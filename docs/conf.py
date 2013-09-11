@@ -53,7 +53,7 @@ copyright = u'2013, Petr Hracek, Tomas Hozza'
 # built documents.
 #
 # The short X.Y version.
-version = '.'.join(da_version.VERSION.split('.')[0:2])
+version = '.'.join(rh_version.VERSION.split('.')[0:2])
 # The full version, including alpha/beta/rc tags.
 release = rh_version.VERSION
 
