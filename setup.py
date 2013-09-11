@@ -1,67 +1,73 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from __future__ import print_function
+
+import subprocess
+
+from rebasehelper.version import VERSION
+
+try:
+    from setuptools import setup, Command
+except:
+    from distutils.core import setup, Command
+
+class PyTest(Command):
+    user_options = [('test-runner=',
+                     't',
+                     'test runner to use; by default, multiple py.test runners are tried')]
+    command_consumes_arguments = True
+
+    def initialize_options(self):
+        self.test_runner = None
+        self.args = []
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        # only one test runner => just run the tests
+        runners = ['py.test-2.7', 'py.test-3.3']
+        if self.test_runner:
+            runners = [self.test_runner]
+
+        for runner in runners:
+            if len(runners) > 1:
+                print('\n' * 2)
+                print('Running tests using "{0}":'.format(runner))
+
+            retcode = 0
+            cmd = [runner]
+            for a in self.args:
+                cmd.append(a)
+            cmd.append('test')
+            t = subprocess.Popen(cmd)
+            rc = t.wait()
+            retcode = t.returncode or retcode
+
+        raise SystemExit(retcode)
 
 
-import os
-import distutils.command.sdist
-from distutils.core import setup
-from distutils.command.install import INSTALL_SCHEMES
-from scripts.include import *
-
-project_name            = "rebase-helper"
-project_dirs            = ["rebase-helper"]
-project_url             = "http://github.com/phracek/rebase-helper"
-project_author          = "Red Hat, Inc."
-project_author_email    = "phracek@redhat.com"
-project_description     = "Rebase Helper"
-package_name            = "%s" % project_name
-package_module_name     = project_name
-package_version         = [ 0, 1, 1, "", "" ]
-
-
-script_files    = []
-
-data_files  = {
-        "/usr/bin": [
-            "rebaser/rebase-helper.py"
-        ],
-}
-
-# override default tarball format with bzip2
-distutils.command.sdist.sdist.default_format = {'posix':'bztar',}
-
-if os.path.isdir(".git"):
-    # we're building from a git repo -> store version tuple to __init__.py
-    if package_version[3] == "git":
-        force = True
-        git_version = get_git_version(os.path.dirname(__file__))
-        git_date = get_git_date(os.path.dirname(__file__))
-        package_version[4] = "%s.%s" % (git_date,git_version)
-
-    for i in project_dirs:
-        file_name = os.path.join(i, "version.py")
-        write_version(file_name, package_version)
-
-# read package version from the module
-package_module = __import__(project_dirs[0] + ".version")
-package_version = get_version(package_module)
-packages = get_packages(project_dirs)
-
-root_dir = os.path.dirname(__file__)
-if root_dir != "":
-    os.chdir(root_dir)
-
-for scheme in INSTALL_SCHEMES.values():
-    scheme["data"] = scheme["purelib"]
-
-setup (
-        name            = package_name,
-        version         = package_version.replace(" ", "_").replace("-","_"),
-        url             = project_url,
-        author          = project_author,
-        author_email    = project_author_email,
-        description     = project_description,
-        packages        = packages,
-        data_files      = data_files.items(),
-        scripts         = script_files,
+setup(
+    name = 'rebasehelper',
+    version = VERSION,
+    description = 'RebaseHelper helps you to rebase your packages.',
+    keywords = 'packages,easy,quick',
+    author = 'Petr Hracek',
+    author_email = 'phracek@redhat.com',
+    url = 'https://github.com/phracek/rebase-helper',
+    license = 'GPLv2+',
+    packages = ['rebasehelper', 'rebasehelper.archive.cli'],
+    include_package_data = True,
+    entry_points = {'console_scripts':['rebase-helper=rebasehelper:rebase_helper']},
+    # PyGithub is in fact optional, but let's keep it here
+    setup_requires = [],
+    classifiers = ['Development Status :: 4 - Beta',
+                   'Environment :: Console',
+                   'Intended Audience :: Developers',
+                   'License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)',
+                   'Operating System :: POSIX :: Linux',
+                   'Programming Language :: Python',
+                   'Topic :: Software Development',
+                  ],
+    cmdclass = {'test': PyTest}
 )
