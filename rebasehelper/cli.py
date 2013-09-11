@@ -4,7 +4,7 @@ import argparse
 import os
 import sys
 
-from rebase-helper.constants import *
+from rebasehelper.constants import *
 
 
 class CLI(object):

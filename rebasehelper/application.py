@@ -30,11 +30,11 @@ class Application(object):
         """ conf is CLI object """
         self.conf = conf
 
-    def build_command(self):
+    def build_command(self,binary):
         """
         create command from CLI options
         """
-        command = [self.binary]
+        command = [binary]
         command.extend(self.command_eval)
         if self.conf.devel:
             command.append("--devel")
@@ -43,7 +43,7 @@ class Application(object):
         return command
 
     def run(self):
-        cmd = self.build_command()
+        #cmd = self.build_command()
         print "running command:\n%s" % ' '.join(cmd)
 
 if __name__ == '__main__':

@@ -4,8 +4,8 @@
 
 import sys
 import os
-from rebaser.cli import CLI
-from rebaser.application import Application
+from rebasehelper.cli import CLI
+from rebasehelper.application import Application
 
 def main(args=None):
     cli = CLI()
