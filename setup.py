@@ -60,6 +60,7 @@ setup(
     include_package_data = True,
     entry_points = {'console_scripts':['rebase-helper=rebasehelper:rebase_helper']},
     # PyGithub is in fact optional, but let's keep it here
+    install_requirements = ['pylzma']
     setup_requires = [],
     classifiers = ['Development Status :: 4 - Beta',
                    'Environment :: Console',
