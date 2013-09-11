@@ -8,24 +8,23 @@ from rebasehelper.logger import logger
 
 class Archive(object):
     """ Class representing an archive with sources """
-    filename = None
-    archive = None
+    _filename = None
+    _archive = None
     def __init__(self, filename):
-        self.filename = filename
-        if self.filename.endswith(".tar.xz"):
-            xz_file = lzma.LZMAFile(self.filename,"r")
-            self.archive = tarfile.open(mode='r',fileobj=xz_file)
-        elif self.filename.endswith(".tar.bz2") or self.filename.endswith("tar.gz"):
-            self.archive = tarfile.TarFile.open(self.filename)
+        self._filename = filename
+        if self._filename.endswith(".tar.xz"):
+            xz_file = lzma.LZMAFile(self._filename,"r")
+            self._archive = tarfile.open(mode='r',fileobj=xz_file)
+        elif self._filename.endswith(".tar.bz2") or self._filename.endswith("tar.gz"):
+            self._archive = tarfile.TarFile.open(self._filename)
         elif zipfile.is_zipfile(filename):
-            self._open = zipfile.ZipFile
+            self._archive = zipfile.ZipFile(self._filename,"r")
         else:
             raise NotImplementedError("Unsupported archive type")
-        self._filename = filename
 
     def extract(self, path=settings.TEMPLATE_DIR):
         """ Extracts the archive into the given path """
-        logger.info("extracting {0}".format(self.filename))
-        self.archive.extractall(path)
-        self.archive.close()
+        logger.info("extracting {0}".format(self._filename))
+        self._archive.extractall(path)
+        self._archive.close()
 
