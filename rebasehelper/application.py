@@ -3,7 +3,6 @@
 import subprocess
 import tempfile
 import os
-import openscap_api as openscap
 import sys
 
 
