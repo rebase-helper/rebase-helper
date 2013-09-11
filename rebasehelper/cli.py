@@ -23,7 +23,8 @@ class CLI(object):
         self.parser.add_argument(
             "-d",
             "--devel",
-            default="xccdf_org.preupgrade-content_profile_fedora-default",
+            default="False",
+            action="store_true",
             help="Check only header files and soname bump"
         )
         self.parser.add_argument(
@@ -32,6 +33,11 @@ class CLI(object):
             default=False,
             action="store_true",
             help="Output is more verbose (recommended)"
+        )
+        self.parser.add_argument(
+            "-s",
+            "--source",
+            help="Tarball or zip source package"
         )
 
     def __getattr__(self, name):
