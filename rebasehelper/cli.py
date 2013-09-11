@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import argparse
-import os
 import sys
+import logging
 
 from rebasehelper.constants import *
+from rebasehelper import logger
 
 
 class CLI(object):
@@ -16,8 +17,17 @@ class CLI(object):
 
         #self.parser.usage = "%%prog [-v] <content_file>"
 
+        self.register_console_logging_handler(logger.logger)
         self.add_args()
         self.args = self.parser.parse_args()
+
+    def register_console_logging_handler(cls, logger):
+        """Registers console logging handler to given logger."""
+        console_handler = logging.StreamHandler(sys.stdout)
+        formatter = logging.Formatter("%(asctime)s - %(name)s - %(message)s")
+        console_handler.setFormatter(formatter)
+        console_handler.setLevel(logging.INFO)
+        logger.addHandler(console_handler)
 
     def add_args(self):
         self.parser.add_argument(
