@@ -1,26 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import subprocess
-import tempfile
-import os
-import sys
-
-
-def run_subprocess(cmd):
-    sp = subprocess.Popen(cmd,
-                          stdout=subprocess.PIPE,
-                          stderr=subprocess.STDOUT,
-                          shell=False)
-
-    while True:
-        lines = sp.stdout.readline()
-        if lines == "":
-            break
-        print lines,
-    sp.wait()
-    print 'Exit code:', sp.returncode
-    return sp.returncode
-
 class Application(object):
     result_file = ""
     temp_dir = ""
@@ -42,7 +21,7 @@ class Application(object):
         return command
 
     def run(self):
-        #cmd = self.build_command()
+        cmd = self.build_command()
         print "running command:\n%s" % ' '.join(cmd)
 
 if __name__ == '__main__':
