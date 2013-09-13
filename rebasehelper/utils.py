@@ -19,5 +19,7 @@ class ProcessHelper(object):
                 out_file.write(line)
             else:
                 print line.rstrip("\n")
+        if out_file is not None:
+            out_file.close()
         sp.wait()
         return sp.returncode
