@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import os
+import fnmatch
 import subprocess
 
 class ProcessHelper(object):
@@ -28,3 +30,16 @@ class ProcessHelper(object):
             out_file.close()
         sp.wait()
         return sp.returncode
+
+class PathHelper(object):
+
+    @staticmethod
+    def find_file(top_path, patern):
+        """ Finds a file that matches the given 'patern' recursively
+        starting in the 'top_path' directory. If found, returns full path
+        to the first occurance of the file, otherwise returns None. """
+        for root, dirs, files in os.walk(top_path):
+            for f in files:
+                if fnmatch.fnmatch(f, patern):
+                    return os.path.join(root, f)
+        return None
