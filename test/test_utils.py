@@ -22,7 +22,6 @@ class TestProcessHelper(object):
         def setup(self):
             self.WORKING_DIR = tempfile.mkdtemp(prefix="rebase-helper-test-")
             os.chdir(self.WORKING_DIR)
-            print("set up temp dir" + self.WORKING_DIR)
 
         def teardown(self):
             os.chdir(tempfile.gettempdir())
