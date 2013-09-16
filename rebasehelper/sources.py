@@ -20,19 +20,11 @@ class Sources(object):
 
     def _find_setup_path_configure(self):
         logger.debug("Sources: Looking for configure script in {0}".format(self.get_path()))
-        script_path = PathHelper.find_file(self.get_path(), "configure")
-        if script_path is not None:
-            return os.path.dirname(script_path)
-        else:
-            return None
+        return PathHelper.find_first_dir_with_file(self.get_path(), "configure")
 
     def _find_setup_path_cmake(self):
         logger.debug("Sources: Looking for CMake script in {0}".format(self.get_path()))
-        script_path = PathHelper.find_file(self.get_path(), "CMakeList.txt")
-        if script_path is not None:
-            return os.path.dirname(script_path)
-        else:
-            return None
+        return PathHelper.find_first_dir_with_file(self.get_path(), "CMakeList.txt")
 
     def _find_setup(self):
         functions = [(self.SETUP_TYPE_CONFIGURE, self._find_setup_path_configure),
@@ -43,12 +35,6 @@ class Sources(object):
                 logger.debug("Sources: Found {0} script in {1}".format(setup_type, setup_path))
                 return setup_path, setup_type
         return None, None
-
-    def get_path(self):
-        return self._abspath
-
-    def build(self):
-        raise NotImplementedError("Not implemented yet")
 
     def _run_setup_configure(self, args=None, output=None):
 
@@ -77,3 +63,11 @@ class Sources(object):
                          self._setup_script_path))
             return 1
 
+    def get_path(self):
+        return self._abspath
+
+    def _find_makefile(self):
+        pass
+
+    def build(self):
+        raise NotImplementedError("Not implemented yet")

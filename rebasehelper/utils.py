@@ -34,7 +34,19 @@ class ProcessHelper(object):
 class PathHelper(object):
 
     @staticmethod
-    def find_file(top_path, patern):
+    def find_first_dir_with_file(top_path, patern):
+        """ Finds a file that matches the given 'patern' recursively
+        starting in the 'top_path' directory. If found, returns full path
+        to the directory with first occurance of the file, otherwise
+        returns None. """
+        for root, dirs, files in os.walk(top_path):
+            for f in files:
+                if fnmatch.fnmatch(f, patern):
+                    return root
+        return None
+
+    @staticmethod
+    def find_first_file(top_path, patern):
         """ Finds a file that matches the given 'patern' recursively
         starting in the 'top_path' directory. If found, returns full path
         to the first occurance of the file, otherwise returns None. """
