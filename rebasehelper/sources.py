@@ -84,8 +84,75 @@ class Sources(object):
     def get_path(self):
         return self._abspath
 
-    def _find_makefile(self):
-        pass
 
-    def build(self):
-        raise NotImplementedError("Not implemented yet")
+    def _find_makefile(self):
+        logger.debug("Sources: Looking for Makefile in {0}".format(self.get_path()))
+        return PathHelper.find_first_dir_with_file(self.get_path(), "Makefile")
+
+
+    def _pre_make_check(self):
+        if self._setup_done == False:
+            logger.debug("Sources: Setup script needs to be executed before make")
+            return False
+        if self._makefile_path == None:
+            self._makefile_path = self._find_makefile()
+        if self._makefile_path == None:
+            logger.debug("Sources: Could not find Makefile")
+            return False
+        return True
+
+
+    def build(self, args=None, output=None):
+        """Runs make with the given list of argumens and writes make output
+        to the given file"""
+        if self._pre_make_check() == False:
+            return False
+        cmd = ["make"]
+        if args != None:
+            cmd.extend(args)
+        ret = ProcessHelper.run_subprocess_cwd(cmd,
+                                               self._makefile_path,
+                                               output)
+        if ret == 0:
+            self._build_done = True
+            return True
+        else:
+            logger.debug("Sources: Building failed")
+            return False
+
+
+    def install(self, path=None, output=None):
+        """Runs make install with DESTDIR='path' and writes output to the given
+        file"""
+        if self._pre_make_check() == False:
+            return False
+        if self._build_done == False:
+            logger.debug("Sources: Sources need to be built before intsall")
+            return False
+        cmd = ["make", "install"]
+        if path != None:
+            cmd.append("DESTDIR=" + path)
+        ret = ProcessHelper.run_subprocess_cwd(cmd,
+                                               self._makefile_path,
+                                               output)
+        if ret == 0:
+            return True
+        else:
+            logger.debug("Sources: 'make install' failed")
+            return False
+
+
+    def clean(self):
+        """Runs make clean"""
+        if self._pre_make_check() == False:
+            return False
+        cmd = ["make", "clean"]
+        ret = ProcessHelper.run_subprocess_cwd(cmd,
+                                               self._makefile_path,
+                                               ProcessHelper.DEV_NULL)
+        if ret == 0:
+            self._build_done = False
+            return True
+        else:
+            logger.debug("Sources: 'make clean' failed")
+            return False
