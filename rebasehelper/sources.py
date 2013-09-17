@@ -50,23 +50,36 @@ class Sources(object):
                                                 self._setup_script_path,
                                                 output)
 
+
     def _run_setup_cmake(self, args=None, output=None):
         cmd = ["cmake"]
         if args is not None:
             cmd.extend(args)
-        cmd.append(self._setup_script_path)
-        return ProcessHelper.run_subprocess(cmd, output)
+        cmd.append(".")
+        return ProcessHelper.run_subprocess_cwd(cmd,
+                                                self._setup_script_path,
+                                                output)
 
 
-    def run_setup(self, args=None, output=None):
+    def setup(self, args=None, output=None):
+        """Runs setup script with given list of arguments and writes script
+        output to the given file"""
         functions = {self.SETUP_TYPE_CONFIGURE : self._run_setup_configure,
                      self.SETUP_TYPE_CMAKE : self._run_setup_cmake}
-        if self._setup_script_path is not None and self._setup_script_type is not None:
-            return functions[self._setup_script_type](args, output)
+        if not self._setup_script_path or not self._setup_script_type:
+            self._setup_script_path, self._setup_script_type = self._find_setup()
+        if self._setup_script_path and self._setup_script_type:
+            ret = functions[self._setup_script_type](args, output)
+            if ret == 0:
+                self._setup_done = True
+                return True
+            else:
+                logger.debug("Sources: Setup script failed")
+                return False
         else:
-            logger.debug("Sources: Could not run script '{0}' in '{1}'".format(self._setup_script_type,
-                         self._setup_script_path))
-            return 1
+            logger.debug("Sources: Could not find setup script")
+            return False
+
 
     def get_path(self):
         return self._abspath
