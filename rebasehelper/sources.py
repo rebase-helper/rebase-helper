@@ -12,19 +12,24 @@ class Sources(object):
 
     def __init__(self, path):
         self._abspath = os.path.abspath(path)
-        self._setup_done = False        # was setup script run?
-        self._build_done = False        # was Makefile run?
         if not os.path.isdir(self._abspath):
             raise ValueError("Given path is not a valid directory: {0}".format(path))
-        self._setup_script_path, self._setup_script_type = self._find_setup()
+        self._setup_done = False
+        self._build_done = False
+        self._setup_script_path = None
+        self._setup_script_type = None
+        self._makefile_path = None
+
 
     def _find_setup_path_configure(self):
         logger.debug("Sources: Looking for configure script in {0}".format(self.get_path()))
         return PathHelper.find_first_dir_with_file(self.get_path(), "configure")
 
+
     def _find_setup_path_cmake(self):
         logger.debug("Sources: Looking for CMake script in {0}".format(self.get_path()))
         return PathHelper.find_first_dir_with_file(self.get_path(), "CMakeList.txt")
+
 
     def _find_setup(self):
         functions = [(self.SETUP_TYPE_CONFIGURE, self._find_setup_path_configure),
@@ -36,8 +41,8 @@ class Sources(object):
                 return setup_path, setup_type
         return None, None
 
-    def _run_setup_configure(self, args=None, output=None):
 
+    def _run_setup_configure(self, args=None, output=None):
         cmd = ["./configure"]
         if args is not None:
             cmd.extend(args)
