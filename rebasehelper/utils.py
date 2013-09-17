@@ -6,6 +6,8 @@ import subprocess
 
 class ProcessHelper(object):
 
+    DEV_NULL = "/dev/null"
+
     @staticmethod
     def run_subprocess(cmd, output=None):
         return ProcessHelper.run_subprocess_cwd(cmd, output=output)
