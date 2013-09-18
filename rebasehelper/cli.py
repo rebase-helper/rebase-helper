@@ -49,6 +49,10 @@ class CLI(object):
             "--source",
             help="Tarball or zip source package"
         )
+        self.parser.add_argument(
+            "--specfile",
+            help="Specify spec file for testing"
+        )
 
     def __getattr__(self, name):
         try:
