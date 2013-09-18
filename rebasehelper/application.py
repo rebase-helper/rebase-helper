@@ -23,6 +23,17 @@ class Application(object):
     def run(self):
         cmd = self.build_command()
         print "running command:\n%s" % ' '.join(cmd)
+        """ This section can be used for testing """
+        """if self.conf.devel:
+            old_arch = archive.Archive("emacs-24.2.tar.xz")
+            old_arch.extract()
+            tar_arch = archive.Archive(self.conf.source)
+            tar_arch.extract()
+            zip_arch = archive.Archive("taglist_46.zip")
+            zip_arch.extract()
+        """
+
+
 
 if __name__ == '__main__':
     a = Application(None)
