@@ -2,7 +2,7 @@
 
 from rebasehelper import rebase_base
 
-class PatchChecker(rebase_base.RebaseBase):
+class PatchChecker(rebase_base.BaseChecker):
     """ Class used for testing and other future stuff, ...
         Each method should overwrite method like run_check
     """

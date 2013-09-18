@@ -2,7 +2,7 @@
 
 from rebasehelper import rebase_base
 
-class FilesChecker(rebase_base.RebaseBase):
+class FilesChecker(rebase_base.BaseChecker):
     """ Class used for testing and other future stuff, ...
         Each method should overwrite method like run_check
     """
