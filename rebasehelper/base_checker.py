@@ -3,7 +3,7 @@
 import os
 from rebasehelper.logger import logger
 
-class RebaseBase(object):
+class BaseChecker(object):
     """ Class used for testing and other future stuff, ...
         Each method should overwrite method like run_check
     """
