@@ -6,12 +6,25 @@ import re
 
 import os
 from rebasehelper import settings
+SPECFILE_SECTIONS=['%header', # special "section" for the start of specfile
+                   '%description',
+                   '%package',
+                   '%prep',
+                   '%build',
+                   '%install',
+                   '%clean',
+                   '%check',
+                   '%files',
+                   '%changelog']
+RUNTIME_SECTIONS=['%prep', '%build', '%install', '%clean', '%check']
+METAINFO_SECTIONS=['%header', '%package']
 
 class Specfile(object):
-    def __init__(self, file):
-        f = open(file,"r")
-        self.specfile = ''.join(f.readlines())
-        f.close()
+    def __init__(self, specfile):
+        self.spec = []
+        with open(specfile,"r") as f:
+            self.spec.append(f.readlines())
+        self.specfile = ''.join(self.spec)
         self.sections = self.split_sections()
 
     def split_sections(self):
