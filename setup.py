@@ -45,7 +45,10 @@ class PyTest(Command):
             retcode = t.returncode or retcode
 
         raise SystemExit(retcode)
-
+if sys.version_info < (2, 7):
+    install_requires = ['pylzma']
+else:
+    install_requires = []
 
 setup(
     name = 'rebasehelper',
@@ -60,7 +63,7 @@ setup(
     include_package_data = True,
     entry_points = {'console_scripts':['rebase-helper=rebasehelper:rebase_helper']},
     # PyGithub is in fact optional, but let's keep it here
-    install_requires = ['pylzma'],
+    install_requires = install_requires,
     setup_requires = [],
     classifiers = ['Development Status :: 4 - Beta',
                    'Environment :: Console',
