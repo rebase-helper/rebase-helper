@@ -1,3 +1,2 @@
-pylzma
 pytest
 flexmock
