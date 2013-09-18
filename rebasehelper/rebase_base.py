@@ -9,13 +9,12 @@ class RebaseBase(object):
     """
 
     def run_check(self, **kwargs):
-        """ abstract method for checking
-        like PathChecker and DevelChecker
+        """ Return list of files which has been changed against old version
+        This will be used by checkers
         """
-        return []
+        raise NotImplementedError()
 
     def prepare_source(self):
-        """ This method is used for prepare sources
-        before running any checker
+        """ This method should prepare sources for any checker
         """
-        pass
+        raise NotImplementedError()
