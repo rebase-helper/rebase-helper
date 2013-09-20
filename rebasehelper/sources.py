@@ -44,24 +44,19 @@ class Sources(object):
                 return setup_path, setup_type
         return None, None
 
-    def _run_setup_configure(self, args=None, output=None):
-        cmd = ["./configure"]
-        if args is not None:
-            cmd.extend(args)
+    def _run_setup_configure(self, args=[], output=None):
+        cmd = ["./configure"] + args
         return ProcessHelper.run_subprocess_cwd(cmd,
                                                 self._setup_script_path,
                                                 output)
 
-    def _run_setup_cmake(self, args=None, output=None):
-        cmd = ["cmake"]
-        if args is not None:
-            cmd.extend(args)
-        cmd.append(".")
+    def _run_setup_cmake(self, args=[], output=None):
+        cmd = ["cmake"] + args + ["."]
         return ProcessHelper.run_subprocess_cwd(cmd,
                                                 self._setup_script_path,
                                                 output)
 
-    def setup(self, args=None, output=None):
+    def setup(self, args=[], output=None):
         """Runs setup script with given list of arguments and writes script
         output to the given file"""
         functions = {self.SETUP_TYPE_CONFIGURE: self._run_setup_configure,
@@ -100,14 +95,12 @@ class Sources(object):
             return False
         return True
 
-    def build(self, args=None, output=None):
+    def build(self, args=[], output=None):
         """Runs make with the given list of argumens and writes make output
         to the given file"""
         if self._pre_make_check() is False:
             return False
-        cmd = ["make"]
-        if args is not None:
-            cmd.extend(args)
+        cmd = ["make"] + args
         ret = ProcessHelper.run_subprocess_cwd(cmd,
                                                self._makefile_path,
                                                output)
