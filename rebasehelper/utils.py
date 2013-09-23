@@ -44,7 +44,7 @@ class PathHelper(object):
         for root, dirs, files in os.walk(top_path):
             for f in files:
                 if fnmatch.fnmatch(f, patern):
-                    return root
+                    return os.path.abspath(root)
         return None
 
     @staticmethod
@@ -55,5 +55,5 @@ class PathHelper(object):
         for root, dirs, files in os.walk(top_path):
             for f in files:
                 if fnmatch.fnmatch(f, patern):
-                    return os.path.join(root, f)
+                    return os.path.join(os.path.abspath(root), f)
         return None
