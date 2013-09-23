@@ -4,6 +4,7 @@ import os
 import fnmatch
 import subprocess
 
+
 class ProcessHelper(object):
 
     DEV_NULL = "/dev/null"
@@ -32,6 +33,7 @@ class ProcessHelper(object):
             out_file.close()
         sp.wait()
         return sp.returncode
+
 
 class PathHelper(object):
 
