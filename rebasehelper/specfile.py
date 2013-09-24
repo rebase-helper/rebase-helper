@@ -3,6 +3,7 @@ try:
 except ImportError:
     pass # we're on Python 2 => ok
 import re
+import rpm
 
 SPECFILE_SECTIONS=['%header', # special "section" for the start of specfile
                    '%description',
@@ -18,12 +19,15 @@ RUNTIME_SECTIONS=['%prep', '%build', '%install', '%clean', '%check']
 METAINFO_SECTIONS=['%header', '%package']
 
 class Specfile(object):
+    
+    values = []
     def __init__(self, specfile):
-        self.spec = []
-        with open(specfile,"r") as f:
-            self.spec = f.readlines()
-        self.specfile = ''.join(self.spec)
-        self.sections = self.split_sections()
+        #self.spec = []
+        #with open(specfile,"r") as f:
+        #    self.spec = f.readlines()
+        self.specfile = ''.join(specfile)
+        #self.sections = self.split_sections()
+        self.spc = rpm.spec(self.specfile)        
 
     def split_sections(self):
         headers_re = [re.compile('^' + x, re.M) for x in SPECFILE_SECTIONS]
@@ -63,24 +67,54 @@ class Specfile(object):
         return section[1:]
         
     def _get_build_flags(self, build_section, flag):
-        flags = []
         next_line = False
         for b in build_section:
-            b.strip()
+            b = b.strip()
             if next_line:
-                flags.append(b)
                 if not b.endswith('\\'):
-                    next_line = False
+                    self.values.append(b)
+                    break
+                b = b.replace('\\','').strip()
+                self.values.append(b)
             elif flag in b:
                 if b.endswith('\\'):
                     next_line = True
-                flags.append(b.replace('\\',''))
-        print flags
-        return flags
+                b = b.replace('\\','').replace(flag,'').strip()
+                b = b.split(' ')
+                self.values.extend(b)
+    
+    def _get_sections(self, section, parameters=[]):
+        requested_section = self.spc.build
+        self.values = []
+        for param in parameters:
+            self._get_build_flags(requested_section,param)
+        return self.values
+            
         
     def get_config_options(self):
-        build_section = self._filter_section('%build')
-        config_values = []
-        config_values.append(self._get_build_flags(build_section,'CFLAGS'))
-        config_values.append(self._get_build_flags(build_section,'%configure'))
-        return config_values
+        requested_section = self.spc.build
+        self.values = []
+        for param in ['./configure']:
+            self._get_build_flags(requested_section.split('\n'),param)
+        return self.values
+        
+    def get_make_options(self):
+        requested_section = self.spc.build
+        self.values = []
+        for param in ['make']:
+            self._get_build_flags(requested_section.split('\n'),param)
+        return self.values
+    
+    def _correct_install_prefix(self):
+        for value in self.values:
+            print 'PREFIX:',value
+        
+    def get_make_install_options(self):
+        requested_section = self.spc.install
+        self.values = []
+        for param in ['make']:
+            self._get_build_flags(requested_section.split('\n'),param)
+        self._correct_install_prefix()
+            
+        return self.values
+        
