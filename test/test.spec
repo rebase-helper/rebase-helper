@@ -27,7 +27,7 @@ files.
 autoreconf -vi
 
 %configure
-make %{?_smp_mflags} 
+make TEST
 
 %install
 make DESTDIR=$RPM_BUILD_ROOT install
