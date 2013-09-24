@@ -5,7 +5,6 @@ from rebasehelper.utils import PathHelper
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.logger import logger
 
-
 class Sources(object):
     """ Class representing sources that can be buit, installed, ... """
     SETUP_TYPE_CONFIGURE = "configure"
@@ -111,7 +110,7 @@ class Sources(object):
             logger.debug("Sources: Building failed")
             return False
 
-    def install(self, path=None, output=None):
+    def install(self, path=None, args=[], output=None):
         """Runs make install with DESTDIR='path' and writes output to the given
         file"""
         if self._pre_make_check() is False:
@@ -119,9 +118,13 @@ class Sources(object):
         if self._build_done is False:
             logger.debug("Sources: Sources need to be built before intsall")
             return False
-        cmd = ["make", "install"]
+        cmd = ["make"]
         if path is not None:
             cmd.append("DESTDIR=" + path)
+        if args:
+            cmd.append(args)
+        cmd.extend(["install"])
+        print cmd
         ret = ProcessHelper.run_subprocess_cwd(cmd,
                                                self._makefile_path,
                                                output)
