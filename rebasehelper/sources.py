@@ -121,10 +121,7 @@ class Sources(object):
         cmd = ["make"]
         if path is not None:
             cmd.append("DESTDIR=" + path)
-        if args:
-            cmd.append(args)
-        cmd.extend(["install"])
-        print cmd
+        cmd = cmd + args + ["install"]
         ret = ProcessHelper.run_subprocess_cwd(cmd,
                                                self._makefile_path,
                                                output)
