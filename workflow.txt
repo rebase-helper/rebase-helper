@@ -1,0 +1,18 @@
+Prerequisite is to copy a new upstream release to a GIT repository of relevant package.
+
+How Rebase-Helper should work.
+- extract tarball with the existing sources to directory <package_name>
+- extract tarball with the new sources to directory <package_name>-rebasehelper
+- apply first patch to existing directory <package_name>
+- Try to apply a patch to <package_name>-rebasehelper
+- If the patch passed go to another if not try to apply them via fuzz
+- If the patch failed run a DiffHelper to correct a patch.
+- Save the corrected patch to <org_name>-rebase.patch
+- Go through all patche
+- Run rpmdiff tool for finding libraries and header changes.
+
+What is currently missing:
+- PatchHelper class - abstract class with at least one Patch Helper (mostly patch command)
+- DiffHelper class - abstract class with at least one Diff Helper (like vimdiff, Meld)
+    - Each DiffHelper class can have different syntax
+ 
