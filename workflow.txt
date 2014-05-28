@@ -1,18 +1,34 @@
 Prerequisite is to copy a new upstream release to a GIT repository of relevant package.
 
 How Rebase-Helper should work.
+- Each action should be logged and visible by user.
 - extract tarball with the existing sources to directory <package_name>
 - extract tarball with the new sources to directory <package_name>-rebasehelper
+- Provide a list of patches mentioned in SPEC file
 - apply first patch to existing directory <package_name>
-- Try to apply a patch to <package_name>-rebasehelper
+- Try to apply the first patch to <package_name>-rebasehelper
 - If the patch passed go to another if not try to apply them via fuzz
 - If the patch failed run a DiffHelper to correct a patch.
 - Save the corrected patch to <org_name>-rebase.patch
 - Go through all patche
 - Run rpmdiff tool for finding libraries and header changes.
+- Inform user what libraries and header files were changed.
 
 What is currently missing:
 - PatchHelper class - abstract class with at least one Patch Helper (mostly patch command)
 - DiffHelper class - abstract class with at least one Diff Helper (like vimdiff, Meld)
     - Each DiffHelper class can have different syntax
+- BuildHelper class - the class should implemented several method how to build up a package
+    - It can be done via mock, fedpkg local or brew.
+    - Be careful about dependecies in case of fedpkg local
+- RPMDiff class - use the class for getting information what was changed against previous version
+- Report class - it can be used for reporting things discovered during rebasing.
+    - like what patches were changed.
+    - what headers and libraries were changed.
+
+Nice to have:
+- If library was change (like soname bump) try to execute repoquery to find out what packages needs the library.
+- Execute BZ for solving the dependencies.
+
+
  
