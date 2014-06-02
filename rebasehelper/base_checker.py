@@ -14,7 +14,3 @@ class BaseChecker(object):
         """
         raise NotImplementedError()
 
-    def prepare_source(self):
-        """ This method should prepare sources for any checker
-        """
-        raise NotImplementedError()

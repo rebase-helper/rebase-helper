@@ -118,3 +118,5 @@ class Specfile(object):
             
         return self.values
         
+    def get_patches(self):
+        pass

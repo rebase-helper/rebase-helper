@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from rebasehelper import rebase_base
+from rebasehelper import base_checker
 
-class FilesChecker(rebase_base.BaseChecker):
+class FilesChecker(base_checker.BaseChecker):
     """ Class used for testing and other future stuff, ...
         Each method should overwrite method like run_check
     """
