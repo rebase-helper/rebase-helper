@@ -21,7 +21,7 @@ class CLI(object):
         self.add_args()
         self.args = self.parser.parse_args()
 
-    def register_console_logging_handler(cls, logger):
+    def register_console_logging_handler(self, logger):
         """Registers console logging handler to given logger."""
         console_handler = logging.StreamHandler(sys.stdout)
         formatter = logging.Formatter("%(asctime)s - %(name)s - %(message)s")
