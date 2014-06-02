@@ -22,12 +22,8 @@ class Specfile(object):
     
     values = []
     def __init__(self, specfile):
-        #self.spec = []
-        #with open(specfile,"r") as f:
-        #    self.spec = f.readlines()
-        self.specfile = ''.join(specfile)
-        #self.sections = self.split_sections()
-        self.spc = rpm.spec(self.specfile)        
+        self.specfile = specfile
+        self.spc = rpm.spec(self.specfile)
 
     def split_sections(self):
         headers_re = [re.compile('^' + x, re.M) for x in SPECFILE_SECTIONS]
@@ -119,4 +115,14 @@ class Specfile(object):
         return self.values
         
     def get_patches(self):
-        pass
+        patches = {}
+        for source in self.spc.sources:
+            try:
+                patch, num, patch_type = source
+            except IndexError:
+                pass
+            # Patch has flag 2
+            if int(patch_type) != 2:
+                continue
+            patches[num] = patch
+        return patches
