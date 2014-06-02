@@ -31,4 +31,5 @@ Nice to have:
 - Execute BZ for solving the dependencies.
 
 
- 
+ SPEC File changes:
+ Requires: patchutils
