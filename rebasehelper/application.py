@@ -1,5 +1,10 @@
 # -*- coding: utf-8 -*-
 
+import os
+import sys
+
+from rebasehelper.specfile import Specfile
+from rebasehelper.patch_checker import Patch
 class Application(object):
     result_file = ""
     temp_dir = ""
@@ -20,18 +25,27 @@ class Application(object):
             command.append("--verbose")
         return command
 
-    def run(self):
-        cmd = self.build_command()
-        print "running command:\n%s" % ' '.join(cmd)
-        """ This section can be used for testing """
-        """if self.conf.devel:
-            old_arch = archive.Archive("emacs-24.2.tar.xz")
-            old_arch.extract()
-            tar_arch = archive.Archive(self.conf.source)
-            tar_arch.extract()
-            zip_arch = archive.Archive("taglist_46.zip")
-            zip_arch.extract()
+    def get_spec_file(self):
         """
+        Function get a spec file from current directory
+        """
+        cwd = os.getcwd()
+        spec_file = None
+        for filename in os.listdir(cwd):
+            if filename.endswith(".spec"):
+                spec_file = filename
+                break
+        return spec_file
+
+    def run(self):
+        spec_file = self.get_spec_file()
+        if spec_file:
+            spec = Specfile(spec_file)
+            patches = spec.get_patches()
+
+        if patches:
+            patch = Patch(patches)
+            patch.run_patch()
 
 
 

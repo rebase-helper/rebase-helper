@@ -14,7 +14,14 @@ class PatchTool(object):
     helpers = {}
 
     @classmethod
-    def run_patch(self, **kwargs):
+    def match(cls):
+        """
+            Method checks whether it is usefull patch method
+        """
+        return NotImplementedError()
+
+    @classmethod
+    def run_patch(cls, **kwargs):
         """
             Method will check all patches in relevant package
         """
@@ -22,7 +29,7 @@ class PatchTool(object):
 
 @register_patch_tool
 class FedoraPatchTool(PatchTool):
-    shortname = 'fedora_patch'
+    shortcut = 'fedora_patch'
     c_patch = 'patch'
 
     @classmethod
@@ -32,3 +39,14 @@ class FedoraPatchTool(PatchTool):
         directory against another
         """
         pass
+
+
+class Patch(object):
+    def __init__(self, patches, source_dir, dest_dir):
+        self.patches = patches
+        self.source_dir = source_dir
+        self.dest_dir = dest_dir
+
+    def run_patch(self):
+        for order in sorted(self.patches):
+            print order, self.patches[order]
