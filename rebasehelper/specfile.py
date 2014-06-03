@@ -3,7 +3,10 @@ try:
 except ImportError:
     pass # we're on Python 2 => ok
 import re
+import os
 import rpm
+from rebasehelper.utils import ProcessHelper
+from rebasehelper.logger import logger
 
 SPECFILE_SECTIONS=['%header', # special "section" for the start of specfile
                    '%description',
@@ -33,6 +36,7 @@ class Specfile(object):
                 section_starts.append(match.start())
 
         section_starts.sort()
+        print section_starts
         # this is mainly for tests - if the header is the only section
         header_end = section_starts[0] if section_starts else len(self.specfile)
         sections = [('%header', self.specfile[:header_end])]
@@ -113,16 +117,60 @@ class Specfile(object):
         self._correct_install_prefix()
             
         return self.values
+
+    def get_patch_option(self, line):
+        spl = line.strip().split()
+        if len(spl) == 1:
+            return spl[0], " "
+        elif len(spl) == 2:
+            return spl[0], spl[1]
+        else:
+            return spl[0], spl[1]
+
+    def get_patch_flags(self):
+        patch_flags = {}
+        with open(self.specfile, "r") as spc_file:
+            lines = spc_file.readlines()
+            lines = [x for x in lines if x.startswith('%patch')]
+            for line in lines:
+                num, option = self.get_patch_option(line)
+                num = num.replace('%patch','')
+                patch_flags[int(num)] = option
+        return patch_flags
         
     def get_patches(self):
         patches = {}
+        patch_flags = self.get_patch_flags()
         for source in self.spc.sources:
             try:
                 patch, num, patch_type = source
             except IndexError:
-                pass
+                print 'Problem with getting patches'
+                return None
             # Patch has flag 2
             if int(patch_type) != 2:
                 continue
-            patches[num] = patch
+            full_patch_name = patch
+            if not os.path.exists(full_patch_name):
+                logger.error('Patch {0} does not exist'.format(patch))
+                continue
+            patches[num] = [full_patch_name, patch_flags[num]]
         return patches
+
+    def get_old_sources(self):
+        old_sources = None
+        source_name = ""
+        for source in self.spc.sources:
+            try:
+                source, num, source_type = source
+            except IndexError:
+                logger.error('Problem with getting source')
+                return None
+            if int(num) == 0:
+                old_sources = source
+                break
+
+        source_name = old_sources.split('/')[-1]
+        if not os.path.exists(source_name):
+            ProcessHelper.run_subprocess_cwd('wget {0}'.format(old_sources), shell=True)
+        return source_name
