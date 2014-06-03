@@ -79,6 +79,7 @@ class Application(object):
             sys.exit(0)
 
         spec_file = self.get_spec_file()
+        patches = None
         if spec_file:
             spec = Specfile(spec_file)
             patches = spec.get_patches()
