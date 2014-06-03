@@ -10,7 +10,7 @@ from rebasehelper.patch_checker import Patch
 from rebasehelper.build_helper import *
 from rebasehelper.diff_helper import *
 from rebasehelper.logger import logger
-from rebasehelper.settings import *
+from rebasehelper import settings
 
 def extract_sources(source_name, source_dir):
     """
