@@ -2,9 +2,29 @@
 
 import os
 import sys
+import shutil
 
+from rebasehelper.archive import Archive
 from rebasehelper.specfile import Specfile
 from rebasehelper.patch_checker import Patch
+from rebasehelper.build_helper import Builder
+from rebasehelper.logger import logger
+from rebasehelper import settings
+
+def extract_sources(source_name, source_dir):
+    """
+    Function extracts tar ball and returns a full dirname to sources
+    """
+    if os.path.isdir(source_dir):
+        shutil.rmtree(source_dir)
+    arch = Archive(source_name)
+    arch.extract(source_dir)
+    package_dir = ""
+    for dir_name in os.listdir(source_dir):
+        package_dir = dir_name
+    return os.path.join(os.getcwd(), source_dir, package_dir)
+
+
 class Application(object):
     result_file = ""
     temp_dir = ""
@@ -37,15 +57,34 @@ class Application(object):
                 break
         return spec_file
 
+    def check_build_argument(self):
+        available_args = ['mock', 'rpmbuild']
+        if self.conf.build not in available_args:
+            logger.error('You have to specify one of these builders {0}'.format(available_args))
+            sys.exit(0)
+
     def run(self):
+        if self.conf.build:
+            self.check_build_argument()
+            builder = Builder(self.conf.build)
+            kwargs = dict()
+            kwargs['spec'] = self.conf.specfile
+            kwargs['sources'] = self.conf.sources
+            builder.build(kwargs)
+            sys.exit(0)
+
         spec_file = self.get_spec_file()
         if spec_file:
             spec = Specfile(spec_file)
             patches = spec.get_patches()
-
+            old_sources = spec.get_old_sources()
+            old_dir = extract_sources(old_sources, settings.OLD_SOURCES)
+            new_dir = extract_sources(self.conf.sources, settings.NEW_SOURCES)
         if patches:
-            patch = Patch(patches)
+            patch = Patch(patches, old_dir, new_dir)
             patch.run_patch()
+            if self.conf.patches:
+                sys.exit(0)
 
 
 

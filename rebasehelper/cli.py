@@ -17,17 +17,8 @@ class CLI(object):
 
         #self.parser.usage = "%%prog [-v] <content_file>"
 
-        self.register_console_logging_handler(logger.logger)
         self.add_args()
         self.args = self.parser.parse_args()
-
-    def register_console_logging_handler(self, logger):
-        """Registers console logging handler to given logger."""
-        console_handler = logging.StreamHandler(sys.stdout)
-        formatter = logging.Formatter("%(asctime)s - %(name)s - %(message)s")
-        console_handler.setFormatter(formatter)
-        console_handler.setLevel(logging.INFO)
-        logger.addHandler(console_handler)
 
     def add_args(self):
         self.parser.add_argument(
@@ -46,12 +37,24 @@ class CLI(object):
         )
         self.parser.add_argument(
             "-s",
-            "--source",
+            "--sources",
             help="Tarball or zip source package"
         )
         self.parser.add_argument(
             "--specfile",
             help="Specify spec file for testing"
+        )
+        self.parser.add_argument(
+            "-p",
+            "--patches",
+            default=False,
+            action="store_true",
+            help="Apply only patches"
+        )
+        self.parser.add_argument(
+            "-b",
+            "--build",
+            help="Only build package. It can be done by mock or rpmbuild."
         )
 
     def __getattr__(self, name):
