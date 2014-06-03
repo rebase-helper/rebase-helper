@@ -14,7 +14,7 @@ class ProcessHelper(object):
         return ProcessHelper.run_subprocess_cwd(cmd, output=output)
 
     @staticmethod
-    def run_subprocess_cwd(cmd, cwd=None, output=None):
+    def run_subprocess_cwd(cmd, cwd=None, output=None, shell=False):
         if output is not None:
             out_file = open(output, "w")
         else:
@@ -23,7 +23,7 @@ class ProcessHelper(object):
                               stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT,
                               cwd=cwd,
-                              shell=False)
+                              shell=shell)
         for line in sp.stdout:
             if out_file is not None:
                 out_file.write(line)
