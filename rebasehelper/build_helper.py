@@ -99,7 +99,7 @@ class MockBuildTool(BuildToolBase):
         if srpm is None:
             logger.debug("MockBuildTool: Building SRPM failed")
             raise RuntimeError()
-        return cls._build_rpm(srpm=srpm, kwargs)
+        return cls._build_rpm(kwargs, srpm=srpm)
 
 
 @register_build_tool
@@ -134,7 +134,7 @@ class RpmbuildBuildTool(BuildToolBase):
         if srpm is None:
             logger.debug("RpmbuildBuildTool: Building SRPM failed")
             raise RuntimeError()
-        return cls._build_rpm(srpm=srpm, kwargs)
+        return cls._build_rpm(kwargs, srpm=srpm)
 
 
 class Builder(object):

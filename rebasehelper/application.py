@@ -7,7 +7,7 @@ import shutil
 from rebasehelper.archive import Archive
 from rebasehelper.specfile import Specfile
 from rebasehelper.patch_checker import Patch
-from rebasehelper.build_helper import Builder
+from rebasehelper.build_helper import *
 from rebasehelper.logger import logger
 from rebasehelper import settings
 

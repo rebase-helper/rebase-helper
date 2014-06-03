@@ -19,6 +19,7 @@ class CLI(object):
 
         self.add_args()
         self.args = self.parser.parse_args()
+        print self.args
 
     def add_args(self):
         self.parser.add_argument(
@@ -54,6 +55,7 @@ class CLI(object):
         self.parser.add_argument(
             "-b",
             "--build",
+            default=False,
             help="Only build package. It can be done by mock or rpmbuild."
         )
 
