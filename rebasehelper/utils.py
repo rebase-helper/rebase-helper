@@ -59,3 +59,15 @@ class PathHelper(object):
                 if fnmatch.fnmatch(f, pattern):
                     return os.path.join(os.path.abspath(root), f)
         return None
+
+    @staticmethod
+    def find_all_files(top_path, pattern):
+        """ Finds a file that matches the given 'pattern' recursively
+        starting in the 'top_path' directory. If found, returns full path
+        to the first occurance of the file, otherwise returns None. """
+        files_list = []
+        for root, dirs, files in os.walk(top_path):
+            for f in files:
+                if fnmatch.fnmatch(f, pattern):
+                    files_list.append(os.path.join(os.path.abspath(root), f))
+        return files_list
