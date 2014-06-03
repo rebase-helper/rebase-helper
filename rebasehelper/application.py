@@ -59,7 +59,7 @@ class Application(object):
 
     def check_build_argument(self):
         if self.conf.build not in build_tools.keys():
-            logger.error('You have to specify one of these builders {0}'.format(available_args))
+            logger.error('You have to specify one of these builders {0}'.format(build_tools.keys()))
             sys.exit(0)
 
     def run(self):
