@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 
+from rebasehelper.logger import logger
+from rebasehelper import settings
+
 import os
 import fnmatch
 import subprocess
-from rebasehelper.logger import logger
-from rebasehelper import settings
+import tempfile
 
 
 def get_content_file(path, perms, method=False):
@@ -110,3 +112,8 @@ class PathHelper(object):
                 if fnmatch.fnmatch(f, pattern):
                     files_list.append(os.path.join(os.path.abspath(root), f))
         return files_list
+
+    @staticmethod
+    def get_temp_dir():
+        """ Returns a path to new temporary directory. """
+        return tempfile.mkdtemp(prefix=settings.REBASE_HELPER_PREFIX)
