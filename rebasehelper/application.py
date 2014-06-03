@@ -58,8 +58,7 @@ class Application(object):
         return spec_file
 
     def check_build_argument(self):
-        available_args = ['mock', 'rpmbuild']
-        if self.conf.build not in available_args:
+        if self.conf.build not in build_tools.keys():
             logger.error('You have to specify one of these builders {0}'.format(available_args))
             sys.exit(0)
 
