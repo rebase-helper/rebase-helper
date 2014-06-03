@@ -55,7 +55,7 @@ class CLI(object):
         self.parser.add_argument(
             "-b",
             "--build",
-            default="rpmbuild",
+            default=False,
             help="Only build package. It can be done by mock or rpmbuild."
         )
         self.parser.add_argument(

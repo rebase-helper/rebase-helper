@@ -70,20 +70,21 @@ class Application(object):
 
     def run(self):
         kwargs = dict()
-        spec_file = self.get_spec_file()
-        if not spec_file:
+        #spec_file = self.get_spec_file()
+        if not self.conf.specfile:
+            logger.error('You have to define a SPEC file.')
             sys.exit(1)
-        spec = Specfile(spec_file)
+        spec = Specfile(self.conf.specfile)
         sources = spec.get_all_sources()
         patches = spec.get_patches()
 
         if self.conf.build:
             self.check_build_argument()
             builder = Builder(self.conf.build)
-            kwargs['spec'] = self.conf.specfile
+            kwargs['spec'] = os.path.join(os.getcwd(), self.conf.specfile)
             kwargs['sources'] = sources
             kwargs['patches'] = patches
-            builder.build(kwargs)
+            builder.build(**kwargs)
             sys.exit(0)
 
         if not self.conf.sources:

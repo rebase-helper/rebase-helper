@@ -71,33 +71,42 @@ class Specfile(object):
         """
         patches = {}
         patch_flags = self.get_patch_flags()
-        for source in self.spc.sources:
-            try:
-                patch, num, patch_type = source
-            except IndexError:
-                print 'Problem with getting patches'
-                return None
-            # Patch has flag 2
-            if int(patch_type) != 2:
-                continue
-            full_patch_name = patch
+        cwd = os.getcwd()
+        sources = [ x for x in self.spc.sources if x[2] == 2]
+        for source in sources:
+            filename, num, patch_type = source
+            full_patch_name = os.path.join(cwd, filename)
             if not os.path.exists(full_patch_name):
-                logger.error('Patch {0} does not exist'.format(patch))
+                logger.error('Patch {0} does not exist'.format(filename))
                 continue
             patches[num] = [full_patch_name, patch_flags[num]]
         return patches
+
+    def get_sources(self):
+        """
+        Function returns a all sources
+        """
+        sources = [ x for x in self.spc.sources if x[2] == 0 or x[2] == 1 ]
+        return sources
 
     def get_all_sources(self):
         """
         Function returns all sources mentioned in specfile
         """
-        sources = [ x for x in self.spc.sources if x[2] == 0 or x[2] == 1 ]
+        cwd = os.getcwd()
+        sources = self.get_sources()
+        for index, src in enumerate(sources):
+            if int(src[1]) == 0:
+                sources[index] = os.path.join(cwd, src[0].split('/')[-1])
+            else:
+                sources[index] = os.path.join(cwd, src[0])
         return sources
+
     def get_old_sources(self):
         """
         Function returns a old sources from specfile
         """
-        sources = self.get_all_sources()
+        sources = self.get_sources()
         old_source_name = [ x for x in sources if x[1] == 0 ]
         source_name = old_source_name[0][0].split('/')[-1]
         if not os.path.exists(source_name):
@@ -115,6 +124,6 @@ class Specfile(object):
                 continue
             fields = line.strip().split()
             patch_num = self.get_patch_number(line)
-            lines[index] = ' '.join(fields[:-1]) + ' ' + patches[int(patch_num)][0] +'\n'
+            lines[index] = ' '.join(fields[:-1]) + ' ' + os.path.basename(patches[int(patch_num)][0]) +'\n'
 
         write_to_file(self.get_rebased_spec(), "w", lines)
