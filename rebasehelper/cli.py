@@ -5,7 +5,7 @@ import sys
 import logging
 
 from rebasehelper.constants import *
-from rebasehelper import logger
+from rebasehelper.logger import logger
 
 
 class CLI(object):
