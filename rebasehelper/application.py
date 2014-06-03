@@ -70,29 +70,39 @@ class Application(object):
 
     def run(self):
         kwargs = dict()
+        spec_file = self.get_spec_file()
+        if not spec_file:
+            sys.exit(1)
+        spec = Specfile(spec_file)
+        sources = spec.get_all_sources()
+        patches = spec.get_patches()
+
         if self.conf.build:
             self.check_build_argument()
             builder = Builder(self.conf.build)
             kwargs['spec'] = self.conf.specfile
-            kwargs['sources'] = self.conf.sources
+            kwargs['sources'] = sources
+            kwargs['patches'] = patches
             builder.build(kwargs)
             sys.exit(0)
 
-        spec_file = self.get_spec_file()
-        patches = None
-        if spec_file:
-            spec = Specfile(spec_file)
-            patches = spec.get_patches()
-            old_sources = spec.get_old_sources()
-            old_dir = extract_sources(old_sources, settings.OLD_SOURCES)
-            new_dir = extract_sources(self.conf.sources, settings.NEW_SOURCES)
+        if not self.conf.sources:
+            logger.error('You have to define a new sources.')
+            sys.exit(0)
+        if not os.path.exists(self.conf.sources):
+            logger.error('Defined sources does not exist.')
+            sys.exit(0)
+        old_sources = spec.get_old_sources()
+        old_dir = extract_sources(old_sources, settings.OLD_SOURCES)
+        new_dir = extract_sources(self.conf.sources, settings.NEW_SOURCES)
         if patches:
             kwargs['patches'] = patches
             kwargs['old_dir'] = old_dir
             kwargs['new_dir'] = new_dir
             kwargs['diff_tool'] = self.conf.difftool
             patch = Patch(**kwargs)
-            patch.run_patch()
+            patches = patch.run_patch()
+            spec.write_updated_patches(patches)
             if self.conf.patches:
                 sys.exit(0)
 
