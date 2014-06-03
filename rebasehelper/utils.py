@@ -56,6 +56,10 @@ class ProcessHelper(object):
 
     @staticmethod
     def run_subprocess_cwd(cmd, cwd=None, output=None, shell=False):
+        return ProcessHelper.run_subprocess_cwd_env(cmd, cwd=cwd, output=output, shell=shell)
+
+    @staticmethod
+    def run_subprocess_cwd_env(cmd, cwd=None, env=None, output=None, shell=False):
         if output is not None:
             out_file = open(output, "w")
         else:
@@ -64,6 +68,7 @@ class ProcessHelper(object):
                               stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT,
                               cwd=cwd,
+                              env=env,
                               shell=shell)
         for line in sp.stdout:
             if out_file is not None:
@@ -74,7 +79,6 @@ class ProcessHelper(object):
             out_file.close()
         sp.wait()
         return sp.returncode
-
 
 class PathHelper(object):
 

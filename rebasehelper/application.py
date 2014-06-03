@@ -83,7 +83,11 @@ class Application(object):
             builder = Builder(self.conf.build)
             kwargs['spec'] = os.path.join(os.getcwd(), self.conf.specfile)
             kwargs['sources'] = sources
-            kwargs['patches'] = patches
+            kwargs['patches'] = [ p[0] for p in patches.itervalues() ]
+            # TODO: need to create some results directory where results of tests
+            # will be stored!!! The results dir should be removed on startup
+            # or the tool should fail if it exists
+            kwargs['resultdir'] = os.path.join(os.getcwd(), "rebase-helper-results")
             builder.build(**kwargs)
             sys.exit(0)
 
