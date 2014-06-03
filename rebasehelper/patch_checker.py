@@ -6,6 +6,8 @@ import sys
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.logger import logger
 from rebasehelper.diff_helper import *
+from rebasehelper import settings
+from rebasehelper.utils import get_rebase_name
 
 patch_tools = {}
 
@@ -80,16 +82,22 @@ class Patch(object):
         if ret_code != 0:
             logger.error('Applying patch {0} failed with return code {1}'.format(patch[0], ret_code))
             logger.error('Patch failed. Updating patch with some diff programs continues.')
+            patch[0] = get_rebase_name(patch[0])
             while ret_code != 0:
                 diff = Diff(self.kwargs.get('diff_tool', None))
                 if diff.diff(**self.kwargs) is None:
                     logger.warning("Diff output is empty. Rebase-helper is finished")
-                    sys.exit(0)
+                ret_code = 0
+        return patch
 
     def run_patch(self):
+        cwd = os.getcwd()
         for order in sorted(self.patches):
             self.apply_patch(self.patches[order], self.old_sources)
-            self.apply_patch(self.patches[order], self.new_sources)
+            patch = self.apply_patch(self.patches[order], self.new_sources)
+            self.patches[order] = patch
+        os.chdir(cwd)
+        return self.patches
 
 
 
