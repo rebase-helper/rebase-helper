@@ -3,7 +3,46 @@
 import os
 import fnmatch
 import subprocess
+from rebasehelper.logger import logger
+from rebasehelper import settings
 
+
+def get_content_file(path, perms, method=False):
+    """
+    Function returns a file content
+    if method is False then file is read by function read
+    if method is True then file is read by function readlines
+    """
+    try:
+        f = open(path, perms)
+        try:
+            data = f.read() if not method else f.readlines()
+        finally:
+            f.close()
+            return data
+    except IOError:
+        logger.error('Unable to open file %s' % path)
+        raise
+
+def write_to_file(path, perms, data):
+    """
+    shortcut for returning content of file:
+     open(...).read()
+    """
+    try:
+        f = open(path, perms)
+        try:
+            f.write(data) if isinstance(data, str) else f.writelines(data)
+        finally:
+            f.close()
+    except IOError:
+        logger.error('Unable to access file %s' % path)
+        raise
+
+
+def get_rebase_name(name):
+    name, extension = os.path.splitext(name)
+    return name + settings.REBASE_HELPER_SUFFIX + extension
 
 class ProcessHelper(object):
 
