@@ -5,6 +5,7 @@ import sys
 
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.logger import logger
+from rebasehelper.diff_helper import *
 
 patch_tools = {}
 
@@ -52,10 +53,11 @@ class FedoraPatchTool(PatchTool):
 
 
 class Patch(object):
-    def __init__(self, patches, old_sources, new_sources):
-        self.patches = patches
-        self.old_sources = old_sources
-        self.new_sources = new_sources
+    def __init__(self, **kwargs):
+        self.kwargs = kwargs
+        self.patches = kwargs.get('patches', '')
+        self.old_sources = kwargs.get('old_dir', None)
+        self.new_sources = kwargs.get('new_dir', None)
 
     def patch_command(self, patch_name, patch_flags):
         """
@@ -78,8 +80,11 @@ class Patch(object):
         if ret_code != 0:
             logger.error('Applying patch {0} failed with return code {1}'.format(patch[0], ret_code))
             logger.error('Patch failed. Updating patch with some diff programs continues.')
-            sys.exit(0)
-            #TODO Run any diff tool
+            while ret_code != 0:
+                diff = Diff(self.kwargs.get('diff_tool', None))
+                if diff.diff(**self.kwargs) is None:
+                    logger.warning("Diff output is empty. Rebase-helper is finished")
+                    sys.exit(0)
 
     def run_patch(self):
         for order in sorted(self.patches):

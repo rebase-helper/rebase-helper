@@ -8,6 +8,7 @@ from rebasehelper.archive import Archive
 from rebasehelper.specfile import Specfile
 from rebasehelper.patch_checker import Patch
 from rebasehelper.build_helper import *
+from rebasehelper.diff_helper import *
 from rebasehelper.logger import logger
 from rebasehelper import settings
 
@@ -62,11 +63,16 @@ class Application(object):
             logger.error('You have to specify one of these builders {0}'.format(build_tools.keys()))
             sys.exit(0)
 
+    def check_difftool_argument(self):
+        if self.conf.difftool not in diff_tools.keys():
+            logger.error('You have to specify one of these builders {0}'.format(diff_tools.keys()))
+            sys.exit(0)
+
     def run(self):
+        kwargs = dict()
         if self.conf.build:
             self.check_build_argument()
             builder = Builder(self.conf.build)
-            kwargs = dict()
             kwargs['spec'] = self.conf.specfile
             kwargs['sources'] = self.conf.sources
             builder.build(kwargs)
@@ -80,7 +86,11 @@ class Application(object):
             old_dir = extract_sources(old_sources, settings.OLD_SOURCES)
             new_dir = extract_sources(self.conf.sources, settings.NEW_SOURCES)
         if patches:
-            patch = Patch(patches, old_dir, new_dir)
+            kwargs['patches'] = patches
+            kwargs['old_dir'] = old_dir
+            kwargs['new_dir'] = new_dir
+            kwargs['diff_tool'] = self.conf.difftool
+            patch = Patch(**kwargs)
             patch.run_patch()
             if self.conf.patches:
                 sys.exit(0)

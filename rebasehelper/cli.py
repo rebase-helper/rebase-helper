@@ -58,6 +58,11 @@ class CLI(object):
             default=False,
             help="Only build package. It can be done by mock or rpmbuild."
         )
+        self.parser.add_argument(
+            "--difftool",
+            default="vimdiff",
+            help="Tool for comparing two sources."
+        )
 
     def __getattr__(self, name):
         try:
