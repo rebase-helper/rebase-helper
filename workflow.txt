@@ -28,8 +28,6 @@ What is currently missing:
 
 Nice to have:
 - If library was change (like soname bump) try to execute repoquery to find out what packages needs the library.
-- Execute BZ for solving the dependencies.
-
 
  SPEC File changes:
  Requires: patchutils
