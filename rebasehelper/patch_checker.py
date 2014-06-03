@@ -87,6 +87,7 @@ class Patch(object):
                 diff = Diff(self.kwargs.get('diff_tool', None))
                 if diff.diff(**self.kwargs) is None:
                     logger.warning("Diff output is empty. Rebase-helper is finished")
+                #TODO This row should be deleted when Diff is finished
                 ret_code = 0
         return patch
 
