@@ -65,15 +65,15 @@ class Patch(object):
         self.output_data = []
         self.patched_files = []
 
-    def patch_command(self, patch_name, patch_flags, suffix=None, output=None):
+    def patch_command(self, patch_name, patch_flags, output=None):
         """
         Patch command whom patches as the
         """
         cmd = ['/usr/bin/patch']
         cmd.append(patch_flags)
-        if suffix:
+        if self.suffix:
             cmd.append('-b ')
-            cmd.append('--suffix .'+suffix)
+            cmd.append('--suffix .' + self.suffix)
         cmd.append(" < ")
         cmd.append(patch_name)
         temp_name = get_temporary_name()
@@ -113,13 +113,14 @@ class Patch(object):
 
     def apply_patch(self, patch, source_dir):
         """
-        Function applies a patch to a new sources
+        Function applies a patch to a old/new sources
         """
         os.chdir(source_dir)
-        suffix = ''.join(random.choice(string.ascii_letters) for _ in range(6))
-        if source_dir != self.old_sources:
-            logger.error('Applying patch {0} ...'.format(patch[0]))
-        ret_code = self.patch_command(get_path_to_patch(patch[0]), patch[1], suffix=suffix)
+        if source_dir == self.old_sources:
+            # for new_sources we want the same suffix as for old_sources
+            self.suffix = ''.join(random.choice(string.ascii_letters) for _ in range(6))
+        logger.debug('Applying patch {0} to {1}...'.format(patch[0], source_dir))
+        ret_code = self.patch_command(get_path_to_patch(patch[0]), patch[1])
         if ret_code != 0:
             logger.error('Patch failed with return code {0}. Updating patch with some diff programs continues.'.format(ret_code))
             patched_files = self.get_failed_patched_files(patch[0])
@@ -128,7 +129,7 @@ class Patch(object):
                 raise Exception
             patch[0] = get_rebase_name(patch[0])
             while ret_code != 0:
-                self.kwargs['suffix'] = suffix
+                self.kwargs['suffix'] = self.suffix
                 self.kwargs['failed_files'] = patched_files
                 diff = Diff(self.kwargs.get('diff_tool', None))
                 ret_code = diff.diff(**self.kwargs)
@@ -137,7 +138,7 @@ class Patch(object):
                 #TODO This row should be deleted when Diff is finished
                 ret_code = 0
             #TODO
-            # gendiff new_source + suffix
+            # gendiff new_source + self.suffix
         return patch
 
     def run_patch(self):
