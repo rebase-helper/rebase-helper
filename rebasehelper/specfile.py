@@ -2,121 +2,28 @@ try:
     from functools import reduce
 except ImportError:
     pass # we're on Python 2 => ok
-import re
 import os
 import rpm
+import shutil
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.logger import logger
+from rebasehelper import settings
+from rebasehelper.utils import get_content_file,  get_rebase_name, write_to_file
 
-SPECFILE_SECTIONS=['%header', # special "section" for the start of specfile
-                   '%description',
-                   '%package',
-                   '%prep',
-                   '%build',
-                   '%install',
-                   '%clean',
-                   '%check',
-                   '%files',
-                   '%changelog']
-RUNTIME_SECTIONS=['%prep', '%build', '%install', '%clean', '%check']
-METAINFO_SECTIONS=['%header', '%package']
 
 class Specfile(object):
+    """
+    Class who manipulates with SPEC file
+    """
     
     values = []
     def __init__(self, specfile):
         self.specfile = specfile
-        self.spc = rpm.spec(self.specfile)
-
-    def split_sections(self):
-        headers_re = [re.compile('^' + x, re.M) for x in SPECFILE_SECTIONS]
-        section_starts = []
-        for header in headers_re:
-            for match in header.finditer(self.specfile):
-                section_starts.append(match.start())
-
-        section_starts.sort()
-        print section_starts
-        # this is mainly for tests - if the header is the only section
-        header_end = section_starts[0] if section_starts else len(self.specfile)
-        sections = [('%header', self.specfile[:header_end])]
-        for i in range(len(section_starts)):
-            if len(section_starts) > i + 1:
-                curr_section = self.specfile[section_starts[i]:section_starts[i+1]]
-            else:
-                curr_section = self.specfile[section_starts[i]:]
-            #print 'Curr_section',curr_section
-            for header in headers_re:
-                if header.match(curr_section):
-                    #print 'append',(header.pattern[1:], curr_section)
-                    sections.append((header.pattern[1:], curr_section))
-
-        return sections
-
-    def __contains__(self, what):
-        return reduce(lambda x, y: x or (what in y[1]), self.sections, False)
-
-    def __str__(self):
-        # in tests (maybe in reality, too), we may have an empty header, which will result in
-        # putting unnecessary newlines on top => leave out empty sections from joining
-        return '\n\n'.join([section for section in list(zip(*self.sections))[1] if section])
-
-    def _filter_section(self, section):
-        section = filter(lambda x: x[0] == section, self.sections)[0]
-        section = section[1].split('\n')
-        return section[1:]
-        
-    def _get_build_flags(self, build_section, flag):
-        next_line = False
-        for b in build_section:
-            b = b.strip()
-            if next_line:
-                if not b.endswith('\\'):
-                    self.values.append(b)
-                    break
-                b = b.replace('\\','').strip()
-                self.values.append(b)
-            elif flag in b:
-                if b.endswith('\\'):
-                    next_line = True
-                b = b.replace('\\','').replace(flag,'').strip()
-                b = b.split(' ')
-                self.values.extend(b)
-    
-    def _get_sections(self, section, parameters=[]):
-        requested_section = self.spc.build
-        self.values = []
-        for param in parameters:
-            self._get_build_flags(requested_section,param)
-        return self.values
-            
-        
-    def get_config_options(self):
-        requested_section = self.spc.build
-        self.values = []
-        for param in ['./configure']:
-            self._get_build_flags(requested_section.split('\n'),param)
-        return self.values
-        
-    def get_make_options(self):
-        requested_section = self.spc.build
-        self.values = []
-        for param in ['make']:
-            self._get_build_flags(requested_section.split('\n'),param)
-        return self.values
-    
-    def _correct_install_prefix(self):
-        for value in self.values:
-            print 'PREFIX:',value
-        
-    def get_make_install_options(self):
-        requested_section = self.spc.install
-        self.values = []
-        for param in ['make']:
-            self._get_build_flags(requested_section.split('\n'),param)
-        self._correct_install_prefix()
-            
-        return self.values
+        self.rebased_spec = get_rebase_name(specfile)
+        if os.path.exists(self.rebased_spec):
+            os.unlink(self.rebased_spec)
+        shutil.copy(self.specfile, self.rebased_spec)
+        self.spc = rpm.spec(self.rebased_spec)
 
     def get_patch_option(self, line):
         spl = line.strip().split()
@@ -127,50 +34,96 @@ class Specfile(object):
         else:
             return spl[0], spl[1]
 
+    def get_rebased_spec(self):
+        """
+        Function returns rebase.spec file
+        """
+        return self.rebased_spec
+
+    def get_patch_number(self, line):
+        fields = line.strip().split()
+        patch_num = fields[0].replace('Patch','')[:-1]
+        return patch_num
+
+    def get_content_rebase(self):
+        """
+        Function reads a content rebase.spec file
+        """
+        lines = get_content_file(self.get_rebased_spec(), "r", method=True)
+        return lines
+
     def get_patch_flags(self):
+        """
+        Function gets all patches
+        """
         patch_flags = {}
-        with open(self.specfile, "r") as spc_file:
-            lines = spc_file.readlines()
-            lines = [x for x in lines if x.startswith('%patch')]
-            for line in lines:
-                num, option = self.get_patch_option(line)
-                num = num.replace('%patch','')
-                patch_flags[int(num)] = option
+        lines = self.get_content_rebase()
+        lines = [x for x in lines if x.startswith(settings.PATCH_PREFIX)]
+        for line in lines:
+            num, option = self.get_patch_option(line)
+            num = num.replace(settings.PATCH_PREFIX,'')
+            patch_flags[int(num)] = option
         return patch_flags
         
     def get_patches(self):
+        """
+        Function returns a list of patches from a spec file
+        """
         patches = {}
         patch_flags = self.get_patch_flags()
-        for source in self.spc.sources:
-            try:
-                patch, num, patch_type = source
-            except IndexError:
-                print 'Problem with getting patches'
-                return None
-            # Patch has flag 2
-            if int(patch_type) != 2:
-                continue
-            full_patch_name = patch
+        cwd = os.getcwd()
+        sources = [ x for x in self.spc.sources if x[2] == 2]
+        for source in sources:
+            filename, num, patch_type = source
+            full_patch_name = os.path.join(cwd, filename)
             if not os.path.exists(full_patch_name):
-                logger.error('Patch {0} does not exist'.format(patch))
+                logger.error('Patch {0} does not exist'.format(filename))
                 continue
             patches[num] = [full_patch_name, patch_flags[num]]
         return patches
 
-    def get_old_sources(self):
-        old_sources = None
-        source_name = ""
-        for source in self.spc.sources:
-            try:
-                source, num, source_type = source
-            except IndexError:
-                logger.error('Problem with getting source')
-                return None
-            if int(num) == 0:
-                old_sources = source
-                break
+    def get_sources(self):
+        """
+        Function returns a all sources
+        """
+        sources = [ x for x in self.spc.sources if x[2] == 0 or x[2] == 1 ]
+        return sources
 
-        source_name = old_sources.split('/')[-1]
+    def get_all_sources(self):
+        """
+        Function returns all sources mentioned in specfile
+        """
+        cwd = os.getcwd()
+        sources = self.get_sources()
+        for index, src in enumerate(sources):
+            if int(src[1]) == 0:
+                sources[index] = os.path.join(cwd, src[0].split('/')[-1])
+            else:
+                sources[index] = os.path.join(cwd, src[0])
+        return sources
+
+    def get_old_sources(self):
+        """
+        Function returns a old sources from specfile
+        """
+        sources = self.get_sources()
+        old_source_name = [ x for x in sources if x[1] == 0 ]
+        source_name = old_source_name[0][0].split('/')[-1]
         if not os.path.exists(source_name):
-            ProcessHelper.run_subprocess_cwd('wget {0}'.format(old_sources), shell=True)
+            ProcessHelper.run_subprocess_cwd('wget {0}'.format(old_source_name), shell=True)
         return source_name
+
+    def write_updated_patches(self, patches):
+        """
+        Function writes a patches to -rebase.spec file
+        """
+        lines = self.get_content_rebase()
+        for index, line in enumerate(lines):
+            # We take care about patches.
+            if not line.startswith('Patch'):
+                continue
+            fields = line.strip().split()
+            patch_num = self.get_patch_number(line)
+            lines[index] = ' '.join(fields[:-1]) + ' ' + os.path.basename(patches[int(patch_num)][0]) +'\n'
+
+        write_to_file(self.get_rebased_spec(), "w", lines)

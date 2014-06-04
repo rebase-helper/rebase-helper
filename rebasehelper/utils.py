@@ -1,9 +1,50 @@
 # -*- coding: utf-8 -*-
 
+from rebasehelper.logger import logger
+from rebasehelper import settings
+
 import os
 import fnmatch
 import subprocess
+import tempfile
 
+
+def get_content_file(path, perms, method=False):
+    """
+    Function returns a file content
+    if method is False then file is read by function read
+    if method is True then file is read by function readlines
+    """
+    try:
+        f = open(path, perms)
+        try:
+            data = f.read() if not method else f.readlines()
+        finally:
+            f.close()
+            return data
+    except IOError:
+        logger.error('Unable to open file %s' % path)
+        raise
+
+def write_to_file(path, perms, data):
+    """
+    shortcut for returning content of file:
+     open(...).read()
+    """
+    try:
+        f = open(path, perms)
+        try:
+            f.write(data) if isinstance(data, str) else f.writelines(data)
+        finally:
+            f.close()
+    except IOError:
+        logger.error('Unable to access file %s' % path)
+        raise
+
+
+def get_rebase_name(name):
+    name, extension = os.path.splitext(name)
+    return name + settings.REBASE_HELPER_SUFFIX + extension
 
 class ProcessHelper(object):
 
@@ -15,6 +56,10 @@ class ProcessHelper(object):
 
     @staticmethod
     def run_subprocess_cwd(cmd, cwd=None, output=None, shell=False):
+        return ProcessHelper.run_subprocess_cwd_env(cmd, cwd=cwd, output=output, shell=shell)
+
+    @staticmethod
+    def run_subprocess_cwd_env(cmd, cwd=None, env=None, output=None, shell=False):
         if output is not None:
             out_file = open(output, "w")
         else:
@@ -23,17 +68,19 @@ class ProcessHelper(object):
                               stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT,
                               cwd=cwd,
+                              env=env,
                               shell=shell)
+        output_data = ''
         for line in sp.stdout:
             if out_file is not None:
                 out_file.write(line)
             else:
                 print line.rstrip("\n")
+                output_data += line
         if out_file is not None:
             out_file.close()
         sp.wait()
-        return sp.returncode
-
+        return sp.returncode, output_data
 
 class PathHelper(object):
 
@@ -71,3 +118,8 @@ class PathHelper(object):
                 if fnmatch.fnmatch(f, pattern):
                     files_list.append(os.path.join(os.path.abspath(root), f))
         return files_list
+
+    @staticmethod
+    def get_temp_dir():
+        """ Returns a path to new temporary directory. """
+        return tempfile.mkdtemp(prefix=settings.REBASE_HELPER_PREFIX)

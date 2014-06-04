@@ -10,7 +10,7 @@ from rebasehelper.patch_checker import Patch
 from rebasehelper.build_helper import *
 from rebasehelper.diff_helper import diff_tools
 from rebasehelper.logger import logger
-from rebasehelper.settings import *
+from rebasehelper import settings
 
 def extract_sources(source_name, source_dir):
     """
@@ -70,29 +70,48 @@ class Application(object):
 
     def run(self):
         kwargs = dict()
+        #spec_file = self.get_spec_file()
+        if not self.conf.specfile:
+            logger.error('You have to define a SPEC file.')
+            sys.exit(1)
+        spec = Specfile(self.conf.specfile)
+        sources = spec.get_all_sources()
+        patches = spec.get_patches()
+
         if self.conf.build:
             self.check_build_argument()
             builder = Builder(self.conf.build)
-            kwargs['spec'] = self.conf.specfile
-            kwargs['sources'] = self.conf.sources
-            builder.build(kwargs)
+            kwargs['spec'] = os.path.join(os.getcwd(), self.conf.specfile)
+            kwargs['sources'] = sources
+            kwargs['patches'] = [ p[0] for p in patches.itervalues() ]
+            # TODO: need to create some results directory where results of tests
+            # will be stored!!! The results dir should be removed on startup
+            # or the tool should fail if it exists
+            kwargs['resultdir'] = os.path.join(os.getcwd(), "rebase-helper-results")
+            builder.build(**kwargs)
             sys.exit(0)
 
-        spec_file = self.get_spec_file()
-        patches = None
-        if spec_file:
-            spec = Specfile(spec_file)
-            patches = spec.get_patches()
-            old_sources = spec.get_old_sources()
-            old_dir = extract_sources(old_sources, settings.OLD_SOURCES)
-            new_dir = extract_sources(self.conf.sources, settings.NEW_SOURCES)
+        if not self.conf.sources:
+            logger.error('You have to define a new sources.')
+            sys.exit(0)
+        if not os.path.exists(self.conf.sources):
+            logger.error('Defined sources does not exist.')
+            sys.exit(0)
+        old_sources = spec.get_old_sources()
+        old_dir = extract_sources(old_sources, settings.OLD_SOURCES)
+        new_dir = extract_sources(self.conf.sources, settings.NEW_SOURCES)
         if patches:
             kwargs['patches'] = patches
             kwargs['old_dir'] = old_dir
             kwargs['new_dir'] = new_dir
             kwargs['diff_tool'] = self.conf.difftool
             patch = Patch(**kwargs)
-            patch.run_patch()
+            try:
+                patches = patch.run_patch()
+            except Exception:
+                sys.exit(0)
+                #os.unlink(spec.get_rebased_spec())
+            spec.write_updated_patches(patches)
             if self.conf.patches:
                 sys.exit(0)
 
