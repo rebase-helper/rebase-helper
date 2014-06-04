@@ -1,6 +1,10 @@
+# -*- coding: utf-8 -*-
 
-from rebasehelper import base_checker
+import os
+
 from rebasehelper.logger import logger
+from rebasehelper.utils import PathHelper
+from rebasehelper.utils import ProcessHelper
 
 diff_tools = {}
 def register_diff_tool(diff_tool):
@@ -27,25 +31,6 @@ class DiffBase(object):
         return NotImplementedError()
 
 @register_diff_tool
-class MeldDiffTool(DiffBase):
-    """
-    The class is used for diff between two directory sources
-    """
-    CMD = 'meld'
-    @classmethod
-    def match(cls, diff=None):
-        if diff == cls.CMD:
-            return True
-        else:
-            return False
-
-
-    @classmethod
-    def run_diff(cls, **kwargs):
-        pass
-
-
-@register_diff_tool
 class VimDiffTool(DiffBase):
     """
     The class is used for diff between two directories or sources
@@ -61,6 +46,53 @@ class VimDiffTool(DiffBase):
     @classmethod
     def run_diff(cls, **kwargs):
         pass
+
+@register_diff_tool
+class MeldDiffTool(DiffBase):
+    """
+    The class is used for diff between two directory sources
+    """
+    CMD = 'meld'
+    @classmethod
+    def match(cls, diff=None):
+        if diff == cls.CMD:
+            return True
+        else:
+            return False
+
+
+    @classmethod
+    def run_diff(cls, **kwargs):
+        old_dir = kwargs.get('old_dir')
+        new_dir = kwargs.get('new_dir')
+        suffix = kwargs.get('suffix')
+        failed_files = kwargs.get('failed_files')
+        output = kwargs.get('output')
+
+        if old_dir == None:
+            raise TypeError("MeldDiffTool: missing old_dir")
+        if new_dir == None:
+            raise TypeError("MeldDiffTool: missing new_dir")
+        if suffix == None:
+            raise TypeError("MeldDiffTool: missing suffix")
+        else:
+            suffix = "." + suffix
+        if not failed_files:
+            raise TypeError("MeldDiffTool: missing failed_files")
+        if output == None:
+            pass # never mind
+
+        for fname in failed_files:
+            base =   old_dir + fname + suffix
+            remote = old_dir + fname
+            local =  new_dir + fname + suffix
+            merged = new_dir + fname
+
+            # http://stackoverflow.com/questions/11133290/git-merging-using-meld
+            cmd = [cls.CMD, '--diff', base, local, '--diff', base, remote, '--auto-merge', local, base, remote, '--output', merged]
+            logger.debug("MeldDiffTool: running '" + str(cmd) + "'")
+            ret = ProcessHelper.run_subprocess(cmd, output)
+            print "ret" + str(ret)
 
 
 class Diff(object):
@@ -89,3 +121,7 @@ class Diff(object):
         logger.debug("Diff: Diff between trees..")
         return cls._tool.run_diff(**kwargs)
 
+if __name__ == '__main__':
+    kwargs = {}
+    diff = Diff('meld')
+    diff.diff(**kwargs)

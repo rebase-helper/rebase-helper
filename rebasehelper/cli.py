@@ -60,7 +60,7 @@ class CLI(object):
         )
         self.parser.add_argument(
             "--difftool",
-            default="vimdiff",
+            default="meld",
             help="Tool for comparing two sources."
         )
 
