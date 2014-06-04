@@ -4,7 +4,7 @@ python:
   - "3.3"
 before_install:
   - git submodule update --init --recursive
-
+  - sudo apt-get install liblzma-dev
 install: 
 - pip install -r requirements-devel.txt --use-mirrors
 - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then pip install argparse; fi
