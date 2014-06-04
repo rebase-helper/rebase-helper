@@ -106,7 +106,11 @@ class Application(object):
             kwargs['new_dir'] = new_dir
             kwargs['diff_tool'] = self.conf.difftool
             patch = Patch(**kwargs)
-            patches = patch.run_patch()
+            try:
+                patches = patch.run_patch()
+            except Exception:
+                sys.exit(0)
+                #os.unlink(spec.get_rebased_spec())
             spec.write_updated_patches(patches)
             if self.conf.patches:
                 sys.exit(0)

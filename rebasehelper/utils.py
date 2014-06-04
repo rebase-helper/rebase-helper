@@ -70,15 +70,17 @@ class ProcessHelper(object):
                               cwd=cwd,
                               env=env,
                               shell=shell)
+        output_data = ''
         for line in sp.stdout:
             if out_file is not None:
                 out_file.write(line)
             else:
                 print line.rstrip("\n")
+                output_data += line
         if out_file is not None:
             out_file.close()
         sp.wait()
-        return sp.returncode
+        return sp.returncode, output_data
 
 class PathHelper(object):
 
