@@ -1,13 +1,21 @@
 # -*- coding: utf-8 -*-
 
-from rebasehelper.logger import logger
-from rebasehelper import settings
-
 import os
 import fnmatch
 import subprocess
 import tempfile
 
+from rebasehelper.logger import logger
+from rebasehelper import settings
+
+def get_temporary_name():
+    return tempfile.mkstemp(prefix="rebase-helper", text=True)[1]
+
+def get_content_temp(filename):
+    lines = get_content_file(filename, "r", method=True)
+    if os.path.exists(filename):
+        os.unlink(filename)
+    return lines
 
 def get_content_file(path, perms, method=False):
     """
@@ -70,17 +78,15 @@ class ProcessHelper(object):
                               cwd=cwd,
                               env=env,
                               shell=shell)
-        output_data = ''
         for line in sp.stdout:
             if out_file is not None:
                 out_file.write(line)
             else:
                 print line.rstrip("\n")
-                output_data += line
         if out_file is not None:
             out_file.close()
         sp.wait()
-        return sp.returncode, output_data
+        return sp.returncode
 
 class PathHelper(object):
 

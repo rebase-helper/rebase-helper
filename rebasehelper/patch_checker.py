@@ -9,7 +9,7 @@ from rebasehelper.utils import ProcessHelper
 from rebasehelper.logger import logger
 from rebasehelper.diff_helper import *
 from rebasehelper import settings
-from rebasehelper.utils import get_rebase_name
+from rebasehelper.utils import get_rebase_name, get_temporary_name, get_content_temp
 
 patch_tools = {}
 
@@ -76,22 +76,31 @@ class Patch(object):
             cmd.append('--suffix .'+suffix)
         cmd.append(" < ")
         cmd.append(patch_name)
-        ret_code, self.output_data = ProcessHelper.run_subprocess_cwd(' '.join(cmd), shell=True)
+        temp_name = get_temporary_name()
+        ret_code = ProcessHelper.run_subprocess_cwd(' '.join(cmd),
+                                                    output=temp_name,
+                                                    shell=True)
+        self.output_data = get_content_temp(temp_name)
         return ret_code
 
     def get_failed_patched_files(self, patch_name):
         cmd = 'lsdiff {0}'.format(patch_name)
-        ret_code, self.patched_files= ProcessHelper.run_subprocess_cwd(cmd, shell=True)
+        temp_name = get_temporary_name()
+        ret_code = ProcessHelper.run_subprocess_cwd(cmd,
+                                                    output=temp_name,
+                                                    shell=True)
         if ret_code != 0:
             return None
+        self.patched_files = get_content_temp(temp_name)
         failed_files = []
         applied_rules = ['succeeded']
         source_file = ""
-        for data in self.output_data.split('\n'):
+        for data in self.output_data:
             if data.startswith('patching file'):
                 patch, file_text, source_file = data.strip().split()
                 continue
             result = [x for x in applied_rules if x in data ]
+            print result
             if result:
                 continue
             file_list = [x for x in self.patched_files if source_file in x ]
