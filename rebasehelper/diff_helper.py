@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import sys
 
 from rebasehelper.logger import logger
 from rebasehelper.utils import PathHelper
@@ -83,16 +84,24 @@ class MeldDiffTool(DiffBase):
             pass # never mind
 
         for fname in failed_files:
-            base =   old_dir + fname + suffix
-            remote = old_dir + fname
-            local =  new_dir + fname + suffix
-            merged = new_dir + fname
+            base =   os.path.join(old_dir, fname + suffix)
+            remote = os.path.join(old_dir, fname)
+            local =  os.path.join(new_dir, fname + suffix)
+            merged = os.path.join(new_dir, fname)
 
             # http://stackoverflow.com/questions/11133290/git-merging-using-meld
             cmd = [cls.CMD, '--diff', base, local, '--diff', base, remote, '--auto-merge', local, base, remote, '--output', merged]
             logger.debug("MeldDiffTool: running '" + str(cmd) + "'")
-            ret = ProcessHelper.run_subprocess(cmd, output)
+            ret = ProcessHelper.run_subprocess_cwd(' '.join(cmd), output, shell=True)
             print "ret" + str(ret)
+            if len(failed_files) > 1:
+                var = raw_input("Do you want to merge another patch? (y/n)")
+                output = ['y', 'n']
+                while var.lower() not in output:
+                    var = raw_input("Do you want to merge another patch? (y/n)")
+                if var.lower() == "n":
+                    sys.exit(0)
+
 
 
 class Diff(object):
