@@ -115,13 +115,13 @@ class Patch(object):
             if not patched_files:
                 logger.error('We are not able to get a list of failed files')
                 raise Exception
-            failed_files = []
             patch[0] = get_rebase_name(patch[0])
             while ret_code != 0:
                 self.kwargs['suffix'] = suffix
-                self.kwargs['failed_files'] = failed_files
+                self.kwargs['failed_files'] = patched_files
                 diff = Diff(self.kwargs.get('diff_tool', None))
-                if diff.diff(**self.kwargs) is None:
+                ret_code = diff.diff(**self.kwargs)
+                if ret_code is None:
                     logger.warning("Diff output is empty. Rebase-helper is finished")
                 #TODO This row should be deleted when Diff is finished
                 ret_code = 0
