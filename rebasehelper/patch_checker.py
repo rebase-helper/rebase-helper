@@ -77,6 +77,7 @@ class Patch(object):
         cmd.append(" < ")
         cmd.append(patch_name)
         temp_name = get_temporary_name()
+        logger.debug('patch_command(): ' + ' '.join(cmd))
         ret_code = ProcessHelper.run_subprocess_cwd(' '.join(cmd),
                                                     output=temp_name,
                                                     shell=True)
@@ -100,13 +101,14 @@ class Patch(object):
                 patch, file_text, source_file = data.strip().split()
                 continue
             result = [x for x in applied_rules if x in data ]
-            print result
+            logger.debug('get_failed_patched_files(): result: ' + str(result))
             if result:
                 continue
             file_list = [x for x in self.patched_files if source_file in x ]
             if source_file in failed_files:
                 continue
             failed_files.append(source_file)
+        logger.debug('get_failed_patched_files(): failed_files: ' + str(failed_files))
         return failed_files
 
     def apply_patch(self, patch, source_dir):

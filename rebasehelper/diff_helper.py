@@ -92,16 +92,15 @@ class MeldDiffTool(DiffBase):
             # http://stackoverflow.com/questions/11133290/git-merging-using-meld
             cmd = [cls.CMD, '--diff', base, local, '--diff', base, remote, '--auto-merge', local, base, remote, '--output', merged]
             logger.debug("MeldDiffTool: running '" + str(cmd) + "'")
-            ret = ProcessHelper.run_subprocess_cwd(' '.join(cmd), output, shell=True)
-            print "ret" + str(ret)
+            ProcessHelper.run_subprocess_cwd(' '.join(cmd), output, shell=True)
+
             if len(failed_files) > 1:
-                var = raw_input("Do you want to merge another patch? (y/n)")
+                var = raw_input("Do you want to merge another file? (y/n)")
                 output = ['y', 'n']
                 while var.lower() not in output:
-                    var = raw_input("Do you want to merge another patch? (y/n)")
+                    var = raw_input("Do you want to merge another file? (y/n)")
                 if var.lower() == "n":
                     sys.exit(0)
-
 
 
 class Diff(object):
