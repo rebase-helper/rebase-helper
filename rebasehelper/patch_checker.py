@@ -118,7 +118,7 @@ class Patch(object):
             failed_files = []
             patch[0] = get_rebase_name(patch[0])
             while ret_code != 0:
-                self.kwargs['suffix'] = suffix
+                self.kwargs['suffix'] = '.'+suffix
                 self.kwargs['failed_files'] = failed_files
                 diff = Diff(self.kwargs.get('diff_tool', None))
                 if diff.diff(**self.kwargs) is None:
