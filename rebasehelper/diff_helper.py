@@ -4,7 +4,7 @@ import os
 import sys
 
 from rebasehelper.logger import logger
-from rebasehelper.utils import PathHelper
+from rebasehelper.utils import PathHelper, get_message
 from rebasehelper.utils import ProcessHelper
 
 diff_tools = {}
@@ -83,7 +83,7 @@ class MeldDiffTool(DiffBase):
         if output == None:
             pass # never mind
 
-        for fname in failed_files:
+        for index, fname in enumerate(failed_files):
             base =   os.path.join(old_dir, fname + suffix)
             remote = os.path.join(old_dir, fname)
             local =  os.path.join(new_dir, fname + suffix)
@@ -92,15 +92,17 @@ class MeldDiffTool(DiffBase):
             # http://stackoverflow.com/questions/11133290/git-merging-using-meld
             cmd = [cls.CMD, '--diff', base, local, '--diff', base, remote, '--auto-merge', local, base, remote, '--output', merged]
             logger.debug("MeldDiffTool: running '" + str(cmd) + "'")
-            ProcessHelper.run_subprocess_cwd(' '.join(cmd), output, shell=True)
+            ret_code = ProcessHelper.run_subprocess_cwd(' '.join(cmd), output, shell=True)
+            print ret_code, len(failed_files), index
 
-            if len(failed_files) > 1:
-                var = raw_input("Do you want to merge another file? (y/n)")
-                output = ['y', 'n']
-                while var.lower() not in output:
-                    var = raw_input("Do you want to merge another file? (y/n)")
-                if var.lower() == "n":
+            if len(failed_files) > 1 and index < len(failed_files) - 1:
+                accept = ['y', 'yes']
+                var = get_message(message="Do you want to merge another file? (y/n)")
+                if var not in accept:
                     sys.exit(0)
+
+
+
 
 
 class Diff(object):
