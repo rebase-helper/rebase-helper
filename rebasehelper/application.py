@@ -70,18 +70,18 @@ class Application(object):
 
     def run(self):
         kwargs = dict()
-        #spec_file = self.get_spec_file()
-        if not self.conf.specfile:
+        spec_file = self.get_spec_file()
+        if not spec_file:
             logger.error('You have to define a SPEC file.')
             sys.exit(1)
-        spec = Specfile(self.conf.specfile)
+        spec = Specfile(spec_file)
         sources = spec.get_all_sources()
         patches = spec.get_patches()
 
         if self.conf.build:
             self.check_build_argument()
             builder = Builder(self.conf.build)
-            kwargs['spec'] = os.path.join(os.getcwd(), self.conf.specfile)
+            kwargs['spec'] = os.path.join(os.getcwd(), spec_file)
             kwargs['sources'] = sources
             kwargs['patches'] = [ p[0] for p in patches.itervalues() ]
             # TODO: need to create some results directory where results of tests

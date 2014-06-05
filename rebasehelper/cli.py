@@ -23,27 +23,11 @@ class CLI(object):
 
     def add_args(self):
         self.parser.add_argument(
-            "-d",
-            "--devel",
-            default="False",
-            action="store_true",
-            help="Check only header files and soname bump"
-        )
-        self.parser.add_argument(
             "-v",
             "--verbose",
             default=False,
             action="store_true",
             help="Output is more verbose (recommended)"
-        )
-        self.parser.add_argument(
-            "-s",
-            "--sources",
-            help="Tarball or zip source package"
-        )
-        self.parser.add_argument(
-            "--specfile",
-            help="Specify spec file for testing"
         )
         self.parser.add_argument(
             "-p",
@@ -62,6 +46,11 @@ class CLI(object):
             "--difftool",
             default="meld",
             help="Tool for comparing two sources."
+        )
+        self.parser.add_argument(
+            "sources",
+            metavar='SOURCES',
+            help="Specify new upstream sources"
         )
 
     def __getattr__(self, name):
