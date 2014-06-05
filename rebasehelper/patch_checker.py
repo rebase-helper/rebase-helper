@@ -64,6 +64,8 @@ class Patch(object):
         self.new_sources = kwargs.get('new_dir', None)
         self.output_data = []
         self.patched_files = []
+        self.suffix = None
+        self.fuzz = 0
         print self.kwargs
 
     def patch_command(self, patch_name, patch_flags, output=None):
@@ -75,7 +77,8 @@ class Patch(object):
         if self.suffix:
             cmd.append('-b ')
             cmd.append('--suffix .' + self.suffix)
-        cmd.append(" < ")
+        cmd.append(' --fuzz={0}'.format(self.fuzz))
+        cmd.append(' < ')
         cmd.append(patch_name)
         temp_name = get_temporary_name()
         logger.debug('patch_command(): ' + ' '.join(cmd))
