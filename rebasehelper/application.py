@@ -68,6 +68,19 @@ class Application(object):
             logger.error('You have to specify one of these builders {0}'.format(diff_tools.keys()))
             sys.exit(0)
 
+    def build_packages(self, spec_file, sources, patches):
+        kwargs = {}
+        self.check_build_argument()
+        builder = Builder(self.conf.build)
+        kwargs['spec'] = os.path.join(os.getcwd(), spec_file)
+        kwargs['sources'] = sources
+        kwargs['patches'] = [ p[0] for p in patches.itervalues() ]
+        # TODO: need to create some results directory where results of tests
+        # will be stored!!! The results dir should be removed on startup
+        # or the tool should fail if it exists
+        kwargs['resultdir'] = os.path.join(os.getcwd(), "rebase-helper-results")
+        builder.build(**kwargs)
+
     def run(self):
         kwargs = dict()
         spec_file = self.get_spec_file()
@@ -79,16 +92,7 @@ class Application(object):
         patches = spec.get_patches()
 
         if self.conf.build:
-            self.check_build_argument()
-            builder = Builder(self.conf.build)
-            kwargs['spec'] = os.path.join(os.getcwd(), spec_file)
-            kwargs['sources'] = sources
-            kwargs['patches'] = [ p[0] for p in patches.itervalues() ]
-            # TODO: need to create some results directory where results of tests
-            # will be stored!!! The results dir should be removed on startup
-            # or the tool should fail if it exists
-            kwargs['resultdir'] = os.path.join(os.getcwd(), "rebase-helper-results")
-            builder.build(**kwargs)
+            self.build_packages(spec_file, sources, patches)
             sys.exit(0)
 
         if not self.conf.sources:
@@ -115,6 +119,7 @@ class Application(object):
             if self.conf.patches:
                 sys.exit(0)
 
+        self.build_packages(spec_file, sources, patches)
 
 
 if __name__ == '__main__':
