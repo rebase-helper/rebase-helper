@@ -128,11 +128,12 @@ class Patch(object):
             if not patched_files:
                 logger.error('We are not able to get a list of failed files')
                 raise Exception
+            orig_patch = patch[0]
             patch[0] = get_rebase_name(patch[0])
             self.kwargs['suffix'] = self.suffix
             self.kwargs['failed_files'] = patched_files
             diff = Diff(self.kwargs.get('diff_tool', None))
-            ret_code = diff.diff(**self.kwargs)
+            ret_code = diff.mergetool(**self.kwargs)
             # gendiff new_source + self.suffix > patch[0]
             logger.info("Generating patch by gendiff")
             cmd = ['/usr/bin/gendiff']
@@ -146,7 +147,8 @@ class Patch(object):
                                                         output=temp_name,
                                                         shell=True)
             gen_diff_output = get_content_temp(temp_name)
-            print gen_diff_output
+            print "gen_diff_output:", gen_diff_output
+            diff.diff(orig_patch, patch[0])
             if ret_code != 0:
                 return None
 

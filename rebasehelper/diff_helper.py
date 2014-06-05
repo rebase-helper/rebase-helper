@@ -4,7 +4,7 @@ import os
 import sys
 
 from rebasehelper.logger import logger
-from rebasehelper.utils import PathHelper, get_message
+from rebasehelper.utils import get_message
 from rebasehelper.utils import ProcessHelper
 
 diff_tools = {}
@@ -25,9 +25,16 @@ class DiffBase(object):
         raise NotImplementedError()
 
     @classmethod
-    def run_diff(self, **kwargs):
+    def run_diff(self, old, new):
         """
-            Method will check all patches in relevant package
+            Method for showing difference between two files
+        """
+        return NotImplementedError()
+
+    @classmethod
+    def run_mergetool(self, **kwargs):
+        """
+            Start a tool for resolving merge conflicts
         """
         return NotImplementedError()
 
@@ -48,6 +55,10 @@ class VimDiffTool(DiffBase):
     def run_diff(cls, **kwargs):
         pass
 
+    @classmethod
+    def run_mergetool(cls, **kwargs):
+        pass
+
 @register_diff_tool
 class MeldDiffTool(DiffBase):
     """
@@ -63,25 +74,34 @@ class MeldDiffTool(DiffBase):
 
 
     @classmethod
-    def run_diff(cls, **kwargs):
+    def run_diff(cls, old, new):
+        if not old:
+            raise TypeError("MeldDiffTool:run_diff: missing old")
+        if not new:
+            raise TypeError("MeldDiffTool:run_diff: missing new")
+
+        cmd = [cls.CMD, '--diff', old, new]
+        logger.debug("MeldDiffTool:run_diff: running '" + str(cmd) + "'")
+        ret_code = ProcessHelper.run_subprocess_cwd(' '.join(cmd), output=None, shell=True)
+        print "ret_code:", ret_code
+
+    @classmethod
+    def run_mergetool(cls, **kwargs):
         old_dir = kwargs.get('old_dir')
         new_dir = kwargs.get('new_dir')
         suffix = kwargs.get('suffix')
         failed_files = kwargs.get('failed_files')
-        output = kwargs.get('output')
 
         if old_dir == None:
-            raise TypeError("MeldDiffTool: missing old_dir")
+            raise TypeError("MeldDiffTool:run_mergetool: missing old_dir")
         if new_dir == None:
-            raise TypeError("MeldDiffTool: missing new_dir")
+            raise TypeError("MeldDiffTool:run_mergetool: missing new_dir")
         if suffix == None:
-            raise TypeError("MeldDiffTool: missing suffix")
+            raise TypeError("MeldDiffTool:run_mergetool: missing suffix")
         else:
             suffix = "." + suffix
         if not failed_files:
-            raise TypeError("MeldDiffTool: missing failed_files")
-        if output == None:
-            pass # never mind
+            raise TypeError("MeldDiffTool:run_mergetool: missing failed_files")
 
         for index, fname in enumerate(failed_files):
             base =   os.path.join(old_dir, fname + suffix)
@@ -91,17 +111,9 @@ class MeldDiffTool(DiffBase):
 
             # http://stackoverflow.com/questions/11133290/git-merging-using-meld
             cmd = [cls.CMD, '--diff', base, local, '--diff', base, remote, '--auto-merge', local, base, remote, '--output', merged]
-            logger.debug("MeldDiffTool: running '" + str(cmd) + "'")
-            ret_code = ProcessHelper.run_subprocess_cwd(' '.join(cmd), output, shell=True)
+            logger.debug("MeldDiffTool:run_mergetool: running '" + str(cmd) + "'")
+            ret_code = ProcessHelper.run_subprocess_cwd(' '.join(cmd), output=None, shell=True)
             print ret_code, len(failed_files), index
-
-            if len(failed_files) > 1 and index < len(failed_files) - 1:
-                accept = ['y', 'yes']
-                var = get_message(message="Do you want to merge another file? (y/n)")
-                if var not in accept:
-                    sys.exit(0)
-
-
 
 
 
@@ -124,12 +136,20 @@ class Diff(object):
             raise NotImplementedError("Unsupported diff tool")
 
     @classmethod
-    def diff(cls, **kwargs):
+    def diff(cls, old, new):
         """
-        Diff between sources
+        Diff between two files
         """
-        logger.debug("Diff: Diff between trees..")
-        return cls._tool.run_diff(**kwargs)
+        logger.debug("Diff: Diff between files {0} and {1}".format(old, new))
+        return cls._tool.run_diff(old, new)
+
+    @classmethod
+    def mergetool(cls, **kwargs):
+        """
+        Tool for resolving merge conflicts
+        """
+        logger.debug("Diff: mergetool..")
+        return cls._tool.run_mergetool(**kwargs)
 
 if __name__ == '__main__':
     kwargs = {}
