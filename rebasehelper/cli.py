@@ -15,11 +15,11 @@ class CLI(object):
         """ parse arguments """
         self.parser = argparse.ArgumentParser(description=PROGRAM_DESCRIPTION)
 
-        #self.parser.usage = "%%prog [-v] <content_file>"
+        #self.parser.usage = "%%prog [-v] <sources>"
 
         self.add_args()
         self.args = self.parser.parse_args()
-        print self.args
+        logger.info(self.args)
 
     def add_args(self):
         self.parser.add_argument(
