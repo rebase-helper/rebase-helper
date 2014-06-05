@@ -167,13 +167,14 @@ class Patch(object):
 
     def run_patch(self):
         cwd = os.getcwd()
-        for order in sorted(self.patches):
+        # apply patches in the same order as in spec file, not according to their numbers
+        for order in sorted(self.patches.items(), key=lambda x: x[1][2]):
             try:
-                self.apply_patch(self.patches[order], self.old_sources)
-                patch = self.apply_patch(self.patches[order], self.new_sources)
+                self.apply_patch(self.patches[order[0]], self.old_sources)
+                patch = self.apply_patch(self.patches[order[0]], self.new_sources)
             except Exception:
                 raise Exception
-            self.patches[order] = patch
+            self.patches[order[0]] = patch
         os.chdir(cwd)
         return self.patches
 

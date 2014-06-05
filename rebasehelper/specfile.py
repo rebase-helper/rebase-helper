@@ -59,10 +59,10 @@ class Specfile(object):
         patch_flags = {}
         lines = self.get_content_rebase()
         lines = [x for x in lines if x.startswith(settings.PATCH_PREFIX)]
-        for line in lines:
+        for index, line in enumerate(lines):
             num, option = self.get_patch_option(line)
             num = num.replace(settings.PATCH_PREFIX,'')
-            patch_flags[int(num)] = option
+            patch_flags[int(num)] = (option, index)
         return patch_flags
         
     def get_patches(self):
@@ -80,7 +80,7 @@ class Specfile(object):
                 logger.error('Patch {0} does not exist'.format(filename))
                 continue
             if num in patch_flags:
-                patches[num] = [full_patch_name, patch_flags[num]]
+                patches[num] = [full_patch_name, patch_flags[num][0], patch_flags[num][1]]
         return patches
 
     def get_sources(self):

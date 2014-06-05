@@ -112,7 +112,8 @@ class Application(object):
             patch = Patch(**kwargs)
             try:
                 patches = patch.run_patch()
-            except Exception:
+            except Exception as e:
+                logger.error(e.message)
                 sys.exit(0)
                 #os.unlink(spec.get_rebased_spec())
             spec.write_updated_patches(patches)
