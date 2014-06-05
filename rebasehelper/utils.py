@@ -54,6 +54,18 @@ def get_rebase_name(name):
     name, extension = os.path.splitext(name)
     return name + settings.REBASE_HELPER_SUFFIX + extension
 
+def get_message(message=""):
+    output = ['yes', 'y', 'no', 'n']
+    while True:
+        try:
+            var = raw_input(message).lower()
+        except KeyboardInterrupt:
+            return None
+        if var not in output:
+            logger.info('You have to choose one of y/n.')
+        else:
+            return var
+
 class ProcessHelper(object):
 
     DEV_NULL = "/dev/null"
