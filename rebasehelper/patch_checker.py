@@ -64,6 +64,7 @@ class Patch(object):
         self.new_sources = kwargs.get('new_dir', None)
         self.output_data = []
         self.patched_files = []
+        print self.kwargs
 
     def patch_command(self, patch_name, patch_flags, output=None):
         """
@@ -137,8 +138,20 @@ class Patch(object):
                     logger.warning("Diff output is empty. Rebase-helper is finished")
                 #TODO This row should be deleted when Diff is finished
                 ret_code = 0
-            #TODO
-            # gendiff new_source + self.suffix
+            # gendiff new_source + self.suffix > patch[0]
+            cmd = ['gendiff']
+            cmd.append(self.new_sources)
+            cmd.append(self.suffix)
+            cmd.append('>')
+            cmd.append(patch[0])
+            temp_name = get_temporary_name()
+            ret_code = ProcessHelper.run_subprocess_cwd(cmd,
+                                                        output=temp_name,
+                                                        shell=True)
+            if ret_code != 0:
+                return None
+            self.patched_files = get_content_temp(temp_name)
+
         return patch
 
     def run_patch(self):
