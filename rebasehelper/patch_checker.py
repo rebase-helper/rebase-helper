@@ -102,14 +102,12 @@ class Patch(object):
                 patch, file_text, source_file = data.strip().split()
                 continue
             result = [x for x in applied_rules if x in data ]
-            logger.debug('get_failed_patched_files(): result: ' + str(result))
             if result:
                 continue
             file_list = [x for x in self.patched_files if source_file in x ]
             if source_file in failed_files:
                 continue
             failed_files.append(source_file)
-        logger.debug('get_failed_patched_files(): failed_files: ' + str(failed_files))
         return failed_files
 
     def apply_patch(self, patch, source_dir):
@@ -129,28 +127,26 @@ class Patch(object):
                 logger.error('We are not able to get a list of failed files')
                 raise Exception
             patch[0] = get_rebase_name(patch[0])
-            while ret_code != 0:
-                self.kwargs['suffix'] = self.suffix
-                self.kwargs['failed_files'] = patched_files
-                diff = Diff(self.kwargs.get('diff_tool', None))
-                ret_code = diff.diff(**self.kwargs)
-                if ret_code is None:
-                    logger.warning("Diff output is empty. Rebase-helper is finished")
-                #TODO This row should be deleted when Diff is finished
-                ret_code = 0
+            self.kwargs['suffix'] = self.suffix
+            self.kwargs['failed_files'] = patched_files
+            diff = Diff(self.kwargs.get('diff_tool', None))
+            ret_code = diff.diff(**self.kwargs)
             # gendiff new_source + self.suffix > patch[0]
+            logger.info("Generating patch by gendiff")
             cmd = ['gendiff']
             cmd.append(self.new_sources)
-            cmd.append(self.suffix)
+            cmd.append('.'+self.suffix)
             cmd.append('>')
             cmd.append(patch[0])
             temp_name = get_temporary_name()
-            ret_code = ProcessHelper.run_subprocess_cwd(cmd,
+            print cmd
+            ret_code = ProcessHelper.run_subprocess_cwd(' '.join(cmd),
                                                         output=temp_name,
                                                         shell=True)
+            gen_diff_output = get_content_temp(temp_name)
+            print gen_diff_output
             if ret_code != 0:
                 return None
-            self.patched_files = get_content_temp(temp_name)
 
         return patch
 
