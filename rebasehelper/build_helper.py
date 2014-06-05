@@ -182,6 +182,8 @@ class MockBuildTool(BuildToolBase):
         # build SRPM
         srpm = cls._build_srpm(**env)
         srpm_resultdir = os.path.join(kwargs['resultdir'], "SRPM")
+        if os.path.exists(srpm_resultdir):
+            shutil.rmtree(srpm_resultdir)
         shutil.copytree(env[cls.TEMPDIR_RESULTDIR], srpm_resultdir)
         if srpm is None:
             logger.error("MockBuildTool: Building SRPM failed!")
