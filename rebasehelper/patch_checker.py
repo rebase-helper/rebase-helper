@@ -66,7 +66,6 @@ class Patch(object):
         self.patched_files = []
         self.suffix = None
         self.fuzz = 0
-        print self.kwargs
 
     def patch_command(self, patch_name, patch_flags, output=None):
         """
@@ -136,7 +135,7 @@ class Patch(object):
             ret_code = diff.diff(**self.kwargs)
             # gendiff new_source + self.suffix > patch[0]
             logger.info("Generating patch by gendiff")
-            cmd = ['gendiff']
+            cmd = ['/usr/bin/gendiff']
             cmd.append(self.new_sources)
             cmd.append('.'+self.suffix)
             cmd.append('>')
