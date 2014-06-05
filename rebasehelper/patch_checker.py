@@ -137,17 +137,20 @@ class Patch(object):
             # gendiff new_source + self.suffix > patch[0]
             logger.info("Generating patch by gendiff")
             cmd = ['/usr/bin/gendiff']
-            cmd.append(self.new_sources)
+            cmd.append(os.path.basename(self.new_sources))
             cmd.append('.'+self.suffix)
             cmd.append('>')
             cmd.append(patch[0])
             temp_name = get_temporary_name()
-            print cmd
+            os.chdir(os.pardir) # goto parent dir
+            logger.debug('apply_patch(): ' + ' '.join(cmd))
             ret_code = ProcessHelper.run_subprocess_cwd(' '.join(cmd),
                                                         output=temp_name,
                                                         shell=True)
-            gen_diff_output = get_content_temp(temp_name)
-            print "gen_diff_output:", gen_diff_output
+            os.chdir(source_dir)
+            gendiff_output = get_content_temp(temp_name)
+            if gendiff_output:
+                print "gendiff_output:", gendiff_output
             diff.diff(orig_patch, patch[0])
             if ret_code != 0:
                 return None
