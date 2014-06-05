@@ -123,11 +123,14 @@ class Patch(object):
         logger.debug('Applying patch {0} to {1}...'.format(patch[0], source_dir))
         ret_code = self.patch_command(get_path_to_patch(patch[0]), patch[1])
         if ret_code != 0:
-            logger.error('Patch failed with return code {0}. Updating patch with some diff programs continues.'.format(ret_code))
+            if source_dir == self.old_sources: # unexpected
+                logger.critical('Failed to patch old sources.')
+                raise RuntimeError
+            logger.warning('Patch failed with return code {0}. Will start merge-tool to fix conflicts manually.'.format(ret_code))
             patched_files = self.get_failed_patched_files(patch[0])
             if not patched_files:
-                logger.error('We are not able to get a list of failed files')
-                raise Exception
+                logger.error('We are not able to get a list of failed files.')
+                raise RuntimeError
             orig_patch = patch[0]
             patch[0] = get_rebase_name(patch[0])
             self.kwargs['suffix'] = self.suffix
@@ -148,6 +151,7 @@ class Patch(object):
             ret_code = ProcessHelper.run_subprocess_cwd(' '.join(cmd),
                                                         output=temp_name,
                                                         shell=True)
+            print "ret_code:", ret_code # sometimes returns 1 even the patch was generated. why ???
             os.chdir(source_dir)
             gendiff_output = get_content_temp(temp_name)
             if gendiff_output:
@@ -159,16 +163,13 @@ class Patch(object):
             if var not in accept:
                 sys.exit(0)
 
-            if ret_code != 0:
-                return None
-
         return patch
 
     def run_patch(self):
         cwd = os.getcwd()
         for order in sorted(self.patches):
-            self.apply_patch(self.patches[order], self.old_sources)
             try:
+                self.apply_patch(self.patches[order], self.old_sources)
                 patch = self.apply_patch(self.patches[order], self.new_sources)
             except Exception:
                 raise Exception
