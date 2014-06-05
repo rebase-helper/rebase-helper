@@ -134,6 +134,7 @@ class Patch(object):
             self.kwargs['failed_files'] = patched_files
             diff = Diff(self.kwargs.get('diff_tool', None))
             ret_code = diff.mergetool(**self.kwargs)
+
             # gendiff new_source + self.suffix > patch[0]
             logger.info("Generating patch by gendiff")
             cmd = ['/usr/bin/gendiff']
@@ -151,7 +152,13 @@ class Patch(object):
             gendiff_output = get_content_temp(temp_name)
             if gendiff_output:
                 print "gendiff_output:", gendiff_output
+
             diff.diff(orig_patch, patch[0])
+            accept = ['y', 'yes']
+            var = get_message(message="Do you want to continue with another patch? (y/n)")
+            if var not in accept:
+                sys.exit(0)
+
             if ret_code != 0:
                 return None
 

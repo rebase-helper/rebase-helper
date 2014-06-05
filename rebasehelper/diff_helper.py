@@ -115,6 +115,11 @@ class MeldDiffTool(DiffBase):
             ret_code = ProcessHelper.run_subprocess_cwd(' '.join(cmd), output=None, shell=True)
             print ret_code, len(failed_files), index
 
+            if len(failed_files) > 1 and index < len(failed_files) - 1:
+                accept = ['y', 'yes']
+                var = get_message(message="Do you want to merge another file? (y/n)")
+                if var not in accept:
+                    sys.exit(0)
 
 
 class Diff(object):
