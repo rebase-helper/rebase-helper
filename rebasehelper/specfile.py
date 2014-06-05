@@ -79,7 +79,8 @@ class Specfile(object):
             if not os.path.exists(full_patch_name):
                 logger.error('Patch {0} does not exist'.format(filename))
                 continue
-            patches[num] = [full_patch_name, patch_flags[num]]
+            if num in patch_flags:
+                patches[num] = [full_patch_name, patch_flags[num]]
         return patches
 
     def get_sources(self):
