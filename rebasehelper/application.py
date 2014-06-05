@@ -119,7 +119,8 @@ class Application(object):
             spec.write_updated_patches(patches)
             if self.conf.patches:
                 sys.exit(0)
-
+        if not self.conf.build:
+            self.conf.build = 'mock'
         self.build_packages(spec_file, sources, patches)
 
 
