@@ -77,7 +77,7 @@ class Patch(object):
             cmd.append('-b ')
             cmd.append('--suffix .' + self.suffix)
         cmd.append(' --fuzz={0}'.format(self.fuzz))
-        cmd.append(' --force') # don't ask questions ?
+        cmd.append(' --force') # don't ask questions
         cmd.append(' < ')
         cmd.append(patch_name)
         temp_name = get_temporary_name()
