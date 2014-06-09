@@ -91,7 +91,7 @@ class Application(object):
         sources = spec.get_all_sources()
         patches = spec.get_patches()
 
-        if self.conf.build:
+        if self.conf.build_only:
             self.build_packages(spec_file, sources, patches)
             sys.exit(0)
 
@@ -117,10 +117,8 @@ class Application(object):
                 sys.exit(0)
                 #os.unlink(spec.get_rebased_spec())
             spec.write_updated_patches(patches)
-            if self.conf.patches:
+            if self.conf.patches_only:
                 sys.exit(0)
-        if not self.conf.build:
-            self.conf.build = 'mock'
         self.build_packages(spec_file, sources, patches)
 
 
