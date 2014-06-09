@@ -136,6 +136,7 @@ class Patch(object):
             patch[0] = get_rebase_name(patch[0])
             self.kwargs['suffix'] = self.suffix
             self.kwargs['failed_files'] = patched_files
+            print 'Input to MergeTool:', self.kwargs
             diff = Diff(self.kwargs.get('diff_tool', None))
             ret_code = diff.mergetool(**self.kwargs)
 

@@ -113,7 +113,6 @@ class MeldDiffTool(DiffBase):
             cmd = [cls.CMD, '--diff', base, local, '--diff', base, remote, '--auto-merge', local, base, remote, '--output', merged]
             logger.debug("MeldDiffTool:run_mergetool: running '" + str(cmd) + "'")
             ret_code = ProcessHelper.run_subprocess_cwd(' '.join(cmd), output=None, shell=True)
-            print ret_code, len(failed_files), index
 
             if len(failed_files) > 1 and index < len(failed_files) - 1:
                 accept = ['y', 'yes']
