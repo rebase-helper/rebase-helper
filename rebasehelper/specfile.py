@@ -138,22 +138,26 @@ class Specfile(object):
         return source_name
 
     def check_empty_patches(self, patch_name):
-        lines = get_content_file(patch_name, "r")
+        lines = get_content_file(patch_name, "r", method=True)
         if len(lines) == 1:
             return True
         else:
             return False
 
-    def remove_empty_patches(self, removed_patches):
-        pass
+    def remove_empty_patches(self, lines, patch_num):
+        for num in patch_num:
+            for index, line in enumerate(lines):
+                if not line.startswith('%patch{0}'.format(num)):
+                    continue
+                lines[index] = '#' + line.strip()
 
     def write_updated_patches(self, patches):
         """
         Function writes a patches to -rebase.spec file
         """
-        print 'Patches', patches
+        logger.info('Patches:{0}'.format(patches))
         lines = self.get_content_rebase()
-        removed_patches = {}
+        removed_patches = []
         for index, line in enumerate(lines):
             # We take care about patches.
             if not line.startswith('Patch'):
@@ -164,7 +168,9 @@ class Specfile(object):
             comment = ""
             if settings.REBASE_HELPER_SUFFIX in patch_name:
                 if self.check_empty_patches(patch_name):
-                    comment="#"
+                    comment = '#'
+                    removed_patches.append(patch_num)
             lines[index] = comment + ' '.join(fields[:-1]) + ' ' + os.path.basename(patch_name) +'\n'
+        self.remove_empty_patches(lines, removed_patches)
 
         write_to_file(self.get_rebased_spec(), "w", lines)
