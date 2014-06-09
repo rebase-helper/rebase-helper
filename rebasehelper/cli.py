@@ -31,9 +31,8 @@ class CLI(object):
         )
         self.parser.add_argument(
             "-p",
-            "--patches",
-            default=False,
-            action="store_true",
+            "--patch_tool",
+            default='patch',
             help="Select a patch tool [patch|git]"
         )
         self.parser.add_argument(
