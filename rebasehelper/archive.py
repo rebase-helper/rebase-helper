@@ -81,6 +81,18 @@ class TarBz2ArchiveType(ArchiveTypeBase):
 class TarGzArchiveType(TarBz2ArchiveType):
     """ .tar.gz archive type """
     EXTENSION = ".tar.gz"
+    @classmethod
+    def match(cls, filename=None):
+        if filename is not None and filename.endswith(cls.EXTENSION):
+            return True
+        else:
+            return False
+
+    @classmethod
+    def open(cls, filename=None):
+        if filename is None:
+            raise TypeError("Expected argument 'filename' (pos 1) is missing")
+        return tarfile.TarFile.open(filename)
 
 
 @register_archive_type
