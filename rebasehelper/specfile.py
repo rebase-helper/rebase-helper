@@ -109,22 +109,45 @@ class Specfile(object):
         """
         sources = self.get_sources()
         old_source_name = [ x for x in sources if x[1] == 0 ]
-        source_name = old_source_name[0][0].split('/')[-1]
+        old_source_name = old_source_name[0][0]
+        old_source_name
+        source_name = old_source_name.split('/')[-1]
         if not os.path.exists(source_name):
-            ProcessHelper.run_subprocess_cwd('wget {0}'.format(old_source_name), shell=True)
+            ret_code = ProcessHelper.run_subprocess_cwd('wget {0}'.format(old_source_name), shell=True)
+            if ret_code != 0:
+                os.unlink(source_name)
+                ret_code = ProcessHelper.run_subprocess_cwd('wget {0}'.format(old_source_name), shell=True)
+
         return source_name
+
+    def check_empty_patches(self, patch_name):
+        lines = get_content_file(patch_name, "r")
+        if len(lines) == 1:
+            return True
+        else:
+            return False
+
+    def remove_empty_patches(self, removed_patches):
+        pass
 
     def write_updated_patches(self, patches):
         """
         Function writes a patches to -rebase.spec file
         """
+        print 'Patches', patches
         lines = self.get_content_rebase()
+        removed_patches = {}
         for index, line in enumerate(lines):
             # We take care about patches.
             if not line.startswith('Patch'):
                 continue
             fields = line.strip().split()
             patch_num = self.get_patch_number(line)
-            lines[index] = ' '.join(fields[:-1]) + ' ' + os.path.basename(patches[int(patch_num)][0]) +'\n'
+            patch_name = patches[int(patch_num)][0]
+            comment = ""
+            if settings.REBASE_HELPER_SUFFIX in patch_name:
+                if self.check_empty_patches(patch_name):
+                    comment="#"
+            lines[index] = comment + ' '.join(fields[:-1]) + ' ' + os.path.basename(patch_name) +'\n'
 
         write_to_file(self.get_rebased_spec(), "w", lines)
