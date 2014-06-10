@@ -73,8 +73,12 @@ class Specfile(object):
         """
         with open(full_patch_name) as f:
             for line in f:
-                if "diff --git" in line:
-                    return True
+                if line.startswith("diff "):
+                    if line.startswith("diff --git"):
+                        return True
+                    else:
+                        return False
+        logger.error("Are you sure {0} is a patch ?".format(full_patch_name))
         return False
 
     def get_patches(self):
