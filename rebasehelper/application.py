@@ -18,8 +18,14 @@ def extract_sources(source_name, source_dir):
     """
     if os.path.isdir(source_dir):
         shutil.rmtree(source_dir)
-    arch = Archive(source_name)
-    arch.extract(source_dir)
+    arch = None
+    try:
+        arch = Archive(source_name)
+        arch.extract(source_dir)
+    except NotImplementedError as nie:
+        if nie.message == "Unsupported archive type":
+            logger.error("This archive is not supported yet.")
+        sys.exit(0)
     package_dir = ""
     for dir_name in os.listdir(source_dir):
         package_dir = dir_name
