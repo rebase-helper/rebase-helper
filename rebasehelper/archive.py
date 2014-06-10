@@ -80,10 +80,13 @@ class TarBz2ArchiveType(ArchiveTypeBase):
 @register_archive_type
 class TarGzArchiveType(TarBz2ArchiveType):
     """ .tar.gz archive type """
-    EXTENSION = ".tar.gz"
+    EXTENSIONS = [".tar.gz", ".tgz"]
     @classmethod
     def match(cls, filename=None):
-        if filename is not None and filename.endswith(cls.EXTENSION):
+        if (filename is not None and
+            # ends with one of the allowed extensions?
+            reduce (lambda x, y: x or y,
+                    map (filename.endswith, cls.EXTENSIONS))):
             return True
         else:
             return False
