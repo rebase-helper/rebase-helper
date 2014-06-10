@@ -164,15 +164,12 @@ class SpecFile(object):
         """
         Function writes a patches to -rebase.spec file
         """
-        print kwargs
         if 'new' not in kwargs:
             return None
         new_files = kwargs.get('new', None)
-        print new_files
         if 'patches' not in new_files:
             return None
         patches = new_files.get('patches', None)
-        print patches
 
         logger.info('Patches:{0}'.format(patches))
         lines = self.get_content_rebase()
