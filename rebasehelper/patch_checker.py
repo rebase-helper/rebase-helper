@@ -140,6 +140,13 @@ class Patch(object):
             diff = Diff(self.kwargs.get('diff_tool', None))
             ret_code = diff.mergetool(**self.kwargs)
 
+            # TODO:
+            # is_patch_git_generated = patch[3]
+            # if is_patch_git_generated:
+            #     generate new patch with git
+            # else:
+            #     generate new patch with gendiff
+
             # gendiff new_source + self.suffix > patch[0]
             logger.info("Generating patch by gendiff")
             cmd = ['/usr/bin/gendiff']
