@@ -17,11 +17,10 @@ def get_path_to_patch(patch):
     return os.path.join('..', '..', patch)
 
 def register_patch_tool(patch_tool):
-    patch_tools.setdefault(patch_tool.shortcut, [])
-    patch_tools[patch_tool.shortcut].append(patch_tool)
+    patch_tools[patch_tool.c_patch] = patch_tool
     return patch_tool
 
-class PatchTool(object):
+class PatchBase(object):
     """ Class used for using several patching command tools, ...
         Each method should overwrite method like run_check
     """
@@ -43,40 +42,31 @@ class PatchTool(object):
         return NotImplementedError()
 
 @register_patch_tool
-class FedoraPatchTool(PatchTool):
-    shortcut = 'fedora_patch'
+class FedoraPatchTool(PatchBase):
+    shortcut = 'patch'
     c_patch = 'patch'
+    suffix = None
+    fuzz = 0
+    source_dir = ""
 
     @classmethod
-    def run_patch(self, **kwargs):
-        """
-        The function can be used for patching one
-        directory against another
-        """
-        pass
+    def match(cls, c_patch):
+        if c_patch == cls.c_patch:
+            return True
+        else:
+            return False
 
-
-class Patch(object):
-    def __init__(self, **kwargs):
-        self.kwargs = kwargs
-        self.patches = kwargs.get('patches', '')
-        self.old_sources = kwargs.get('old_dir', None)
-        self.new_sources = kwargs.get('new_dir', None)
-        self.output_data = []
-        self.patched_files = []
-        self.suffix = None
-        self.fuzz = 0
-
-    def patch_command(self, patch_name, patch_flags, output=None):
+    @classmethod
+    def patch_command(cls, patch_name, patch_flags, output=None):
         """
         Patch command whom patches as the
         """
         cmd = ['/usr/bin/patch']
         cmd.append(patch_flags)
-        if self.suffix:
+        if cls.suffix:
             cmd.append('-b ')
-            cmd.append('--suffix .' + self.suffix)
-        cmd.append(' --fuzz={0}'.format(self.fuzz))
+            cmd.append('--suffix .' + cls.suffix)
+        cmd.append(' --fuzz={0}'.format(cls.fuzz))
         cmd.append(' --force') # don't ask questions
         cmd.append(' < ')
         cmd.append(patch_name)
@@ -85,10 +75,11 @@ class Patch(object):
         ret_code = ProcessHelper.run_subprocess_cwd(' '.join(cmd),
                                                     output=temp_name,
                                                     shell=True)
-        self.output_data = get_content_temp(temp_name)
+        cls.output_data = get_content_temp(temp_name)
         return ret_code
 
-    def get_failed_patched_files(self, patch_name):
+    @classmethod
+    def get_failed_patched_files(cls, patch_name):
         cmd = 'lsdiff {0}'.format(patch_name)
         temp_name = get_temporary_name()
         ret_code = ProcessHelper.run_subprocess_cwd(cmd,
@@ -96,76 +87,76 @@ class Patch(object):
                                                     shell=True)
         if ret_code != 0:
             return None
-        self.patched_files = get_content_temp(temp_name)
+        cls.patched_files = get_content_temp(temp_name)
         failed_files = []
         applied_rules = ['succeeded']
         source_file = ""
-        for data in self.output_data:
+        for data in cls.output_data:
             if data.startswith('patching file'):
                 patch, file_text, source_file = data.strip().split()
                 continue
             result = [x for x in applied_rules if x in data ]
             if result:
                 continue
-            file_list = [x for x in self.patched_files if source_file in x ]
+            file_list = [x for x in cls.patched_files if source_file in x ]
             if source_file in failed_files:
                 continue
             failed_files.append(source_file)
         return failed_files
 
-    def apply_patch(self, patch, source_dir):
+    @classmethod
+    def generate_diff(cls, patch):
+        # gendiff new_source + self.suffix > patch[0]
+        logger.info("Generating patch by gendiff")
+        cmd = ['/usr/bin/gendiff']
+        cmd.append(os.path.basename(cls.new_sources))
+        cmd.append('.'+cls.suffix)
+        cmd.append('>')
+        cmd.append(patch)
+        temp_name = get_temporary_name()
+        os.chdir(os.pardir) # goto parent dir
+        logger.debug('apply_patch(): ' + ' '.join(cmd))
+        ret_code = ProcessHelper.run_subprocess_cwd(' '.join(cmd),
+                                                    output=temp_name,
+                                                    shell=True)
+        logger.debug("ret_code: {0}".format(ret_code)) # sometimes returns 1 even the patch was generated. why ???
+        os.chdir(cls.source_dir)
+        gendiff_output = get_content_temp(temp_name)
+        if gendiff_output:
+            logger.info("gendiff_output: {0}".format(gendiff_output))
+
+
+    @classmethod
+    def apply_patch(cls, patch):
         """
         Function applies a patch to a old/new sources
         """
-        os.chdir(source_dir)
-        if source_dir == self.old_sources:
+        os.chdir(cls.source_dir)
+        if cls.source_dir == cls.old_sources:
             # for new_sources we want the same suffix as for old_sources
-            self.suffix = ''.join(random.choice(string.ascii_letters) for _ in range(6))
-        logger.debug('Applying patch {0} to {1}...'.format(patch[0], source_dir))
-        ret_code = self.patch_command(get_path_to_patch(patch[0]), patch[1])
+            cls.suffix = ''.join(random.choice(string.ascii_letters) for _ in range(6))
+        logger.debug('Applying patch {0} to {1}...'.format(patch[0], cls.source_dir))
+        ret_code = cls.patch_command(get_path_to_patch(patch[0]), patch[1])
         if ret_code != 0:
-            if source_dir == self.old_sources: # unexpected
+            if cls.source_dir == cls.old_sources: # unexpected
                 logger.critical('Failed to patch old sources.')
                 raise RuntimeError
             logger.warning('Patch failed with return code {0}. Will start merge-tool to fix conflicts manually.'.format(ret_code))
-            patched_files = self.get_failed_patched_files(patch[0])
+            patched_files = cls.get_failed_patched_files(patch[0])
             if not patched_files:
                 logger.error('We are not able to get a list of failed files.')
                 raise RuntimeError
             orig_patch = patch[0]
             patch[0] = get_rebase_name(patch[0])
-            self.kwargs['suffix'] = self.suffix
-            self.kwargs['failed_files'] = patched_files
-            print 'Input to MergeTool:', self.kwargs
-            diff = Diff(self.kwargs.get('diff_tool', None))
-            ret_code = diff.mergetool(**self.kwargs)
+            if os.path.exists(patch[0]):
+                os.unlink(patch[0])
+            cls.kwargs['suffix'] = cls.suffix
+            cls.kwargs['failed_files'] = patched_files
+            logger.info('Input to MergeTool:', cls.kwargs)
+            diff = Diff(cls.kwargs.get('diff_tool', None))
+            ret_code = diff.mergetool(**cls.kwargs)
 
-            # TODO:
-            # is_patch_git_generated = patch[3]
-            # if is_patch_git_generated:
-            #     generate new patch with git
-            # else:
-            #     generate new patch with gendiff
-
-            # gendiff new_source + self.suffix > patch[0]
-            logger.info("Generating patch by gendiff")
-            cmd = ['/usr/bin/gendiff']
-            cmd.append(os.path.basename(self.new_sources))
-            cmd.append('.'+self.suffix)
-            cmd.append('>')
-            cmd.append(patch[0])
-            temp_name = get_temporary_name()
-            os.chdir(os.pardir) # goto parent dir
-            logger.debug('apply_patch(): ' + ' '.join(cmd))
-            ret_code = ProcessHelper.run_subprocess_cwd(' '.join(cmd),
-                                                        output=temp_name,
-                                                        shell=True)
-            print "ret_code:", ret_code # sometimes returns 1 even the patch was generated. why ???
-            os.chdir(source_dir)
-            gendiff_output = get_content_temp(temp_name)
-            if gendiff_output:
-                print "gendiff_output:", gendiff_output
-
+            cls.generate_diff(patch[0])
             diff.diff(orig_patch, patch[0])
             accept = ['y', 'yes']
             var = get_message(message="Do you want to continue with another patch? (y/n)")
@@ -174,18 +165,53 @@ class Patch(object):
 
         return patch
 
-    def run_patch(self):
+    @classmethod
+    def run_patch(cls, **kwargs):
+        """
+        The function can be used for patching one
+        directory against another
+        """
+        cls.kwargs = kwargs
+        cls.patches = kwargs.get('patches', '')
+        cls.old_sources = kwargs.get('old_dir', None)
+        cls.new_sources = kwargs.get('new_dir', None)
+        cls.output_data = []
+        cls.patched_files = []
         cwd = os.getcwd()
         # apply patches in the same order as in spec file, not according to their numbers
-        for order in sorted(self.patches.items(), key=lambda x: x[1][2]):
+        for order in sorted(cls.patches.items(), key=lambda x: x[1][2]):
             try:
-                self.apply_patch(self.patches[order[0]], self.old_sources)
-                patch = self.apply_patch(self.patches[order[0]], self.new_sources)
+                cls.source_dir = cls.old_sources
+                cls.apply_patch(cls.patches[order[0]])
+                cls.source_dir = cls.new_sources
+                patch = cls.apply_patch(cls.patches[order[0]])
             except Exception:
                 raise Exception
-            self.patches[order[0]] = patch
+            cls.patches[order[0]] = patch
         os.chdir(cwd)
-        return self.patches
+        return cls.patches
+
+
+class PatchTool(object):
+    def __init__(self, patch=None):
+        if patch is None:
+            raise TypeError("Expected argument 'tool' (pos 1) is missing")
+        self._path_tool_name = patch
+        self._tool = None
+
+        for patch_tool in patch_tools.values():
+            if patch_tool.match(self._path_tool_name):
+                self._tool = patch_tool
+
+        if self._tool is None:
+            raise NotImplementedError("Unsupported build tool")
+
+
+
+    def patch(self, **kwargs):
+        logger.debug("Patch: Patching source by patch tool {0}...".format(self._path_tool_name))
+        return self._tool.run_patch(**kwargs)
+
 
 
 

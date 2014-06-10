@@ -6,7 +6,7 @@ import shutil
 
 from rebasehelper.archive import Archive
 from rebasehelper.specfile import Specfile
-from rebasehelper.patch_checker import Patch
+from rebasehelper.patch_checker import PatchTool
 from rebasehelper.build_helper import *
 from rebasehelper.diff_helper import diff_tools
 from rebasehelper.logger import logger
@@ -54,6 +54,8 @@ class Application(object):
         spec_file = None
         for filename in os.listdir(cwd):
             if filename.endswith(".spec"):
+                if settings.REBASE_HELPER_SUFFIX in filename:
+                    continue
                 spec_file = filename
                 break
         return spec_file
@@ -109,9 +111,9 @@ class Application(object):
             kwargs['old_dir'] = old_dir
             kwargs['new_dir'] = new_dir
             kwargs['diff_tool'] = self.conf.difftool
-            patch = Patch(**kwargs)
+            patch = PatchTool(self.conf.patch_tool)
             try:
-                patches = patch.run_patch()
+                patches = patch.patch(**kwargs)
             except Exception as e:
                 logger.error(e.message)
                 sys.exit(0)
