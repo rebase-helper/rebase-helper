@@ -12,6 +12,11 @@ from rebasehelper.utils import get_content_file,  get_rebase_name, write_to_file
 from rebasehelper.utils import get_temporary_name, get_content_temp
 
 
+def get_source_name(name):
+    new_name = name.split('/')[-1]
+    return new_name
+
+
 class SpecFile(object):
     """
     Class who manipulates with SPEC file
@@ -27,6 +32,11 @@ class SpecFile(object):
         self.spc = rpm.spec(self.rebased_spec)
 
     def get_patch_option(self, line):
+        """
+        Function returns a patch options
+        :param line:
+        :return: patch options like -p1
+        """
         spl = line.strip().split()
         if len(spl) == 1:
             return spl[0], " "
@@ -42,8 +52,13 @@ class SpecFile(object):
         return self.rebased_spec
 
     def get_patch_number(self, line):
+        """
+        Function returns patch number
+        :param line:
+        :return: patch_num
+        """
         fields = line.strip().split()
-        patch_num = fields[0].replace('Patch','')[:-1]
+        patch_num = fields[0].replace('Patch', '')[:-1]
         return patch_num
 
     def get_content_rebase(self):
@@ -89,7 +104,7 @@ class SpecFile(object):
         patches = {}
         patch_flags = self.get_patches_flags()
         cwd = os.getcwd()
-        sources = [ x for x in self.spc.sources if x[2] == 2]
+        sources = [x for x in self.spc.sources if x[2] == 2]
         for source in sources:
             filename, num, patch_type = source
             full_patch_name = os.path.join(cwd, filename)
@@ -108,17 +123,29 @@ class SpecFile(object):
         sources = [x for x in self.spc.sources if x[2] == 0 or x[2] == 1]
         return sources
 
+    def _download_source(self, source_name, download_name):
+        """
+        Function downloads a source name defined in SPEC file
+        """
+        if not os.path.exists(download_name):
+            ret_code = ProcessHelper.run_subprocess_cwd('wget {0}'.format(source_name), shell=True)
+
     def get_all_sources(self):
         """
         Function returns all sources mentioned in specfile
         """
         cwd = os.getcwd()
         sources = self.get_sources()
+        remote_files = ['http:', 'https:', 'ftp:']
         for index, src in enumerate(sources):
+            new_name = get_source_name(src[0])
             if int(src[1]) == 0:
-                sources[index] = os.path.join(cwd, src[0].split('/')[-1])
+                sources[index] = os.path.join(cwd, new_name)
             else:
-                sources[index] = os.path.join(cwd, src[0])
+                remote = [x for x in remote_files if src[0].startswith(x)]
+                if remote:
+                    self._download_source(src[0], new_name)
+                sources[index] = os.path.join(cwd, new_name)
         return sources
 
     def get_old_tarball(self):
@@ -130,15 +157,13 @@ class SpecFile(object):
         old_source_name = old_source_name[0][0]
         old_source_name
         source_name = old_source_name.split('/')[-1]
-        if not os.path.exists(source_name):
-            ret_code = ProcessHelper.run_subprocess_cwd('wget {0}'.format(old_source_name), shell=True)
-            if ret_code != 0:
-                os.unlink(source_name)
-                ret_code = ProcessHelper.run_subprocess_cwd('wget {0}'.format(old_source_name), shell=True)
-
+        self._download_source(old_source_name, source_name)
         return source_name
 
     def check_empty_patches(self, patch_name):
+        """
+        Function checks whether patch is empty or not
+        """
         cmd = []
         cmd.append("/usr/bin/lsdiff")
         cmd.append(patch_name)
@@ -147,13 +172,15 @@ class SpecFile(object):
         if ret_code != 0:
             return False
         lines = get_content_temp(temp_name)
-        print lines
         if not lines:
             return True
         else:
             return False
 
     def remove_empty_patches(self, lines, patch_num):
+        """
+        Remove ampty patches from SPEC file
+        """
         for num in patch_num:
             for index, line in enumerate(lines):
                 if not line.startswith('%patch{0}'.format(num)):
