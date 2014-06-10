@@ -12,6 +12,7 @@ from rebasehelper.diff_helper import diff_tools
 from rebasehelper.logger import logger
 from rebasehelper import settings
 
+
 def extract_sources(source_name, source_dir):
     """
     Function extracts tar ball and returns a full dirname to sources
@@ -43,11 +44,17 @@ class Application(object):
         self.conf = conf
 
     def _initialize_dictionary(self):
+        """
+        Function initializes a dictionaries used by rebase-helper
+        """
         self.kwargs = {}
         self.kwargs['old'] = {}
         self.kwargs['new'] = {}
 
     def _initialize_data(self):
+        """
+        Function fill dictionary by default data
+        """
         spec_file = self._get_spec_file()
         if not spec_file:
             logger.error('You have to define a SPEC file.')
@@ -90,16 +97,25 @@ class Application(object):
         return spec_file
 
     def check_build_argument(self):
+        """
+        Function checks whether build argument is allowed
+        """
         if self.conf.build not in build_tools.keys():
             logger.error('You have to specify one of these builders {0}'.format(build_tools.keys()))
             sys.exit(0)
 
     def check_difftool_argument(self):
+        """
+        Function checks whether difftool argument is allowed
+        """
         if self.conf.difftool not in diff_tools.keys():
             logger.error('You have to specify one of these builders {0}'.format(diff_tools.keys()))
             sys.exit(0)
 
     def build_packages(self):
+        """
+        Function calls build calss for building packages
+        """
         self.check_build_argument()
         builder = Builder(self.conf.build)
         old_patches = self.kwargs['old'].get('patches')
