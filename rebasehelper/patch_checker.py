@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
-import os
-import sys
+import shutil
 import random
 import string
 
@@ -10,6 +9,7 @@ from rebasehelper.logger import logger
 from rebasehelper.diff_helper import *
 from rebasehelper import settings
 from rebasehelper.utils import get_rebase_name, get_temporary_name, get_content_temp
+from rebasehelper.utils import get_patch_name
 
 patch_tools = {}
 
@@ -48,6 +48,8 @@ class FedoraPatchTool(PatchBase):
     suffix = None
     fuzz = 0
     source_dir = ""
+    old_sources = ""
+    new_sources = ""
 
     @classmethod
     def match(cls, c_patch):
@@ -105,7 +107,7 @@ class FedoraPatchTool(PatchBase):
         return failed_files
 
     @classmethod
-    def generate_diff(cls, patch):
+    def generate_diff(cls, patch, source_dir):
         # gendiff new_source + self.suffix > patch[0]
         logger.info("Generating patch by gendiff")
         cmd = ['/usr/bin/gendiff']
@@ -120,7 +122,7 @@ class FedoraPatchTool(PatchBase):
                                                     output=temp_name,
                                                     shell=True)
         logger.debug("ret_code: {0}".format(ret_code)) # sometimes returns 1 even the patch was generated. why ???
-        os.chdir(cls.source_dir)
+        os.chdir(source_dir)
         gendiff_output = get_content_temp(temp_name)
         if gendiff_output:
             logger.info("gendiff_output: {0}".format(gendiff_output))
@@ -139,7 +141,7 @@ class FedoraPatchTool(PatchBase):
         ret_code = cls.patch_command(get_path_to_patch(patch[0]), patch[1])
         if ret_code != 0:
             if cls.source_dir == cls.old_sources: # unexpected
-                logger.critical('Failed to patch old sources.')
+                logger.critical('Failed to patch old sources.{0}'.format(ret_code))
                 raise RuntimeError
             logger.warning('Patch failed with return code {0}. Will start merge-tool to fix conflicts manually.'.format(ret_code))
             patched_files = cls.get_failed_patched_files(patch[0])
@@ -155,8 +157,7 @@ class FedoraPatchTool(PatchBase):
             logger.info('Input to MergeTool:', cls.kwargs)
             diff = Diff(cls.kwargs.get('diff_tool', None))
             ret_code = diff.mergetool(**cls.kwargs)
-
-            cls.generate_diff(patch[0])
+            cls.generate_diff(patch[0], cls.source_dir)
             diff.diff(orig_patch, patch[0])
             accept = ['y', 'yes']
             var = get_message(message="Do you want to continue with another patch? (y/n)")
@@ -172,7 +173,7 @@ class FedoraPatchTool(PatchBase):
         directory against another
         """
         cls.kwargs = kwargs
-        cls.patches = kwargs.get('patches', '')
+        cls.patches = kwargs['old'].get('patches', '')
         cls.old_sources = kwargs.get('old_dir', None)
         cls.new_sources = kwargs.get('new_dir', None)
         cls.output_data = []
@@ -189,6 +190,7 @@ class FedoraPatchTool(PatchBase):
                 raise Exception
             cls.patches[order[0]] = patch
         os.chdir(cwd)
+
         return cls.patches
 
 

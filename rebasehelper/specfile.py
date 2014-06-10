@@ -9,20 +9,21 @@ from rebasehelper.utils import ProcessHelper
 from rebasehelper.logger import logger
 from rebasehelper import settings
 from rebasehelper.utils import get_content_file,  get_rebase_name, write_to_file
+from rebasehelper.utils import get_temporary_name, get_content_temp
 
 
-class Specfile(object):
+class SpecFile(object):
     """
     Class who manipulates with SPEC file
     """
     
     values = []
     def __init__(self, specfile):
-        self.specfile = specfile
+        self.spec_file = specfile
         self.rebased_spec = get_rebase_name(specfile)
         if os.path.exists(self.rebased_spec):
             os.unlink(self.rebased_spec)
-        shutil.copy(self.specfile, self.rebased_spec)
+        shutil.copy(self.spec_file, self.rebased_spec)
         self.spc = rpm.spec(self.rebased_spec)
 
     def get_patch_option(self, line):
@@ -104,7 +105,7 @@ class Specfile(object):
         """
         Function returns a all sources
         """
-        sources = [ x for x in self.spc.sources if x[2] == 0 or x[2] == 1 ]
+        sources = [x for x in self.spc.sources if x[2] == 0 or x[2] == 1]
         return sources
 
     def get_all_sources(self):
@@ -120,12 +121,12 @@ class Specfile(object):
                 sources[index] = os.path.join(cwd, src[0])
         return sources
 
-    def get_old_sources(self):
+    def get_old_tarball(self):
         """
         Function returns a old sources from specfile
         """
         sources = self.get_sources()
-        old_source_name = [ x for x in sources if x[1] == 0 ]
+        old_source_name = [x for x in sources if x[1] == 0]
         old_source_name = old_source_name[0][0]
         old_source_name
         source_name = old_source_name.split('/')[-1]
@@ -138,8 +139,16 @@ class Specfile(object):
         return source_name
 
     def check_empty_patches(self, patch_name):
-        lines = get_content_file(patch_name, "r", method=True)
-        if len(lines) == 1:
+        cmd = []
+        cmd.append("/usr/bin/lsdiff")
+        cmd.append(patch_name)
+        temp_name = get_temporary_name()
+        ret_code = ProcessHelper.run_subprocess(cmd, temp_name)
+        if ret_code != 0:
+            return False
+        lines = get_content_temp(temp_name)
+        print lines
+        if not lines:
             return True
         else:
             return False
@@ -149,12 +158,22 @@ class Specfile(object):
             for index, line in enumerate(lines):
                 if not line.startswith('%patch{0}'.format(num)):
                     continue
-                lines[index] = '#' + line.strip()
+                lines[index] = '#' + line
 
-    def write_updated_patches(self, patches):
+    def write_updated_patches(self, **kwargs):
         """
         Function writes a patches to -rebase.spec file
         """
+        print kwargs
+        if 'new' not in kwargs:
+            return None
+        new_files = kwargs.get('new', None)
+        print new_files
+        if 'patches' not in new_files:
+            return None
+        patches = new_files.get('patches', None)
+        print patches
+
         logger.info('Patches:{0}'.format(patches))
         lines = self.get_content_rebase()
         removed_patches = []
@@ -166,10 +185,9 @@ class Specfile(object):
             patch_num = self.get_patch_number(line)
             patch_name = patches[int(patch_num)][0]
             comment = ""
-            if settings.REBASE_HELPER_SUFFIX in patch_name:
-                if self.check_empty_patches(patch_name):
-                    comment = '#'
-                    removed_patches.append(patch_num)
+            if self.check_empty_patches(patch_name):
+                comment = '#'
+                removed_patches.append(patch_num)
             lines[index] = comment + ' '.join(fields[:-1]) + ' ' + os.path.basename(patch_name) +'\n'
         self.remove_empty_patches(lines, removed_patches)
 

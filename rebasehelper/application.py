@@ -5,7 +5,7 @@ import sys
 import shutil
 
 from rebasehelper.archive import Archive
-from rebasehelper.specfile import Specfile
+from rebasehelper.specfile import SpecFile
 from rebasehelper.patch_checker import PatchTool
 from rebasehelper.build_helper import *
 from rebasehelper.diff_helper import diff_tools
@@ -29,12 +29,35 @@ def extract_sources(source_name, source_dir):
 class Application(object):
     result_file = ""
     temp_dir = ""
+    kwargs = {}
+    spec = None
 
     def __init__(self, conf):
         """ conf is CLI object """
         self.conf = conf
 
-    def build_command(self,binary):
+    def _initialize_dictionary(self):
+        self.kwargs = {}
+        self.kwargs['old'] = {}
+        self.kwargs['new'] = {}
+
+    def _initialize_data(self):
+        spec_file = self._get_spec_file()
+        if not spec_file:
+            logger.error('You have to define a SPEC file.')
+            sys.exit(1)
+        self.spec = SpecFile(spec_file)
+        old_values = {}
+        old_values['spec'] = os.path.join(os.getcwd(), spec_file)
+        old_values['sources'] = self.spec.get_all_sources()
+        old_values['patches'] = self.spec.get_patches()
+        self.kwargs['old'] = old_values
+        new_values = {}
+        new_values['spec'] = os.path.join(os.getcwd(), self.spec.get_rebased_spec())
+        new_values['sources'] = self.spec.get_all_sources()
+        self.kwargs['new'] = new_values
+
+    def _build_command(self, binary):
         """
         create command from CLI options
         """
@@ -46,7 +69,7 @@ class Application(object):
             command.append("--verbose")
         return command
 
-    def get_spec_file(self):
+    def _get_spec_file(self):
         """
         Function get a spec file from current directory
         """
@@ -70,32 +93,28 @@ class Application(object):
             logger.error('You have to specify one of these builders {0}'.format(diff_tools.keys()))
             sys.exit(0)
 
-    def build_packages(self, spec_file, sources, patches):
-        kwargs = {}
+    def build_packages(self):
         self.check_build_argument()
         builder = Builder(self.conf.build)
-        kwargs['spec'] = os.path.join(os.getcwd(), spec_file)
-        kwargs['sources'] = sources
-        kwargs['patches'] = [ p[0] for p in patches.itervalues() ]
+        old_patches = self.kwargs['old'].get('patches')
+        self.kwargs['old']['patches'] = [p[0] for p in old_patches.itervalues()]
+        new_patches = self.kwargs['new'].get('patches')
+        self.kwargs['new']['patches'] = [p[0] for p in new_patches.itervalues()]
         # TODO: need to create some results directory where results of tests
         # will be stored!!! The results dir should be removed on startup
         # or the tool should fail if it exists
-        kwargs['resultdir'] = os.path.join(os.getcwd(), "rebase-helper-results")
-        builder.build(**kwargs)
+        result_path = os.path.join(os.getcwd(), "rebase-helper-results")
+        if os.path.exists(result_path):
+            shutil.rmtree(result_path)
+
+        self.kwargs['resultdir'] = result_path
+        builder.build(**self.kwargs)
 
     def run(self):
-        kwargs = dict()
-        spec_file = self.get_spec_file()
-        if not spec_file:
-            logger.error('You have to define a SPEC file.')
-            sys.exit(1)
-        spec = Specfile(spec_file)
-        sources = spec.get_all_sources()
-        patches = spec.get_patches()
-
-        if self.conf.build_only:
-            self.build_packages(spec_file, sources, patches)
-            sys.exit(0)
+        if not os.path.exists(settings.REBASE_RESULTS_DIR):
+            os.makedirs(settings.REBASE_RESULTS_DIR)
+        self._initialize_dictionary()
+        self._initialize_data()
 
         if not self.conf.sources:
             logger.error('You have to define a new sources.')
@@ -103,25 +122,23 @@ class Application(object):
         if not os.path.exists(self.conf.sources):
             logger.error('Defined sources does not exist.')
             sys.exit(0)
-        old_sources = spec.get_old_sources()
+        old_sources = self.spec.get_old_tarball()
         old_dir = extract_sources(old_sources, settings.OLD_SOURCES)
         new_dir = extract_sources(self.conf.sources, settings.NEW_SOURCES)
-        if patches:
-            kwargs['patches'] = patches
-            kwargs['old_dir'] = old_dir
-            kwargs['new_dir'] = new_dir
-            kwargs['diff_tool'] = self.conf.difftool
+        if not self.conf.build_only:
+            self.kwargs['old_dir'] = old_dir
+            self.kwargs['new_dir'] = new_dir
+            self.kwargs['diff_tool'] = self.conf.difftool
             patch = PatchTool(self.conf.patch_tool)
             try:
-                patches = patch.patch(**kwargs)
+                self.kwargs['new']['patches'] = patch.patch(**self.kwargs)
             except Exception as e:
+                if os.path.exists(self.spec.get_rebased_spec()):
+                    os.unlink(self.spec.get_rebased_spec())
                 logger.error(e.message)
                 sys.exit(0)
-                #os.unlink(spec.get_rebased_spec())
-            spec.write_updated_patches(patches)
-            if self.conf.patches_only:
-                sys.exit(0)
-        self.build_packages(spec_file, sources, patches)
+            self.spec.write_updated_patches(**self.kwargs)
+        self.build_packages()
 
 
 if __name__ == '__main__':

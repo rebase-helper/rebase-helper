@@ -49,10 +49,14 @@ def write_to_file(path, perms, data):
         logger.error('Unable to access file %s' % path)
         raise
 
-
-def get_rebase_name(name):
+def get_patch_name(name):
     name, extension = os.path.splitext(name)
     return name + settings.REBASE_HELPER_SUFFIX + extension
+
+def get_rebase_name(name):
+    dir_name = os.path.dirname(name)
+    file_name = os.path.basename(name)
+    return os.path.join(dir_name, settings.REBASE_RESULTS_DIR, file_name)
 
 def get_message(message=""):
     output = ['yes', 'y', 'no', 'n']

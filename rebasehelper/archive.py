@@ -133,7 +133,10 @@ class Archive(object):
         if self._archive_type is None:
             raise NotImplementedError("Unsupported archive type")
 
-    def extract(self, path=settings.TEMPLATE_DIR):
+    def extract(self, path=None):
+        if path is None:
+            logger.info("Specify path where to extract sources.")
+            raise
         """ Extracts the archive into the given path """
         logger.debug("Archive: Extracting '{0}' into '{1}'".format(
                      self._filename, path))
