@@ -207,7 +207,7 @@ class MockBuildTool(BuildToolBase):
         if len(rpms) == 0:
             logger.error("MockBuildTool: Building RPMs failed!")
             raise RuntimeError()
-        print str(rpms)
+        logger.info(str(rpms))
         rpms = [ os.path.join(rpm_resultdir, os.path.basename(f)) for f in rpms ]
 
         # destroy the temporary environment
