@@ -2,6 +2,7 @@ import logging
 
 from rebasehelper.logger import logger
 
+
 class TestLoggingHandler(logging.Handler):
     def __init__(self):
         logging.Handler.__init__(self)

@@ -1,6 +1,6 @@
 Summary: A testing spec file
 Name: test
-Version: 1.0.0
+Version: 1.0.2
 Release: 1%{?dist}
 License: GPL2+
 Group: System Environment

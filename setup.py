@@ -12,6 +12,7 @@ try:
 except:
     from distutils.core import setup, Command
 
+
 class PyTest(Command):
     user_options = [('test-runner=',
                      't',
@@ -52,21 +53,20 @@ class PyTest(Command):
 install_requires = []
 
 setup(
-    name = 'rebasehelper',
-    version = VERSION,
-    description = 'RebaseHelper helps you to rebase your packages.',
-    keywords = 'packages,easy,quick',
-    author = 'Petr Hracek',
-    author_email = 'phracek@redhat.com',
-    url = 'https://github.com/phracek/rebase-helper',
-    license = 'GPLv2+',
-    packages = ['rebasehelper', 'rebasehelper.archive.cli'],
-    include_package_data = True,
-    entry_points = {'console_scripts':['rebase-helper=rebasehelper:rebase_helper']},
-    # PyGithub is in fact optional, but let's keep it here
-    install_requires = install_requires,
-    setup_requires = [],
-    classifiers = ['Development Status :: 4 - Beta',
+    name='rebasehelper',
+    version=VERSION,
+    description='RebaseHelper helps you to rebase your packages.',
+    keywords='packages,easy,quick',
+    author='Petr Hracek',
+    author_email='phracek@redhat.com',
+    url='https://github.com/phracek/rebase-helper',
+    license='GPLv2+',
+    packages=['rebasehelper', 'rebasehelper.archive.cli'],
+    include_package_data=True,
+    entry_points={'console_scripts':['rebase-helper=rebasehelper:rebase_helper']},
+    install_requires=install_requires,
+    setup_requires=[],
+    classifiers=['Development Status :: 4 - Beta',
                    'Environment :: Console',
                    'Intended Audience :: Developers',
                    'License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)',
@@ -74,5 +74,5 @@ setup(
                    'Programming Language :: Python',
                    'Topic :: Software Development',
                   ],
-    cmdclass = {'test': PyTest}
+    cmdclass={'test': PyTest}
 )

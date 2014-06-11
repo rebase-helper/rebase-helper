@@ -21,10 +21,11 @@ class SpecFile(object):
     """
     Class who manipulates with SPEC file
     """
-    
     values = []
-    def __init__(self, specfile):
+
+    def __init__(self, specfile, download=True):
         self.spec_file = specfile
+        self.download = download
         self.rebased_spec = get_rebase_name(specfile)
         if os.path.exists(self.rebased_spec):
             os.unlink(self.rebased_spec)
@@ -127,6 +128,8 @@ class SpecFile(object):
         """
         Function downloads a source name defined in SPEC file
         """
+        if not self.download:
+            return
         if not os.path.exists(download_name):
             ret_code = ProcessHelper.run_subprocess_cwd('wget {0}'.format(source_name), shell=True)
 
