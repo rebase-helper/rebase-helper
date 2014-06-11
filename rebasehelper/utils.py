@@ -8,14 +8,22 @@ import tempfile
 from rebasehelper.logger import logger
 from rebasehelper import settings
 
+
 def get_temporary_name():
     return tempfile.mkstemp(prefix="rebase-helper", text=True)[1]
 
+
 def get_content_temp(filename):
+    """
+    Function return a content of temp filename
+    :param filename:
+    :return: list of lines from temporary filename
+    """
     lines = get_content_file(filename, "r", method=True)
     if os.path.exists(filename):
         os.unlink(filename)
     return lines
+
 
 def get_content_file(path, perms, method=False):
     """
@@ -34,10 +42,31 @@ def get_content_file(path, perms, method=False):
         logger.error('Unable to open file %s' % path)
         raise
 
+
+def get_value_from_kwargs(kwargs, field, source='old'):
+    """
+    Function returns a part of self.kwargs dictionary
+    :param kwargs:
+    :param source: 'old' or 'new'
+    :param field: like 'patches', 'source'
+    :return: value from dictionary
+    """
+    if not kwargs:
+        raise
+    if source not in kwargs:
+        raise
+    if field not in kwargs[source]:
+        raise
+    return kwargs[source][field]
+
+
 def write_to_file(path, perms, data):
     """
-    shortcut for returning content of file:
-     open(...).read()
+    Function writes a data to file
+    :param path: path to file
+    :param perms: permission like "w"
+    :param data: string or list
+    :return:
     """
     try:
         f = open(path, perms)
@@ -49,16 +78,34 @@ def write_to_file(path, perms, data):
         logger.error('Unable to access file %s' % path)
         raise
 
+
 def get_patch_name(name):
+    """
+    Function returns a patch name with suffix
+    :param name:
+    :return: patch name with suffix
+    """
     name, extension = os.path.splitext(name)
     return name + settings.REBASE_HELPER_SUFFIX + extension
 
+
 def get_rebase_name(name):
+    """
+    Function returns a name in results directory
+    :param name:
+    :return: full path to results dir with name
+    """
     dir_name = os.path.dirname(name)
     file_name = os.path.basename(name)
     return os.path.join(dir_name, settings.REBASE_RESULTS_DIR, file_name)
 
+
 def get_message(message=""):
+    """
+    Function for command line messages
+    :param message:
+    :return: variable y/n
+    """
     output = ['yes', 'y', 'no', 'n']
     while True:
         try:
@@ -103,6 +150,7 @@ class ProcessHelper(object):
             out_file.close()
         sp.wait()
         return sp.returncode
+
 
 class PathHelper(object):
 
