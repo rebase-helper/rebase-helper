@@ -212,6 +212,7 @@ class SpecFile(object):
             if self.check_empty_patches(patch_name):
                 comment = '#'
                 removed_patches.append(patch_num)
+                del patches[int(patch_num)]
             lines[index] = comment + ' '.join(fields[:-1]) + ' ' + os.path.basename(patch_name) +'\n'
         self.remove_empty_patches(lines, removed_patches)
 
