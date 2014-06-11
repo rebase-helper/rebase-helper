@@ -11,6 +11,7 @@ from rebasehelper.build_helper import *
 from rebasehelper.diff_helper import diff_tools
 from rebasehelper.logger import logger
 from rebasehelper import settings
+from rebasehelper.utils import get_value_from_kwargs
 
 
 def extract_sources(source_name, source_dir):
@@ -68,6 +69,7 @@ class Application(object):
         new_values = {}
         new_values['spec'] = os.path.join(os.getcwd(), self.spec.get_rebased_spec())
         new_values['sources'] = self.spec.get_all_sources()
+        new_values['patches'] = self.spec.get_patches()
         self.kwargs['new'] = new_values
 
     def _build_command(self, binary):
@@ -118,9 +120,9 @@ class Application(object):
         """
         self.check_build_argument()
         builder = Builder(self.conf.build)
-        old_patches = self.kwargs['old'].get('patches')
+        old_patches = get_value_from_kwargs(self.kwargs, 'patches')
         self.kwargs['old']['patches'] = [p[0] for p in old_patches.itervalues()]
-        new_patches = self.kwargs['new'].get('patches')
+        new_patches = get_value_from_kwargs(self.kwargs, 'patches', source='new')
         self.kwargs['new']['patches'] = [p[0] for p in new_patches.itervalues()]
         # TODO: need to create some results directory where results of tests
         # will be stored!!! The results dir should be removed on startup
@@ -128,9 +130,6 @@ class Application(object):
         result_path = os.path.join(os.getcwd(), "rebase-helper-results")
         if os.path.exists(result_path):
             shutil.rmtree(result_path)
-
-        self.kwargs['resultdir'] = result_path
-        builder.build(**self.kwargs)
 
     def run(self):
         if not os.path.exists(settings.REBASE_RESULTS_DIR):

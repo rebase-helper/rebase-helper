@@ -173,7 +173,7 @@ class FedoraPatchTool(PatchBase):
         directory against another
         """
         cls.kwargs = kwargs
-        cls.patches = kwargs['old'].get('patches', '')
+        cls.patches = kwargs['new'].get('patches', '')
         cls.old_sources = kwargs.get('old_dir', None)
         cls.new_sources = kwargs.get('new_dir', None)
         cls.output_data = []
