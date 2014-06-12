@@ -9,6 +9,8 @@ URL: http://testing.org
 # Note: non-current tarballs get moved to the history/ subdirectory,
 # so look there if you fail to retrieve the version you want
 Source0: ftp://ftp.test.org/test-%{version}.tar.gz
+Source1: source-tests.sh
+Source2: ftp://test.com/test-source.sh
 Patch1: test-testing.patch
 Patch2: test-testing2.patch
 Patch3: test-testing3.patch
