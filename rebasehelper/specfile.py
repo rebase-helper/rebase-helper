@@ -98,7 +98,6 @@ class SpecFile(object):
                         return True
                     else:
                         return False
-        logger.error("Are you sure {0} is a patch ?".format(full_patch_name))
         return False
 
     def get_patches(self):
