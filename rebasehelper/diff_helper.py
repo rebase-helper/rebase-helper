@@ -83,7 +83,7 @@ class MeldDiffTool(DiffBase):
         cmd = [cls.CMD, '--diff', old, new]
         logger.debug("MeldDiffTool:run_diff: running '" + str(cmd) + "'")
         ret_code = ProcessHelper.run_subprocess_cwd(' '.join(cmd), output=None, shell=True)
-        logger.info("ret_code:", ret_code)
+        logger.debug("ret_code:{0}".format(ret_code))
 
     @classmethod
     def run_mergetool(cls, **kwargs):

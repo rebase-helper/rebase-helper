@@ -201,7 +201,7 @@ class SpecFile(object):
             return None
         patches = new_files.get('patches', None)
 
-        logger.info('Patches:{0}'.format(patches))
+        logger.debug('Patches:{0}'.format(patches))
         lines = self.get_content_rebase()
         removed_patches = []
         for index, line in enumerate(lines):

@@ -32,12 +32,9 @@ def get_content_file(path, perms, method=False):
     if method is True then file is read by function readlines
     """
     try:
-        f = open(path, perms)
-        try:
+        with open(path, perms) as f:
             data = f.read() if not method else f.readlines()
-        finally:
-            f.close()
-            return data
+        return data
     except IOError:
         logger.error('Unable to open file %s' % path)
         raise
@@ -69,11 +66,8 @@ def write_to_file(path, perms, data):
     :return:
     """
     try:
-        f = open(path, perms)
-        try:
+        with open(path, perms) as f:
             f.write(data) if isinstance(data, str) else f.writelines(data)
-        finally:
-            f.close()
     except IOError:
         logger.error('Unable to access file %s' % path)
         raise
@@ -146,7 +140,7 @@ class ProcessHelper(object):
             if out_file is not None:
                 out_file.write(line)
             else:
-                logger.info(line.rstrip("\n"))
+                logger.debug(line.rstrip("\n"))
         if out_file is not None:
             out_file.close()
         sp.wait()

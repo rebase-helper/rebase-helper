@@ -9,6 +9,7 @@ import os
 
 build_tools = {}
 
+
 def register_build_tool(build_tool):
     build_tools[build_tool.CMD] = build_tool
     return build_tool    
@@ -207,8 +208,8 @@ class MockBuildTool(BuildToolBase):
         if len(rpms) == 0:
             logger.error("MockBuildTool: Building RPMs failed!")
             raise RuntimeError()
-        logger.info(str(rpms))
-        rpms = [ os.path.join(rpm_resultdir, os.path.basename(f)) for f in rpms ]
+        logger.debug(str(rpms))
+        rpms = [os.path.join(rpm_resultdir, os.path.basename(f)) for f in rpms]
 
         # destroy the temporary environment
         cls._environment_destroy(**env)
@@ -409,12 +410,38 @@ class Builder(object):
         if self._tool is None:
             raise NotImplementedError("Unsupported build tool")
 
-
     def __str__(self):
         return "<Builder tool_name='{_tool_name}' tool={_tool}>".format(**vars(self))
-
 
     def build(self, **kwargs):
         """ Build sources. """
         logger.debug("Builder: Building sources using '%s'" % self._tool_name)
         return self._tool.build(**kwargs)
+
+    def build_packages(self, **kwargs):
+        """
+        Build old and new packages
+        Returns structure like
+        {new: {'srpm': <path_to_srpm>,
+                'rpm': <path_to_rpm>, <path_to_rpm>},
+        {old: {'srpm': <path_to_srpm>,
+                'rpm' : <path_to_rpm>, <path_to_rpm>},
+        }
+        :param kwargs:
+        :return: new and old packages
+        """
+        if 'old' not in kwargs:
+            logger.error('Builder class expects old specfile, sources and patches.')
+            raise RuntimeError
+        if 'new' not in kwargs:
+            logger.error('Builder class expects new specfile, sources and patches.')
+            raise RuntimeError
+        if 'resultdir' not in kwargs:
+            logger.error('Builder class expects resultdir.')
+            raise RuntimeError
+
+        for path in ['old', 'new']:
+            input_structure = kwargs.get(path)
+            input_structure['resultdir'] = os.path.join(kwargs.get('resultdir'), path)
+            results = self.build(**input_structure)
+            kwargs[path].update(results)

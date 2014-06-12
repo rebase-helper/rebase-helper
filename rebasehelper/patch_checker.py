@@ -154,7 +154,7 @@ class FedoraPatchTool(PatchBase):
                 os.unlink(patch[0])
             cls.kwargs['suffix'] = cls.suffix
             cls.kwargs['failed_files'] = patched_files
-            logger.info('Input to MergeTool:', cls.kwargs)
+            logger.debug('Input to MergeTool:', cls.kwargs)
             diff = Diff(cls.kwargs.get('diff_tool', None))
             ret_code = diff.mergetool(**cls.kwargs)
             cls.generate_diff(patch[0], cls.source_dir)
