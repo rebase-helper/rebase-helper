@@ -43,7 +43,7 @@ class TestArchive(object):
         return lines
 
     def setup(self):
-        for key, value in self.list_archives.iteritems():
+        for key, value in self.list_archives.items():
             arch_name = os.path.join(self.dir_name, self.list_names[key])
             if key == self.TAR_XZ:
                 xz_file = value(arch_name, 'w')
@@ -72,10 +72,10 @@ class TestArchive(object):
         assert True
 
     def teardown(self):
-        for key, value in self.list_archives.iteritems():
+        for key, value in self.list_archives.items():
             arch_name = os.path.join(self.dir_name, self.list_names[key])
-            #if os.path.exists(arch_name):
-            #    os.unlink(arch_name)
+            if os.path.exists(arch_name):
+                os.unlink(arch_name)
             dir_name = os.path.join(self.dir_name, self.extr + "-" + key)
             #if os.path.isdir(dir_name):
             #    shutil.rmtree(dir_name)
@@ -97,7 +97,7 @@ class TestArchive(object):
     def test_zip_archive(self):
         archive_dir = self.extract_sources(self.ZIP)
         assert os.path.isdir(archive_dir)
-        lines = self.get_extract_file(archive_dir)
+        lines = self.get_extract_file(os.path.join(archive_dir, "zip"))
         expected_contain = "{0} archive".format(self.ZIP.replace('_', '.'))
         assert lines[0].strip() == expected_contain
 

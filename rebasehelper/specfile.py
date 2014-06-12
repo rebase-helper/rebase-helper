@@ -3,7 +3,10 @@ try:
 except ImportError:
     pass # we're on Python 2 => ok
 import os
-import rpm
+try:
+    import rpm
+except ImportError:
+    pass
 import shutil
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.logger import logger
