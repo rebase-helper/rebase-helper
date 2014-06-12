@@ -39,6 +39,15 @@ class TestSpecHelper(object):
         test_tarball = self.spec_file.get_old_tarball()
         assert test_tarball == expected_tarball
 
+    def test_all_sources(self):
+        sources = ['test-source.sh', 'source-tests.sh', 'test-1.0.2.tar.gz']
+        expected_sources = [os.path.join(os.getcwd(), x) for x in sources]
+        test_sources = self.spec_file.get_all_sources()
+        logger.info(test_sources)
+        assert expected_sources == test_sources
+
     def test_list_patches(self):
-        expected_sources = []
+        expected_patches = {}
+        test_patches = self.spec_file.get_patches()
+        assert expected_patches == test_patches
         
