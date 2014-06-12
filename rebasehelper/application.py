@@ -130,6 +130,8 @@ class Application(object):
         result_path = os.path.join(os.getcwd(), "rebase-helper-results")
         if os.path.exists(result_path):
             shutil.rmtree(result_path)
+        self.kwargs['resultdir'] = result_path
+        builder.build_packages(**self.kwargs)
 
     def run(self):
         if not os.path.exists(settings.REBASE_RESULTS_DIR):
