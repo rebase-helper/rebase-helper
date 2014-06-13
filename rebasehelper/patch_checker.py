@@ -8,17 +8,30 @@ from rebasehelper.utils import ProcessHelper
 from rebasehelper.logger import logger
 from rebasehelper.diff_helper import *
 from rebasehelper import settings
-from rebasehelper.utils import get_rebase_name, get_temporary_name, get_content_temp
-from rebasehelper.utils import get_patch_name
+from rebasehelper.utils import get_temporary_name, get_content_temp
+from rebasehelper.specfile import get_rebase_name
 
 patch_tools = {}
+
+
+def get_patch_name(name):
+    """
+    Function returns a patch name with suffix
+    :param name:
+    :return: patch name with suffix
+    """
+    name, extension = os.path.splitext(name)
+    return name + settings.REBASE_HELPER_SUFFIX + extension
+
 
 def get_path_to_patch(patch):
     return os.path.join('..', '..', patch)
 
+
 def register_patch_tool(patch_tool):
     patch_tools[patch_tool.c_patch] = patch_tool
     return patch_tool
+
 
 class PatchBase(object):
     """ Class used for using several patching command tools, ...
@@ -42,7 +55,7 @@ class PatchBase(object):
         return NotImplementedError()
 
 @register_patch_tool
-class FedoraPatchTool(PatchBase):
+class PatchTool(PatchBase):
     shortcut = 'patch'
     c_patch = 'patch'
     suffix = None

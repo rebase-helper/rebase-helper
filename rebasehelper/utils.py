@@ -73,27 +73,6 @@ def write_to_file(path, perms, data):
         raise
 
 
-def get_patch_name(name):
-    """
-    Function returns a patch name with suffix
-    :param name:
-    :return: patch name with suffix
-    """
-    name, extension = os.path.splitext(name)
-    return name + settings.REBASE_HELPER_SUFFIX + extension
-
-
-def get_rebase_name(name):
-    """
-    Function returns a name in results directory
-    :param name:
-    :return: full path to results dir with name
-    """
-    dir_name = os.path.dirname(name)
-    file_name = os.path.basename(name)
-    return os.path.join(dir_name, settings.REBASE_RESULTS_DIR, file_name)
-
-
 def get_message(message=""):
     """
     Function for command line messages

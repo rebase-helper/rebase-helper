@@ -11,13 +11,24 @@ import shutil
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.logger import logger
 from rebasehelper import settings
-from rebasehelper.utils import get_content_file,  get_rebase_name, write_to_file
+from rebasehelper.utils import get_content_file,  write_to_file
 from rebasehelper.utils import get_temporary_name, get_content_temp
 
 
 def get_source_name(name):
     new_name = name.split('/')[-1]
     return new_name
+
+
+def get_rebase_name(name):
+    """
+    Function returns a name in results directory
+    :param name:
+    :return: full path to results dir with name
+    """
+    dir_name = os.path.dirname(name)
+    file_name = os.path.basename(name)
+    return os.path.join(dir_name, settings.REBASE_RESULTS_DIR, file_name)
 
 
 class SpecFile(object):
