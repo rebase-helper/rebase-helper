@@ -7,7 +7,7 @@ import shutil
 from rebasehelper.archive import Archive
 from rebasehelper.specfile import SpecFile
 from rebasehelper.patch_checker import PatchTool
-from rebasehelper.build_helper import *
+from rebasehelper.build_helper import Builder, build_tools
 from rebasehelper.diff_helper import diff_tools
 from rebasehelper.logger import logger
 from rebasehelper import settings
@@ -102,7 +102,7 @@ class Application(object):
         """
         Function checks whether build argument is allowed
         """
-        if self.conf.build not in build_tools.keys():
+        if self.conf.buildtool not in build_tools.keys():
             logger.error('You have to specify one of these builders {0}'.format(build_tools.keys()))
             sys.exit(0)
 
@@ -119,7 +119,7 @@ class Application(object):
         Function calls build calss for building packages
         """
         self.check_build_argument()
-        builder = Builder(self.conf.build)
+        builder = Builder(self.conf.buildtool)
         old_patches = get_value_from_kwargs(self.kwargs, 'patches')
         self.kwargs['old']['patches'] = [p[0] for p in old_patches.itervalues()]
         new_patches = get_value_from_kwargs(self.kwargs, 'patches', source='new')
@@ -152,7 +152,7 @@ class Application(object):
             self.kwargs['old_dir'] = old_dir
             self.kwargs['new_dir'] = new_dir
             self.kwargs['diff_tool'] = self.conf.difftool
-            patch = PatchTool(self.conf.patch_tool)
+            patch = PatchTool(self.conf.patchtool)
             try:
                 self.kwargs['new']['patches'] = patch.patch(**self.kwargs)
             except Exception as e:
