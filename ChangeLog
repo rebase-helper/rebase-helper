@@ -1,0 +1,13 @@
+News in version 0.3.0:
+- pkgdiff class for comparing RPM files
+- test suite for archive class and spec file
+
+News in version 0.2.0:
+- diff_helper for comparing two tarballs
+- applying patches to tarballs
+- patch_helper
+
+News in version 0.1.0:
+- first draft of the project
+- Initial classes
+- CLI interface
