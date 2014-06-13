@@ -136,7 +136,6 @@ class ProcessHelper(object):
                               env=env,
                               shell=shell)
         for line in sp.stdout:
-            logger.info(line)
             if out_file is not None:
                 out_file.write(line)
             else:
