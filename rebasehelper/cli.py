@@ -31,37 +31,37 @@ class CLI(object):
         )
         self.parser.add_argument(
             "-p",
-            "--patch_tool",
-            default='patch',
-            help="Select a patch tool [patch|git]"
+            "--patch-only",
+            default=False,
+            action="store_true",
+            help="Only apply patches"
         )
         self.parser.add_argument(
             "-b",
-            "--build",
+            "--build-only",
+            default=False,
+            action="store_true",
+            help="Only build SRPM and RPMs"
+        )
+        self.parser.add_argument(
+            "--patchtool",
+            default='patch',
+            help="Select the patch tool [patch|git]"
+        )
+        self.parser.add_argument(
+            "--buildtool",
             default="mock",
-            help="Only build package. It can be done by mock or rpmbuild."
+            help="Select the build tool [mock|rpmbuild]"
         )
         self.parser.add_argument(
             "--difftool",
             default="meld",
-            help="Tool for comparing two sources."
+            help="Select the tool for comparing two sources [meld]"
         )
         self.parser.add_argument(
             "sources",
             metavar='SOURCES',
             help="Specify new upstream sources"
-        )
-        self.parser.add_argument(
-            "--patches-only",
-            default=False,
-            action="store_true",
-            help="Apply only patches"
-        )
-        self.parser.add_argument(
-            "--build-only",
-            default=False,
-            action="store_true",
-            help="Apply only patches"
         )
 
     def __getattr__(self, name):

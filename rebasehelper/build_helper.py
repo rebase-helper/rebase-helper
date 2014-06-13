@@ -184,8 +184,6 @@ class MockBuildTool(BuildToolBase):
         # build SRPM
         srpm = cls._build_srpm(**env)
         srpm_resultdir = os.path.join(kwargs['resultdir'], "SRPM")
-        if os.path.exists(srpm_resultdir):
-            shutil.rmtree(srpm_resultdir)
         shutil.copytree(env[cls.TEMPDIR_RESULTDIR], srpm_resultdir)
         if srpm is None:
             logger.error("MockBuildTool: Building SRPM failed!")
@@ -201,8 +199,6 @@ class MockBuildTool(BuildToolBase):
         # build RPM
         rpms = cls._build_rpm(srpm=srpm, **env)
         rpm_resultdir = os.path.join(kwargs['resultdir'], "RPM")
-        if os.path.exists(rpm_resultdir):
-            shutil.rmtree(rpm_resultdir)
         # remove SRPM - side product of building RPM
         tmp_srpm = PathHelper.find_first_file(env[cls.TEMPDIR_RESULTDIR], "*.src.rpm")
         if tmp_srpm is not None:
