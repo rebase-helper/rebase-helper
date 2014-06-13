@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from fedmsg.commands import logger
 
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.utils import PathHelper
@@ -110,7 +111,7 @@ class MockBuildTool(BuildToolBase):
     @classmethod
     def _build_srpm(cls, **kwargs):
         """ Build SRPM using mock. """
-        logger.debug("MockBuildTool: Building SRPM...")
+        logger.debug("MockBuildTool: Building SRPM")
         spec = kwargs.get(cls.TEMPDIR_SPEC)
         sources = kwargs.get(cls.TEMPDIR_SOURCES)
         root = kwargs.get('root')
@@ -128,7 +129,7 @@ class MockBuildTool(BuildToolBase):
         logger.debug("MockBuildTool: running '" + str(cmd) + "'")
         ret = ProcessHelper.run_subprocess(cmd, output)
         if ret != 0:
-            logger.debug("MockBuildTool: running '" + str(cmd) + "' failed")
+            logger.error("MockBuildTool: running '" + str(cmd) + "' failed")
             return None
         else:
             return PathHelper.find_first_file(resultdir, '*.src.rpm')
@@ -137,7 +138,7 @@ class MockBuildTool(BuildToolBase):
     @classmethod
     def _build_rpm(cls, **kwargs):
         """ Build RPM using mock. """
-        logger.debug("MockBuildTool: Building RPMs...")
+        logger.debug("MockBuildTool: Building RPMs")
         srpm = kwargs.get('srpm')
         root = kwargs.get('root')
         arch = kwargs.get('arch')
@@ -157,7 +158,7 @@ class MockBuildTool(BuildToolBase):
             logger.error("MockBuildTool: running: " + str(cmd) + " failed!")
             return None
         else:
-            return [ f for f in PathHelper.find_all_files(resultdir, '*.rpm') if not f.endswith('.src.rpm') ]
+            return [f for f in PathHelper.find_all_files(resultdir, '*.rpm') if not f.endswith('.src.rpm')]
 
 
     @classmethod
@@ -189,8 +190,10 @@ class MockBuildTool(BuildToolBase):
         if srpm is None:
             logger.error("MockBuildTool: Building SRPM failed!")
             raise RuntimeError()
+
         # use the SRPM frpm resultdir
         srpm = os.path.join(srpm_resultdir, os.path.basename(srpm))
+        logger.debug("MockBuildTool: Successfully built SRPM: '%s'" % str(srpm))
 
         # reset the environment
         cls._envoronment_clear_resultdir(**env)
@@ -208,8 +211,9 @@ class MockBuildTool(BuildToolBase):
         if len(rpms) == 0:
             logger.error("MockBuildTool: Building RPMs failed!")
             raise RuntimeError()
-        logger.debug(str(rpms))
+
         rpms = [os.path.join(rpm_resultdir, os.path.basename(f)) for f in rpms]
+        logger.debug("MockBuildTool: Successfully built RPMs: '%s'" % str(rpms))
 
         # destroy the temporary environment
         cls._environment_destroy(**env)
@@ -303,7 +307,7 @@ class RpmbuildBuildTool(BuildToolBase):
     @classmethod
     def _build_srpm(cls, **kwargs):
         """ Build SRPM using rpmbuild. """
-        logger.debug("RpmbuildBuildTool: Building SRPM...")
+        logger.debug("RpmbuildBuildTool: Building SRPM")
 
         spec_name = os.path.basename(kwargs.get(cls.TEMPDIR_SPEC))
         home = kwargs.get(cls.TEMPDIR)
@@ -324,7 +328,7 @@ class RpmbuildBuildTool(BuildToolBase):
     @classmethod
     def _build_rpm(cls, **kwargs):
         """ Build RPM using rpmbuild. """
-        logger.debug("RpmbuildBuildTool: Building RPM...")
+        logger.debug("RpmbuildBuildTool: Building RPM")
         home = kwargs.get(cls.TEMPDIR)
         srpm = kwargs.get('srpm')
         resultdir = kwargs.get(cls.TEMPDIR_RESULTDIR)
@@ -338,7 +342,7 @@ class RpmbuildBuildTool(BuildToolBase):
             logger.error("RpmbuildBuildTool: running: " + str(cmd) + " failed!")
             return None
         else:
-            return [ f for f in PathHelper.find_all_files(kwargs[cls.TEMPDIR_RPMBUILD_RPMS], '*.rpm') ]
+            return [f for f in PathHelper.find_all_files(kwargs[cls.TEMPDIR_RPMBUILD_RPMS], '*.rpm')]
 
 
     @classmethod
@@ -366,9 +370,11 @@ class RpmbuildBuildTool(BuildToolBase):
         if srpm is None:
             logger.error("RpmbuildBuildTool: Building SRPM failed!")
             raise RuntimeError()
+
         # copy the SRPM
         shutil.copy(srpm, srpm_resultdir)
         srpm = os.path.join(srpm_resultdir, os.path.basename(srpm))
+        logger.debug("RpmbuildBuildTool: Successfully built SRPM: '%s'" % str(srpm))
 
         # reset the environment
         cls._envoronment_clear_resultdir(**env)
@@ -380,10 +386,13 @@ class RpmbuildBuildTool(BuildToolBase):
         if len(rpms) == 0:
             logger.error("RpmbuildBuildTool: Building RPMs failed!")
             raise RuntimeError()
+
         # copy RPMs
         for rpm in rpms:
             shutil.copy(rpm, rpm_resultdir)
-        rpms = [ os.path.join(rpm_resultdir, os.path.basename(f)) for f in rpms ]
+
+        rpms = [os.path.join(rpm_resultdir, os.path.basename(f)) for f in rpms]
+        logger.debug("RpmbuildBuildTool: Successfully built RPMs: '%s'" % str(rpms))
 
         # destroy the temporary environment
         cls._environment_destroy(**env)
