@@ -103,6 +103,10 @@ class ProcessHelper(object):
         return ProcessHelper.run_subprocess_cwd_env(cmd, cwd=cwd, output=output, shell=shell)
 
     @staticmethod
+    def run_subprocess_env(cmd, env=None, output=None, shell=False):
+        return ProcessHelper.run_subprocess_cwd_env(cmd, env=env, output=output, shell=shell)
+
+    @staticmethod
     def run_subprocess_cwd_env(cmd, cwd=None, env=None, output=None, shell=False):
         # write the output to a file?
         if output is not None:
