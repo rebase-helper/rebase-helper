@@ -96,18 +96,53 @@ class ProcessHelper(object):
 
     @staticmethod
     def run_subprocess(cmd, output=None):
+        """
+        Runs the passed command as a subprocess.
+
+        :param cmd: command with arguments to be run
+        :param output: file to write the output of the command. If None, write to STDOUT
+        :return: exit code of the process
+        """
         return ProcessHelper.run_subprocess_cwd(cmd, output=output)
 
     @staticmethod
     def run_subprocess_cwd(cmd, cwd=None, output=None, shell=False):
+        """
+        Runs the passed command as a subprocess in different working directory.
+
+        :param cmd: command with arguments to be run
+        :param cwd: the directory to change the working dir to
+        :param output: file to write the output of the command. If None, write to STDOUT
+        :param shell: if to run the command as shell command (default: False)
+        :return: exit code of the process
+        """
         return ProcessHelper.run_subprocess_cwd_env(cmd, cwd=cwd, output=output, shell=shell)
 
     @staticmethod
     def run_subprocess_env(cmd, env=None, output=None, shell=False):
+        """
+        Runs the passed command as a subprocess with possibly changed ENVIRONMENT VARIABLES.
+
+        :param cmd: command with arguments to be run
+        :param env: dictionary with ENVIRONMENT VARIABLES to define
+        :param output: file to write the output of the command. If None, write to STDOUT
+        :param shell: if to run the command as shell command (default: False)
+        :return: exit code of the process
+        """
         return ProcessHelper.run_subprocess_cwd_env(cmd, env=env, output=output, shell=shell)
 
     @staticmethod
     def run_subprocess_cwd_env(cmd, cwd=None, env=None, output=None, shell=False):
+        """
+        Runs the passed command as a subprocess in different working directory with possibly changed ENVIRONMENT VARIABLES.
+
+        :param cmd: command with arguments to be run
+        :param cwd: the directory to change the working dir to
+        :param env: dictionary with ENVIRONMENT VARIABLES to define
+        :param output: file to write the output of the command. If None, write to STDOUT
+        :param shell: if to run the command as shell command (default: False)
+        :return: exit code of the process
+        """
         # write the output to a file?
         if output is not None:
             out_file = open(output, "w")
