@@ -6,9 +6,10 @@ import shutil
 
 from rebasehelper.archive import Archive
 from rebasehelper.specfile import SpecFile
-from rebasehelper.patch_checker import PatchTool
+from rebasehelper.patch_helper import PatchTool
 from rebasehelper.build_helper import Builder, build_tools
 from rebasehelper.diff_helper import diff_tools
+from rebasehelper.pkgdiff_checker import PkgCompare, pkgdiff_tools
 from rebasehelper.logger import logger
 from rebasehelper import settings
 from rebasehelper.utils import get_value_from_kwargs
@@ -65,11 +66,15 @@ class Application(object):
         old_values['spec'] = os.path.join(os.getcwd(), spec_file)
         old_values['sources'] = self.spec.get_all_sources()
         old_values['patches'] = self.spec.get_patches()
+        old_values['version'] = self.spec.get_spec_versions()[0]
+        old_values['name'] = self.spec.get_package_name()
         self.kwargs['old'] = old_values
         new_values = {}
         new_values['spec'] = os.path.join(os.getcwd(), self.spec.get_rebased_spec())
         new_values['sources'] = self.spec.get_all_sources()
         new_values['patches'] = self.spec.get_patches()
+        new_values['version'] = self.spec.get_spec_versions()[1]
+        new_values['name'] = self.spec.get_package_name()
         self.kwargs['new'] = new_values
 
     def _build_command(self, binary):
@@ -114,9 +119,17 @@ class Application(object):
             logger.error('You have to specify one of these builders {0}'.format(diff_tools.keys()))
             sys.exit(0)
 
+    def check_pkgdiff_argument(self):
+        """
+        Function checks whether pkgdifftool argument is allowed
+        """
+        if self.conf.pkgcomparetool not in pkgdiff_tools.keys():
+            logger.error('You have to specify one of these package diff tool {0}'.format(pkgdiff_tools.keys()))
+            sys.exit(0)
+
     def build_packages(self):
         """
-        Function calls build calss for building packages
+        Function calls build class for building packages
         """
         self.check_build_argument()
         builder = Builder(self.conf.buildtool)
@@ -132,6 +145,15 @@ class Application(object):
             shutil.rmtree(result_path)
         self.kwargs['resultdir'] = result_path
         builder.build_packages(**self.kwargs)
+
+    def pkgdiff_packages(self):
+        """
+        Function calls pkgdiff class for comparing packages
+        :return:
+        """
+        self.check_pkgdiff_argument()
+        pkgchecker = PkgCompare(self.conf.pkgcomparetool)
+        pkgchecker.compare_pkgs(**self.kwargs)
 
     def run(self):
         if not os.path.exists(settings.REBASE_RESULTS_DIR):
@@ -162,6 +184,7 @@ class Application(object):
                 sys.exit(0)
             self.spec.write_updated_patches(**self.kwargs)
         self.build_packages()
+        self.pkgdiff_packages()
 
 
 if __name__ == '__main__':

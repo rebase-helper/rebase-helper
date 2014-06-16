@@ -44,7 +44,8 @@ class SpecFile(object):
         if os.path.exists(self.rebased_spec):
             os.unlink(self.rebased_spec)
         shutil.copy(self.spec_file, self.rebased_spec)
-        self.spc = rpm.spec(self.rebased_spec)
+        self.old_spc = rpm.spec(self.spec_file)
+        self.new_spc = rpm.spec(self.rebased_spec)
 
     def get_patch_option(self, line):
         """
@@ -92,9 +93,29 @@ class SpecFile(object):
         lines = [x for x in lines if x.startswith(settings.PATCH_PREFIX)]
         for index, line in enumerate(lines):
             num, option = self.get_patch_option(line)
-            num = num.replace(settings.PATCH_PREFIX,'')
+            num = num.replace(settings.PATCH_PREFIX, '')
             patch_flags[int(num)] = (option, index)
         return patch_flags # {num: (flags, index of application)}
+
+    def _get_version_from_spec(self, spec_file):
+        hdr = spec_file.sourceHeader
+        version = hdr[rpm.RPMTAG_VERSION]
+        if not version:
+            return None
+        return version
+
+    def get_spec_versions(self):
+        """
+        Function return an old and a new versions
+        :return:
+        """
+        old_version = self._get_version_from_spec(self.old_spc)
+        new_version = self._get_version_from_spec(self.new_spc)
+        return [old_version, new_version]
+
+    def get_package_name(self):
+        hdr = self.new_spc.sourceHeader
+        return hdr[rpm.RPMTAG_NAME]
 
     def is_patch_git_generated(self, full_patch_name):
         """
@@ -118,7 +139,7 @@ class SpecFile(object):
         patches = {}
         patch_flags = self.get_patches_flags()
         cwd = os.getcwd()
-        sources = [x for x in self.spc.sources if x[2] == 2]
+        sources = [x for x in self.new_spc.sources if x[2] == 2]
         for source in sources:
             filename, num, patch_type = source
             full_patch_name = os.path.join(cwd, filename)
@@ -134,7 +155,7 @@ class SpecFile(object):
         """
         Function returns a all sources
         """
-        sources = [x for x in self.spc.sources if x[2] == 0 or x[2] == 1]
+        sources = [x for x in self.new_spc.sources if x[2] == 0 or x[2] == 1]
         return sources
 
     def _download_source(self, source_name, download_name):
