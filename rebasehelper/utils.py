@@ -104,15 +104,24 @@ class ProcessHelper(object):
 
     @staticmethod
     def run_subprocess_cwd_env(cmd, cwd=None, env=None, output=None, shell=False):
+        # write the output to a file?
         if output is not None:
             out_file = open(output, "w")
         else:
             out_file = None
+
+        # need to change enviroment variables?
+        if env is not None:
+            local_env = os.environ.copy()
+            local_env.update(env)
+        else:
+            local_env = None
+
         sp = subprocess.Popen(cmd,
                               stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT,
                               cwd=cwd,
-                              env=env,
+                              env=local_env,
                               shell=shell)
         for line in sp.stdout:
             if out_file is not None:
