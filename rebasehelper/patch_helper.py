@@ -134,7 +134,8 @@ class PatchTool(PatchBase):
         ret_code = ProcessHelper.run_subprocess_cwd(' '.join(cmd),
                                                     output=temp_name,
                                                     shell=True)
-        logger.debug("ret_code: {0}".format(ret_code)) # sometimes returns 1 even the patch was generated. why ???
+        # sometimes returns 1 even the patch was generated. why ???
+        logger.debug("ret_code: {0}".format(ret_code))
         os.chdir(source_dir)
         gendiff_output = get_content_temp(temp_name)
         if gendiff_output:
@@ -156,7 +157,11 @@ class PatchTool(PatchBase):
             if cls.source_dir == cls.old_sources: # unexpected
                 logger.critical('Failed to patch old sources.{0}'.format(ret_code))
                 raise RuntimeError
-            logger.warning('Patch failed with return code {0}. Will start merge-tool to fix conflicts manually.'.format(ret_code))
+            get_message("Patch {0} failed on new source. merge-tool will start.".
+                        format(os.path.basename(patch[0])),
+                        keyboard=True)
+            logger.warning('Patch failed with return code {0}. '
+                           'Will start merge-tool to fix conflicts manually.'.format(ret_code))
             patched_files = cls.get_failed_patched_files(patch[0])
             if not patched_files:
                 logger.error('We are not able to get a list of failed files.')
