@@ -92,7 +92,7 @@ def get_message(message=""):
 
 class ProcessHelper(object):
 
-    DEV_NULL = "/dev/null"
+    DEV_NULL = os.devnull
 
     @staticmethod
     def run_subprocess(cmd, output=None):
