@@ -59,6 +59,11 @@ class CLI(object):
             help="Select the tool for comparing two sources [meld]"
         )
         self.parser.add_argument(
+            "--pkgcomparetool",
+            default="pkgdiff",
+            help="Select the tool for comparing two packages [pkgdiff]"
+        )
+        self.parser.add_argument(
             "sources",
             metavar='SOURCES',
             help="Specify new upstream sources"
