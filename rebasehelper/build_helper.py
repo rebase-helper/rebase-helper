@@ -356,6 +356,9 @@ class RpmbuildBuildTool(BuildToolBase):
         'srpm' -> path to SRPM
         'rpm' -> list with paths to RPMs
         """
+
+        # TODO: check for dependencies from SRPM! If they are missing, the build will fail
+
         # prepare environment for building
         env = cls._environment_prepare(**kwargs)
 
