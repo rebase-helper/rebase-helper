@@ -73,7 +73,7 @@ def write_to_file(path, perms, data):
         raise
 
 
-def get_message(message=""):
+def get_message(message="", keyboard=False):
     """
     Function for command line messages
     :param message:
@@ -85,6 +85,8 @@ def get_message(message=""):
             var = raw_input(message).lower()
         except KeyboardInterrupt:
             return None
+        if keyboard:
+            return var
         if var not in output:
             logger.info('You have to choose one of y/n.')
         else:
