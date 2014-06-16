@@ -312,7 +312,7 @@ class RpmbuildBuildTool(BuildToolBase):
 
         cmd = [cls.CMD, '-bs', spec_name]
         logger.debug("RpmbuildBuildTool: running: " + str(cmd))
-        ret = ProcessHelper.run_subprocess_cwd_env(cmd, kwargs[cls.TEMPDIR_RPMBUILD_SPECS], {'HOME='+ home}, output)
+        ret = ProcessHelper.run_subprocess_cwd_env(cmd, kwargs[cls.TEMPDIR_RPMBUILD_SPECS], {'HOME': home}, None)
 
         if ret != 0:
             logger.error("RpmbuildBuildTool: running: " + str(cmd) + " failed!")
@@ -330,9 +330,9 @@ class RpmbuildBuildTool(BuildToolBase):
         resultdir = kwargs.get(cls.TEMPDIR_RESULTDIR)
         output = os.path.join(resultdir, "mock_output.log")
 
-        cmd = ['HOME=' + home, cls.CMD, '--rebuild', srpm]
+        cmd = [cls.CMD, '--rebuild', srpm]
         logger.debug("RpmbuildBuildTool: running: " + str(cmd))
-        ret = ProcessHelper.run_subprocess(cmd, kwargs[cls.TEMPDIR_RPMBUILD_SPECS], output, True)
+        ret = ProcessHelper.run_subprocess_cwd_env(cmd, kwargs[cls.TEMPDIR_RPMBUILD_SPECS], {'HOME': home}, None)
 
         if ret != 0:
             logger.error("RpmbuildBuildTool: running: " + str(cmd) + " failed!")
