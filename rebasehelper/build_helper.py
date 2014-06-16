@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from fedmsg.commands import logger
 
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.utils import PathHelper
