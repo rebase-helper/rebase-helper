@@ -203,7 +203,7 @@ class MockBuildTool(BuildToolBase):
         if tmp_srpm is not None:
             os.unlink(tmp_srpm)
         shutil.copytree(env[cls.TEMPDIR_RESULTDIR], rpm_resultdir)
-        if len(rpms) == 0:
+        if rpms is None:
             logger.error("MockBuildTool: Building RPMs failed!")
             raise RuntimeError()
 
@@ -381,7 +381,7 @@ class RpmbuildBuildTool(BuildToolBase):
         rpms = cls._build_rpm(srpm=srpm, **env)
         rpm_resultdir = os.path.join(kwargs['resultdir'], "RPM")
         shutil.copytree(env[cls.TEMPDIR_RESULTDIR], rpm_resultdir)
-        if len(rpms) == 0:
+        if rpms is None:
             logger.error("RpmbuildBuildTool: Building RPMs failed!")
             raise RuntimeError()
 
