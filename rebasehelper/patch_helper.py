@@ -90,7 +90,7 @@ class PatchTool(PatchBase):
         ret_code = ProcessHelper.run_subprocess_cwd(' '.join(cmd),
                                                     output=temp_name,
                                                     shell=True)
-        cls.output_data = get_content_file(temp_name, method=True)
+        cls.output_data = get_content_file(temp_name, 'r', method=True)
         remove_temporary_name(temp_name)
         return ret_code
 
@@ -103,7 +103,7 @@ class PatchTool(PatchBase):
                                                     shell=True)
         if ret_code != 0:
             return None
-        cls.patched_files = get_content_file(temp_name, method=True)
+        cls.patched_files = get_content_file(temp_name, 'r', method=True)
         remove_temporary_name(temp_name)
         failed_files = []
         applied_rules = ['succeeded']
@@ -139,7 +139,7 @@ class PatchTool(PatchBase):
         # sometimes returns 1 even the patch was generated. why ???
         logger.debug("ret_code: {0}".format(ret_code))
         os.chdir(source_dir)
-        gendiff_output = get_content_file(temp_name, method=True)
+        gendiff_output = get_content_file(temp_name, 'r', method=True)
         remove_temporary_name(temp_name)
         if gendiff_output:
             logger.info("gendiff_output: {0}".format(gendiff_output))
@@ -157,7 +157,8 @@ class PatchTool(PatchBase):
         logger.debug('Applying patch {0} to {1}...'.format(patch[0], cls.source_dir))
         ret_code = cls.patch_command(get_path_to_patch(patch[0]), patch[1])
         if ret_code != 0:
-            if cls.source_dir == cls.old_sources: # unexpected
+            # unexpected
+            if cls.source_dir == cls.old_sources:
                 logger.critical('Failed to patch old sources.{0}'.format(ret_code))
                 raise RuntimeError
             get_message("Patch {0} failed on new source. merge-tool will start.".
