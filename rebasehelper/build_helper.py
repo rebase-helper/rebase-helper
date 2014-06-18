@@ -126,7 +126,7 @@ class MockBuildTool(BuildToolBase):
             cmd.extend(['--arch', arch])
 
         logger.debug("MockBuildTool: running '" + str(cmd) + "'")
-        ret = ProcessHelper.run_subprocess(cmd, output)
+        ret = ProcessHelper.run_subprocess(cmd, output=output)
         if ret != 0:
             logger.error("MockBuildTool: running '" + str(cmd) + "' failed with exit code '%s'!" % str(ret))
             return None
@@ -151,7 +151,7 @@ class MockBuildTool(BuildToolBase):
             cmd.extend(['--arch', arch])
 
         logger.debug("MockBuildTool: running: " + str(cmd))
-        ret = ProcessHelper.run_subprocess(cmd, output)
+        ret = ProcessHelper.run_subprocess(cmd, output=output)
 
         if ret != 0:
             logger.error("MockBuildTool: running: " + str(cmd) + " failed with exit code '%s'!" % str(ret))
@@ -311,7 +311,7 @@ class RpmbuildBuildTool(BuildToolBase):
 
         cmd = [cls.CMD, '-bs', spec_name]
         logger.debug("RpmbuildBuildTool: running: " + str(cmd))
-        ret = ProcessHelper.run_subprocess_cwd_env(cmd, kwargs[cls.TEMPDIR_RPMBUILD_SPECS], {'HOME': home}, output)
+        ret = ProcessHelper.run_subprocess_cwd_env(cmd, cwd=kwargs[cls.TEMPDIR_RPMBUILD_SPECS], env={'HOME': home}, output=output)
 
         if ret != 0:
             logger.error("RpmbuildBuildTool: running: " + str(cmd) + " failed with exit code '%s'!" % str(ret))
@@ -331,7 +331,7 @@ class RpmbuildBuildTool(BuildToolBase):
 
         cmd = [cls.CMD, '--rebuild', srpm]
         logger.debug("RpmbuildBuildTool: running: " + str(cmd))
-        ret = ProcessHelper.run_subprocess_cwd_env(cmd, kwargs[cls.TEMPDIR_RPMBUILD_SPECS], {'HOME': home}, output)
+        ret = ProcessHelper.run_subprocess_cwd_env(cmd, cwd=kwargs[cls.TEMPDIR_RPMBUILD_SPECS], env={'HOME': home}, output=output)
 
         if ret != 0:
             logger.error("RpmbuildBuildTool: running: " + str(cmd) + " failed with exit code '%s'!" % str(ret))

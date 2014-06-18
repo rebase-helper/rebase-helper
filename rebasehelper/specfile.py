@@ -248,7 +248,7 @@ class SpecFile(object):
         cmd.append("/usr/bin/lsdiff")
         cmd.append(patch_name)
         temp_name = get_temporary_name()
-        ret_code = ProcessHelper.run_subprocess(cmd, temp_name)
+        ret_code = ProcessHelper.run_subprocess(cmd, output=temp_name)
         if ret_code != 0:
             return False
         lines = get_content_file(temp_name, 'r', method=True)
