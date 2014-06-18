@@ -76,31 +76,26 @@ class PatchTool(PatchBase):
         """
         Patch command whom patches as the
         """
-        cmd = ['/usr/bin/patch']
+        cmd = ['patch']
         cmd.append(patch_flags)
         if cls.suffix:
-            cmd.append('-b ')
-            cmd.append('--suffix .' + cls.suffix)
-        cmd.append(' --fuzz={0}'.format(cls.fuzz))
-        cmd.append(' --force') # don't ask questions
-        cmd.append(' < ')
-        cmd.append(patch_name)
+            cmd.append('-b')
+            cmd.append('--suffix=.' + cls.suffix)
+        cmd.append('--fuzz={0}'.format(cls.fuzz))
+        cmd.append('--force')  # don't ask questions
+
         temp_name = get_temporary_name()
         logger.debug('patch_command(): ' + ' '.join(cmd))
-        ret_code = ProcessHelper.run_subprocess_cwd(' '.join(cmd),
-                                                    output=temp_name,
-                                                    shell=True)
+        ret_code = ProcessHelper.run_subprocess(cmd, input=patch_name, output=temp_name)
         cls.output_data = get_content_file(temp_name, 'r', method=True)
         remove_temporary_name(temp_name)
         return ret_code
 
     @classmethod
     def get_failed_patched_files(cls, patch_name):
-        cmd = 'lsdiff {0}'.format(patch_name)
+        cmd = ['lsdiff', patch_name]
         temp_name = get_temporary_name()
-        ret_code = ProcessHelper.run_subprocess_cwd(cmd,
-                                                    output=temp_name,
-                                                    shell=True)
+        ret_code = ProcessHelper.run_subprocess(cmd, output=temp_name)
         if ret_code != 0:
             return None
         cls.patched_files = get_content_file(temp_name, 'r', method=True)
@@ -125,22 +120,19 @@ class PatchTool(PatchBase):
     def generate_diff(cls, patch, source_dir):
         # gendiff new_source + self.suffix > patch[0]
         logger.info("Generating patch by gendiff")
-        cmd = ['/usr/bin/gendiff']
+        cmd = ['gendiff']
         cmd.append(os.path.basename(cls.new_sources))
-        cmd.append('.'+cls.suffix)
-        cmd.append('>')
-        cmd.append(patch)
+        cmd.append('.' + cls.suffix)
         temp_name = get_temporary_name()
-        os.chdir(os.pardir) # goto parent dir
+
         logger.debug('apply_patch(): ' + ' '.join(cmd))
-        ret_code = ProcessHelper.run_subprocess_cwd(' '.join(cmd),
-                                                    output=temp_name,
-                                                    shell=True)
+        ret_code = ProcessHelper.run_subprocess_cwd(cmd, cwd=os.pardir, input=patch, output=temp_name)
+
         # sometimes returns 1 even the patch was generated. why ???
         logger.debug("ret_code: {0}".format(ret_code))
-        os.chdir(source_dir)
         gendiff_output = get_content_file(temp_name, 'r', method=True)
         remove_temporary_name(temp_name)
+
         if gendiff_output:
             logger.info("gendiff_output: {0}".format(gendiff_output))
 
