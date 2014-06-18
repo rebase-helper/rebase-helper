@@ -128,7 +128,7 @@ class MockBuildTool(BuildToolBase):
         logger.debug("MockBuildTool: running '" + str(cmd) + "'")
         ret = ProcessHelper.run_subprocess(cmd, output)
         if ret != 0:
-            logger.error("MockBuildTool: running '" + str(cmd) + "' failed")
+            logger.error("MockBuildTool: running '" + str(cmd) + "' failed with exit code '%s'!" % str(ret))
             return None
         else:
             return PathHelper.find_first_file(resultdir, '*.src.rpm')
@@ -154,7 +154,7 @@ class MockBuildTool(BuildToolBase):
         ret = ProcessHelper.run_subprocess(cmd, output)
 
         if ret != 0:
-            logger.error("MockBuildTool: running: " + str(cmd) + " failed!")
+            logger.error("MockBuildTool: running: " + str(cmd) + " failed with exit code '%s'!" % str(ret))
             return None
         else:
             return [f for f in PathHelper.find_all_files(resultdir, '*.rpm') if not f.endswith('.src.rpm')]
@@ -314,7 +314,7 @@ class RpmbuildBuildTool(BuildToolBase):
         ret = ProcessHelper.run_subprocess_cwd_env(cmd, kwargs[cls.TEMPDIR_RPMBUILD_SPECS], {'HOME': home}, None)
 
         if ret != 0:
-            logger.error("RpmbuildBuildTool: running: " + str(cmd) + " failed!")
+            logger.error("RpmbuildBuildTool: running: " + str(cmd) + " failed with exit code '%s'!" % str(ret))
             return None
         else:
             return PathHelper.find_first_file(kwargs[cls.TEMPDIR_RPMBUILD_SRPMS], '*.src.rpm')
@@ -334,7 +334,7 @@ class RpmbuildBuildTool(BuildToolBase):
         ret = ProcessHelper.run_subprocess_cwd_env(cmd, kwargs[cls.TEMPDIR_RPMBUILD_SPECS], {'HOME': home}, None)
 
         if ret != 0:
-            logger.error("RpmbuildBuildTool: running: " + str(cmd) + " failed!")
+            logger.error("RpmbuildBuildTool: running: " + str(cmd) + " failed with exit code '%s'!" % str(ret))
             return None
         else:
             return [f for f in PathHelper.find_all_files(kwargs[cls.TEMPDIR_RPMBUILD_RPMS], '*.rpm')]
