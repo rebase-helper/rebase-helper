@@ -110,7 +110,7 @@ class PatchTool(PatchBase):
             result = [x for x in applied_rules if x in data ]
             if result:
                 continue
-            file_list = [x for x in cls.patched_files if source_file in x ]
+            file_list = [x for x in cls.patched_files if source_file in x]
             if source_file in failed_files:
                 continue
             failed_files.append(source_file)
@@ -146,7 +146,7 @@ class PatchTool(PatchBase):
         if cls.source_dir == cls.old_sources:
             # for new_sources we want the same suffix as for old_sources
             cls.suffix = ''.join(random.choice(string.ascii_letters) for _ in range(6))
-        logger.debug('Applying patch {0} to {1}...'.format(patch[0], cls.source_dir))
+        logger.debug('Applying patch {0} to {1}'.format(patch[0], cls.source_dir))
         ret_code = cls.patch_command(get_path_to_patch(patch[0]), patch[1])
         if ret_code != 0:
             # unexpected
@@ -223,7 +223,7 @@ class PatchTool(object):
 
 
     def patch(self, **kwargs):
-        logger.debug("Patch: Patching source by patch tool {0}...".format(self._path_tool_name))
+        logger.debug("Patch: Patching source by patch tool {0}".format(self._path_tool_name))
         return self._tool.run_patch(**kwargs)
 
 
