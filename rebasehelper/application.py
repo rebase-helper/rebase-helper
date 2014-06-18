@@ -40,6 +40,7 @@ class Application(object):
     temp_dir = ""
     kwargs = {}
     spec = None
+    old_sources = ""
 
     def __init__(self, conf):
         """ conf is CLI object """
@@ -62,6 +63,8 @@ class Application(object):
             logger.error('You have to define a SPEC file.')
             sys.exit(1)
         self.spec = SpecFile(spec_file, self.conf.sources)
+        self.old_sources = self.spec.get_old_tarball()
+        self.spec.get_new_tarball()
         old_values = {}
         old_values['spec'] = os.path.join(os.getcwd(), spec_file)
         old_values['sources'] = self.spec.get_all_sources()
@@ -153,11 +156,9 @@ class Application(object):
             logger.error('You have to define a new sources.')
             sys.exit(0)
 
-        self.spec.get_new_tarball()
-        old_sources = self.spec.get_old_tarball()
-        old_dir = extract_sources(old_sources, settings.OLD_SOURCES)
+        old_dir = extract_sources(self.old_sources, settings.OLD_SOURCES)
         new_dir = extract_sources(self.conf.sources, settings.NEW_SOURCES)
-        # Rebase Patches
+        self.spec.update_new_version()
         if not self.conf.build_only:
             self.kwargs['old_dir'] = old_dir
             self.kwargs['new_dir'] = new_dir
