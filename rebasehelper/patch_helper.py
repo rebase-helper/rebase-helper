@@ -72,7 +72,7 @@ class PatchTool(PatchBase):
             return False
 
     @classmethod
-    def patch_command(cls, patch_name, patch_flags, output=None):
+    def patch_command(cls, patch_name, patch_flags):
         """
         Patch command whom patches as the
         """
