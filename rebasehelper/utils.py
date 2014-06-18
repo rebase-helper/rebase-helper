@@ -95,59 +95,69 @@ class ProcessHelper(object):
     DEV_NULL = os.devnull
 
     @staticmethod
-    def run_subprocess(cmd, output=None):
+    def run_subprocess(cmd, input=None, output=None):
         """
         Runs the passed command as a subprocess.
 
         :param cmd: command with arguments to be run
+        :param input: file to read the input from. If None, read from STDIN
         :param output: file to write the output of the command. If None, write to STDOUT
         :return: exit code of the process
         """
-        return ProcessHelper.run_subprocess_cwd(cmd, output=output)
+        return ProcessHelper.run_subprocess_cwd(cmd, input=input, output=output)
 
     @staticmethod
-    def run_subprocess_cwd(cmd, cwd=None, output=None, shell=False):
+    def run_subprocess_cwd(cmd, cwd=None, input=None, output=None, shell=False):
         """
         Runs the passed command as a subprocess in different working directory.
 
         :param cmd: command with arguments to be run
         :param cwd: the directory to change the working dir to
+        :param input: file to read the input from. If None, read from STDIN
         :param output: file to write the output of the command. If None, write to STDOUT
         :param shell: if to run the command as shell command (default: False)
         :return: exit code of the process
         """
-        return ProcessHelper.run_subprocess_cwd_env(cmd, cwd=cwd, output=output, shell=shell)
+        return ProcessHelper.run_subprocess_cwd_env(cmd, cwd=cwd, input=input, output=output, shell=shell)
 
     @staticmethod
-    def run_subprocess_env(cmd, env=None, output=None, shell=False):
+    def run_subprocess_env(cmd, env=None, input=None, output=None, shell=False):
         """
         Runs the passed command as a subprocess with possibly changed ENVIRONMENT VARIABLES.
 
         :param cmd: command with arguments to be run
         :param env: dictionary with ENVIRONMENT VARIABLES to define
+        :param input: file to read the input from. If None, read from STDIN
         :param output: file to write the output of the command. If None, write to STDOUT
         :param shell: if to run the command as shell command (default: False)
         :return: exit code of the process
         """
-        return ProcessHelper.run_subprocess_cwd_env(cmd, env=env, output=output, shell=shell)
+        return ProcessHelper.run_subprocess_cwd_env(cmd, env=env, input=input, output=output, shell=shell)
 
     @staticmethod
-    def run_subprocess_cwd_env(cmd, cwd=None, env=None, output=None, shell=False):
+    def run_subprocess_cwd_env(cmd, cwd=None, env=None, input=None, output=None, shell=False):
         """
         Runs the passed command as a subprocess in different working directory with possibly changed ENVIRONMENT VARIABLES.
 
         :param cmd: command with arguments to be run
         :param cwd: the directory to change the working dir to
         :param env: dictionary with ENVIRONMENT VARIABLES to define
+        :param input: file to read the input from. If None, read from STDIN
         :param output: file to write the output of the command. If None, write to STDOUT
         :param shell: if to run the command as shell command (default: False)
         :return: exit code of the process
         """
         # write the output to a file?
         if output is not None:
-            out_file = open(output, "w")
+            out_file = open(output, 'w')
         else:
             out_file = None
+
+        # read the input from a file?
+        if input is not None:
+            in_file = open(input, 'r')
+        else:
+            in_file = None
 
         # need to change enviroment variables?
         if env is not None:
@@ -157,18 +167,26 @@ class ProcessHelper(object):
             local_env = None
 
         sp = subprocess.Popen(cmd,
+                              stdin=in_file,
                               stdout=subprocess.PIPE,
                               stderr=subprocess.STDOUT,
                               cwd=cwd,
                               env=local_env,
                               shell=shell)
+
+        # read the output
         for line in sp.stdout:
             if out_file is not None:
                 out_file.write(line)
             else:
                 logger.debug(line.rstrip("\n"))
+
         if out_file is not None:
             out_file.close()
+
+        if in_file is not None:
+            in_file.close()
+
         sp.wait()
         return sp.returncode
 
