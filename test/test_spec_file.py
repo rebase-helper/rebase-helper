@@ -21,7 +21,7 @@ class TestSpecHelper(object):
             shutil.rmtree(self.result_dir)
         os.makedirs(self.result_dir)
         file_name = os.path.join(self.dir_name, self.test_spec)
-        self.spec_file = specfile.SpecFile(file_name, download=False)
+        self.spec_file = specfile.SpecFile(file_name, '', download=False)
 
     def teardown(self):
         if os.path.exists(self.result_dir):

@@ -8,12 +8,13 @@ try:
 except ImportError:
     pass
 import shutil
-import mimetypes
+import re
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.logger import logger
 from rebasehelper import settings
 from rebasehelper.utils import get_content_file,  write_to_file
 from rebasehelper.utils import get_temporary_name, remove_temporary_name
+from rebasehelper.archive import archive_types
 
 
 def get_source_name(name):
@@ -223,7 +224,7 @@ class SpecFile(object):
         ret_code = ProcessHelper.run_subprocess(cmd, temp_name)
         if ret_code != 0:
             return False
-        lines = get_content_file(temp_name)
+        lines = get_content_file(temp_name, 'r', method=True)
         remove_temporary_name(temp_name)
         if not lines:
             return True
@@ -239,6 +240,24 @@ class SpecFile(object):
                 if not line.startswith('%patch{0}'.format(num)):
                     continue
                 lines[index] = '#' + line
+
+    def update_new_version(self):
+        """
+        Function updates a version in spec file based on input argument
+        """
+        tarball_ext = [(k, v) for k, v in archive_types.items() if self.new_sources.endswith(k)][0]
+        tarball_name = self.new_sources.replace(tarball_ext[0], '')
+        regex = re.compile(r'^\w+\d+-?_?(.*)')
+        match = re.search(regex, tarball_name)
+        if match:
+            lines = get_content_file(self.get_rebased_spec(), "r", method=True)
+            for index, line in enumerate(lines):
+                if not line.startswith('Version'):
+                    continue
+                lines[index] = line.replace(self.get_spec_versions()[0], match.group(1))
+            write_to_file(self.get_rebased_spec(), "w", lines)
+        else:
+            logger.error('CLI argument does not contain a version.')
 
     def write_updated_patches(self, **kwargs):
         """
