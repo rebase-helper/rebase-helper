@@ -8,7 +8,7 @@ from rebasehelper.utils import ProcessHelper
 from rebasehelper.logger import logger
 from rebasehelper.diff_helper import *
 from rebasehelper import settings
-from rebasehelper.utils import get_temporary_name, get_content_temp
+from rebasehelper.utils import get_temporary_name, remove_temporary_name, get_content_file
 from rebasehelper.specfile import get_rebase_name
 
 patch_tools = {}
@@ -90,7 +90,8 @@ class PatchTool(PatchBase):
         ret_code = ProcessHelper.run_subprocess_cwd(' '.join(cmd),
                                                     output=temp_name,
                                                     shell=True)
-        cls.output_data = get_content_temp(temp_name)
+        cls.output_data = get_content_file(temp_name, method=True)
+        remove_temporary_name(temp_name)
         return ret_code
 
     @classmethod
@@ -102,7 +103,8 @@ class PatchTool(PatchBase):
                                                     shell=True)
         if ret_code != 0:
             return None
-        cls.patched_files = get_content_temp(temp_name)
+        cls.patched_files = get_content_file(temp_name, method=True)
+        remove_temporary_name(temp_name)
         failed_files = []
         applied_rules = ['succeeded']
         source_file = ""
@@ -137,7 +139,8 @@ class PatchTool(PatchBase):
         # sometimes returns 1 even the patch was generated. why ???
         logger.debug("ret_code: {0}".format(ret_code))
         os.chdir(source_dir)
-        gendiff_output = get_content_temp(temp_name)
+        gendiff_output = get_content_file(temp_name, method=True)
+        remove_temporary_name(temp_name)
         if gendiff_output:
             logger.info("gendiff_output: {0}".format(gendiff_output))
 
@@ -168,8 +171,7 @@ class PatchTool(PatchBase):
                 raise RuntimeError
             orig_patch = patch[0]
             patch[0] = get_rebase_name(patch[0])
-            if os.path.exists(patch[0]):
-                os.unlink(patch[0])
+            remove_temporary_name(patch[0])
             cls.kwargs['suffix'] = cls.suffix
             cls.kwargs['failed_files'] = patched_files
             logger.debug('Input to MergeTool:', cls.kwargs)

@@ -13,16 +13,14 @@ def get_temporary_name():
     return tempfile.mkstemp(prefix="rebase-helper", text=True)[1]
 
 
-def get_content_temp(filename):
+def remove_temporary_name(name):
     """
-    Function return a content of temp filename
-    :param filename:
-    :return: list of lines from temporary filename
+    Function removes generated temporary name
+    :param name: temporary name
+    :return:
     """
-    lines = get_content_file(filename, "r", method=True)
-    if os.path.exists(filename):
-        os.unlink(filename)
-    return lines
+    if os.path.exists(name):
+        os.unlink(name)
 
 
 def get_content_file(path, perms, method=False):

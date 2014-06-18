@@ -149,7 +149,8 @@ class SpecFile(object):
             if num in patch_flags:
                 patches[num] = [full_patch_name, patch_flags[num][0], \
                                 patch_flags[num][1], self.is_patch_git_generated(full_patch_name)]
-        return patches # list of [name, flags, index, git_generated]
+        # list of [name, flags, index, git_generated]
+        return patches
 
     def get_sources(self):
         """
@@ -192,7 +193,6 @@ class SpecFile(object):
         sources = self.get_sources()
         old_source_name = [x for x in sources if x[1] == 0]
         old_source_name = old_source_name[0][0]
-        old_source_name
         source_name = old_source_name.split('/')[-1]
         self._download_source(old_source_name, source_name)
         return source_name
