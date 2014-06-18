@@ -12,7 +12,7 @@ from rebasehelper.utils import ProcessHelper
 from rebasehelper.logger import logger
 from rebasehelper import settings
 from rebasehelper.utils import get_content_file,  write_to_file
-from rebasehelper.utils import get_temporary_name, get_content_temp
+from rebasehelper.utils import get_temporary_name
 
 
 def get_source_name(name):
