@@ -55,7 +55,10 @@ class TarXzArchiveType(ArchiveTypeBase):
         if filename is None:
             raise TypeError("Expected argument 'filename' (pos 1) is missing")
         xz_file = lzma.LZMAFile(filename, "r")
-        return tarfile.open(mode='r', fileobj=xz_file)
+        try:
+            return tarfile.open(mode='r', fileobj=xz_file)
+        except IOError as ioe:
+            raise
 
 
 @register_archive_type
@@ -74,7 +77,10 @@ class TarBz2ArchiveType(ArchiveTypeBase):
     def open(cls, filename=None):
         if filename is None:
             raise TypeError("Expected argument 'filename' (pos 1) is missing")
-        return tarfile.TarFile.open(filename)
+        try:
+            return tarfile.TarFile.open(filename)
+        except IOError as ioe:
+            raise
 
 
 @register_archive_type
@@ -96,7 +102,10 @@ class TarGzArchiveType(TarBz2ArchiveType):
     def open(cls, filename=None):
         if filename is None:
             raise TypeError("Expected argument 'filename' (pos 1) is missing")
-        return tarfile.TarFile.open(filename)
+        try:
+            return tarfile.TarFile.open(filename)
+        except IOError as ioe:
+            raise
 
 
 @register_archive_type
@@ -115,7 +124,10 @@ class ZipArchiveType(ArchiveTypeBase):
     def open(cls, filename=None):
         if filename is None:
             raise TypeError("Expected argument 'filename' (pos 1) is missing")
-        return zipfile.ZipFile(filename, "r")
+        try:
+            return zipfile.ZipFile(filename, "r")
+        except IOError as ioe:
+            raise
 
 
 class Archive(object):
@@ -141,7 +153,10 @@ class Archive(object):
         """ Extracts the archive into the given path """
         logger.debug("Archive: Extracting '{0}' into '{1}'".format(
                      self._filename, path))
-        archive = self._archive_type.open(self._filename)
+        try:
+            archive = self._archive_type.open(self._filename)
+        except IOError as ioe:
+            raise
         archive.extractall(path)
         archive.close()
         return path
