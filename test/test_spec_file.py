@@ -36,7 +36,7 @@ class TestSpecHelper(object):
 
     def test_old_tarball(self):
         expected_tarball = 'test-1.0.2.tar.gz'
-        test_tarball = self.spec_file.get_old_tarball()
+        test_tarball = self.spec_file._get_old_tarball()
         assert test_tarball == expected_tarball
 
     def test_all_sources(self):
