@@ -211,8 +211,6 @@ class SpecFile(object):
         url_path.append(self.new_sources)
         if not os.path.exists(self.new_sources):
             self._download_source('/'.join(url_path), self.new_sources)
-        import sys
-        sys.exit(0)
 
     def check_empty_patches(self, patch_name):
         """
