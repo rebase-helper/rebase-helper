@@ -31,7 +31,6 @@ class TestSpecHelper(object):
         spec_path = os.path.join(self.dir_name,
                                            settings.REBASE_RESULTS_DIR,
                                            self.test_spec)
-        logger.error("Specname", spec_path)
         assert os.path.exists(spec_path)
 
     def test_old_tarball(self):
@@ -47,7 +46,14 @@ class TestSpecHelper(object):
         assert expected_sources == test_sources
 
     def test_list_patches(self):
-        expected_patches = {}
+        cwd = os.getcwd()
+        dir_name = os.path.join(cwd, self.dir_name)
+        expected_patches = {1: [os.path.join(dir_name, 'test-testing.patch' ), ' ', 0, False],
+                            2: [os.path.join(dir_name, 'test-testing2.patch' ), '-p1', 1, False],
+                            3: [os.path.join(dir_name, 'test-testing3.patch' ), '-p1', 2, False],
+        }
+        os.chdir(os.path.dirname(__file__))
         test_patches = self.spec_file.get_patches()
+        os.chdir(cwd)
         assert expected_patches == test_patches
         

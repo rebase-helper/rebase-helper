@@ -77,8 +77,8 @@ class TestArchive(object):
             if os.path.exists(arch_name):
                 os.unlink(arch_name)
             dir_name = os.path.join(self.dir_name, self.extr + "-" + key)
-            #if os.path.isdir(dir_name):
-            #    shutil.rmtree(dir_name)
+            if os.path.isdir(dir_name):
+                shutil.rmtree(dir_name)
 
     def test_bz2_archive(self):
         archive_dir = self.extract_sources(self.TAR_BZ2)
