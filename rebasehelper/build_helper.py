@@ -311,7 +311,7 @@ class RpmbuildBuildTool(BuildToolBase):
 
         cmd = [cls.CMD, '-bs', spec_name]
         logger.debug("RpmbuildBuildTool: running: " + str(cmd))
-        ret = ProcessHelper.run_subprocess_cwd_env(cmd, kwargs[cls.TEMPDIR_RPMBUILD_SPECS], {'HOME': home}, None)
+        ret = ProcessHelper.run_subprocess_cwd_env(cmd, kwargs[cls.TEMPDIR_RPMBUILD_SPECS], {'HOME': home}, output)
 
         if ret != 0:
             logger.error("RpmbuildBuildTool: running: " + str(cmd) + " failed with exit code '%s'!" % str(ret))
@@ -331,7 +331,7 @@ class RpmbuildBuildTool(BuildToolBase):
 
         cmd = [cls.CMD, '--rebuild', srpm]
         logger.debug("RpmbuildBuildTool: running: " + str(cmd))
-        ret = ProcessHelper.run_subprocess_cwd_env(cmd, kwargs[cls.TEMPDIR_RPMBUILD_SPECS], {'HOME': home}, None)
+        ret = ProcessHelper.run_subprocess_cwd_env(cmd, kwargs[cls.TEMPDIR_RPMBUILD_SPECS], {'HOME': home}, output)
 
         if ret != 0:
             logger.error("RpmbuildBuildTool: running: " + str(cmd) + " failed with exit code '%s'!" % str(ret))
