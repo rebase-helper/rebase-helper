@@ -172,7 +172,6 @@ class PatchTool(PatchBase):
                 raise RuntimeError
             orig_patch = patch[0]
             patch[0] = get_rebase_name(patch[0])
-            remove_temporary_name(patch[0])
             cls.kwargs['suffix'] = cls.suffix
             cls.kwargs['failed_files'] = patched_files
             logger.debug('Input to MergeTool:', cls.kwargs)

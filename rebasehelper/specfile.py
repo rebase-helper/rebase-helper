@@ -46,8 +46,9 @@ class SpecFile(object):
         if os.path.exists(self.rebased_spec):
             os.unlink(self.rebased_spec)
         shutil.copy(self.spec_file, self.rebased_spec)
-        self.old_spc = rpm.spec(self.spec_file)
-        self.new_spc = rpm.spec(self.rebased_spec)
+        self.old_spc = None
+        self.new_spc = None
+        self.spc = None
         self.new_sources = new_sources
 
     def get_patch_option(self, line):
@@ -87,7 +88,7 @@ class SpecFile(object):
         lines = get_content_file(self.get_rebased_spec(), "r", method=True)
         return lines
 
-    def get_patches_flags(self):
+    def _get_patches_flags(self):
         """
         For all patches: get flags passed to %patch macro and index of application
         """
@@ -101,6 +102,24 @@ class SpecFile(object):
         # {num: (flags, index of application)}
         return patch_flags
 
+    def get_old_information(self):
+        kwargs = {}
+        self.spc = rpm.spec(self.spec_file)
+        kwargs['sources'] = self._get_all_sources()
+        kwargs['patches'] = self._get_patches()
+        kwargs['version'] = self._get_spec_versions()[0]
+        kwargs['name'] = self._get_package_name(self.spc)
+        return kwargs
+
+    def get_new_information(self):
+        kwargs = {}
+        self.spc = rpm.spec(self.rebased_spec)
+        kwargs['sources'] = self._get_all_sources()
+        kwargs['patches'] = self._get_patches()
+        kwargs['version'] = self._get_spec_versions()[1]
+        kwargs['name'] = self._get_package_name(self.spc)
+        return kwargs
+
     def _get_version_from_spec(self, spec_file):
         hdr = spec_file.sourceHeader
         version = hdr[rpm.RPMTAG_VERSION]
@@ -108,17 +127,17 @@ class SpecFile(object):
             return None
         return version
 
-    def get_spec_versions(self):
+    def _get_spec_versions(self):
         """
         Function return an old and a new versions
         :return:
         """
-        old_version = self._get_version_from_spec(self.old_spc)
-        new_version = self._get_version_from_spec(self.new_spc)
+        old_version = self._get_version_from_spec(rpm.spec(self.spec_file))
+        new_version = self._get_version_from_spec(rpm.spec(self.rebased_spec))
         return [old_version, new_version]
 
-    def get_package_name(self):
-        hdr = self.new_spc.sourceHeader
+    def _get_package_name(self, spec_file):
+        hdr = spec_file.sourceHeader
         return hdr[rpm.RPMTAG_NAME]
 
     def is_patch_git_generated(self, full_patch_name):
@@ -136,14 +155,14 @@ class SpecFile(object):
                         return False
         return False
 
-    def get_patches(self):
+    def _get_patches(self):
         """
         Function returns a list of patches from a spec file
         """
         patches = {}
-        patch_flags = self.get_patches_flags()
+        patch_flags = self._get_patches_flags()
         cwd = os.getcwd()
-        sources = [x for x in self.new_spc.sources if x[2] == 2]
+        sources = [x for x in self.spc.sources if x[2] == 2]
         for source in sources:
             filename, num, patch_type = source
             full_patch_name = os.path.join(cwd, filename)
@@ -156,11 +175,11 @@ class SpecFile(object):
         # list of [name, flags, index, git_generated]
         return patches
 
-    def get_sources(self):
+    def _get_sources(self):
         """
         Function returns a all sources
         """
-        sources = [x for x in self.new_spc.sources if x[2] == 0 or x[2] == 1]
+        sources = [x for x in self.spc.sources if x[2] == 0 or x[2] == 1]
         return sources
 
     def _download_source(self, source_name, download_name):
@@ -172,12 +191,12 @@ class SpecFile(object):
         if not os.path.exists(download_name):
             ret_code = ProcessHelper.run_subprocess_cwd('wget {0}'.format(source_name), shell=True)
 
-    def get_all_sources(self):
+    def _get_all_sources(self):
         """
         Function returns all sources mentioned in specfile
         """
         cwd = os.getcwd()
-        sources = self.get_sources()
+        sources = self._get_sources()
         remote_files = ['http:', 'https:', 'ftp:']
         for index, src in enumerate(sources):
             new_name = get_source_name(src[0])
@@ -194,7 +213,8 @@ class SpecFile(object):
         """
         Function returns a old sources from specfile
         """
-        sources = self.get_sources()
+        self.spc = rpm.spec(self.spec_file)
+        sources = self._get_sources()
         old_source_name = [x for x in sources if x[1] == 0]
         old_source_name = old_source_name[0][0]
         source_name = get_source_name(old_source_name)
@@ -205,7 +225,8 @@ class SpecFile(object):
         """
         Function gets a new tarball if it does not exist.
         """
-        sources = self.get_sources()
+        self.spc = rpm.spec(self.rebased_spec)
+        sources = self._get_sources()
         new_source_name = [x for x in sources if x[1] == 0]
         new_source_name = new_source_name[0][0]
         url_path = new_source_name.split('/')[:-1]
@@ -231,7 +252,7 @@ class SpecFile(object):
         else:
             return False
 
-    def remove_empty_patches(self, lines, patch_num):
+    def _remove_empty_patches(self, lines, patch_num):
         """
         Remove ampty patches from SPEC file
         """
@@ -246,6 +267,9 @@ class SpecFile(object):
         Function updates a version in spec file based on input argument
         """
         tarball_ext = [(k, v) for k, v in archive_types.items() if self.new_sources.endswith(k)][0]
+        if not tarball_ext:
+            # CLI argument is propably just a version without name and extension
+            pass
         tarball_name = self.new_sources.replace(tarball_ext[0], '')
         regex = re.compile(r'^\w+\d+-?_?(.*)')
         match = re.search(regex, tarball_name)
@@ -254,7 +278,7 @@ class SpecFile(object):
             for index, line in enumerate(lines):
                 if not line.startswith('Version'):
                     continue
-                lines[index] = line.replace(self.get_spec_versions()[0], match.group(1))
+                lines[index] = line.replace(self._get_spec_versions()[0], match.group(1))
             write_to_file(self.get_rebased_spec(), "w", lines)
         else:
             logger.error('CLI argument does not contain a version.')
@@ -286,6 +310,6 @@ class SpecFile(object):
                 removed_patches.append(patch_num)
                 del patches[int(patch_num)]
             lines[index] = comment + ' '.join(fields[:-1]) + ' ' + os.path.basename(patch_name) +'\n'
-        self.remove_empty_patches(lines, removed_patches)
+        self._remove_empty_patches(lines, removed_patches)
 
         write_to_file(self.get_rebased_spec(), "w", lines)

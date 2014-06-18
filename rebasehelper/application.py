@@ -41,6 +41,7 @@ class Application(object):
     kwargs = {}
     spec = None
     old_sources = ""
+    spec_file = ""
 
     def __init__(self, conf):
         """ conf is CLI object """
@@ -58,27 +59,15 @@ class Application(object):
         """
         Function fill dictionary by default data
         """
-        spec_file = self._get_spec_file()
-        if not spec_file:
-            logger.error('You have to define a SPEC file.')
-            sys.exit(1)
-        self.spec = SpecFile(spec_file, self.conf.sources)
-        self.old_sources = self.spec.get_old_tarball()
-        self.spec.get_new_tarball()
         old_values = {}
-        old_values['spec'] = os.path.join(os.getcwd(), spec_file)
-        old_values['sources'] = self.spec.get_all_sources()
-        old_values['patches'] = self.spec.get_patches()
-        old_values['version'] = self.spec.get_spec_versions()[0]
-        old_values['name'] = self.spec.get_package_name()
+        old_values['spec'] = os.path.join(os.getcwd(), self.spec_file)
         self.kwargs['old'] = old_values
+        self.kwargs['old'].update(self.spec.get_old_information())
+        self.spec.update_new_version()
         new_values = {}
         new_values['spec'] = os.path.join(os.getcwd(), self.spec.get_rebased_spec())
-        new_values['sources'] = self.spec.get_all_sources()
-        new_values['patches'] = self.spec.get_patches()
-        new_values['version'] = self.spec.get_spec_versions()[1]
-        new_values['name'] = self.spec.get_package_name()
         self.kwargs['new'] = new_values
+        self.kwargs['new'].update(self.spec.get_new_information())
 
     def _get_spec_file(self):
         """
@@ -150,15 +139,22 @@ class Application(object):
         if not os.path.exists(settings.REBASE_RESULTS_DIR):
             os.makedirs(settings.REBASE_RESULTS_DIR)
         self._initialize_dictionary()
+        self.spec_file = self._get_spec_file()
+        if not self.spec_file:
+            logger.error('You have to define a SPEC file.')
+            sys.exit(1)
+        self.spec = SpecFile(self.spec_file, self.conf.sources)
+        self.old_sources = self.spec.get_old_tarball()
+        self.spec.get_new_tarball()
+
+        old_dir = extract_sources(self.old_sources, settings.OLD_SOURCES)
+        new_dir = extract_sources(self.conf.sources, settings.NEW_SOURCES)
         self._initialize_data()
 
         if not self.conf.sources:
             logger.error('You have to define a new sources.')
             sys.exit(0)
 
-        old_dir = extract_sources(self.old_sources, settings.OLD_SOURCES)
-        new_dir = extract_sources(self.conf.sources, settings.NEW_SOURCES)
-        self.spec.update_new_version()
         if not self.conf.build_only:
             self.kwargs['old_dir'] = old_dir
             self.kwargs['new_dir'] = new_dir
