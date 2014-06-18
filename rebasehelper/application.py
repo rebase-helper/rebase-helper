@@ -157,6 +157,7 @@ class Application(object):
         old_sources = self.spec.get_old_tarball()
         old_dir = extract_sources(old_sources, settings.OLD_SOURCES)
         new_dir = extract_sources(self.conf.sources, settings.NEW_SOURCES)
+        # Rebase Patches
         if not self.conf.build_only:
             self.kwargs['old_dir'] = old_dir
             self.kwargs['new_dir'] = new_dir
@@ -170,7 +171,10 @@ class Application(object):
                 logger.error(e.message)
                 sys.exit(0)
             self.spec.write_updated_patches(**self.kwargs)
+        # Build packages
         self.build_packages()
+
+        # Perform checks
         self.pkgdiff_packages()
 
 
