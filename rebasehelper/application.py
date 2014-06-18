@@ -77,18 +77,6 @@ class Application(object):
         new_values['name'] = self.spec.get_package_name()
         self.kwargs['new'] = new_values
 
-    def _build_command(self, binary):
-        """
-        create command from CLI options
-        """
-        command = [binary]
-        command.extend(self.command_eval)
-        if self.conf.devel:
-            command.append("--devel")
-        if self.conf.verbose:
-            command.append("--verbose")
-        return command
-
     def _get_spec_file(self):
         """
         Function get a spec file from current directory
