@@ -8,11 +8,12 @@ try:
 except ImportError:
     pass
 import shutil
+import mimetypes
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.logger import logger
 from rebasehelper import settings
 from rebasehelper.utils import get_content_file,  write_to_file
-from rebasehelper.utils import get_temporary_name
+from rebasehelper.utils import get_temporary_name, remove_temporary_name
 
 
 def get_source_name(name):
@@ -37,7 +38,7 @@ class SpecFile(object):
     """
     values = []
 
-    def __init__(self, specfile, download=True):
+    def __init__(self, specfile, new_sources, download=True):
         self.spec_file = specfile
         self.download = download
         self.rebased_spec = get_rebase_name(specfile)
@@ -46,6 +47,7 @@ class SpecFile(object):
         shutil.copy(self.spec_file, self.rebased_spec)
         self.old_spc = rpm.spec(self.spec_file)
         self.new_spc = rpm.spec(self.rebased_spec)
+        self.new_sources = new_sources
 
     def get_patch_option(self, line):
         """
@@ -95,7 +97,8 @@ class SpecFile(object):
             num, option = self.get_patch_option(line)
             num = num.replace(settings.PATCH_PREFIX, '')
             patch_flags[int(num)] = (option, index)
-        return patch_flags # {num: (flags, index of application)}
+        # {num: (flags, index of application)}
+        return patch_flags
 
     def _get_version_from_spec(self, spec_file):
         hdr = spec_file.sourceHeader
@@ -193,9 +196,23 @@ class SpecFile(object):
         sources = self.get_sources()
         old_source_name = [x for x in sources if x[1] == 0]
         old_source_name = old_source_name[0][0]
-        source_name = old_source_name.split('/')[-1]
+        source_name = get_source_name(old_source_name)
         self._download_source(old_source_name, source_name)
         return source_name
+
+    def get_new_tarball(self):
+        """
+        Function gets a new tarball if it does not exist.
+        """
+        sources = self.get_sources()
+        new_source_name = [x for x in sources if x[1] == 0]
+        new_source_name = new_source_name[0][0]
+        url_path = new_source_name.split('/')[:-1]
+        url_path.append(self.new_sources)
+        if not os.path.exists(self.new_sources):
+            self._download_source('/'.join(url_path), self.new_sources)
+        import sys
+        sys.exit(0)
 
     def check_empty_patches(self, patch_name):
         """
@@ -208,7 +225,8 @@ class SpecFile(object):
         ret_code = ProcessHelper.run_subprocess(cmd, temp_name)
         if ret_code != 0:
             return False
-        lines = get_content_temp(temp_name)
+        lines = get_content_file(temp_name)
+        remove_temporary_name(temp_name)
         if not lines:
             return True
         else:

@@ -61,7 +61,7 @@ class Application(object):
         if not spec_file:
             logger.error('You have to define a SPEC file.')
             sys.exit(1)
-        self.spec = SpecFile(spec_file)
+        self.spec = SpecFile(spec_file, self.conf.sources)
         old_values = {}
         old_values['spec'] = os.path.join(os.getcwd(), spec_file)
         old_values['sources'] = self.spec.get_all_sources()
@@ -152,9 +152,8 @@ class Application(object):
         if not self.conf.sources:
             logger.error('You have to define a new sources.')
             sys.exit(0)
-        if not os.path.exists(self.conf.sources):
-            logger.error('Defined sources does not exist.')
-            sys.exit(0)
+
+        self.spec.get_new_tarball()
         old_sources = self.spec.get_old_tarball()
         old_dir = extract_sources(old_sources, settings.OLD_SOURCES)
         new_dir = extract_sources(self.conf.sources, settings.NEW_SOURCES)
