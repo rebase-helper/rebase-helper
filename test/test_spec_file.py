@@ -22,6 +22,7 @@ class TestSpecHelper(object):
         os.makedirs(self.result_dir)
         file_name = os.path.join(self.dir_name, self.test_spec)
         self.spec_file = specfile.SpecFile(file_name, '', download=False)
+        self.spec_file.get_old_information()
 
     def teardown(self):
         if os.path.exists(self.result_dir):
@@ -41,7 +42,7 @@ class TestSpecHelper(object):
     def test_all_sources(self):
         sources = ['test-source.sh', 'source-tests.sh', 'test-1.0.2.tar.gz']
         expected_sources = [os.path.join(os.getcwd(), x) for x in sources]
-        test_sources = self.spec_file.get_all_sources()
+        test_sources = self.spec_file._get_all_sources()
         logger.info(test_sources)
         assert expected_sources == test_sources
 
@@ -53,7 +54,7 @@ class TestSpecHelper(object):
                             3: [os.path.join(dir_name, 'test-testing3.patch' ), '-p1', 2, False],
         }
         os.chdir(os.path.dirname(__file__))
-        test_patches = self.spec_file.get_patches()
+        test_patches = self.spec_file._get_patches()
         os.chdir(cwd)
         assert expected_patches == test_patches
         
