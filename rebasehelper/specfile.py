@@ -209,7 +209,7 @@ class SpecFile(object):
                 sources[index] = os.path.join(cwd, new_name)
         return sources
 
-    def get_old_tarball(self):
+    def _get_old_tarball(self):
         """
         Function returns a old sources from specfile
         """
@@ -221,7 +221,7 @@ class SpecFile(object):
         self._download_source(old_source_name, source_name)
         return source_name
 
-    def get_new_tarball(self):
+    def _get_new_tarball(self):
         """
         Function gets a new tarball if it does not exist.
         """
@@ -233,6 +233,12 @@ class SpecFile(object):
         url_path.append(self.new_sources)
         if not os.path.exists(self.new_sources):
             self._download_source('/'.join(url_path), self.new_sources)
+
+    def get_tarballs(self):
+        old_sources = self._get_old_tarball()
+        new_sources = self._update_new_version()
+        self._get_new_tarball()
+        return old_sources, new_sources
 
     def check_empty_patches(self, patch_name):
         """
@@ -262,24 +268,37 @@ class SpecFile(object):
                     continue
                 lines[index] = '#' + line
 
-    def update_new_version(self):
+    def _update_new_version(self):
         """
         Function updates a version in spec file based on input argument
         """
-        tarball_ext = [(k, v) for k, v in archive_types.items() if self.new_sources.endswith(k)][0]
+        lines = get_content_file(self.get_rebased_spec(), "r", method=True)
+        self.spc = rpm.spec(self.rebased_spec)
+        tarball_ext = [(k, v) for k, v in archive_types.items() if self.new_sources.endswith(k)]
         if not tarball_ext:
-            # CLI argument is propably just a version without name and extension
-            pass
-        tarball_name = self.new_sources.replace(tarball_ext[0], '')
+            # CLI argument is probably just a version without name and extension
+            for index, line in enumerate(lines):
+                if not line.startswith('Version'):
+                    continue
+                lines[index] = line.replace(self._get_spec_versions()[0], self.new_sources)
+            write_to_file(self.get_rebased_spec(), "w", lines)
+            # We need to reload the spec file
+            self.spc = rpm.spec(self.rebased_spec)
+            sources = self._get_sources()
+            old_source_name = [x for x in sources if x[1] == 0]
+            old_source_name = old_source_name[0][0]
+            self.new_sources = get_source_name(old_source_name)
+            return self.new_sources
+        tarball_name = self.new_sources.replace(tarball_ext[0][0], '')
         regex = re.compile(r'^\w+\d+-?_?(.*)')
         match = re.search(regex, tarball_name)
         if match:
-            lines = get_content_file(self.get_rebased_spec(), "r", method=True)
             for index, line in enumerate(lines):
                 if not line.startswith('Version'):
                     continue
                 lines[index] = line.replace(self._get_spec_versions()[0], match.group(1))
             write_to_file(self.get_rebased_spec(), "w", lines)
+            return None
         else:
             logger.error('CLI argument does not contain a version.')
 

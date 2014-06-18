@@ -29,6 +29,9 @@ def extract_sources(source_name, source_dir):
         if nie.message == "Unsupported archive type":
             logger.error("This archive is not supported yet.")
         sys.exit(0)
+    except IOError as ioe:
+        logger.error("Archive with the name {0} does not exist or is corrupted.".format(source_name))
+        sys.exit(0)
     package_dir = ""
     for dir_name in os.listdir(source_dir):
         package_dir = dir_name
@@ -63,7 +66,6 @@ class Application(object):
         old_values['spec'] = os.path.join(os.getcwd(), self.spec_file)
         self.kwargs['old'] = old_values
         self.kwargs['old'].update(self.spec.get_old_information())
-        self.spec.update_new_version()
         new_values = {}
         new_values['spec'] = os.path.join(os.getcwd(), self.spec.get_rebased_spec())
         self.kwargs['new'] = new_values
@@ -144,8 +146,9 @@ class Application(object):
             logger.error('You have to define a SPEC file.')
             sys.exit(1)
         self.spec = SpecFile(self.spec_file, self.conf.sources)
-        self.old_sources = self.spec.get_old_tarball()
-        self.spec.get_new_tarball()
+        self.old_sources, new_sources = self.spec.get_tarballs()
+        if new_sources:
+            self.conf.sources = new_sources
 
         old_dir = extract_sources(self.old_sources, settings.OLD_SOURCES)
         new_dir = extract_sources(self.conf.sources, settings.NEW_SOURCES)
