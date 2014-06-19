@@ -8,9 +8,20 @@ from rebasehelper.utils import get_message
 from rebasehelper.utils import ProcessHelper
 
 diff_tools = {}
+
+
 def register_diff_tool(diff_tool):
     diff_tools[diff_tool.CMD] = diff_tool
     return diff_tool
+
+
+def check_difftool_argument(difftool):
+    """
+    Function checks whether difftool argument is allowed
+    """
+    if difftool not in diff_tools.keys():
+        logger.error('You have to specify one of these builders {0}'.format(diff_tools.keys()))
+        sys.exit(0)
 
 
 class DiffBase(object):

@@ -1,13 +1,11 @@
 # -*- coding: utf-8 -*-
 
+import sys
+
 from rebasehelper.utils import ProcessHelper
-from rebasehelper.utils import PathHelper
 from rebasehelper.logger import logger
 from rebasehelper.base_checker import BaseChecker
 from rebasehelper.utils import write_to_file
-
-import shutil
-import os
 
 pkgdiff_tools = {}
 
@@ -15,6 +13,16 @@ pkgdiff_tools = {}
 def register_build_tool(pkgdiff_tool):
     pkgdiff_tools[pkgdiff_tool.CMD] = pkgdiff_tool
     return pkgdiff_tool
+
+
+def check_pkgdiff_argument(pkgcomparetool):
+    """
+    Function checks whether pkgdifftool argument is allowed
+    """
+    if pkgcomparetool not in pkgdiff_tools.keys():
+        logger.error('You have to specify one of these package diff tool {0}'.format(pkgdiff_tools.keys()))
+        sys.exit(0)
+
 
 
 @register_build_tool

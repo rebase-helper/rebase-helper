@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 
+import shutil
+import os
+import sys
+
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.utils import PathHelper
 from rebasehelper.logger import logger
-
-import shutil
-import os
 
 build_tools = {}
 
@@ -13,6 +14,15 @@ build_tools = {}
 def register_build_tool(build_tool):
     build_tools[build_tool.CMD] = build_tool
     return build_tool    
+
+
+def check_build_argument(buildtool):
+    """
+    Function checks whether build argument is allowed
+    """
+    if buildtool not in build_tools.keys():
+        logger.error('You have to specify one of these builders {0}'.format(build_tools.keys()))
+        sys.exit(0)
 
 
 class BuildToolBase(object):

@@ -6,12 +6,8 @@ import shutil
 
 from rebasehelper.archive import Archive
 from rebasehelper.specfile import SpecFile
-from rebasehelper.patch_helper import PatchTool
-from rebasehelper.build_helper import Builder, build_tools
-from rebasehelper.diff_helper import diff_tools
-from rebasehelper.pkgdiff_checker import PkgCompare, pkgdiff_tools
 from rebasehelper.logger import logger
-from rebasehelper import settings
+from rebasehelper import settings, patch_helper, build_helper, pkgdiff_checker
 from rebasehelper.utils import get_value_from_kwargs
 
 
@@ -85,36 +81,12 @@ class Application(object):
                 break
         return spec_file
 
-    def check_build_argument(self):
-        """
-        Function checks whether build argument is allowed
-        """
-        if self.conf.buildtool not in build_tools.keys():
-            logger.error('You have to specify one of these builders {0}'.format(build_tools.keys()))
-            sys.exit(0)
-
-    def check_difftool_argument(self):
-        """
-        Function checks whether difftool argument is allowed
-        """
-        if self.conf.difftool not in diff_tools.keys():
-            logger.error('You have to specify one of these builders {0}'.format(diff_tools.keys()))
-            sys.exit(0)
-
-    def check_pkgdiff_argument(self):
-        """
-        Function checks whether pkgdifftool argument is allowed
-        """
-        if self.conf.pkgcomparetool not in pkgdiff_tools.keys():
-            logger.error('You have to specify one of these package diff tool {0}'.format(pkgdiff_tools.keys()))
-            sys.exit(0)
-
     def build_packages(self):
         """
         Function calls build class for building packages
         """
-        self.check_build_argument()
-        builder = Builder(self.conf.buildtool)
+        build_helper.check_build_argument(self.conf.buildtool)
+        builder = build_helper.Builder(self.conf.buildtool)
         old_patches = get_value_from_kwargs(self.kwargs, 'patches')
         self.kwargs['old']['patches'] = [p[0] for p in old_patches.itervalues()]
         new_patches = get_value_from_kwargs(self.kwargs, 'patches', source='new')
@@ -133,8 +105,8 @@ class Application(object):
         Function calls pkgdiff class for comparing packages
         :return:
         """
-        self.check_pkgdiff_argument()
-        pkgchecker = PkgCompare(self.conf.pkgcomparetool)
+        pkgdiff_checker.check_pkgdiff_argument(self.conf.pkgcomparetool)
+        pkgchecker = pkgdiff_checker.PkgCompare(self.conf.pkgcomparetool)
         pkgchecker.compare_pkgs(**self.kwargs)
 
     def run(self):
@@ -159,10 +131,12 @@ class Application(object):
             sys.exit(0)
 
         if not self.conf.build_only:
+            # Patch sources
+            patch_helper.check_difftool_argument(self.conf.difftool)
             self.kwargs['old_dir'] = old_dir
             self.kwargs['new_dir'] = new_dir
             self.kwargs['diff_tool'] = self.conf.difftool
-            patch = PatchTool(self.conf.patchtool)
+            patch = patch_helper.PatchTool(self.conf.patchtool)
             try:
                 self.kwargs['new']['patches'] = patch.patch(**self.kwargs)
             except Exception as e:
