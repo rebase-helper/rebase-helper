@@ -327,7 +327,7 @@ class RpmbuildBuildTool(BuildToolBase):
         home = kwargs.get(cls.TEMPDIR)
         srpm = kwargs.get('srpm')
         resultdir = kwargs.get(cls.TEMPDIR_RESULTDIR)
-        output = os.path.join(resultdir, "mock_output.log")
+        output = os.path.join(resultdir, "rpmbuild_output.log")
 
         cmd = [cls.CMD, '--rebuild', srpm]
         logger.debug("RpmbuildBuildTool: running: " + str(cmd))

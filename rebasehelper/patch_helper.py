@@ -218,7 +218,7 @@ class PatchTool(object):
                 self._tool = patch_tool
 
         if self._tool is None:
-            raise NotImplementedError("Unsupported build tool")
+            raise NotImplementedError("Unsupported patch tool")
 
 
 
