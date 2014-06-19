@@ -290,7 +290,7 @@ class SpecFile(object):
             self.new_sources = get_source_name(old_source_name)
             return self.new_sources
         tarball_name = self.new_sources.replace(tarball_ext[0][0], '')
-        regex = re.compile(r'^\w+\d+-?_?(.*)')
+        regex = re.compile(r'^\w+-?_?(.*)')
         match = re.search(regex, tarball_name)
         if match:
             for index, line in enumerate(lines):
@@ -298,9 +298,7 @@ class SpecFile(object):
                     continue
                 lines[index] = line.replace(self._get_spec_versions()[0], match.group(1))
             write_to_file(self.get_rebased_spec(), "w", lines)
-            return None
-        else:
-            logger.error('CLI argument does not contain a version.')
+        return None
 
     def write_updated_patches(self, **kwargs):
         """
