@@ -289,7 +289,7 @@ class RpmbuildBuildTool(BuildToolBase):
         env[cls.TEMPDIR_RESULTDIR] = os.path.join(env[cls.TEMPDIR], "RESULTS")
         os.makedirs(env[cls.TEMPDIR_RESULTDIR])
 
-        logger.debug("RpmbuildBuildTool: Prepared temporary environemt in '%s' " % env[cls.TEMPDIR])
+        logger.debug("RpmbuildBuildTool: Prepared temporary environment in '%s' " % env[cls.TEMPDIR])
         # merge kwargs ans env
         return dict(kwargs.items() + env.items())
 
@@ -298,7 +298,7 @@ class RpmbuildBuildTool(BuildToolBase):
     def _environment_destroy(cls, **kwargs):
         """ Destroys the temprary environment. """
         shutil.rmtree(kwargs[cls.TEMPDIR])
-        logger.debug("RpmbuildBuildTool: Destroyed temporary environemt in '%s'" % kwargs[cls.TEMPDIR])
+        logger.debug("RpmbuildBuildTool: Destroyed temporary environment in '%s'" % kwargs[cls.TEMPDIR])
 
 
     @classmethod
