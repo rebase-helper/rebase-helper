@@ -3,7 +3,6 @@
 import sys
 import os
 
-from rebasehelper.base_output_tool import BaseOutputTool
 from rebasehelper.logger import logger
 from rebasehelper import settings
 
@@ -59,13 +58,17 @@ class TextOutputTool(BaseOutputTool):
         if not patches:
             logger.info("Patches were neither modified nor deleted.")
             return
+        max_number = max(x for x in [len(str(y)) for y in patches.keys()]) + 2
+        max_name = max(x for x in [len(os.path.basename(y[0])) for y in patches.values()]) + 2
         for key, value in patches.items():
             patch_name = os.path.basename(value[0])
             for status, patches in summary.items():
                 found = [x for x in patches if patch_name in x]
                 if not found:
                     continue
-                logger.info("Patch{0} {1} [{2}]".format(key, patch_name, status))
+                logger.info("Patch{0} {1} [{2}]".format(str(key).ljust(max_number),
+                                                        patch_name.ljust(max_name),
+                                                        status))
                 break
     @classmethod
     def print_rpms(cls, rpms, version):

@@ -39,7 +39,7 @@ class TestOutputTool(object):
         expected_output = """Summary information:
 ====================
 Patches:
-Patch1 mytest2.patch [deleted]
+Patch1   mytest2.patch   [deleted]
 Old (S)RPM packages:
 --------------------
 SRPM package(s):
