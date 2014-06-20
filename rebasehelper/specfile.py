@@ -326,13 +326,14 @@ class SpecFile(object):
             patch_num = self.get_patch_number(line)
             patch_name = patches[int(patch_num)][0]
             comment = ""
-            if self.check_empty_patches(patch_name):
-                comment = '#'
-                removed_patches.append(patch_num)
-                del patches[int(patch_num)]
-                update_patches['deleted'].append(patch_name)
-            #else:
-            #    update_patches['modified'].append(patch_name)
+            if settings.REBASE_RESULTS_DIR in patch_name:
+                if self.check_empty_patches(patch_name):
+                    comment = '#'
+                    removed_patches.append(patch_num)
+                    del patches[int(patch_num)]
+                    update_patches['deleted'].append(patch_name)
+                else:
+                    update_patches['modified'].append(patch_name)
             lines[index] = comment + ' '.join(fields[:-1]) + ' ' + os.path.basename(patch_name) + '\n'
         self._remove_empty_patches(lines, removed_patches)
 
