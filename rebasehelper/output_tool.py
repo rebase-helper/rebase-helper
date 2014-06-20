@@ -35,6 +35,7 @@ class BaseOutputTool(object):
         """
         raise NotImplementedError()
 
+
 @register_build_tool
 class TextOutputTool(BaseOutputTool):
     """ Text output tool. """

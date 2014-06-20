@@ -3,6 +3,7 @@
 import os
 import sys
 import shutil
+import logging
 
 from rebasehelper.archive import Archive
 from rebasehelper.specfile import SpecFile
@@ -116,6 +117,8 @@ class Application(object):
         output.print_information(**self.kwargs)
 
     def run(self):
+        if self.conf.verbose:
+            logger.setLevel(logging.DEBUG)
         if not os.path.exists(settings.REBASE_RESULTS_DIR):
             os.makedirs(settings.REBASE_RESULTS_DIR)
         self._initialize_dictionary()

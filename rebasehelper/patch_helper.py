@@ -146,7 +146,7 @@ class PatchTool(PatchBase):
         if cls.source_dir == cls.old_sources:
             # for new_sources we want the same suffix as for old_sources
             cls.suffix = ''.join(random.choice(string.ascii_letters) for _ in range(6))
-        logger.debug('Applying patch {0} to {1}'.format(patch[0], cls.source_dir))
+        logger.info('Applying patch {0} to {1}'.format(patch[0], cls.source_dir))
         ret_code = cls.patch_command(get_path_to_patch(patch[0]), patch[1])
         if ret_code != 0:
             # unexpected
@@ -167,10 +167,10 @@ class PatchTool(PatchBase):
             cls.kwargs['suffix'] = cls.suffix
             cls.kwargs['failed_files'] = patched_files
             logger.debug('Input to MergeTool: {0}'.format(cls.kwargs))
-            diff = Diff(cls.kwargs.get('diff_tool', None))
-            ret_code = diff.mergetool(**cls.kwargs)
+            diff_cls = Diff(cls.kwargs.get('diff_tool', None))
+            ret_code = diff_cls.mergetool(**cls.kwargs)
             cls.generate_diff(patch[0], cls.source_dir)
-            diff.diff(orig_patch, patch[0])
+            diff_cls.diff(orig_patch, patch[0])
             accept = ['y', 'yes']
             var = get_message(message="Do you want to continue with another patch? (y/n)")
             if var not in accept:
