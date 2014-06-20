@@ -8,6 +8,7 @@ from rebasehelper.archive import Archive
 from rebasehelper.specfile import SpecFile
 from rebasehelper.logger import logger
 from rebasehelper import settings, patch_helper, build_helper, pkgdiff_checker
+from rebasehelper import output_tool
 from rebasehelper.utils import get_value_from_kwargs
 
 
@@ -87,9 +88,9 @@ class Application(object):
         """
         build_helper.check_build_argument(self.conf.buildtool)
         builder = build_helper.Builder(self.conf.buildtool)
-        old_patches = get_value_from_kwargs(self.kwargs, 'patches')
+        old_patches = get_value_from_kwargs(self.kwargs, settings.FULL_PATCHES)
         self.kwargs['old']['patches'] = [p[0] for p in old_patches.itervalues()]
-        new_patches = get_value_from_kwargs(self.kwargs, 'patches', source='new')
+        new_patches = get_value_from_kwargs(self.kwargs, settings.FULL_PATCHES, source='new')
         self.kwargs['new']['patches'] = [p[0] for p in new_patches.itervalues()]
         # TODO: need to create some results directory where results of tests
         # will be stored!!! The results dir should be removed on startup
@@ -108,6 +109,11 @@ class Application(object):
         pkgdiff_checker.check_pkgdiff_argument(self.conf.pkgcomparetool)
         pkgchecker = pkgdiff_checker.PkgCompare(self.conf.pkgcomparetool)
         pkgchecker.compare_pkgs(**self.kwargs)
+
+    def print_summary(self):
+        output_tool.check_output_argument(self.conf.outputtool)
+        output = output_tool.OutputTool(self.conf.outputtool)
+        output.print_information(**self.kwargs)
 
     def run(self):
         if not os.path.exists(settings.REBASE_RESULTS_DIR):
@@ -144,12 +150,19 @@ class Application(object):
                     os.unlink(self.spec.get_rebased_spec())
                 logger.error(e.message)
                 sys.exit(0)
-            self.spec.write_updated_patches(**self.kwargs)
+            update_patches = self.spec.write_updated_patches(**self.kwargs)
+            self.kwargs['summary_info'] = update_patches
+            if self.conf.patch_only:
+                self.print_summary()
+                sys.exit(0)
         # Build packages
         self.build_packages()
 
         # Perform checks
         self.pkgdiff_packages()
+
+        # print summary information
+        self.print_summary()
 
 
 if __name__ == '__main__':

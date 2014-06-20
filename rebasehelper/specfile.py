@@ -106,7 +106,7 @@ class SpecFile(object):
         kwargs = {}
         self.spc = rpm.spec(self.spec_file)
         kwargs['sources'] = self._get_all_sources()
-        kwargs['patches'] = self._get_patches()
+        kwargs[settings.FULL_PATCHES] = self._get_patches()
         kwargs['version'] = self._get_spec_versions()[0]
         kwargs['name'] = self._get_package_name(self.spc)
         return kwargs
@@ -115,7 +115,7 @@ class SpecFile(object):
         kwargs = {}
         self.spc = rpm.spec(self.rebased_spec)
         kwargs['sources'] = self._get_all_sources()
-        kwargs['patches'] = self._get_patches()
+        kwargs[settings.FULL_PATCHES] = self._get_patches()
         kwargs['version'] = self._get_spec_versions()[1]
         kwargs['name'] = self._get_package_name(self.spc)
         return kwargs
@@ -311,6 +311,10 @@ class SpecFile(object):
             return None
         patches = new_files.get('patches', None)
 
+        update_patches = {}
+        update_patches['deleted'] = []
+        update_patches['modified'] = []
+
         logger.debug('Patches:{0}'.format(patches))
         lines = self.get_content_rebase()
         removed_patches = []
@@ -326,7 +330,11 @@ class SpecFile(object):
                 comment = '#'
                 removed_patches.append(patch_num)
                 del patches[int(patch_num)]
-            lines[index] = comment + ' '.join(fields[:-1]) + ' ' + os.path.basename(patch_name) +'\n'
+                update_patches['deleted'].append(patch_name)
+            #else:
+            #    update_patches['modified'].append(patch_name)
+            lines[index] = comment + ' '.join(fields[:-1]) + ' ' + os.path.basename(patch_name) + '\n'
         self._remove_empty_patches(lines, removed_patches)
 
         write_to_file(self.get_rebased_spec(), "w", lines)
+        return update_patches

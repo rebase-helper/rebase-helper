@@ -64,6 +64,11 @@ class CLI(object):
             help="Select the tool for comparing two packages [pkgdiff]"
         )
         self.parser.add_argument(
+            "--outputtool",
+            default="text",
+            help="Select the tool for comparing two packages [text]"
+        )
+        self.parser.add_argument(
             "sources",
             metavar='SOURCES',
             help="Specify new upstream sources"
