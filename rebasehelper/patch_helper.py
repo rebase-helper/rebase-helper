@@ -107,7 +107,7 @@ class PatchTool(PatchBase):
             if data.startswith('patching file'):
                 patch, file_text, source_file = data.strip().split()
                 continue
-            result = [x for x in applied_rules if x in data ]
+            result = [x for x in applied_rules if x in data]
             if result:
                 continue
             file_list = [x for x in cls.patched_files if source_file in x]
@@ -166,7 +166,7 @@ class PatchTool(PatchBase):
             patch[0] = get_rebase_name(patch[0])
             cls.kwargs['suffix'] = cls.suffix
             cls.kwargs['failed_files'] = patched_files
-            logger.debug('Input to MergeTool:', cls.kwargs)
+            logger.debug('Input to MergeTool: {0}'.format(cls.kwargs))
             diff = Diff(cls.kwargs.get('diff_tool', None))
             ret_code = diff.mergetool(**cls.kwargs)
             cls.generate_diff(patch[0], cls.source_dir)
@@ -185,7 +185,7 @@ class PatchTool(PatchBase):
         directory against another
         """
         cls.kwargs = kwargs
-        cls.patches = kwargs['new'].get('patches', '')
+        cls.patches = kwargs['new'].get(settings.FULL_PATCHES, None)
         cls.old_sources = kwargs.get('old_dir', None)
         cls.new_sources = kwargs.get('new_dir', None)
         cls.output_data = []
@@ -206,7 +206,7 @@ class PatchTool(PatchBase):
         return cls.patches
 
 
-class PatchTool(object):
+class Patch(object):
     def __init__(self, patch=None):
         if patch is None:
             raise TypeError("Expected argument 'tool' (pos 1) is missing")
@@ -219,8 +219,6 @@ class PatchTool(object):
 
         if self._tool is None:
             raise NotImplementedError("Unsupported patch tool")
-
-
 
     def patch(self, **kwargs):
         logger.debug("Patch: Patching source by patch tool {0}".format(self._path_tool_name))

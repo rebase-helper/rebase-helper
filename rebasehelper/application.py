@@ -142,7 +142,7 @@ class Application(object):
             self.kwargs['old_dir'] = old_dir
             self.kwargs['new_dir'] = new_dir
             self.kwargs['diff_tool'] = self.conf.difftool
-            patch = patch_helper.PatchTool(self.conf.patchtool)
+            patch = patch_helper.Patch(self.conf.patchtool)
             try:
                 self.kwargs['new']['patches'] = patch.patch(**self.kwargs)
             except Exception as e:
