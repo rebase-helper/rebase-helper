@@ -52,13 +52,14 @@ class PkgDiffTool(BaseChecker):
     def run_check(cls, **kwargs):
         """ Compares  old and new RPMs using pkgdiff """
         versions = ['old', 'new']
-        cmd = ['/usr/bin/pkgdiff']
+        cmd = ['pkgdiff']
         for version in versions:
             old = kwargs.get(version, None)
             if old:
                 file_name = cls._create_xml(version, old)
                 cmd.append(file_name)
-        ProcessHelper.run_subprocess_cwd(' '.join(cmd), shell=True)
+        # TODO Should we return a value??
+        ProcessHelper.run_subprocess(cmd)
 
 
 class PkgCompare(object):
