@@ -87,7 +87,8 @@ class Application(object):
         """
         Function calls build class for building packages
         """
-        build_helper.check_build_argument(self.conf.buildtool)
+        if not build_helper.check_build_argument(self.conf.buildtool):
+            sys.exit(0)
         builder = build_helper.Builder(self.conf.buildtool)
         old_patches = get_value_from_kwargs(self.kwargs, settings.FULL_PATCHES)
         self.kwargs['old']['patches'] = [p[0] for p in old_patches.itervalues()]
@@ -107,7 +108,8 @@ class Application(object):
         Function calls pkgdiff class for comparing packages
         :return:
         """
-        pkgdiff_checker.check_pkgdiff_argument(self.conf.pkgcomparetool)
+        if not pkgdiff_checker.check_pkgdiff_argument(self.conf.pkgcomparetool):
+            sys.exit(0)
         pkgchecker = pkgdiff_checker.PkgCompare(self.conf.pkgcomparetool)
         pkgchecker.compare_pkgs(**self.kwargs)
 
@@ -141,7 +143,8 @@ class Application(object):
 
         if not self.conf.build_only:
             # Patch sources
-            patch_helper.check_difftool_argument(self.conf.difftool)
+            if not patch_helper.check_difftool_argument(self.conf.difftool):
+                sys.exit(0)
             self.kwargs['old_dir'] = old_dir
             self.kwargs['new_dir'] = new_dir
             self.kwargs['diff_tool'] = self.conf.difftool

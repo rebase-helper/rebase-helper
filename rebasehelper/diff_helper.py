@@ -21,7 +21,8 @@ def check_difftool_argument(difftool):
     """
     if difftool not in diff_tools.keys():
         logger.error('You have to specify one of these builders {0}'.format(diff_tools.keys()))
-        sys.exit(0)
+        return False
+    return True
 
 
 class DiffBase(object):

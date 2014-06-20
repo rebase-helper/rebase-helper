@@ -2,7 +2,6 @@
 
 import shutil
 import os
-import sys
 
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.utils import PathHelper
@@ -22,7 +21,8 @@ def check_build_argument(buildtool):
     """
     if buildtool not in build_tools.keys():
         logger.error('You have to specify one of these builders {0}'.format(build_tools.keys()))
-        sys.exit(0)
+        return False
+    return True
 
 
 class BuildToolBase(object):
@@ -70,7 +70,6 @@ class MockBuildTool(BuildToolBase):
         else:
             return False
 
-
     @classmethod
     def _environment_prepare(cls, **kwargs):
         """ Create a temporary directory and copy sources and SPEC file in. """
@@ -101,13 +100,11 @@ class MockBuildTool(BuildToolBase):
         # merge kwargs ans env
         return dict(kwargs.items() + env.items())
 
-
     @classmethod
     def _environment_destroy(cls, **kwargs):
         """ Destroys the temprary environment. """
         shutil.rmtree(kwargs[cls.TEMPDIR])
         logger.debug("MockBuildTool: Destroyed temporary environment in '%s'" % kwargs[cls.TEMPDIR])
-
 
     @classmethod
     def _envoronment_clear_resultdir(cls, **kwargs):
@@ -115,7 +112,6 @@ class MockBuildTool(BuildToolBase):
         logger.debug("MockBuildTool: cleaning the temporary resultdir '%s'" % kwargs[cls.TEMPDIR_RESULTDIR])
         shutil.rmtree(kwargs[cls.TEMPDIR_RESULTDIR])
         os.mkdir(kwargs[cls.TEMPDIR_RESULTDIR])
-
 
     @classmethod
     def _build_srpm(cls, **kwargs):
@@ -143,7 +139,6 @@ class MockBuildTool(BuildToolBase):
         else:
             return PathHelper.find_first_file(resultdir, '*.src.rpm')
 
-
     @classmethod
     def _build_rpm(cls, **kwargs):
         """ Build RPM using mock. """
@@ -168,7 +163,6 @@ class MockBuildTool(BuildToolBase):
             return None
         else:
             return [f for f in PathHelper.find_all_files(resultdir, '*.rpm') if not f.endswith('.src.rpm')]
-
 
     @classmethod
     def build(cls, **kwargs):
@@ -250,7 +244,6 @@ class RpmbuildBuildTool(BuildToolBase):
         else:
             return False
 
-
     @classmethod
     def _environment_prepare(cls, **kwargs):
         """ Create a temporary directory and copy sources and SPEC file in. """
@@ -293,13 +286,11 @@ class RpmbuildBuildTool(BuildToolBase):
         # merge kwargs ans env
         return dict(kwargs.items() + env.items())
 
-
     @classmethod
     def _environment_destroy(cls, **kwargs):
         """ Destroys the temprary environment. """
         shutil.rmtree(kwargs[cls.TEMPDIR])
         logger.debug("RpmbuildBuildTool: Destroyed temporary environment in '%s'" % kwargs[cls.TEMPDIR])
-
 
     @classmethod
     def _envoronment_clear_resultdir(cls, **kwargs):
@@ -307,7 +298,6 @@ class RpmbuildBuildTool(BuildToolBase):
         logger.debug("RpmbuildBuildTool: cleaning the temporary resultdir '%s'" % kwargs[cls.TEMPDIR_RESULTDIR])
         shutil.rmtree(kwargs[cls.TEMPDIR_RESULTDIR])
         os.mkdir(kwargs[cls.TEMPDIR_RESULTDIR])
-
 
     @classmethod
     def _build_srpm(cls, **kwargs):
@@ -321,14 +311,16 @@ class RpmbuildBuildTool(BuildToolBase):
 
         cmd = [cls.CMD, '-bs', spec_name]
         logger.debug("RpmbuildBuildTool: running: " + str(cmd))
-        ret = ProcessHelper.run_subprocess_cwd_env(cmd, cwd=kwargs[cls.TEMPDIR_RPMBUILD_SPECS], env={'HOME': home}, output=output)
+        ret = ProcessHelper.run_subprocess_cwd_env(cmd,
+                                                   cwd=kwargs[cls.TEMPDIR_RPMBUILD_SPECS],
+                                                   env={'HOME': home},
+                                                   output=output)
 
         if ret != 0:
             logger.error("RpmbuildBuildTool: running: " + str(cmd) + " failed with exit code '%s'!" % str(ret))
             return None
         else:
             return PathHelper.find_first_file(kwargs[cls.TEMPDIR_RPMBUILD_SRPMS], '*.src.rpm')
-
 
     @classmethod
     def _build_rpm(cls, **kwargs):
@@ -341,14 +333,16 @@ class RpmbuildBuildTool(BuildToolBase):
 
         cmd = [cls.CMD, '--rebuild', srpm]
         logger.debug("RpmbuildBuildTool: running: " + str(cmd))
-        ret = ProcessHelper.run_subprocess_cwd_env(cmd, cwd=kwargs[cls.TEMPDIR_RPMBUILD_SPECS], env={'HOME': home}, output=output)
+        ret = ProcessHelper.run_subprocess_cwd_env(cmd,
+                                                   cwd=kwargs[cls.TEMPDIR_RPMBUILD_SPECS],
+                                                   env={'HOME': home},
+                                                   output=output)
 
         if ret != 0:
             logger.error("RpmbuildBuildTool: running: " + str(cmd) + " failed with exit code '%s'!" % str(ret))
             return None
         else:
             return [f for f in PathHelper.find_all_files(kwargs[cls.TEMPDIR_RPMBUILD_RPMS], '*.rpm')]
-
 
     @classmethod
     def build(cls, **kwargs):

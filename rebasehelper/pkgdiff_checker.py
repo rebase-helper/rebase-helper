@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import sys
-
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.logger import logger
 from rebasehelper.base_checker import BaseChecker
@@ -21,8 +19,8 @@ def check_pkgdiff_argument(pkgcomparetool):
     """
     if pkgcomparetool not in pkgdiff_tools.keys():
         logger.error('You have to specify one of these package diff tool {0}'.format(pkgdiff_tools.keys()))
-        sys.exit(0)
-
+        return False
+    return True
 
 
 @register_build_tool
@@ -60,7 +58,7 @@ class PkgDiffTool(BaseChecker):
             if old:
                 file_name = cls._create_xml(version, old)
                 cmd.append(file_name)
-        ret_code = ProcessHelper.run_subprocess_cwd(' '.join(cmd), shell=True)
+        ProcessHelper.run_subprocess_cwd(' '.join(cmd), shell=True)
 
 
 class PkgCompare(object):
