@@ -6,6 +6,7 @@ import tempfile
 import shutil
 import random
 import string
+import StringIO
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.utils import PathHelper
 
@@ -40,14 +41,23 @@ class TestProcessHelper(object):
             assert ret == 0
             assert os.path.exists(self.TEMP_FILE)
 
-        def test_simple_cmd_with_redirected_output(self):
+        def test_simple_cmd_with_redirected_output_path(self):
             ret = ProcessHelper.run_subprocess(self.ECHO_COMMAND,
                                                output=self.OUT_FILE)
             assert ret == 0
             assert os.path.exists(self.OUT_FILE)
             assert open(self.OUT_FILE).readline().strip('\n') == self.PHRASE
 
-        def test_simple_cmd_with_input_and_redirected_output(self):
+        def test_simple_cmd_with_redirected_output_fileobject(self):
+            buff = StringIO.StringIO()
+            ret = ProcessHelper.run_subprocess(self.ECHO_COMMAND,
+                                               output=buff)
+            assert ret == 0
+            assert not os.path.exists(self.OUT_FILE)
+            assert buff.readline().strip('\n') == self.PHRASE
+            buff.close()
+
+        def test_simple_cmd_with_input_path_and_redirected_output_path(self):
             with open(self.IN_FILE, 'w') as f:
                 f.write(self.PHRASE)
 
@@ -60,6 +70,58 @@ class TestProcessHelper(object):
             assert ret == 0
             assert os.path.exists(self.OUT_FILE)
             assert open(self.OUT_FILE).readline().strip('\n') == self.PHRASE
+
+        def test_simple_cmd_with_input_fileobject_and_redirected_output_path(self):
+            in_buff = StringIO.StringIO()
+            in_buff.write(self.PHRASE)
+
+            assert not os.path.exists(self.IN_FILE)
+            in_buff.seek(0)
+            assert in_buff.readline().strip('\n') == self.PHRASE
+
+            ret = ProcessHelper.run_subprocess(self.CAT_COMMAND,
+                                               input=in_buff,
+                                               output=self.OUT_FILE)
+            in_buff.close()
+            assert ret == 0
+            assert os.path.exists(self.OUT_FILE)
+            assert open(self.OUT_FILE).readline().strip('\n') == self.PHRASE
+
+        def test_simple_cmd_with_input_path_and_redirected_output_fileobject(self):
+            out_buff = StringIO.StringIO()
+            with open(self.IN_FILE, 'w') as f:
+                f.write(self.PHRASE)
+
+            assert os.path.exists(self.IN_FILE)
+            assert open(self.IN_FILE).readline().strip('\n') == self.PHRASE
+
+            ret = ProcessHelper.run_subprocess(self.CAT_COMMAND,
+                                               input=self.IN_FILE,
+                                               output=out_buff)
+            assert ret == 0
+            assert not os.path.exists(self.OUT_FILE)
+            out_buff.seek(0)
+            assert out_buff.readline().strip('\n') == self.PHRASE
+            out_buff.close()
+
+        def test_simple_cmd_with_input_fileobject_and_redirected_output_fileobject(self):
+            out_buff = StringIO.StringIO()
+            in_buff = StringIO.StringIO()
+            in_buff.write(self.PHRASE)
+
+            assert not os.path.exists(self.IN_FILE)
+            in_buff.seek(0)
+            assert in_buff.readline().strip('\n') == self.PHRASE
+
+            ret = ProcessHelper.run_subprocess(self.CAT_COMMAND,
+                                               input=in_buff,
+                                               output=out_buff)
+            in_buff.close()
+            assert ret == 0
+            assert not os.path.exists(self.OUT_FILE)
+            out_buff.seek(0)
+            assert out_buff.readline().strip('\n') == self.PHRASE
+            out_buff.close()
 
 
     class TestRunSubprocessCwd(object):

@@ -147,19 +147,48 @@ class ProcessHelper(object):
         :param shell: if to run the command as shell command (default: False)
         :return: exit code of the process
         """
-        # write the output to a file?
-        if output is not None:
+        close_out_file = False
+        close_in_file = False
+
+        # write the output to a file/file-like object?
+        try:
             out_file = open(output, 'w')
+        except TypeError:
+            out_file = output
         else:
-            out_file = None
+            close_out_file = True
 
-        # read the input from a file?
-        if input is not None:
+        # read the input from a file/file-like object?
+        try:
             in_file = open(input, 'r')
+        except TypeError:
+            in_file = input
         else:
-            in_file = None
+            close_in_file = True
 
-        # need to change enviroment variables?
+        # we need to rewind the file object pointer to the beginning
+        try:
+            in_file.seek(0)
+        except AttributeError:
+            # we don't mind - in_file might be None
+            pass
+
+        # check if in_file has fileno() method - which is needed for Popen
+        try:
+            in_file.fileno()
+        except AttributeError:
+            spooled_in_file = tempfile.SpooledTemporaryFile(mode='w+b')
+            try:
+                in_data = in_file.read()
+            except AttributeError:
+                spooled_in_file.close()
+            else:
+                spooled_in_file.write(in_data)
+                spooled_in_file.seek(0)
+                in_file = spooled_in_file
+                close_in_file = True
+
+        # need to change environment variables?
         if env is not None:
             local_env = os.environ.copy()
             local_env.update(env)
@@ -181,10 +210,17 @@ class ProcessHelper(object):
             else:
                 logger.debug(line.rstrip("\n"))
 
-        if out_file is not None:
+        # we need to rewind the file object pointer to the beginning
+        try:
+            out_file.seek(0)
+        except AttributeError:
+            # we don't mind - out_file might be None
+            pass
+
+        if close_out_file:
             out_file.close()
 
-        if in_file is not None:
+        if close_in_file:
             in_file.close()
 
         sp.wait()
