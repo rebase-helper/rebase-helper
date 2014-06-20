@@ -19,7 +19,7 @@ class CLI(object):
 
         self.add_args()
         self.args = self.parser.parse_args()
-        logger.info(self.args)
+        logger.debug(self.args)
 
     def add_args(self):
         self.parser.add_argument(
