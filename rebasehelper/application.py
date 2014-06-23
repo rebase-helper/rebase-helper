@@ -8,9 +8,11 @@ import logging
 from rebasehelper.archive import Archive
 from rebasehelper.specfile import SpecFile
 from rebasehelper.logger import logger
-from rebasehelper import settings, patch_helper, build_helper, pkgdiff_checker
+from rebasehelper import settings, patch_helper, build_helper
 from rebasehelper import output_tool
 from rebasehelper.utils import get_value_from_kwargs
+from rebasehelper.base_checker import Checker
+import rebasehelper.pkgdiff_checker
 
 
 def extract_sources(source_name, source_dir):
@@ -108,10 +110,13 @@ class Application(object):
         Function calls pkgdiff class for comparing packages
         :return:
         """
-        if not pkgdiff_checker.check_pkgdiff_argument(self.conf.pkgcomparetool):
-            sys.exit(0)
-        pkgchecker = pkgdiff_checker.PkgCompare(self.conf.pkgcomparetool)
-        pkgchecker.compare_pkgs(**self.kwargs)
+        try:
+            pkgchecker = Checker(self.conf.pkgcomparetool)
+        except NotImplementedError:
+            logger.error('You have to specify one of these check tools {0}'.format(Checker.get_supported_tools()))
+            sys.exit(1)
+        else:
+            pkgchecker.run_check(**self.kwargs)
 
     def print_summary(self):
         output_tool.check_output_argument(self.conf.outputtool)
