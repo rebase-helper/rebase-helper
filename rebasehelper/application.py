@@ -144,12 +144,12 @@ class Application(object):
 
         if not self.conf.sources:
             logger.error('You have to define a new sources.')
-            sys.exit(0)
+            sys.exit(1)
 
         if not self.conf.build_only:
             # Patch sources
             if not patch_helper.check_difftool_argument(self.conf.difftool):
-                sys.exit(0)
+                sys.exit(1)
             self.kwargs['old_dir'] = old_dir
             self.kwargs['new_dir'] = new_dir
             self.kwargs['diff_tool'] = self.conf.difftool
