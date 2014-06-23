@@ -61,7 +61,7 @@ setup(
     author_email='phracek@redhat.com',
     url='https://github.com/phracek/rebase-helper',
     license='GPLv2+',
-    packages=['rebasehelper', 'rebasehelper.archive.cli'],
+    packages=['rebasehelper'],
     include_package_data=True,
     entry_points={'console_scripts':['rebase-helper=rebasehelper:rebase_helper']},
     install_requires=install_requires,
