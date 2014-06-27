@@ -29,7 +29,6 @@ from rebasehelper import settings, patch_helper, build_helper
 from rebasehelper import output_tool
 from rebasehelper.utils import get_value_from_kwargs
 from rebasehelper.base_checker import Checker
-import rebasehelper.pkgdiff_checker
 
 
 def extract_sources(source_name, source_dir):

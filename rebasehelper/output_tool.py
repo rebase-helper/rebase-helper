@@ -120,6 +120,18 @@ class TextOutputTool(BaseOutputTool):
 
         cls.print_rpms(old, 'Old')
         cls.print_rpms(new, 'New')
+        cls.print_pkgdiff_tool(**kwargs)
+
+    @classmethod
+    def print_pkgdiff_tool(cls, **kwargs):
+        """
+        Function prints a summary information about pkgcomparetool
+        """
+        logger.info("Results from pkgcompare tool are stored in directory:")
+        try:
+            logger.info(kwargs['pkgcompareinfo'])
+        except KeyError as ke:
+            logger.error('Comparing information was not found.')
 
 
 class OutputTool(object):

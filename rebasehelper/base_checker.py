@@ -22,6 +22,7 @@ from rebasehelper.logger import logger
 
 check_tools = {}
 
+
 def register_check_tool(check_tool):
     check_tools[check_tool.CMD] = check_tool
     return check_tool
