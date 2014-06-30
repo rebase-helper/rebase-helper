@@ -30,8 +30,8 @@ from rebasehelper import settings
 class PkgDiffTool(BaseChecker):
     """ Pkgdiff compare tool. """
     CMD = "pkgdiff"
-    pkg_diff_result_path = os.path.join(settings.REBASE_HELPER_PREFIX+settings.REBASE_RESULTS_DIR,
-                                        "pkgdiff_reports")
+    pkg_diff_result_path = os.path.join(settings.REBASE_HELPER_PREFIX + settings.REBASE_RESULTS_DIR,
+                                        "pkgdiff_reports.html")
 
     @classmethod
     def match(cls, cmd=None):
@@ -54,7 +54,7 @@ class PkgDiffTool(BaseChecker):
         return file_name
 
     @classmethod
-    def run_check(cls, *args, **kwargs):
+    def run_check(cls, **kwargs):
         """ Compares  old and new RPMs using pkgdiff """
         versions = ['old', 'new']
         cmd = [cls.CMD]
@@ -67,7 +67,5 @@ class PkgDiffTool(BaseChecker):
         cmd.append(cls.pkg_diff_result_path)
         # TODO Should we return a value??
         ProcessHelper.run_subprocess(cmd)
-        pkginfo = {}
-        pkginfo['pkgcompareinfo'] = cls.pkg_diff_result_path
-        kwargs.update(pkginfo)
+        return cls.pkg_diff_result_path
 

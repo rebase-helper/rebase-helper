@@ -29,6 +29,7 @@ from rebasehelper import settings, patch_helper, build_helper
 from rebasehelper import output_tool
 from rebasehelper.utils import get_value_from_kwargs
 from rebasehelper.base_checker import Checker
+import rebasehelper.pkgdiff_checker
 
 
 def extract_sources(source_name, source_dir):
@@ -132,7 +133,7 @@ class Application(object):
             logger.error('You have to specify one of these check tools {0}'.format(Checker.get_supported_tools()))
             sys.exit(1)
         else:
-            pkgchecker.run_check(**self.kwargs)
+            self.kwargs['pkgcompareinfo'] = pkgchecker.run_check(**self.kwargs)
 
     def print_summary(self):
         output_tool.check_output_argument(self.conf.outputtool)

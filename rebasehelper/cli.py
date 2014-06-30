@@ -83,7 +83,7 @@ class CLI(object):
         self.parser.add_argument(
             "--outputtool",
             default="text",
-            help="Select the tool for comparing two packages [text]"
+            help="Select the tool for showing information from rebase-helper process [text]"
         )
         self.parser.add_argument(
             "sources",
