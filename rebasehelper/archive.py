@@ -23,7 +23,7 @@ try:
     import lzma
 except ImportError:
     from backports import lzma
-from rebasehelper import settings
+
 from rebasehelper.logger import logger
 
 
