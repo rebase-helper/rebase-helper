@@ -103,7 +103,7 @@ class PatchTool(PatchBase):
 
         temp_name = get_temporary_name()
         logger.debug('patch_command(): ' + ' '.join(cmd))
-        ret_code = ProcessHelper.run_subprocess(cmd, input=patch_name, output=temp_name)
+        ret_code = ProcessHelper.run_subprocess_cwd(cmd, cwd=cls.source_dir, input=patch_name, output=temp_name)
         cls.output_data = get_content_file(temp_name, 'r', method=True)
         remove_temporary_name(temp_name)
         return ret_code
@@ -112,7 +112,7 @@ class PatchTool(PatchBase):
     def get_failed_patched_files(cls, patch_name):
         cmd = ['lsdiff', patch_name]
         temp_name = get_temporary_name()
-        ret_code = ProcessHelper.run_subprocess(cmd, output=temp_name)
+        ret_code = ProcessHelper.run_subprocess_cwd(cmd, cwd=cls.source_dir, output=temp_name)
         if ret_code != 0:
             return None
         cls.patched_files = get_content_file(temp_name, 'r', method=True)
@@ -141,9 +141,10 @@ class PatchTool(PatchBase):
         cmd.append(os.path.basename(cls.new_sources))
         cmd.append('.' + cls.suffix)
         temp_name = get_temporary_name()
+        new_upstream_dir = os.path.join(os.getcwd(), settings.NEW_SOURCES)
 
-        logger.debug('apply_patch(): ' + ' '.join(cmd))
-        ret_code = ProcessHelper.run_subprocess_cwd(cmd, cwd=os.pardir, input=patch, output=temp_name)
+        logger.debug('generate_diff(): ' + ' '.join(cmd))
+        ret_code = ProcessHelper.run_subprocess_cwd(cmd, cwd=new_upstream_dir, output=patch)
 
         # sometimes returns 1 even the patch was generated. why ???
         logger.debug("ret_code: {0}".format(ret_code))
@@ -159,7 +160,6 @@ class PatchTool(PatchBase):
         """
         Function applies a patch to a old/new sources
         """
-        os.chdir(cls.source_dir)
         if cls.source_dir == cls.old_sources:
             # for new_sources we want the same suffix as for old_sources
             cls.suffix = ''.join(random.choice(string.ascii_letters) for _ in range(6))
@@ -207,7 +207,6 @@ class PatchTool(PatchBase):
         cls.new_sources = kwargs.get('new_dir', None)
         cls.output_data = []
         cls.patched_files = []
-        cwd = os.getcwd()
         # apply patches in the same order as in spec file, not according to their numbers
         for order in sorted(cls.patches.items(), key=lambda x: x[1][2]):
             try:
@@ -218,7 +217,6 @@ class PatchTool(PatchBase):
             except Exception:
                 raise Exception
             cls.patches[order[0]] = patch
-        os.chdir(cwd)
 
         return cls.patches
 
