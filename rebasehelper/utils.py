@@ -167,6 +167,15 @@ class ProcessHelper(object):
         close_out_file = False
         close_in_file = False
 
+        logger.debug("ProcessHelper.run_subprocess: cmd={cmd}, cwd={cwd}, env={env}, input={input}, output={output}, shell={shell}".format(
+            cmd=str(cmd),
+            cwd=str(cwd),
+            env=str(env),
+            input=str(input),
+            output=str(output),
+            shell=str(shell),
+        ))
+
         # write the output to a file/file-like object?
         try:
             out_file = open(output, 'w')
@@ -241,6 +250,9 @@ class ProcessHelper(object):
             in_file.close()
 
         sp.wait()
+
+        logger.debug("ProcessHelper.run_subprocess: subprocess exited with return code {ret}".format(ret=str(sp.returncode)))
+
         return sp.returncode
 
 
