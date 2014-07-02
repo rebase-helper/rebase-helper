@@ -181,3 +181,8 @@ class Archive(object):
         archive = self._archive_type.open(self._filename)
         archive.extractall(path)
         archive.close()
+
+    @classmethod
+    def get_supported_archives(cls):
+        """ Return list of supported archive types """
+        return archive_types.keys()

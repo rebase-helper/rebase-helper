@@ -31,36 +31,13 @@ from rebasehelper.utils import get_value_from_kwargs
 from rebasehelper.checker import Checker
 
 
-
-def extract_sources(source_name, source_dir):
-    """
-    Function extracts tar ball and returns a full dirname to sources
-    """
-    if os.path.isdir(source_dir):
-        shutil.rmtree(source_dir)
-    arch = None
-    try:
-        arch = Archive(source_name)
-        arch.extract(source_dir)
-    except NotImplementedError as nie:
-        if nie.message == "Unsupported archive type":
-            logger.error("This archive is not supported yet.")
-        sys.exit(0)
-    except IOError as ioe:
-        logger.error("Archive with the name {0} does not exist or is corrupted.".format(source_name))
-        sys.exit(0)
-    package_dir = ""
-    for dir_name in os.listdir(source_dir):
-        package_dir = dir_name
-    return os.path.join(os.getcwd(), source_dir, package_dir)
-
-
 class Application(object):
     result_file = ""
     temp_dir = ""
     kwargs = {}
     spec = None
     old_sources = ""
+    new_sources = ""
     spec_file = ""
 
     def __init__(self, cli_conf=None):
@@ -101,6 +78,47 @@ class Application(object):
                 spec_file = filename
                 break
         return spec_file
+
+    @staticmethod
+    def extract_archive(archive_path, destination):
+        """
+        Extracts given archive into the destination and handle all exceptions.
+
+        :param archive_path: path to the archive to be extracted
+        :param destination: path to a destination, where the archive should be extracted to
+        :return:
+        """
+        try:
+            archive = Archive(archive_path)
+        except NotImplementedError as e:
+            logger.error("{0}, '{1}".format(e.message, archive_path))
+            logger.error("Supported archive types are '{0}'".format(str(Archive.get_supported_archives())))
+            sys.exit(1)
+
+        try:
+            archive.extract(destination)
+        except IOError as e:
+            logger.error("Archive '{0}' can not be extracted: '{1}'".format(archive_path, e.message))
+            sys.exit(1)
+
+    @staticmethod
+    def extract_sources(archive_path, destination):
+        """
+        Function extracts a given Archive and returns a full dirname to sources
+        """
+        # TODO Remove this in the future -> we should clean the workspace before calling this method
+        if os.path.isdir(destination):
+            shutil.rmtree(destination)
+
+        Application.extract_archive(archive_path, destination)
+
+        try:
+            sources_dir = os.listdir(destination)[0]
+        except IndexError:
+            # TODO Maybe we should raise a RuntimeError
+            sources_dir = ""
+
+        return os.path.join(destination, sources_dir)
 
     def build_packages(self):
         """
@@ -156,17 +174,21 @@ class Application(object):
             logger.error('You have to define a SPEC file.')
             sys.exit(1)
         self.spec = SpecFile(self.spec_file, self.conf.sources)
+
         self.old_sources, new_sources = self.spec.get_tarballs()
+        self.old_sources = os.path.abspath(self.old_sources)
         if new_sources:
             self.conf.sources = new_sources
-
-        old_dir = extract_sources(self.old_sources, settings.OLD_SOURCES)
-        new_dir = extract_sources(self.conf.sources, settings.NEW_SOURCES)
-        self._initialize_data()
 
         if not self.conf.sources:
             logger.error('You have to define a new sources.')
             sys.exit(1)
+        else:
+            self.new_sources = os.path.abspath(self.conf.sources)
+
+        old_dir = Application.extract_sources(self.old_sources, settings.OLD_SOURCES_DIR)
+        new_dir = Application.extract_sources(self.new_sources, settings.NEW_SOURCES_DIR)
+        self._initialize_data()
 
         if not self.conf.build_only:
             # Patch sources
