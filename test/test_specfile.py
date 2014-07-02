@@ -33,7 +33,7 @@ class TestSpecHelper(object):
 
     def setup(self):
         self.dir_name = os.path.dirname(__file__)
-        self.result_dir = os.path.join(self.dir_name, settings.REBASE_RESULTS_DIR)
+        self.result_dir = os.path.join(self.dir_name, settings.REBASE_HELPER_RESULTS_DIR)
         if os.path.exists(self.result_dir):
             shutil.rmtree(self.result_dir)
         os.makedirs(self.result_dir)
@@ -47,7 +47,7 @@ class TestSpecHelper(object):
 
     def test_spec_file(self):
         spec_path = os.path.join(self.dir_name,
-                                           settings.REBASE_RESULTS_DIR,
+                                           settings.REBASE_HELPER_RESULTS_DIR,
                                            self.test_spec)
         assert os.path.exists(spec_path)
 

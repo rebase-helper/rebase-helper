@@ -55,7 +55,7 @@ class BaseChecker(object):
 class PkgDiffTool(BaseChecker):
     """ Pkgdiff compare tool. """
     CMD = "pkgdiff"
-    pkg_diff_result_path = os.path.join(settings.REBASE_HELPER_PREFIX + settings.REBASE_RESULTS_DIR,
+    pkg_diff_result_path = os.path.join(settings.REBASE_HELPER_RESULTS_DIR,
                                         "pkgdiff_reports.html")
 
     @classmethod

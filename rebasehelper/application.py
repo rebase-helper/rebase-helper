@@ -48,6 +48,13 @@ class Application(object):
         :return:
         """
         self.conf = cli_conf
+        # The directory in which rebase-helper was executed
+        self.execution_dir = os.getcwd()
+        # Temporary workspace for Builder, checks, ...
+        self.workspace_dir = os.path.join(self.execution_dir, settings.REBASE_HELPER_WORKSPACE_DIR)
+        # Directory where results should be put
+        self.results_dir = os.path.join(self.execution_dir, settings.REBASE_HELPER_RESULTS_DIR)
+
         self.kwargs = {}
         self.kwargs['old'] = {}
         self.kwargs['new'] = {}
@@ -127,17 +134,13 @@ class Application(object):
         if not build_helper.check_build_argument(self.conf.buildtool):
             sys.exit(0)
         builder = build_helper.Builder(self.conf.buildtool)
+
         old_patches = get_value_from_kwargs(self.kwargs, settings.FULL_PATCHES)
         self.kwargs['old']['patches'] = [p[0] for p in old_patches.itervalues()]
         new_patches = get_value_from_kwargs(self.kwargs, settings.FULL_PATCHES, source='new')
         self.kwargs['new']['patches'] = [p[0] for p in new_patches.itervalues()]
-        # TODO: need to create some results directory where results of tests
-        # will be stored!!! The results dir should be removed on startup
-        # or the tool should fail if it exists
-        result_path = os.path.join(os.getcwd(), "rebase-helper-results")
-        if os.path.exists(result_path):
-            shutil.rmtree(result_path)
-        self.kwargs['resultdir'] = result_path
+        self.kwargs['resultdir'] = self.workspace_dir
+
         logger.info('Building packages using {0} ... running'.format(self.conf.buildtool))
         builder.build_packages(**self.kwargs)
         logger.info('Building package done')
@@ -166,8 +169,8 @@ class Application(object):
         if self.conf.verbose:
             logger.setLevel(logging.DEBUG)
 
-        if not os.path.exists(settings.REBASE_RESULTS_DIR):
-            os.makedirs(settings.REBASE_RESULTS_DIR)
+        if not os.path.exists(self.results_dir):
+            os.makedirs(self.results_dir)
 
         self.spec_file = self._get_spec_file()
         if not self.spec_file:

@@ -49,7 +49,7 @@ def get_rebase_name(name):
     """
     dir_name = os.path.dirname(name)
     file_name = os.path.basename(name)
-    return os.path.join(dir_name, settings.REBASE_RESULTS_DIR, file_name)
+    return os.path.join(dir_name, settings.REBASE_HELPER_RESULTS_DIR, file_name)
 
 
 class SpecFile(object):
@@ -350,7 +350,7 @@ class SpecFile(object):
             patch_num = self.get_patch_number(line)
             patch_name = patches[int(patch_num)][0]
             comment = ""
-            if settings.REBASE_RESULTS_DIR in patch_name:
+            if settings.REBASE_HELPER_RESULTS_DIR in patch_name:
                 if self.check_empty_patches(patch_name):
                     comment = '#'
                     removed_patches.append(patch_num)

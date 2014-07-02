@@ -20,11 +20,13 @@
 REBASE_HELPER_SUFFIX = "-rebase"
 REBASE_HELPER_PREFIX = "rebase-helper-"
 
+REBASE_HELPER_RESULTS_DIR = REBASE_HELPER_PREFIX + "results"
+REBASE_HELPER_WORKSPACE_DIR = REBASE_HELPER_PREFIX + "workspace"
+
 OLD_SOURCES_DIR = 'old_sources'
 NEW_SOURCES_DIR = 'new_sources'
 
 # TODO: move this to specfile.py ??
 PATCH_PREFIX = '%patch'
-REBASE_RESULTS_DIR = "results"
 # The variable for access to full information about patches
 FULL_PATCHES = 'patches_full'
