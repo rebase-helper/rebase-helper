@@ -72,10 +72,8 @@ class TarXzArchiveType(ArchiveTypeBase):
         if filename is None:
             raise TypeError("Expected argument 'filename' (pos 1) is missing")
         xz_file = lzma.LZMAFile(filename, "r")
-        try:
-            return tarfile.open(mode='r', fileobj=xz_file)
-        except IOError as ioe:
-            raise
+
+        return tarfile.open(mode='r', fileobj=xz_file)
 
 
 @register_archive_type
@@ -94,10 +92,8 @@ class TarBz2ArchiveType(ArchiveTypeBase):
     def open(cls, filename=None):
         if filename is None:
             raise TypeError("Expected argument 'filename' (pos 1) is missing")
-        try:
-            return tarfile.TarFile.open(filename)
-        except IOError as ioe:
-            raise
+
+        return tarfile.TarFile.open(filename)
 
 
 @register_archive_type
@@ -116,10 +112,8 @@ class TarGzArchiveType(TarBz2ArchiveType):
     def open(cls, filename=None):
         if filename is None:
             raise TypeError("Expected argument 'filename' (pos 1) is missing")
-        try:
-            return tarfile.TarFile.open(filename)
-        except IOError as ioe:
-            raise
+
+        return tarfile.TarFile.open(filename)
 
 
 @register_archive_type
@@ -151,10 +145,8 @@ class ZipArchiveType(ArchiveTypeBase):
     def open(cls, filename=None):
         if filename is None:
             raise TypeError("Expected argument 'filename' (pos 1) is missing")
-        try:
-            return zipfile.ZipFile(filename, "r")
-        except IOError as ioe:
-            raise
+
+        return zipfile.ZipFile(filename, "r")
 
 
 class Archive(object):
@@ -180,10 +172,8 @@ class Archive(object):
         """ Extracts the archive into the given path """
         logger.debug("Archive: Extracting '{0}' into '{1}'".format(
                      self._filename, path))
-        try:
-            archive = self._archive_type.open(self._filename)
-        except IOError as ioe:
-            raise
+
+        archive = self._archive_type.open(self._filename)
         archive.extractall(path)
         archive.close()
         return path
