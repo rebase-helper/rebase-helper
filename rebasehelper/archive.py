@@ -181,4 +181,3 @@ class Archive(object):
         archive = self._archive_type.open(self._filename)
         archive.extractall(path)
         archive.close()
-        return path
