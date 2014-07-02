@@ -166,10 +166,15 @@ class Archive(object):
             raise NotImplementedError("Unsupported archive type")
 
     def extract(self, path=None):
+        """
+        Extracts the archive into the given path
+
+        :param path: Path where to extract the archive to.
+        :return:
+        """
         if path is None:
-            logger.info("Specify path where to extract sources.")
-            raise
-        """ Extracts the archive into the given path """
+            TypeError("Expected argument 'path' (pos 1) is missing")
+
         logger.debug("Archive: Extracting '{0}' into '{1}'".format(
                      self._filename, path))
 
