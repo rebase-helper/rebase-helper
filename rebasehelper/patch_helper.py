@@ -94,6 +94,8 @@ class PatchTool(PatchBase):
         Patch command whom patches as the
         """
         cmd = ['patch']
+        logger.debug('PatchTool: Applying patch')
+
         cmd.append(patch_flags)
         if cls.suffix:
             cmd.append('-b')
@@ -102,7 +104,6 @@ class PatchTool(PatchBase):
         cmd.append('--force')  # don't ask questions
 
         temp_name = get_temporary_name()
-        logger.debug('patch_command(): ' + ' '.join(cmd))
         ret_code = ProcessHelper.run_subprocess_cwd(cmd, cwd=cls.source_dir, input=patch_name, output=temp_name)
         cls.output_data = get_content_file(temp_name, 'r', method=True)
         remove_temporary_name(temp_name)
@@ -136,18 +137,14 @@ class PatchTool(PatchBase):
     @classmethod
     def generate_diff(cls, patch, source_dir):
         # gendiff new_source + self.suffix > patch[0]
-        logger.info("Generating patch by gendiff")
+        logger.debug("PatchTool: Generating patch using gendiff")
         cmd = ['gendiff']
         cmd.append(os.path.basename(cls.new_sources))
         cmd.append('.' + cls.suffix)
         temp_name = get_temporary_name()
         new_upstream_dir = os.path.join(os.getcwd(), settings.NEW_SOURCES)
 
-        logger.debug('generate_diff(): ' + ' '.join(cmd))
-        ret_code = ProcessHelper.run_subprocess_cwd(cmd, cwd=new_upstream_dir, output=patch)
-
-        # sometimes returns 1 even the patch was generated. why ???
-        logger.debug("ret_code: {0}".format(ret_code))
+        ProcessHelper.run_subprocess_cwd(cmd, cwd=new_upstream_dir, output=patch)
         gendiff_output = get_content_file(temp_name, 'r', method=True)
         remove_temporary_name(temp_name)
 
@@ -168,13 +165,14 @@ class PatchTool(PatchBase):
         if ret_code != 0:
             # unexpected
             if cls.source_dir == cls.old_sources:
-                logger.critical('Failed to patch old sources.{0}'.format(ret_code))
-                raise RuntimeError
+                logger.error('Failed to patch old sources')
+                raise RuntimeError()
+
             get_message("Patch {0} failed on new source. merge-tool will start.".
                         format(os.path.basename(patch[0])),
                         keyboard=True)
-            logger.warning('Patch failed with return code {0}. '
-                           'Will start merge-tool to fix conflicts manually.'.format(ret_code))
+            logger.warning('Applying patch failed. '
+                           'Will start merge-tool to fix conflicts manually.')
             patched_files = cls.get_failed_patched_files(patch[0])
             if not patched_files:
                 logger.error('We are not able to get a list of failed files.')

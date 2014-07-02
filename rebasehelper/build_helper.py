@@ -148,10 +148,8 @@ class MockBuildTool(BuildToolBase):
         if arch is not None:
             cmd.extend(['--arch', arch])
 
-        logger.debug("MockBuildTool: running '" + str(cmd) + "'")
         ret = ProcessHelper.run_subprocess(cmd, output=output)
         if ret != 0:
-            logger.error("MockBuildTool: running '" + str(cmd) + "' failed with exit code '%s'!" % str(ret))
             return None
         else:
             return PathHelper.find_first_file(resultdir, '*.src.rpm')
@@ -172,11 +170,9 @@ class MockBuildTool(BuildToolBase):
         if arch is not None:
             cmd.extend(['--arch', arch])
 
-        logger.debug("MockBuildTool: running: " + str(cmd))
         ret = ProcessHelper.run_subprocess(cmd, output=output)
 
         if ret != 0:
-            logger.error("MockBuildTool: running: " + str(cmd) + " failed with exit code '%s'!" % str(ret))
             return None
         else:
             return [f for f in PathHelper.find_all_files(resultdir, '*.rpm') if not f.endswith('.src.rpm')]
@@ -327,14 +323,12 @@ class RpmbuildBuildTool(BuildToolBase):
         output = os.path.join(resultdir, "rpmbuild_output.log")
 
         cmd = [cls.CMD, '-bs', spec_name]
-        logger.debug("RpmbuildBuildTool: running: " + str(cmd))
         ret = ProcessHelper.run_subprocess_cwd_env(cmd,
                                                    cwd=kwargs[cls.TEMPDIR_RPMBUILD_SPECS],
                                                    env={'HOME': home},
                                                    output=output)
 
         if ret != 0:
-            logger.error("RpmbuildBuildTool: running: " + str(cmd) + " failed with exit code '%s'!" % str(ret))
             return None
         else:
             return PathHelper.find_first_file(kwargs[cls.TEMPDIR_RPMBUILD_SRPMS], '*.src.rpm')
@@ -349,14 +343,12 @@ class RpmbuildBuildTool(BuildToolBase):
         output = os.path.join(resultdir, "rpmbuild_output.log")
 
         cmd = [cls.CMD, '--rebuild', srpm]
-        logger.debug("RpmbuildBuildTool: running: " + str(cmd))
         ret = ProcessHelper.run_subprocess_cwd_env(cmd,
                                                    cwd=kwargs[cls.TEMPDIR_RPMBUILD_SPECS],
                                                    env={'HOME': home},
                                                    output=output)
 
         if ret != 0:
-            logger.error("RpmbuildBuildTool: running: " + str(cmd) + " failed with exit code '%s'!" % str(ret))
             return None
         else:
             return [f for f in PathHelper.find_all_files(kwargs[cls.TEMPDIR_RPMBUILD_RPMS], '*.rpm')]

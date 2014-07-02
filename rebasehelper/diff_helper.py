@@ -109,10 +109,11 @@ class MeldDiffTool(DiffBase):
         if not new:
             raise TypeError("MeldDiffTool:run_diff: missing new")
 
+        logger.debug("MeldDiffTool: running diff")
+
         cmd = [cls.CMD, '--diff', old, new]
-        logger.debug("MeldDiffTool:run_diff: running '" + str(cmd) + "'")
-        ret_code = ProcessHelper.run_subprocess_cwd(' '.join(cmd), output=None, shell=True)
-        logger.debug("ret_code:{0}".format(ret_code))
+        return ProcessHelper.run_subprocess(cmd, output=ProcessHelper.DEV_NULL)
+
 
     @classmethod
     def run_mergetool(cls, **kwargs):
@@ -132,6 +133,8 @@ class MeldDiffTool(DiffBase):
         if not failed_files:
             raise TypeError("MeldDiffTool:run_mergetool: missing failed_files")
 
+        logger.debug("MeldDiffTool: running merge")
+
         for index, fname in enumerate(failed_files):
             base =   os.path.join(old_dir, fname + suffix)
             remote = os.path.join(old_dir, fname)
@@ -140,8 +143,8 @@ class MeldDiffTool(DiffBase):
 
             # http://stackoverflow.com/questions/11133290/git-merging-using-meld
             cmd = [cls.CMD, '--diff', base, local, '--diff', base, remote, '--auto-merge', local, base, remote, '--output', merged]
-            logger.debug("MeldDiffTool:run_mergetool: running '" + str(cmd) + "'")
-            ret_code = ProcessHelper.run_subprocess_cwd(' '.join(cmd), output=None, shell=True)
+
+            ProcessHelper.run_subprocess(cmd, output=ProcessHelper.DEV_NULL)
 
             if len(failed_files) > 1 and index < len(failed_files) - 1:
                 accept = ['y', 'yes']

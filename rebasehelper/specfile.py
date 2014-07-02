@@ -263,8 +263,7 @@ class SpecFile(object):
         """
         Function checks whether patch is empty or not
         """
-        cmd = []
-        cmd.append("/usr/bin/lsdiff")
+        cmd = ["lsdiff"]
         cmd.append(patch_name)
         temp_name = get_temporary_name()
         ret_code = ProcessHelper.run_subprocess(cmd, output=temp_name)
