@@ -28,8 +28,8 @@ from rebasehelper.logger import logger
 from rebasehelper import settings, patch_helper, build_helper
 from rebasehelper import output_tool
 from rebasehelper.utils import get_value_from_kwargs
-from rebasehelper.base_checker import Checker
-import rebasehelper.pkgdiff_checker
+from rebasehelper.checker import Checker
+
 
 
 def extract_sources(source_name, source_dir):

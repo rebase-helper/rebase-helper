@@ -18,6 +18,10 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 
+import os
+from rebasehelper.utils import ProcessHelper
+from rebasehelper.utils import write_to_file
+from rebasehelper import settings
 from rebasehelper.logger import logger
 
 check_tools = {}
@@ -45,6 +49,50 @@ class BaseChecker(object):
         Perform the check itself and return results.
         """
         raise NotImplementedError()
+
+
+@register_check_tool
+class PkgDiffTool(BaseChecker):
+    """ Pkgdiff compare tool. """
+    CMD = "pkgdiff"
+    pkg_diff_result_path = os.path.join(settings.REBASE_HELPER_PREFIX + settings.REBASE_RESULTS_DIR,
+                                        "pkgdiff_reports.html")
+
+    @classmethod
+    def match(cls, cmd=None):
+        if cmd == cls.CMD:
+            return True
+        else:
+            return False
+
+    @classmethod
+    def _create_xml(cls, name, input_structure={}):
+        file_name = name + ".xml"
+        tags = {'version': input_structure.get('version', ""),
+                'group': input_structure.get('name', ''),
+                'packages': input_structure.get('rpm', [])}
+        lines = []
+        for key, value in tags.items():
+            new_value = value if isinstance(value, str) else '\n'.join(value)
+            lines.append('<{0}>\n{1}\n</{0}>\n'.format(key, new_value))
+        write_to_file(file_name, "w", lines)
+        return file_name
+
+    @classmethod
+    def run_check(cls, **kwargs):
+        """ Compares  old and new RPMs using pkgdiff """
+        versions = ['old', 'new']
+        cmd = [cls.CMD]
+        for version in versions:
+            old = kwargs.get(version, None)
+            if old:
+                file_name = cls._create_xml(version, input_structure=old)
+                cmd.append(file_name)
+        cmd.append('-report-path')
+        cmd.append(cls.pkg_diff_result_path)
+        # TODO Should we return a value??
+        ProcessHelper.run_subprocess(cmd, output=ProcessHelper.DEV_NULL)
+        return cls.pkg_diff_result_path
 
 
 class Checker(object):
