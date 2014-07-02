@@ -105,6 +105,7 @@ class TarGzArchiveType(TarBz2ArchiveType):
     """ .tar.gz archive type """
     EXTENSION = ".tar.gz"
     EXTENSION2 = ".tgz"
+
     @classmethod
     def match(cls, filename=None):
         if filename is not None:
