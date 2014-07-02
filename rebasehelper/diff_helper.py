@@ -85,11 +85,12 @@ class VimDiffTool(DiffBase):
 
     @classmethod
     def run_diff(cls, **kwargs):
-        pass
+        raise NotImplementedError()
 
     @classmethod
     def run_mergetool(cls, **kwargs):
-        pass
+        raise NotImplementedError()
+
 
 @register_diff_tool
 class MeldDiffTool(DiffBase):
