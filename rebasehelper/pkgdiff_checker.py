@@ -66,6 +66,6 @@ class PkgDiffTool(BaseChecker):
         cmd.append('-report-path')
         cmd.append(cls.pkg_diff_result_path)
         # TODO Should we return a value??
-        ProcessHelper.run_subprocess(cmd)
+        ProcessHelper.run_subprocess(cmd, output=ProcessHelper.DEV_NULL)
         return cls.pkg_diff_result_path
 
