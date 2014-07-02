@@ -33,7 +33,7 @@ from rebasehelper.logger import logger
 from rebasehelper import settings
 from rebasehelper.utils import get_content_file,  write_to_file
 from rebasehelper.utils import get_temporary_name, remove_temporary_name
-from rebasehelper.archive import archive_types
+from rebasehelper.archive import Archive
 
 
 def get_source_name(name):
@@ -189,7 +189,7 @@ class SpecFile(object):
                 logger.error('Patch {0} does not exist'.format(filename))
                 continue
             if num in patch_flags:
-                patches[num] = [full_patch_name, patch_flags[num][0], \
+                patches[num] = [full_patch_name, patch_flags[num][0],
                                 patch_flags[num][1], self.is_patch_git_generated(full_patch_name)]
         # list of [name, flags, index, git_generated]
         return patches
@@ -292,7 +292,13 @@ class SpecFile(object):
         """
         lines = get_content_file(self.get_rebased_spec(), "r", method=True)
         self.spc = rpm.spec(self.rebased_spec)
-        tarball_ext = [(k, v) for k, v in archive_types.items() if self.new_sources.endswith(k)]
+
+        tarball_ext = None
+        for ext in Archive.get_supported_archives():
+            if self.new_sources.endswith(ext):
+                tarball_ext = ext
+                break
+
         if not tarball_ext:
             # CLI argument is probably just a version without name and extension
             for index, line in enumerate(lines):
@@ -307,7 +313,7 @@ class SpecFile(object):
             old_source_name = old_source_name[0][0]
             self.new_sources = get_source_name(old_source_name)
             return self.new_sources
-        tarball_name = self.new_sources.replace(tarball_ext[0][0], '')
+        tarball_name = self.new_sources.replace(tarball_ext, '')
         regex = re.compile(r'^\w+-?_?(.*)')
         match = re.search(regex, tarball_name)
         if match:
