@@ -63,14 +63,14 @@ class Application(object):
     old_sources = ""
     spec_file = ""
 
-    def __init__(self, conf):
-        """ conf is CLI object """
-        self.conf = conf
+    def __init__(self, cli_conf=None):
+        """
+        Initialize the application
 
-    def _initialize_dictionary(self):
+        :param cli_conf: CLI object with configuration gathered from commandline
+        :return:
         """
-        Function initializes a dictionaries used by rebase-helper
-        """
+        self.conf = cli_conf
         self.kwargs = {}
         self.kwargs['old'] = {}
         self.kwargs['new'] = {}
@@ -147,9 +147,10 @@ class Application(object):
     def run(self):
         if self.conf.verbose:
             logger.setLevel(logging.DEBUG)
+
         if not os.path.exists(settings.REBASE_RESULTS_DIR):
             os.makedirs(settings.REBASE_RESULTS_DIR)
-        self._initialize_dictionary()
+
         self.spec_file = self._get_spec_file()
         if not self.spec_file:
             logger.error('You have to define a SPEC file.')
