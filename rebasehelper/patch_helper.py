@@ -141,16 +141,9 @@ class PatchTool(PatchBase):
         cmd = ['gendiff']
         cmd.append(os.path.basename(cls.new_sources))
         cmd.append('.' + cls.suffix)
-        temp_name = get_temporary_name()
         new_upstream_dir = os.path.join(os.getcwd(), settings.NEW_SOURCES)
 
         ProcessHelper.run_subprocess_cwd(cmd, cwd=new_upstream_dir, output=patch)
-        gendiff_output = get_content_file(temp_name, 'r', method=True)
-        remove_temporary_name(temp_name)
-
-        if gendiff_output:
-            logger.info("gendiff_output: {0}".format(gendiff_output))
-
 
     @classmethod
     def apply_patch(cls, patch):
