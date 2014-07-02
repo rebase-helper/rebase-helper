@@ -34,10 +34,10 @@ def register_build_tool(output_tool):
 
 def check_output_argument(output_tool):
     """
-    Function checks whether pkgdifftool argument is allowed
+    Function checks whether output_tool argument is allowed
     """
     if output_tool not in output_tools.keys():
-        logger.error('You have to specify one of these printint output tools {0}'.format(output_tools.keys()))
+        logger.error('You have to specify one of these printing output tools {0}'.format(output_tools.keys()))
         sys.exit(0)
 
 
@@ -127,16 +127,15 @@ class TextOutputTool(BaseOutputTool):
         """
         Function prints a summary information about pkgcomparetool
         """
-        logger.info("Results from pkgcompare tool are stored in directory:")
         try:
-            logger.info(kwargs['pkgcompareinfo'])
+            logger.info("Results from pkgcompare check are stored in directory: '{0}'".format(kwargs['pkgcompareinfo']))
         except KeyError as ke:
-            logger.error('Comparing information was not found.')
+            logger.error('Results from pkgcompare check could not found.')
 
 
 class OutputTool(object):
     """
-    Class representing a process of building binaries from sources.
+    Class representing printing the final results.
     """
 
     def __init__(self, output_tool=None):
@@ -150,7 +149,7 @@ class OutputTool(object):
                 self._tool = output
 
         if self._tool is None:
-            raise NotImplementedError("Unsupported build tool")
+            raise NotImplementedError("Unsupported output tool")
 
     def print_information(self, **kwargs):
         """ Build sources. """

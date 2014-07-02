@@ -37,7 +37,7 @@ def check_difftool_argument(difftool):
     Function checks whether difftool argument is allowed
     """
     if difftool not in diff_tools.keys():
-        logger.error('You have to specify one of these builders {0}'.format(diff_tools.keys()))
+        logger.error('You have to specify one of these difftools {0}'.format(diff_tools.keys()))
         return False
     return True
 
@@ -67,12 +67,15 @@ class DiffBase(object):
         """
         return NotImplementedError()
 
+
 @register_diff_tool
 class VimDiffTool(DiffBase):
     """
     The class is used for diff between two directories or sources
     """
     CMD = 'vimdiff'
+
+
     @classmethod
     def match(cls, diff=None):
         if diff == cls.CMD:
@@ -100,7 +103,6 @@ class MeldDiffTool(DiffBase):
             return True
         else:
             return False
-
 
     @classmethod
     def run_diff(cls, old, new):
@@ -136,9 +138,9 @@ class MeldDiffTool(DiffBase):
         logger.debug("MeldDiffTool: running merge")
 
         for index, fname in enumerate(failed_files):
-            base =   os.path.join(old_dir, fname + suffix)
+            base = os.path.join(old_dir, fname + suffix)
             remote = os.path.join(old_dir, fname)
-            local =  os.path.join(new_dir, fname + suffix)
+            local = os.path.join(new_dir, fname + suffix)
             merged = os.path.join(new_dir, fname)
 
             # http://stackoverflow.com/questions/11133290/git-merging-using-meld
