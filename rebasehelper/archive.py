@@ -104,15 +104,11 @@ class TarBz2ArchiveType(ArchiveTypeBase):
 class TarGzArchiveType(TarBz2ArchiveType):
     """ .tar.gz archive type """
     EXTENSION = ".tar.gz"
-    EXTENSION2 = ".tgz"
 
     @classmethod
     def match(cls, filename=None):
-        if filename is not None:
-            if filename.endswith(cls.EXTENSION) or filename.endswith(cls.EXTENSION2):
-                return True
-            else:
-                return False
+        if filename is not None and filename.endswith(cls.EXTENSION):
+            return True
         else:
             return False
 
@@ -124,6 +120,19 @@ class TarGzArchiveType(TarBz2ArchiveType):
             return tarfile.TarFile.open(filename)
         except IOError as ioe:
             raise
+
+
+@register_archive_type
+class TgzArchiveType(TarGzArchiveType):
+    """ .tgz archive type """
+    EXTENSION = ".tgz"
+
+    @classmethod
+    def match(cls, filename=None):
+        if filename is not None and filename.endswith(cls.EXTENSION):
+            return True
+        else:
+            return False
 
 
 @register_archive_type
