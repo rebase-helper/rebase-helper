@@ -46,7 +46,7 @@ def get_path_to_patch(patch):
 
 
 def register_patch_tool(patch_tool):
-    patch_tools[patch_tool.c_patch] = patch_tool
+    patch_tools[patch_tool.CMD] = patch_tool
     return patch_tool
 
 
@@ -58,23 +58,23 @@ class PatchBase(object):
     helpers = {}
 
     @classmethod
-    def match(cls):
+    def match(cls, *args, **kwargs):
         """
             Method checks whether it is usefull patch method
         """
         return NotImplementedError()
 
     @classmethod
-    def run_patch(cls, **kwargs):
+    def run_patch(cls, *args, **kwargs):
         """
             Method will check all patches in relevant package
         """
         return NotImplementedError()
 
+
 @register_patch_tool
 class PatchTool(PatchBase):
-    shortcut = 'patch'
-    c_patch = 'patch'
+    CMD = 'patch'
     suffix = None
     fuzz = 0
     source_dir = ""
@@ -82,8 +82,8 @@ class PatchTool(PatchBase):
     new_sources = ""
 
     @classmethod
-    def match(cls, c_patch):
-        if c_patch == cls.c_patch:
+    def match(cls, cmd):
+        if cls.CMD == cmd:
             return True
         else:
             return False
@@ -93,9 +93,9 @@ class PatchTool(PatchBase):
         """
         Patch command whom patches as the
         """
-        cmd = ['patch']
         logger.debug('PatchTool: Applying patch')
 
+        cmd = [cls.CMD]
         cmd.append(patch_flags)
         if cls.suffix:
             cmd.append('-b')
