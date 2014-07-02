@@ -120,7 +120,7 @@ class Application(object):
         if os.path.exists(result_path):
             shutil.rmtree(result_path)
         self.kwargs['resultdir'] = result_path
-        logger.info('Building packages by {0} ... running'.format(self.conf.buildtool))
+        logger.info('Building packages using {0} ... running'.format(self.conf.buildtool))
         builder.build_packages(**self.kwargs)
         logger.info('Building package done')
 
@@ -135,7 +135,7 @@ class Application(object):
             logger.error('You have to specify one of these check tools {0}'.format(Checker.get_supported_tools()))
             sys.exit(1)
         else:
-            logger.info('Comparing packages by {0} ... running'.format(self.conf.pkgcomparetool))
+            logger.info('Comparing packages using {0} ... running'.format(self.conf.pkgcomparetool))
             self.kwargs['pkgcompareinfo'] = pkgchecker.run_check(**self.kwargs)
             logger.info('Comparing packages done')
 
