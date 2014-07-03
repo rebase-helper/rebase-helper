@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+import os
 
 REBASE_HELPER_SUFFIX = "-rebase"
 REBASE_HELPER_PREFIX = "rebase-helper-"
@@ -23,8 +24,10 @@ REBASE_HELPER_PREFIX = "rebase-helper-"
 REBASE_HELPER_RESULTS_DIR = REBASE_HELPER_PREFIX + "results"
 REBASE_HELPER_WORKSPACE_DIR = REBASE_HELPER_PREFIX + "workspace"
 
-OLD_SOURCES_DIR = 'old_sources'
-NEW_SOURCES_DIR = 'new_sources'
+OLD_SOURCES = 'old_sources'
+NEW_SOURCES = 'new_sources'
+OLD_SOURCES_DIR = os.path.join(REBASE_HELPER_WORKSPACE_DIR, OLD_SOURCES)
+NEW_SOURCES_DIR = os.path.join(REBASE_HELPER_WORKSPACE_DIR, NEW_SOURCES)
 
 # TODO: move this to specfile.py ??
 PATCH_PREFIX = '%patch'
