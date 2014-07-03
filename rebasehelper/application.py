@@ -25,10 +25,11 @@ import logging
 from rebasehelper.archive import Archive
 from rebasehelper.specfile import SpecFile
 from rebasehelper.logger import logger
-from rebasehelper import settings, patch_helper, build_helper
+from rebasehelper import settings, patch_helper
 from rebasehelper import output_tool
 from rebasehelper.utils import get_value_from_kwargs, PathHelper
 from rebasehelper.checker import Checker
+from rebasehelper.build_helper import Builder
 
 
 class Application(object):
@@ -146,9 +147,12 @@ class Application(object):
         """
         Function calls build class for building packages
         """
-        if not build_helper.check_build_argument(self.conf.buildtool):
-            sys.exit(0)
-        builder = build_helper.Builder(self.conf.buildtool)
+        try:
+            builder = Builder(self.conf.buildtool)
+        except NotImplementedError as e:
+            logger.error("{0}, '{1}'".format(e.message, self.conf.buildtool))
+            logger.error("Supported build tools are '{0}'".format(str(Builder.get_supported_tools())))
+            sys.exit(1)
 
         old_patches = get_value_from_kwargs(self.kwargs, settings.FULL_PATCHES)
         self.kwargs['old']['patches'] = [p[0] for p in old_patches.itervalues()]

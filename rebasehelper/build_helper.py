@@ -32,16 +32,6 @@ def register_build_tool(build_tool):
     return build_tool    
 
 
-def check_build_argument(buildtool):
-    """
-    Function checks whether build argument is allowed
-    """
-    if buildtool not in build_tools.keys():
-        logger.error('You have to specify one of these builders {0}'.format(build_tools.keys()))
-        return False
-    return True
-
-
 class BuildToolBase(object):
     """ Base class for various build tools """
 
@@ -444,6 +434,15 @@ class Builder(object):
         """ Build sources. """
         logger.debug("Builder: Building sources using '%s'" % self._tool_name)
         return self._tool.build(**kwargs)
+
+    @classmethod
+    def get_supported_tools(cls):
+        """
+        Returns a list of supported build tools
+
+        :return: list of supported build tools
+        """
+        return build_tools.keys()
 
     def build_packages(self, **kwargs):
         """
