@@ -155,10 +155,7 @@ class PatchTool(PatchBase):
         ret_code, gendiff_output = cls.run_process(cmd,
                                                    cwd=os.path.join(os.getcwd(), settings.NEW_SOURCES_DIR),
                                                    output_name=patch)
-
-        # sometimes returns 1 even the patch was generated. why ???
-        if gendiff_output:
-            logger.info("gendiff_output: {0}".format(gendiff_output))
+        return ret_code
 
     @classmethod
     def execute_diff_helper(cls, patch):
