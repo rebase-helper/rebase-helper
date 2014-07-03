@@ -189,7 +189,8 @@ class PatchTool(PatchBase):
         if cls.source_dir == cls.old_sources:
             # for new_sources we want the same suffix as for old_sources
             cls.suffix = ''.join(random.choice(string.ascii_letters) for _ in range(6))
-        logger.info('Applying patch {0} to {1}'.format(patch[0], cls.source_dir))
+        logger.info("Applying patch '{0}' to '{1}'".format(os.path.basename(patch[0]),
+                                                           os.path.basename(cls.source_dir)))
         ret_code = cls.patch_command(get_path_to_patch(patch[0]), patch[1])
         if ret_code != 0:
             # unexpected
