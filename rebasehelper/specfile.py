@@ -62,8 +62,6 @@ class SpecFile(object):
         self.spec_file = specfile
         self.download = download
         self.rebased_spec = get_rebase_name(specfile)
-        if os.path.exists(self.rebased_spec):
-            os.unlink(self.rebased_spec)
         shutil.copy(self.spec_file, self.rebased_spec)
         self.old_spc = None
         self.new_spc = None

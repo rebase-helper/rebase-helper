@@ -57,6 +57,8 @@ class Application(object):
         self.kwargs['results_dir'] = self.results_dir = os.path.join(self.execution_dir,
                                                                      settings.REBASE_HELPER_RESULTS_DIR)
 
+        self._check_working_dirs()
+
         self._get_spec_file()
         self.spec_file = SpecFile(self.spec_file_path, self.conf.sources)
 
@@ -87,6 +89,22 @@ class Application(object):
             logger.error("Could not find any SPEC file in the current directory '{0}'".format(self.execution_dir))
             sys.exit(1)
 
+    def _check_working_dirs(self):
+        """
+        Check if workspace and results dir exist, and remove them if yes.
+        :return:
+        """
+        if os.path.exists(self.results_dir):
+            logger.warning("'{0}' exists, removing...".format(self.results_dir))
+            shutil.rmtree(self.results_dir)
+        os.makedirs(self.results_dir)
+
+        # TODO: We may not want to delete the directory in the future
+        if os.path.exists(self.workspace_dir):
+            logger.warning("'{0}' exists, removing...".format(self.workspace_dir))
+            shutil.rmtree(self.workspace_dir)
+        os.makedirs(self.workspace_dir)
+
     @staticmethod
     def extract_archive(archive_path, destination):
         """
@@ -114,10 +132,6 @@ class Application(object):
         """
         Function extracts a given Archive and returns a full dirname to sources
         """
-        # TODO Remove this in the future -> we should clean the workspace before calling this method
-        if os.path.isdir(destination):
-            shutil.rmtree(destination)
-
         Application.extract_archive(archive_path, destination)
 
         try:
@@ -168,9 +182,6 @@ class Application(object):
     def run(self):
         if self.conf.verbose:
             logger.setLevel(logging.DEBUG)
-
-        if not os.path.exists(self.results_dir):
-            os.makedirs(self.results_dir)
 
         self.old_sources, new_sources = self.spec_file.get_tarballs()
         self.old_sources = os.path.abspath(self.old_sources)
