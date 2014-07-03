@@ -86,6 +86,13 @@ class CLI(object):
             help="Select the tool for showing information from rebase-helper process [text]"
         )
         self.parser.add_argument(
+            "-w",
+            "--keep-workspace",
+            default=False,
+            action="store_true",
+            help="Use if you want rebase-helper to keep the workspace directory after finishing"
+        )
+        self.parser.add_argument(
             "sources",
             metavar='SOURCES',
             help="Specify new upstream sources"

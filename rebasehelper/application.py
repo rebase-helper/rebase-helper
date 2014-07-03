@@ -106,6 +106,14 @@ class Application(object):
             shutil.rmtree(self.workspace_dir)
         os.makedirs(self.workspace_dir)
 
+    def _delete_workspace_dir(self):
+        """
+        Deletes workspace directory and loggs message
+        :return:
+        """
+        logger.debug("Removing the workspace directory '{0}'".format(self.workspace_dir))
+        shutil.rmtree(self.workspace_dir)
+
     @staticmethod
     def extract_archive(archive_path, destination):
         """
@@ -220,7 +228,10 @@ class Application(object):
             update_patches = self.spec_file.write_updated_patches(**self.kwargs)
             self.kwargs['summary_info'] = update_patches
             if self.conf.patch_only:
+                # TODO: We should solve the run path somehow better to not duplicate code
                 self.print_summary()
+                if not self.conf.keep_workspace:
+                    self._delete_workspace_dir()
                 sys.exit(0)
         # Build packages
         self.build_packages()
@@ -230,6 +241,9 @@ class Application(object):
 
         # print summary information
         self.print_summary()
+
+        if not self.conf.keep_workspace:
+            self._delete_workspace_dir()
 
 
 if __name__ == '__main__':
