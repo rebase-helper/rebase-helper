@@ -41,6 +41,7 @@ class PyTest(Command):
             cmd = [runner]
             for a in self.args:
                 cmd.append(a)
+            cmd.append('-v')
             cmd.append('test')
             t = subprocess.Popen(cmd)
             rc = t.wait()
