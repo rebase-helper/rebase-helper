@@ -21,7 +21,6 @@
 import os
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.utils import write_to_file
-from rebasehelper import settings
 from rebasehelper.logger import logger
 
 check_tools = {}
@@ -55,8 +54,10 @@ class BaseChecker(object):
 class PkgDiffTool(BaseChecker):
     """ Pkgdiff compare tool. """
     CMD = "pkgdiff"
-    pkg_diff_result_path = os.path.join(settings.REBASE_HELPER_RESULTS_DIR,
-                                        "pkgdiff_reports.html")
+    pkgdiff_results_filename = 'pkgdiff_reports.html'
+    pkgdiff_results_path = pkgdiff_results_filename
+    results_dir = ''
+    workspace_dir = ''
 
     @classmethod
     def match(cls, cmd=None):
@@ -67,7 +68,7 @@ class PkgDiffTool(BaseChecker):
 
     @classmethod
     def _create_xml(cls, name, input_structure={}):
-        file_name = name + ".xml"
+        file_name = os.path.join(cls.workspace_dir, name + ".xml")
         tags = {'version': input_structure.get('version', ""),
                 'group': input_structure.get('name', ''),
                 'packages': input_structure.get('rpm', [])}
@@ -81,6 +82,12 @@ class PkgDiffTool(BaseChecker):
     @classmethod
     def run_check(cls, **kwargs):
         """ Compares  old and new RPMs using pkgdiff """
+        cls.results_dir = kwargs.get('results_dir', '')
+        cls.workspace_dir = os.path.join(kwargs.get('workspace_dir', ''), cls.CMD)
+        cls.pkgdiff_results_path = os.path.join(cls.results_dir, cls.pkgdiff_results_filename)
+        # create the workspace directory
+        os.makedirs(cls.workspace_dir)
+
         versions = ['old', 'new']
         cmd = [cls.CMD]
         for version in versions:
@@ -89,10 +96,10 @@ class PkgDiffTool(BaseChecker):
                 file_name = cls._create_xml(version, input_structure=old)
                 cmd.append(file_name)
         cmd.append('-report-path')
-        cmd.append(cls.pkg_diff_result_path)
+        cmd.append(cls.pkgdiff_results_path)
         # TODO Should we return a value??
         ProcessHelper.run_subprocess(cmd, output=ProcessHelper.DEV_NULL)
-        return cls.pkg_diff_result_path
+        return cls.pkgdiff_results_path
 
 
 class Checker(object):

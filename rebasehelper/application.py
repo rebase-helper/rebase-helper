@@ -51,9 +51,11 @@ class Application(object):
         # The directory in which rebase-helper was executed
         self.execution_dir = os.getcwd()
         # Temporary workspace for Builder, checks, ...
-        self.workspace_dir = os.path.join(self.execution_dir, settings.REBASE_HELPER_WORKSPACE_DIR)
+        self.kwargs['workspace_dir'] = self.workspace_dir = os.path.join(self.execution_dir,
+                                                                         settings.REBASE_HELPER_WORKSPACE_DIR)
         # Directory where results should be put
-        self.results_dir = os.path.join(self.execution_dir, settings.REBASE_HELPER_RESULTS_DIR)
+        self.kwargs['results_dir'] = self.results_dir = os.path.join(self.execution_dir,
+                                                                     settings.REBASE_HELPER_RESULTS_DIR)
 
         self.kwargs = {}
         self.kwargs['old'] = {}
@@ -139,7 +141,6 @@ class Application(object):
         self.kwargs['old']['patches'] = [p[0] for p in old_patches.itervalues()]
         new_patches = get_value_from_kwargs(self.kwargs, settings.FULL_PATCHES, source='new')
         self.kwargs['new']['patches'] = [p[0] for p in new_patches.itervalues()]
-        self.kwargs['resultdir'] = self.workspace_dir
 
         logger.info('Building packages using {0} ... running'.format(self.conf.buildtool))
         builder.build_packages(**self.kwargs)
@@ -189,9 +190,11 @@ class Application(object):
         else:
             self.new_sources = os.path.abspath(self.conf.sources)
 
-        old_dir = Application.extract_sources(self.old_sources, settings.OLD_SOURCES_DIR)
-        new_dir = Application.extract_sources(self.new_sources, settings.NEW_SOURCES_DIR)
         self._initialize_data()
+        old_dir = Application.extract_sources(self.old_sources,
+                                              os.path.join(self.workspace_dir, settings.OLD_SOURCES_DIR))
+        new_dir = Application.extract_sources(self.new_sources,
+                                              os.path.join(self.workspace_dir, settings.NEW_SOURCES_DIR))
 
         if not self.conf.build_only:
             # Patch sources

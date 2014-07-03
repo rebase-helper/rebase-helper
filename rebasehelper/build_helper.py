@@ -80,6 +80,8 @@ class MockBuildTool(BuildToolBase):
     TEMPDIR_SPEC = 'tempdir_spec'
     TEMPDIR_RESULTDIR = 'tempdir_resultdir'
 
+    results_dir = ''
+
     @classmethod
     def match(cls, cmd=None):
         if cmd == cls.CMD:
@@ -197,9 +199,10 @@ class MockBuildTool(BuildToolBase):
         # prepare environment for building
         env = cls._environment_prepare(**kwargs)
 
+        cls.results_dir = kwargs.get('workspace_dir', '')
         # build SRPM
         srpm = cls._build_srpm(**env)
-        srpm_resultdir = os.path.join(kwargs['resultdir'], "SRPM")
+        srpm_resultdir = os.path.join(cls.results_dir, "SRPM")
         shutil.copytree(env[cls.TEMPDIR_RESULTDIR], srpm_resultdir)
         if srpm is None:
             logger.error("MockBuildTool: Building SRPM failed!")
@@ -214,7 +217,7 @@ class MockBuildTool(BuildToolBase):
 
         # build RPM
         rpms = cls._build_rpm(srpm=srpm, **env)
-        rpm_resultdir = os.path.join(kwargs['resultdir'], "RPM")
+        rpm_resultdir = os.path.join(cls.results_dir, "RPM")
         # remove SRPM - side product of building RPM
         tmp_srpm = PathHelper.find_first_file(env[cls.TEMPDIR_RESULTDIR], "*.src.rpm")
         if tmp_srpm is not None:
@@ -249,6 +252,8 @@ class RpmbuildBuildTool(BuildToolBase):
     TEMPDIR_RPMBUILD_SRPMS = 'tempdir_rpmbuild_srpms'
     TEMPDIR_SPEC = 'tempdir_spec'
     TEMPDIR_RESULTDIR = 'tempdir_resultdir'
+
+    results_dir = ''
 
     @classmethod
     def match(cls, cmd=None):
@@ -374,9 +379,11 @@ class RpmbuildBuildTool(BuildToolBase):
         # prepare environment for building
         env = cls._environment_prepare(**kwargs)
 
+        cls.results_dir = kwargs.get('workspace_dir', '')
+
         # build SRPM
         srpm = cls._build_srpm(**env)
-        srpm_resultdir = os.path.join(kwargs['resultdir'], "SRPM")
+        srpm_resultdir = os.path.join(cls.results_dir, "SRPM")
         shutil.copytree(env[cls.TEMPDIR_RESULTDIR], srpm_resultdir)
         if srpm is None:
             logger.error("RpmbuildBuildTool: Building SRPM failed!")
@@ -392,7 +399,7 @@ class RpmbuildBuildTool(BuildToolBase):
 
         # build RPM
         rpms = cls._build_rpm(srpm=srpm, **env)
-        rpm_resultdir = os.path.join(kwargs['resultdir'], "RPM")
+        rpm_resultdir = os.path.join(cls.results_dir, "RPM")
         shutil.copytree(env[cls.TEMPDIR_RESULTDIR], rpm_resultdir)
         if rpms is None:
             logger.error("RpmbuildBuildTool: Building RPMs failed!")
@@ -456,12 +463,12 @@ class Builder(object):
         if 'new' not in kwargs:
             logger.error('Builder class expects new specfile, sources and patches.')
             raise RuntimeError
-        if 'resultdir' not in kwargs:
-            logger.error('Builder class expects resultdir.')
+        if 'workspace_dir' not in kwargs:
+            logger.error('Builder class expects workspace_dir.')
             raise RuntimeError
 
         for path in ['old', 'new']:
             input_structure = kwargs.get(path)
-            input_structure['resultdir'] = os.path.join(kwargs.get('resultdir'), path)
+            input_structure['workspace_dir'] = os.path.join(kwargs.get('workspace_dir'), path)
             results = self.build(**input_structure)
             kwargs[path].update(results)
