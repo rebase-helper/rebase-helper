@@ -117,7 +117,7 @@ class Application(object):
         try:
             archive = Archive(archive_path)
         except NotImplementedError as e:
-            logger.error("{0}, '{1}".format(e.message, archive_path))
+            logger.error("{0}, '{1}'".format(e.message, archive_path))
             logger.error("Supported archive types are '{0}'".format(str(Archive.get_supported_archives())))
             sys.exit(1)
 
