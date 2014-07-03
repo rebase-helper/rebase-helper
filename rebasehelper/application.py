@@ -27,7 +27,7 @@ from rebasehelper.specfile import SpecFile
 from rebasehelper.logger import logger
 from rebasehelper import settings, patch_helper, build_helper
 from rebasehelper import output_tool
-from rebasehelper.utils import get_value_from_kwargs
+from rebasehelper.utils import get_value_from_kwargs, PathHelper
 from rebasehelper.checker import Checker
 
 
@@ -35,10 +35,10 @@ class Application(object):
     result_file = ""
     temp_dir = ""
     kwargs = {}
-    spec = None
     old_sources = ""
     new_sources = ""
-    spec_file = ""
+    spec_file = None
+    spec_file_path = None
 
     def __init__(self, cli_conf=None):
         """
@@ -57,6 +57,9 @@ class Application(object):
         self.kwargs['results_dir'] = self.results_dir = os.path.join(self.execution_dir,
                                                                      settings.REBASE_HELPER_RESULTS_DIR)
 
+        self._get_spec_file()
+        self.spec_file = SpecFile(self.spec_file_path, self.conf.sources)
+
         self.kwargs['old'] = {}
         self.kwargs['new'] = {}
 
@@ -65,27 +68,23 @@ class Application(object):
         Function fill dictionary with default data
         """
         old_values = {}
-        old_values['spec'] = os.path.join(os.getcwd(), self.spec_file)
+        old_values['spec'] = self.spec_file_path
         self.kwargs['old'] = old_values
-        self.kwargs['old'].update(self.spec.get_old_information())
+        self.kwargs['old'].update(self.spec_file.get_old_information())
         new_values = {}
-        new_values['spec'] = os.path.join(os.getcwd(), self.spec.get_rebased_spec())
+        new_values['spec'] = self.spec_file.get_rebased_spec()
         self.kwargs['new'] = new_values
-        self.kwargs['new'].update(self.spec.get_new_information())
+        self.kwargs['new'].update(self.spec_file.get_new_information())
 
     def _get_spec_file(self):
         """
-        Function get a spec file from current directory
+        Function gets the spec file from the execution_dir directory
         """
-        cwd = os.getcwd()
-        spec_file = None
-        for filename in os.listdir(cwd):
-            if filename.endswith(".spec"):
-                if settings.REBASE_HELPER_SUFFIX in filename:
-                    continue
-                spec_file = filename
-                break
-        return spec_file
+        self.spec_file_path = PathHelper.find_first_file(self.execution_dir, '*.spec')
+
+        if not self.spec_file_path:
+            logger.error("Could not find any SPEC file in the current directory '{0}'".format(self.execution_dir))
+            sys.exit(1)
 
     @staticmethod
     def extract_archive(archive_path, destination):
@@ -172,13 +171,7 @@ class Application(object):
         if not os.path.exists(self.results_dir):
             os.makedirs(self.results_dir)
 
-        self.spec_file = self._get_spec_file()
-        if not self.spec_file:
-            logger.error('You have to define a SPEC file.')
-            sys.exit(1)
-        self.spec = SpecFile(self.spec_file, self.conf.sources)
-
-        self.old_sources, new_sources = self.spec.get_tarballs()
+        self.old_sources, new_sources = self.spec_file.get_tarballs()
         self.old_sources = os.path.abspath(self.old_sources)
         if new_sources:
             self.conf.sources = new_sources
@@ -206,11 +199,10 @@ class Application(object):
             try:
                 self.kwargs['new']['patches'] = patch.patch(**self.kwargs)
             except Exception as e:
-                if os.path.exists(self.spec.get_rebased_spec()):
-                    os.unlink(self.spec.get_rebased_spec())
                 logger.error(e.message)
-                sys.exit(0)
-            update_patches = self.spec.write_updated_patches(**self.kwargs)
+                sys.exit(1)
+
+            update_patches = self.spec_file.write_updated_patches(**self.kwargs)
             self.kwargs['summary_info'] = update_patches
             if self.conf.patch_only:
                 self.print_summary()
