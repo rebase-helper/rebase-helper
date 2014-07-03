@@ -62,6 +62,7 @@ class Application(object):
 
         self.kwargs['old'] = {}
         self.kwargs['new'] = {}
+        self._initialize_data()
 
     def _initialize_data(self):
         """
@@ -182,7 +183,6 @@ class Application(object):
         else:
             self.new_sources = os.path.abspath(self.conf.sources)
 
-        self._initialize_data()
         old_dir = Application.extract_sources(self.old_sources,
                                               os.path.join(self.workspace_dir, settings.OLD_SOURCES_DIR))
         new_dir = Application.extract_sources(self.new_sources,
