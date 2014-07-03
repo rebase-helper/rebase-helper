@@ -57,13 +57,12 @@ class Application(object):
         self.kwargs['results_dir'] = self.results_dir = os.path.join(self.execution_dir,
                                                                      settings.REBASE_HELPER_RESULTS_DIR)
 
-        self.kwargs = {}
         self.kwargs['old'] = {}
         self.kwargs['new'] = {}
 
     def _initialize_data(self):
         """
-        Function fill dictionary by default data
+        Function fill dictionary with default data
         """
         old_values = {}
         old_values['spec'] = os.path.join(os.getcwd(), self.spec_file)
