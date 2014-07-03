@@ -70,7 +70,8 @@ SRPM package(s):
 - test-1.2.2-1.src.rpm
 RPM package(s):
 - test-1.2.2-1.rpm
-- test-devel-1.2.2-1.rpm"""
+- test-devel-1.2.2-1.rpm
+Results from pkgcompare check could not be found."""
         output = output_tool.OutputTool('text')
         output.print_information(**self.data)
         real_output = get_content_file(self.output_log, 'r')

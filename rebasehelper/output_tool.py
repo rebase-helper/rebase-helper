@@ -130,7 +130,7 @@ class TextOutputTool(BaseOutputTool):
         try:
             logger.info("Results from pkgcompare check are stored in directory: '{0}'".format(kwargs['pkgcompareinfo']))
         except KeyError as ke:
-            logger.error('Results from pkgcompare check could not found.')
+            logger.error('Results from pkgcompare check could not be found.')
 
 
 class OutputTool(object):
