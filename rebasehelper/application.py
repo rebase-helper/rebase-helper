@@ -207,9 +207,9 @@ class Application(object):
             self.new_sources = os.path.abspath(self.conf.sources)
 
         old_dir = Application.extract_sources(self.old_sources,
-                                              settings.OLD_SOURCES_DIR)
+                                              os.path.join(self.execution_dir, settings.OLD_SOURCES_DIR))
         new_dir = Application.extract_sources(self.new_sources,
-                                              settings.NEW_SOURCES_DIR)
+                                              os.path.join(self.execution_dir, settings.NEW_SOURCES_DIR))
 
         if not self.conf.build_only:
             # Patch sources
