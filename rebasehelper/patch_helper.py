@@ -17,16 +17,14 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-import shutil
 import random
 import string
 
-from rebasehelper.utils import ProcessHelper
-from rebasehelper.logger import logger
 from rebasehelper.diff_helper import *
 from rebasehelper import settings
 from rebasehelper.utils import get_temporary_name, remove_temporary_name, get_content_file
 from rebasehelper.specfile import get_rebase_name
+
 
 patch_tools = {}
 
@@ -80,6 +78,8 @@ class PatchTool(PatchBase):
     source_dir = ""
     old_sources = ""
     new_sources = ""
+    diff_cls = None
+    output_data = []
 
     @classmethod
     def match(cls, cmd):
@@ -87,6 +87,17 @@ class PatchTool(PatchBase):
             return True
         else:
             return False
+
+    @classmethod
+    def run_process(cls, cmd, cwd=None, input_name=None, output_name=None):
+        temp_name = output_name
+        if not output_name:
+            temp_name = get_temporary_name()
+        ret_code = ProcessHelper.run_subprocess_cwd(cmd, cwd=cwd, input=input_name, output=temp_name)
+        output_data = get_content_file(temp_name, 'r', method=True)
+        if not output_name:
+            remove_temporary_name(temp_name)
+        return ret_code, output_data
 
     @classmethod
     def patch_command(cls, patch_name, patch_flags):
@@ -103,28 +114,27 @@ class PatchTool(PatchBase):
         cmd.append('--fuzz={0}'.format(cls.fuzz))
         cmd.append('--force')  # don't ask questions
 
-        temp_name = get_temporary_name()
-        ret_code = ProcessHelper.run_subprocess_cwd(cmd, cwd=cls.source_dir, input=patch_name, output=temp_name)
-        cls.output_data = get_content_file(temp_name, 'r', method=True)
-        remove_temporary_name(temp_name)
+        ret_code, cls.output_data = cls.run_process(cmd, cwd=cls.source_dir, input_name=patch_name)
         return ret_code
 
     @classmethod
     def get_failed_patched_files(cls, patch_name):
+        """
+        Function gets a lists of patched files from patch command.
+        """
         cmd = ['lsdiff', patch_name]
-        temp_name = get_temporary_name()
-        ret_code = ProcessHelper.run_subprocess_cwd(cmd, cwd=cls.source_dir, output=temp_name)
+        ret_code, cls.patched_files = cls.run_process(cmd, cwd=cls.source_dir)
         if ret_code != 0:
             return None
-        cls.patched_files = get_content_file(temp_name, 'r', method=True)
-        remove_temporary_name(temp_name)
         failed_files = []
         applied_rules = ['succeeded']
         source_file = ""
         for data in cls.output_data:
+            # First we try to find what file is patched
             if data.startswith('patching file'):
                 patch, file_text, source_file = data.strip().split()
                 continue
+            # Next we look whether patching was successful
             result = [x for x in applied_rules if x in data]
             if result:
                 continue
@@ -141,9 +151,35 @@ class PatchTool(PatchBase):
         cmd = ['gendiff']
         cmd.append(os.path.basename(cls.new_sources))
         cmd.append('.' + cls.suffix)
-        new_upstream_dir = os.path.join(os.getcwd(), settings.NEW_SOURCES)
 
-        ProcessHelper.run_subprocess_cwd(cmd, cwd=new_upstream_dir, output=patch)
+        ret_code, gendiff_output = cls.run_process(cmd,
+                                                   cwd=os.path.join(os.getcwd(), settings.NEW_SOURCES_DIR),
+                                                   output_name=patch)
+
+        # sometimes returns 1 even the patch was generated. why ???
+        if gendiff_output:
+            logger.info("gendiff_output: {0}".format(gendiff_output))
+
+    @classmethod
+    def execute_diff_helper(cls, patch):
+        rebased_patch = get_rebase_name(patch[0])
+        patched_files = cls.get_failed_patched_files(patch[0])
+        if not patched_files:
+            logger.error('We are not able to get a list of failed files.')
+            raise RuntimeError
+        cls.kwargs['suffix'] = cls.suffix
+        cls.kwargs['failed_files'] = patched_files
+
+        logger.debug('Input to MergeTool: {0}'.format(cls.kwargs))
+        diff_cls = Diff(cls.kwargs.get('diff_tool', None))
+        # Running Merge Tool
+        ret_code = diff_cls.mergetool(**cls.kwargs)
+
+        # Generating diff
+        cls.generate_diff(rebased_patch, cls.source_dir)
+
+        # Showing difference between original and new patch
+        diff_cls.diff(patch[0], rebased_patch)
 
     @classmethod
     def apply_patch(cls, patch):
@@ -166,19 +202,10 @@ class PatchTool(PatchBase):
                         keyboard=True)
             logger.warning('Applying patch failed. '
                            'Will start merge-tool to fix conflicts manually.')
-            patched_files = cls.get_failed_patched_files(patch[0])
-            if not patched_files:
-                logger.error('We are not able to get a list of failed files.')
-                raise RuntimeError
-            orig_patch = patch[0]
-            patch[0] = get_rebase_name(patch[0])
-            cls.kwargs['suffix'] = cls.suffix
-            cls.kwargs['failed_files'] = patched_files
-            logger.debug('Input to MergeTool: {0}'.format(cls.kwargs))
-            diff_cls = Diff(cls.kwargs.get('diff_tool', None))
-            ret_code = diff_cls.mergetool(**cls.kwargs)
-            cls.generate_diff(patch[0], cls.source_dir)
-            diff_cls.diff(orig_patch, patch[0])
+            # Running diff_helper in order to merge patch to the upstream version
+            cls.execute_diff_helper(patch)
+
+            # User should clarify whether another patch will be applied
             accept = ['y', 'yes']
             var = get_message(message="Do you want to continue with another patch? (y/n)")
             if var not in accept:
