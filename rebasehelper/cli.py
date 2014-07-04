@@ -96,6 +96,12 @@ class CLI(object):
             help="Use if you want rebase-helper to keep the workspace directory after finishing"
         )
         self.parser.add_argument(
+            "--not-download-sources",
+            default=False,
+            action="store_true",
+            help="Suppress to download sources from web"
+        )
+        self.parser.add_argument(
             "sources",
             metavar='SOURCES',
             help="Specify new upstream sources"

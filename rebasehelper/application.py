@@ -61,8 +61,7 @@ class Application(object):
         self._check_working_dirs()
 
         self._get_spec_file()
-        self.spec_file = SpecFile(self.spec_file_path, self.conf.sources)
-
+        self.spec_file = SpecFile(self.spec_file_path, self.conf.sources, download=not self.conf.not_download_sources)
         self.kwargs['old'] = {}
         self.kwargs['new'] = {}
         self._initialize_data()
