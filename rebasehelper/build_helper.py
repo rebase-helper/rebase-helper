@@ -237,14 +237,14 @@ class RpmbuildBuildTool(BuildToolBase):
     """ rpmbuild build tool. """
     CMD = "rpmbuild"
 
-    TEMPDIR = 'tempdir'
-    TEMPDIR_RPMBUILD = 'tempdir_rpmbuild'
-    TEMPDIR_RPMBUILD_BUILD = 'tempdir_rpmbuild_build'
-    TEMPDIR_RPMBUILD_BUILDROOT = 'tempdir_rpmbuild_buildroot'
-    TEMPDIR_RPMBUILD_RPMS = 'tempdir_rpmbuild_rpms'
-    TEMPDIR_RPMBUILD_SOURCES = 'tempdir_rpmbuild_sources'
-    TEMPDIR_RPMBUILD_SPECS = 'tempdir_rpmbuild_specs'
-    TEMPDIR_RPMBUILD_SRPMS = 'tempdir_rpmbuild_srpms'
+    TEMPDIR = 'tempdir_'
+    TEMPDIR_RPMBUILD = TEMPDIR + 'rpmbuild'
+    TEMPDIR_RPMBUILD_BUILD = TEMPDIR_RPMBUILD + '_build'
+    TEMPDIR_RPMBUILD_BUILDROOT = TEMPDIR_RPMBUILD + '_buildroot'
+    TEMPDIR_RPMBUILD_RPMS = TEMPDIR_RPMBUILD + '_rpms'
+    TEMPDIR_RPMBUILD_SOURCES = TEMPDIR_RPMBUILD + '_sources'
+    TEMPDIR_RPMBUILD_SPECS = TEMPDIR_RPMBUILD + '_specs'
+    TEMPDIR_RPMBUILD_SRPMS = TEMPDIR_RPMBUILD + '_srpms'
     TEMPDIR_SPEC = 'tempdir_spec'
     TEMPDIR_RESULTDIR = 'tempdir_resultdir'
 
@@ -266,18 +266,9 @@ class RpmbuildBuildTool(BuildToolBase):
         # create rpmbuild directory structure
         env[cls.TEMPDIR_RPMBUILD] = os.path.join(env[cls.TEMPDIR], 'rpmbuild')
         os.makedirs(env[cls.TEMPDIR_RPMBUILD])
-        env[cls.TEMPDIR_RPMBUILD_BUILD] = os.path.join(env[cls.TEMPDIR_RPMBUILD], 'BUILD')
-        os.makedirs(env[cls.TEMPDIR_RPMBUILD_BUILD])
-        env[cls.TEMPDIR_RPMBUILD_BUILDROOT] = os.path.join(env[cls.TEMPDIR_RPMBUILD], 'BUILDROOT')
-        os.makedirs(env[cls.TEMPDIR_RPMBUILD_BUILDROOT])
-        env[cls.TEMPDIR_RPMBUILD_RPMS] = os.path.join(env[cls.TEMPDIR_RPMBUILD], 'RPMS')
-        os.makedirs(env[cls.TEMPDIR_RPMBUILD_RPMS])
-        env[cls.TEMPDIR_RPMBUILD_SOURCES] = os.path.join(env[cls.TEMPDIR_RPMBUILD], 'SOURCES')
-        os.makedirs(env[cls.TEMPDIR_RPMBUILD_SOURCES])
-        env[cls.TEMPDIR_RPMBUILD_SPECS] = os.path.join(env[cls.TEMPDIR_RPMBUILD], 'SPECS')
-        os.makedirs(env[cls.TEMPDIR_RPMBUILD_SPECS])
-        env[cls.TEMPDIR_RPMBUILD_SRPMS] = os.path.join(env[cls.TEMPDIR_RPMBUILD], 'SRPMS')
-        os.makedirs(env[cls.TEMPDIR_RPMBUILD_SRPMS])
+        for dir_name in ['BUILD', 'BUILDROOT', 'RPMS', 'SOURCES', 'SPEC', 'SRPMS']:
+            env[cls.TEMPDIR_RPMBUILD_ + dir_name] = os.path.join(env[cls.TEMPDIR_RPMBUILD], dir_name)
+            os.makedirs(env[cls.TEMPDIR_RPMBUILD_ + dir_name])
 
         # copy sources
         for source in kwargs['sources']:
