@@ -72,7 +72,7 @@ class TextOutputTool(BaseOutputTool):
 
     @classmethod
     def print_patches(cls, patches, summary):
-        logger.info("Patches:")
+        logger.info("\nPatches:")
         if not patches:
             logger.info("Patches were neither modified nor deleted.")
             return
@@ -88,23 +88,37 @@ class TextOutputTool(BaseOutputTool):
                                                         patch_name.ljust(max_name),
                                                         status))
                 break
+
+    @classmethod
+    def get_base_name(cls, rpm_name):
+        """
+        Function returns base name of the package
+        :param rpm_name:
+        :return:
+        """
+        return os.path.basename(rpm_name)
+
     @classmethod
     def print_rpms(cls, rpms, version):
         pkgs = ['srpm', 'rpm']
         if not rpms.get('srpm', None):
             return
-        message = '{0} (S)RPM packages:'.format(version)
+        message = '\n{0} (S)RPM packages:'.format(version)
         cls.print_message_and_separator(message=message, separator='-')
         for type_rpm in pkgs:
             srpm = rpms.get(type_rpm, None)
             if not srpm:
                 continue
-            logger.info("{0} package(s):".format(type_rpm.upper()))
+            message = "{0} package(s): are in directory {1}"
             if isinstance(srpm, str):
-                logger.info("- {0}".format(srpm))
+                logger.info(message.format(type_rpm.upper(),
+                                           os.path.dirname(rpms.get(srpm, ""))))
+                logger.info("- {0}".format(cls.get_base_name(srpm)))
             else:
+                logger.info(message.format(type_rpm.upper(),
+                                           os.path.dirname(srpm[0])))
                 for pkg in srpm:
-                    logger.info("- {0}".format(pkg))
+                    logger.info("- {0}".format(cls.get_base_name(pkg)))
 
     @classmethod
     def print_summary(cls, **kwargs):
@@ -112,7 +126,7 @@ class TextOutputTool(BaseOutputTool):
         Function is used for printing summary informations
         :return:
         """
-        cls.print_message_and_separator(message="Summary information:")
+        cls.print_message_and_separator(message="\n\nSummary information:")
         summary = kwargs['summary_info']
         old = kwargs.get('old')
         new = kwargs.get('new')
