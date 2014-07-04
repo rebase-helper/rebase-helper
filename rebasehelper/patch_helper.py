@@ -177,6 +177,7 @@ class PatchTool(PatchBase):
 
         # Showing difference between original and new patch
         diff_cls.diff(patch[0], rebased_patch)
+        return rebased_patch
 
     @classmethod
     def apply_patch(cls, patch):
@@ -201,7 +202,7 @@ class PatchTool(PatchBase):
             logger.warning('Applying patch failed. '
                            'Will start merge-tool to fix conflicts manually.')
             # Running diff_helper in order to merge patch to the upstream version
-            cls.execute_diff_helper(patch)
+            patch[0] = cls.execute_diff_helper(patch)
 
             # User should clarify whether another patch will be applied
             accept = ['y', 'yes']

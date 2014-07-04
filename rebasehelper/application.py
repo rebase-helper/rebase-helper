@@ -71,14 +71,29 @@ class Application(object):
         """
         Function fill dictionary with default data
         """
+        # Get all tarballs before self.kwargs initialization
+        self.old_sources, new_sources = self.spec_file.get_tarballs()
+
+        # Fill self.kwargs with related items
         old_values = {}
         old_values['spec'] = self.spec_file_path
         self.kwargs['old'] = old_values
         self.kwargs['old'].update(self.spec_file.get_old_information())
+
+        # Fill self.kwargs with related items
         new_values = {}
         new_values['spec'] = self.spec_file.get_rebased_spec()
         self.kwargs['new'] = new_values
         self.kwargs['new'].update(self.spec_file.get_new_information())
+        self.old_sources = os.path.abspath(self.old_sources)
+        if new_sources:
+            self.conf.sources = new_sources
+
+        if not self.conf.sources:
+            logger.error('You have to define a new sources.')
+            sys.exit(1)
+        else:
+            self.new_sources = os.path.abspath(self.conf.sources)
 
     def _get_spec_file(self):
         """
@@ -194,17 +209,6 @@ class Application(object):
     def run(self):
         if self.conf.verbose:
             logger.setLevel(logging.DEBUG)
-
-        self.old_sources, new_sources = self.spec_file.get_tarballs()
-        self.old_sources = os.path.abspath(self.old_sources)
-        if new_sources:
-            self.conf.sources = new_sources
-
-        if not self.conf.sources:
-            logger.error('You have to define a new sources.')
-            sys.exit(1)
-        else:
-            self.new_sources = os.path.abspath(self.conf.sources)
 
         old_dir = Application.extract_sources(self.old_sources,
                                               os.path.join(self.execution_dir, settings.OLD_SOURCES_DIR))

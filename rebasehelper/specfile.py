@@ -126,6 +126,7 @@ class SpecFile(object):
         kwargs[settings.FULL_PATCHES] = self._get_patches()
         kwargs['version'] = self._get_spec_versions()[0]
         kwargs['name'] = self._get_package_name(self.spc)
+        kwargs['tarball'] = self._get_old_tarball()
         return kwargs
 
     def get_new_information(self):
@@ -135,6 +136,7 @@ class SpecFile(object):
         kwargs[settings.FULL_PATCHES] = self._get_patches()
         kwargs['version'] = self._get_spec_versions()[1]
         kwargs['name'] = self._get_package_name(self.spc)
+        kwargs['tarball'] = self._get_new_tarball()
         return kwargs
 
     def _get_version_from_spec(self, spec_file):
@@ -250,6 +252,7 @@ class SpecFile(object):
         url_path.append(self.new_sources)
         if not os.path.exists(self.new_sources):
             self._download_source('/'.join(url_path), self.new_sources)
+        return self.new_sources
 
     def get_tarballs(self):
         old_sources = self._get_old_tarball()
@@ -326,18 +329,17 @@ class SpecFile(object):
         """
         Function writes a patches to -rebase.spec file
         """
-        if 'new' not in kwargs:
-            return None
         new_files = kwargs.get('new', None)
-        if 'patches' not in new_files:
+        if not new_files:
             return None
         patches = new_files.get('patches', None)
+        if not patches:
+            return None
 
         update_patches = {}
         update_patches['deleted'] = []
         update_patches['modified'] = []
 
-        logger.debug('Patches:{0}'.format(patches))
         lines = self.get_content_rebase()
         removed_patches = []
         for index, line in enumerate(lines):
