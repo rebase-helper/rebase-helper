@@ -165,6 +165,43 @@ class Application(object):
 
         return os.path.join(destination, sources_dir)
 
+    def prepare_sources(self):
+        """
+        Function prepares a sources.
+        :return:
+        """
+        old_dir = Application.extract_sources(self.old_sources,
+                                              os.path.join(self.execution_dir, settings.OLD_SOURCES_DIR))
+        new_dir = Application.extract_sources(self.new_sources,
+                                              os.path.join(self.execution_dir, settings.NEW_SOURCES_DIR))
+
+        return [old_dir, new_dir]
+
+    def patch_sources(self, sources):
+        # Patch sources
+        return_value = None
+        if not patch_helper.check_difftool_argument(self.conf.difftool):
+            sys.exit(1)
+        self.kwargs['old_dir'] = sources[0]
+        self.kwargs['new_dir'] = sources[1]
+        self.kwargs['diff_tool'] = self.conf.difftool
+        patch = patch_helper.Patch(self.conf.patchtool)
+        try:
+            self.kwargs['new']['patches'] = patch.patch(**self.kwargs)
+        except Exception as e:
+            logger.error(e.message)
+            return_value = 1
+
+        update_patches = self.spec_file.write_updated_patches(**self.kwargs)
+        self.kwargs['summary_info'] = update_patches
+        if self.conf.patch_only:
+            # TODO: We should solve the run path somehow better to not duplicate code
+            self.print_summary()
+            if not self.conf.keep_workspace:
+                self._delete_workspace_dir()
+            return_value = 0
+        return return_value
+
     def build_packages(self):
         """
         Function calls build class for building packages
@@ -209,33 +246,12 @@ class Application(object):
         if self.conf.verbose:
             logger.setLevel(logging.DEBUG)
 
-        old_dir = Application.extract_sources(self.old_sources,
-                                              os.path.join(self.execution_dir, settings.OLD_SOURCES_DIR))
-        new_dir = Application.extract_sources(self.new_sources,
-                                              os.path.join(self.execution_dir, settings.NEW_SOURCES_DIR))
-
+        sources = self.prepare_sources()
         if not self.conf.build_only:
-            # Patch sources
-            if not patch_helper.check_difftool_argument(self.conf.difftool):
-                sys.exit(1)
-            self.kwargs['old_dir'] = old_dir
-            self.kwargs['new_dir'] = new_dir
-            self.kwargs['diff_tool'] = self.conf.difftool
-            patch = patch_helper.Patch(self.conf.patchtool)
-            try:
-                self.kwargs['new']['patches'] = patch.patch(**self.kwargs)
-            except Exception as e:
-                logger.error(e.message)
-                sys.exit(1)
+            return_value = self.patch_sources(sources)
+            if return_value is not None:
+                sys.exit(return_value)
 
-            update_patches = self.spec_file.write_updated_patches(**self.kwargs)
-            self.kwargs['summary_info'] = update_patches
-            if self.conf.patch_only:
-                # TODO: We should solve the run path somehow better to not duplicate code
-                self.print_summary()
-                if not self.conf.keep_workspace:
-                    self._delete_workspace_dir()
-                sys.exit(0)
         # Build packages
         self.build_packages()
 
