@@ -28,14 +28,17 @@ from rebasehelper.logger import logger
 class CLI(object):
     """ Class for processing data from commandline """
 
-    def __init__(self):
+    def __init__(self, args=None):
         """ parse arguments """
         self.parser = argparse.ArgumentParser(description=PROGRAM_DESCRIPTION)
 
         #self.parser.usage = "%%prog [-v] <sources>"
 
         self.add_args()
-        self.args = self.parser.parse_args()
+        if args:
+            self.args = self.parser.parse_args(args)
+        else:
+            self.args = self.parser.parse_args()
         logger.debug(self.args)
 
     def add_args(self):
