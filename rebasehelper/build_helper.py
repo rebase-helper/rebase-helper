@@ -190,8 +190,11 @@ class MockBuildTool(BuildToolBase):
         env = cls._environment_prepare(**kwargs)
 
         cls.results_dir = kwargs.get('workspace_dir', '')
+
         # build SRPM
+        logger.info("Building SRPM package from {0} sources...".format(kwargs.get('tarball', '')))
         srpm = cls._build_srpm(**env)
+        logger.info("Building SRPM package done.")
         srpm_resultdir = os.path.join(cls.results_dir, "SRPM")
         shutil.copytree(env[cls.TEMPDIR_RESULTDIR], srpm_resultdir)
         if srpm is None:
@@ -206,7 +209,9 @@ class MockBuildTool(BuildToolBase):
         cls._envoronment_clear_resultdir(**env)
 
         # build RPM
+        logger.info("Building RPM packages with SRPM from {0} sources...".format(kwargs.get('tarball', '')))
         rpms = cls._build_rpm(srpm=srpm, **env)
+        logger.info("Building RPM packages done.")
         rpm_resultdir = os.path.join(cls.results_dir, "RPM")
         # remove SRPM - side product of building RPM
         tmp_srpm = PathHelper.find_first_file(env[cls.TEMPDIR_RESULTDIR], "*.src.rpm")
@@ -372,7 +377,9 @@ class RpmbuildBuildTool(BuildToolBase):
         cls.results_dir = kwargs.get('workspace_dir', '')
 
         # build SRPM
+        logger.info("Building SRPM package from sources {0}...".format(kwargs.get('tarball', '')))
         srpm = cls._build_srpm(**env)
+        logger.info("Building SRPM package done.")
         srpm_resultdir = os.path.join(cls.results_dir, "SRPM")
         shutil.copytree(env[cls.TEMPDIR_RESULTDIR], srpm_resultdir)
         if srpm is None:
@@ -388,7 +395,9 @@ class RpmbuildBuildTool(BuildToolBase):
         cls._envoronment_clear_resultdir(**env)
 
         # build RPM
+        logger.info("Building RPM packages with SRPM from {0} sources...".format(kwargs.get('tarball', '')))
         rpms = cls._build_rpm(srpm=srpm, **env)
+        logger.info("Building RPM packages done.")
         rpm_resultdir = os.path.join(cls.results_dir, "RPM")
         shutil.copytree(env[cls.TEMPDIR_RESULTDIR], rpm_resultdir)
         if rpms is None:
