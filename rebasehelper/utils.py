@@ -88,11 +88,12 @@ def write_to_file(path, perms, data):
         raise
 
 
-def get_message(message="", keyboard=False):
+def get_message(message="", any=False):
     """
     Function for command line messages
-    :param message:
-    :return: variable y/n
+    :param message: prompt string
+    :param any: if True, return input without checking it first
+    :return: user input
     """
     output = ['yes', 'y', 'no', 'n']
     while True:
@@ -100,7 +101,7 @@ def get_message(message="", keyboard=False):
             var = raw_input(message).lower()
         except KeyboardInterrupt:
             return None
-        if keyboard:
+        if any:
             return var
         if var not in output:
             logger.info('You have to choose one of y/n.')

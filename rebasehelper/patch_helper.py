@@ -196,11 +196,11 @@ class PatchTool(PatchBase):
                 logger.error('Failed to patch old sources')
                 raise RuntimeError()
 
-            get_message("Patch {0} failed on new source. merge-tool will start.".
+            get_message("Applying patch {0} to new source failed. Press Enter to start merge-tool.".
                         format(os.path.basename(patch[0])),
-                        keyboard=True)
+                        any=True)
             logger.warning('Applying patch failed. '
-                           'Will start merge-tool to fix conflicts manually.')
+                           'Starting merge-tool to fix conflicts manually.')
             # Running diff_helper in order to merge patch to the upstream version
             patch[0] = cls.execute_diff_helper(patch)
 
