@@ -343,11 +343,12 @@ class SpecFile(object):
         lines = self.get_content_rebase()
         removed_patches = []
         for index, line in enumerate(lines):
-            # We take care about patches.
             if not line.startswith('Patch'):
                 continue
             fields = line.strip().split()
             patch_num = self.get_patch_number(line)
+            if int(patch_num) not in patches:
+                continue
             patch_name = patches[int(patch_num)][0]
             comment = ""
             if settings.REBASE_HELPER_RESULTS_DIR in patch_name:
