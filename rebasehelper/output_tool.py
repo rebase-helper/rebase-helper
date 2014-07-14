@@ -90,15 +90,6 @@ class TextOutputTool(BaseOutputTool):
                 break
 
     @classmethod
-    def get_base_name(cls, rpm_name):
-        """
-        Function returns base name of the package
-        :param rpm_name:
-        :return:
-        """
-        return os.path.basename(rpm_name)
-
-    @classmethod
     def print_rpms(cls, rpms, version):
         pkgs = ['srpm', 'rpm']
         if not rpms.get('srpm', None):
@@ -113,12 +104,12 @@ class TextOutputTool(BaseOutputTool):
             if isinstance(srpm, str):
                 logger.info(message.format(type_rpm.upper(),
                                            os.path.dirname(rpms.get(srpm, ""))))
-                logger.info("- {0}".format(cls.get_base_name(srpm)))
+                logger.info("- {0}".format(os.path.basename(srpm)))
             else:
                 logger.info(message.format(type_rpm.upper(),
                                            os.path.dirname(srpm[0])))
                 for pkg in srpm:
-                    logger.info("- {0}".format(cls.get_base_name(pkg)))
+                    logger.info("- {0}".format(os.path.basename(pkg)))
 
     @classmethod
     def print_summary(cls, **kwargs):
