@@ -110,7 +110,7 @@ def get_message(message="", any=False):
             return var
 
 
-class SourceDownloader(object):
+class DownloadHelper(object):
     """
     Class for downloading sources defined in SPEC file
     """
