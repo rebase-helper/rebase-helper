@@ -112,6 +112,20 @@ class TextOutputTool(BaseOutputTool):
                     logger.info("- {0}".format(os.path.basename(pkg)))
 
     @classmethod
+    def print_build_logs(cls, rpms, version):
+        """
+        Function is used for printing rpm build logs
+        :param kwargs:
+        :return:
+        """
+        if rpms.get('logs', None) is None:
+            return
+        logger.info('Available {0} logs:'.format(version))
+        for logs in rpms.get('logs', None):
+            logger.info('- {0}'.format(logs))
+
+
+    @classmethod
     def print_summary(cls, **kwargs):
         """
         Function is used for printing summary informations
@@ -119,12 +133,15 @@ class TextOutputTool(BaseOutputTool):
         """
         cls.print_message_and_separator(message="\n\nSummary information:")
         summary = kwargs['summary_info']
-        old = kwargs.get('old')
-        new = kwargs.get('new')
-        cls.print_patches(old.get(settings.FULL_PATCHES, None), summary)
+        pkgs = ['old', 'new']
+        if kwargs.get('old', None) is None:
+            return None
+        cls.print_patches(kwargs.get('old', None).get(settings.FULL_PATCHES, None), summary)
+        for pkg in pkgs:
+            type_pkg = kwargs.get(pkg)
+            cls.print_rpms(type_pkg, pkg.capitalize())
+            cls.print_build_logs(type_pkg, pkg.capitalize())
 
-        cls.print_rpms(old, 'Old')
-        cls.print_rpms(new, 'New')
         cls.print_pkgdiff_tool(**kwargs)
 
     @classmethod
