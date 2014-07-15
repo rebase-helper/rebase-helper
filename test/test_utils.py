@@ -141,7 +141,6 @@ class TestProcessHelper(object):
             assert out_buff.readline().strip('\n') == self.PHRASE
             out_buff.close()
 
-
     class TestRunSubprocessCwd(object):
         """ ProcessHelper - run_subprocess_cwd() tests """
         TEMP_FILE = "temp_file"
@@ -179,7 +178,6 @@ class TestProcessHelper(object):
             assert os.path.exists(os.path.join(self.TEMP_DIR, self.TEMP_FILE))
             assert os.path.exists(self.OUT_FILE)
             assert open(self.OUT_FILE).readline().strip("\n") == self.TEMP_FILE
-
 
     class TestRunSubprocessCwdEnv(object):
         """ ProcessHelper - run_subprocess_cwd_env() tests """

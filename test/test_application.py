@@ -38,8 +38,12 @@ class TestApplication(object):
     spec_file = 'test.spec'
     rebased_spec = os.path.join(settings.REBASE_HELPER_RESULTS_DIR, spec_file)
     cmd_line_args = ['--not-download-sources', 'test-1.0.3.tar.gz']
+    result_dir = ""
+    workspace_dir = ""
 
     def setup(self):
+        self.result_dir = os.path.join(self.dir_name, settings.REBASE_HELPER_RESULTS_DIR)
+        self.workspace_dir = os.path.join(self.dir_name, settings.REBASE_HELPER_WORKSPACE_DIR)
         for tarball in self.list_archives:
             arch_name = os.path.join(self.dir_name, self.list_names[tarball])
             archive = tarfile.TarFile.open(arch_name, 'w:gz')
@@ -48,6 +52,10 @@ class TestApplication(object):
             archive.close()
 
     def teardown(self):
+        if os.path.exists(self.result_dir):
+            shutil.rmtree(self.result_dir)
+        if os.path.exists(self.workspace_dir):
+            shutil.rmtree(self.workspace_dir)
         for tarball in self.list_archives:
             if os.path.exists(tarball):
                 os.unlink(tarball)

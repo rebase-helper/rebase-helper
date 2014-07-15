@@ -30,10 +30,12 @@ class TestSpecHelper(object):
     spec_file = None
     test_spec = 'test.spec'
     result_dir = ""
+    workspace_dir = ""
 
     def setup(self):
         self.dir_name = os.path.dirname(__file__)
         self.result_dir = os.path.join(self.dir_name, settings.REBASE_HELPER_RESULTS_DIR)
+        self.workspace_dir = os.path.join(self.dir_name, settings.REBASE_HELPER_WORKSPACE_DIR)
         if os.path.exists(self.result_dir):
             shutil.rmtree(self.result_dir)
         os.makedirs(self.result_dir)
@@ -44,11 +46,13 @@ class TestSpecHelper(object):
     def teardown(self):
         if os.path.exists(self.result_dir):
             shutil.rmtree(self.result_dir)
+        if os.path.exists(self.workspace_dir):
+            shutil.rmtree(self.workspace_dir)
 
     def test_spec_file(self):
         spec_path = os.path.join(self.dir_name,
-                                           settings.REBASE_HELPER_RESULTS_DIR,
-                                           self.test_spec)
+                                 settings.REBASE_HELPER_RESULTS_DIR,
+                                 self.test_spec)
         assert os.path.exists(spec_path)
 
     def test_old_tarball(self):
@@ -66,12 +70,10 @@ class TestSpecHelper(object):
     def test_list_patches(self):
         cwd = os.getcwd()
         dir_name = os.path.join(cwd, self.dir_name)
-        expected_patches = {1: [os.path.join(dir_name, 'test-testing.patch' ), ' ', 0, False],
-                            2: [os.path.join(dir_name, 'test-testing2.patch' ), '-p1', 1, False],
-                            3: [os.path.join(dir_name, 'test-testing3.patch' ), '-p1', 2, False],
-        }
+        expected_patches = {1: [os.path.join(dir_name, 'test-testing.patch'), ' ', 0, False],
+                            2: [os.path.join(dir_name, 'test-testing2.patch'), '-p1', 1, False],
+                            3: [os.path.join(dir_name, 'test-testing3.patch'), '-p1', 2, False],}
         os.chdir(os.path.dirname(__file__))
         test_patches = self.spec_file._get_patches()
         os.chdir(cwd)
         assert expected_patches == test_patches
-        
