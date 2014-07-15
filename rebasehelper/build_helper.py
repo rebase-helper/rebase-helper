@@ -125,7 +125,7 @@ class MockBuildTool(BuildToolBase):
         logger.debug("MockBuildTool: Destroyed temporary environment in '%s'" % kwargs[cls.TEMPDIR])
 
     @classmethod
-    def _envoronment_clear_resultdir(cls, **kwargs):
+    def _environment_clear_resultdir(cls, **kwargs):
         """ Removes the content of cls.TEMPDIR_RESULTDIR. """
         logger.debug("MockBuildTool: cleaning the temporary resultdir '%s'" % kwargs[cls.TEMPDIR_RESULTDIR])
         shutil.rmtree(kwargs[cls.TEMPDIR_RESULTDIR])
@@ -233,7 +233,7 @@ class MockBuildTool(BuildToolBase):
         logger.debug("MockBuildTool: Successfully built SRPM: '%s'" % str(srpm))
 
         # reset the environment
-        cls._envoronment_clear_resultdir(**env)
+        cls._environment_clear_resultdir(**env)
 
         # build RPM
         logger.info("Building RPM packages from {0} sources...".format(kwargs.get('tarball', '')))
@@ -331,7 +331,7 @@ class RpmbuildBuildTool(BuildToolBase):
         logger.debug("RpmbuildBuildTool: Destroyed temporary environment in '%s'" % kwargs[cls.TEMPDIR])
 
     @classmethod
-    def _envoronment_clear_resultdir(cls, **kwargs):
+    def _environment_clear_resultdir(cls, **kwargs):
         """ Removes the content of cls.TEMPDIR_RESULTDIR. """
         logger.debug("RpmbuildBuildTool: cleaning the temporary resultdir '%s'" % kwargs[cls.TEMPDIR_RESULTDIR])
         shutil.rmtree(kwargs[cls.TEMPDIR_RESULTDIR])
@@ -434,7 +434,7 @@ class RpmbuildBuildTool(BuildToolBase):
         logger.debug("RpmbuildBuildTool: Successfully built SRPM: '%s'" % str(srpm))
 
         # reset the environment
-        cls._envoronment_clear_resultdir(**env)
+        cls._environment_clear_resultdir(**env)
 
         # build RPM
         logger.info("Building RPM packages with SRPM from {0} sources...".format(kwargs.get('tarball', '')))
