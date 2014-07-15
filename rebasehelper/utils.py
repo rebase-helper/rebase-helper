@@ -28,7 +28,7 @@ from rebasehelper import settings
 
 
 def get_temporary_name():
-    return tempfile.mkstemp(prefix="rebase-helper", text=True)[1]
+    return tempfile.mkstemp(prefix=settings.REBASE_HELPER_PREFIX, text=True)[1]
 
 
 def remove_temporary_name(name):
