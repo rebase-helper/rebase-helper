@@ -33,13 +33,13 @@ class TestOutputTool(object):
     """
     data = {'old': {'patches_full': {0: ['mytest.patch', '-p1', 0],
                                      1: ['mytest2.patch', '-p1', 1]},
-                    'srpm': 'test-1.2.0-1.src.rpm',
-                    'rpm': ['test-1.2.0-1.rpm', 'test-devel-1.2.0-1.rpm']
+                    'srpm': './test-1.2.0-1.src.rpm',
+                    'rpm': ['./test-1.2.0-1.rpm', './test-devel-1.2.0-1.rpm']
                     },
             'new': {'patches_full': {0: ['mytest.patch', 0, '-p1'],
                                      1: ['mytest2.patch', 1, '-p1']},
-                    'srpm': 'test-1.2.2-1.src.rpm',
-                    'rpm': ['test-1.2.2-1.rpm', 'test-devel-1.2.2-1.rpm']},
+                    'srpm': './test-1.2.2-1.src.rpm',
+                    'rpm': ['./test-1.2.2-1.rpm', './test-devel-1.2.2-1.rpm']},
             'summary_info': {'deleted': ['mytest2.patch']}
             }
     output_log = os.path.join(os.path.dirname(__file__), 'output.log')
@@ -54,21 +54,24 @@ class TestOutputTool(object):
 
     def test_text_output(self):
         expected_output = """Summary information:
-====================
+======================
+
 Patches:
 Patch1   mytest2.patch   [deleted]
+
 Old (S)RPM packages:
---------------------
-SRPM package(s):
+---------------------
+SRPM package(s): are in directory  :
 - test-1.2.0-1.src.rpm
-RPM package(s):
+RPM package(s): are in directory . :
 - test-1.2.0-1.rpm
 - test-devel-1.2.0-1.rpm
+
 New (S)RPM packages:
---------------------
-SRPM package(s):
+---------------------
+SRPM package(s): are in directory  :
 - test-1.2.2-1.src.rpm
-RPM package(s):
+RPM package(s): are in directory . :
 - test-1.2.2-1.rpm
 - test-devel-1.2.2-1.rpm
 Results from pkgcompare check could not be found."""

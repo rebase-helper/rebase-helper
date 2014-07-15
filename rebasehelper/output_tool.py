@@ -100,7 +100,7 @@ class TextOutputTool(BaseOutputTool):
             srpm = rpms.get(type_rpm, None)
             if not srpm:
                 continue
-            message = "{0} package(s): are in directory {1}"
+            message = "{0} package(s): are in directory {1} :"
             if isinstance(srpm, str):
                 logger.info(message.format(type_rpm.upper(),
                                            os.path.dirname(rpms.get(srpm, ""))))
