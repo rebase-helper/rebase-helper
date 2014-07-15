@@ -266,9 +266,9 @@ class RpmbuildBuildTool(BuildToolBase):
         # create rpmbuild directory structure
         env[cls.TEMPDIR_RPMBUILD] = os.path.join(env[cls.TEMPDIR], 'rpmbuild')
         os.makedirs(env[cls.TEMPDIR_RPMBUILD])
-        for dir_name in ['BUILD', 'BUILDROOT', 'RPMS', 'SOURCES', 'SPEC', 'SRPMS']:
-            env[cls.TEMPDIR_RPMBUILD_ + dir_name] = os.path.join(env[cls.TEMPDIR_RPMBUILD], dir_name)
-            os.makedirs(env[cls.TEMPDIR_RPMBUILD_ + dir_name])
+        for dir_name in ['BUILD', 'BUILDROOT', 'RPMS', 'SOURCES', 'SPECS', 'SRPMS']:
+            env[cls.TEMPDIR_RPMBUILD + "_" + dir_name.lower()] = os.path.join(env[cls.TEMPDIR_RPMBUILD], dir_name)
+            os.makedirs(env[cls.TEMPDIR_RPMBUILD + "_" + dir_name.lower()])
 
         # copy sources
         for source in kwargs['sources']:
