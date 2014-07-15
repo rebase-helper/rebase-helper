@@ -106,6 +106,13 @@ class CLI(object):
             metavar='SOURCES',
             help="Specify new upstream sources"
         )
+        self.parser.add_argument(
+            "-c",
+            "--continue",
+            default=False,
+            action="store_true",
+            help="Use if you want to continue with rebase previously interrupted"
+        )
 
     def __getattr__(self, name):
         try:
