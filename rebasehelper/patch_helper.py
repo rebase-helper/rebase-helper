@@ -23,6 +23,7 @@ import string
 from rebasehelper.diff_helper import *
 from rebasehelper import settings
 from rebasehelper.utils import get_temporary_name, remove_temporary_name, get_content_file
+from rebasehelper.utils import check_empty_patch
 from rebasehelper.specfile import get_rebase_name
 
 
@@ -180,6 +181,34 @@ class PatchTool(PatchBase):
         return rebased_patch
 
     @classmethod
+    def get_rebased_patch_from_kwargs(cls, patch):
+        # Check if patch is in rebased patches
+        patches = [x for x in cls.kwargs['new']['patches'] if os.path.basename(patch) in x]
+        if not patches:
+            return None
+        return patches[0]
+
+    @classmethod
+    def check_already_applied_patch(cls, patch):
+        """
+        Function checks if patch was already rebased
+        :param patch:
+        :return: - None if patch is empty
+                 - Patch
+        """
+        rebased_patches = cls.get_rebased_patch_from_kwargs(patch)
+        # If patch is not rebased yet
+        if not rebased_patches:
+            return patch
+        # Check if patch is empty
+        if check_empty_patch(rebased_patches):
+            # If patch is empty then it isn't applied
+            # and is removed
+            return None
+        # Return non empty rebased patch
+        return rebased_patches
+
+    @classmethod
     def apply_patch(cls, patch):
         """
         Function applies a patch to a old/new sources
@@ -187,6 +216,16 @@ class PatchTool(PatchBase):
         if cls.source_dir == cls.old_sources:
             # for new_sources we want the same suffix as for old_sources
             cls.suffix = ''.join(random.choice(string.ascii_letters) for _ in range(6))
+        else:
+            # This check is applied only in case of new_sources
+            # If rebase-helper is called with --continue option
+            if cls.kwargs.get('continue'):
+                applied = cls.check_already_applied_patch(patch[0])
+                if not applied:
+                    patch[0] = cls.get_rebased_patch_from_kwargs(patch[0])
+                    return patch
+                patch[0] = applied
+
         logger.info("Applying patch '{0}' to '{1}'".format(os.path.basename(patch[0]),
                                                            os.path.basename(cls.source_dir)))
         ret_code = cls.patch_command(get_path_to_patch(patch[0]), patch[1])

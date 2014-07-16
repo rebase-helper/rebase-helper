@@ -57,14 +57,36 @@ class Application(object):
         # Directory where results should be put
         self.kwargs['results_dir'] = self.results_dir = os.path.join(self.execution_dir,
                                                                      settings.REBASE_HELPER_RESULTS_DIR)
+        self.kwargs['continue'] = 0
 
-        self._check_working_dirs()
+        args_dict = vars(self.conf.args)
+        if not args_dict.get('continue', 0):
+            self._check_working_dirs()
 
         self._get_spec_file()
         self.spec_file = SpecFile(self.spec_file_path, self.conf.sources, download=not self.conf.not_download_sources)
         self.kwargs['old'] = {}
         self.kwargs['new'] = {}
         self._initialize_data()
+        if args_dict.get('continue'):
+            # Cleaning sources directories
+            old_sources = os.path.join(self.execution_dir, settings.OLD_SOURCES_DIR)
+            if os.path.exists(old_sources):
+                shutil.rmtree(old_sources)
+            new_sources = os.path.join(self.execution_dir, settings.NEW_SOURCES_DIR)
+            if os.path.exists(new_sources):
+                shutil.rmtree(new_sources)
+            self.kwargs['continue'] = args_dict.get('continue')
+            self.kwargs['new']['patches'] = self._find_old_data()
+
+    def _find_old_data(self):
+        """
+        Function find data previously done
+        """
+        patches = []
+        for file_name in PathHelper.find_all_files(self.kwargs.get('results_dir', ''), '*.patch'):
+            patches.append(file_name)
+        return patches
 
     def _initialize_data(self):
         """
