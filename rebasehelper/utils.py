@@ -28,6 +28,24 @@ from rebasehelper.logger import logger
 from rebasehelper import settings
 
 
+def check_empty_patch(patch_name):
+    """
+    Function checks whether patch is empty or not
+    """
+    cmd = ["lsdiff"]
+    cmd.append(patch_name)
+    temp_name = get_temporary_name()
+    ret_code = ProcessHelper.run_subprocess(cmd, output=temp_name)
+    if ret_code != 0:
+        return False
+    lines = get_content_file(temp_name, 'r', method=True)
+    remove_temporary_name(temp_name)
+    if not lines:
+        return True
+    else:
+        return False
+
+
 def get_temporary_name():
     return tempfile.mkstemp(prefix=settings.REBASE_HELPER_PREFIX, text=True)[1]
 

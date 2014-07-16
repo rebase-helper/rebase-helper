@@ -32,7 +32,7 @@ from rebasehelper.utils import ProcessHelper, DownloadHelper
 from rebasehelper.logger import logger
 from rebasehelper import settings
 from rebasehelper.utils import get_content_file,  write_to_file
-from rebasehelper.utils import get_temporary_name, remove_temporary_name
+from rebasehelper.utils import check_empty_patch
 from rebasehelper.archive import Archive
 
 
@@ -260,23 +260,6 @@ class SpecFile(object):
         self._get_new_tarball()
         return old_sources, new_sources
 
-    def check_empty_patches(self, patch_name):
-        """
-        Function checks whether patch is empty or not
-        """
-        cmd = ["lsdiff"]
-        cmd.append(patch_name)
-        temp_name = get_temporary_name()
-        ret_code = ProcessHelper.run_subprocess(cmd, output=temp_name)
-        if ret_code != 0:
-            return False
-        lines = get_content_file(temp_name, 'r', method=True)
-        remove_temporary_name(temp_name)
-        if not lines:
-            return True
-        else:
-            return False
-
     def _remove_empty_patches(self, lines, patch_num):
         """
         Remove ampty patches from SPEC file
@@ -352,7 +335,7 @@ class SpecFile(object):
             patch_name = patches[int(patch_num)][0]
             comment = ""
             if settings.REBASE_HELPER_RESULTS_DIR in patch_name:
-                if self.check_empty_patches(patch_name):
+                if check_empty_patch(patch_name):
                     comment = '#'
                     removed_patches.append(patch_num)
                     del patches[int(patch_num)]
