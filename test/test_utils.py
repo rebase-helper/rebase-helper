@@ -25,8 +25,10 @@ import shutil
 import random
 import string
 import StringIO
+
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.utils import PathHelper
+from rebasehelper.utils import TemporaryEnvironment
 
 
 class TestProcessHelper(object):
@@ -325,3 +327,76 @@ class TestPathHelper(object):
             assert PathHelper.find_first_file(
                 ".", "py*n") == os.path.abspath(self.files[4])
             assert PathHelper.find_first_file("dir1/bar", "pythooon") is None
+
+
+class TestTemporaryEnvironment(object):
+    """ TemporaryEnvironment class tests. """
+
+    def test_with_statement(self):
+        path = ''
+        with TemporaryEnvironment() as temp:
+            path = temp.path()
+            assert path != ''
+            assert os.path.exists(path)
+            assert os.path.isdir(path)
+            env = temp.env()
+            assert env.get(temp.TEMPDIR, None) is not None
+            assert env.get(temp.TEMPDIR, None) == path
+
+        assert not os.path.exists(path)
+        assert not os.path.isdir(path)
+
+    def test_with_statement_exception(self):
+        path = ''
+
+        try:
+            with TemporaryEnvironment() as temp:
+                path = temp.path()
+                raise RuntimeError()
+        except RuntimeError:
+            pass
+
+        assert not os.path.exists(path)
+        assert not os.path.isdir(path)
+
+    def test_with_statement_callback(self):
+        path = ''
+        tmp_file, tmp_path = tempfile.mkstemp(text=True)
+        os.close(tmp_file)
+
+        def callback(**kwargs):
+            path = kwargs.get(TemporaryEnvironment.TEMPDIR, '')
+            assert path != ''
+            with open(tmp_path, 'wb') as f:
+                f.write(path)
+
+        with TemporaryEnvironment(exit_callback=callback) as temp:
+            path = temp.path()
+
+        with open(tmp_path, 'rb') as f:
+            assert f.read() == path
+
+        os.unlink(tmp_path)
+
+    def test_with_statement_callback_exception(self):
+        path = ''
+        tmp_file, tmp_path = tempfile.mkstemp(text=True)
+        os.close(tmp_file)
+
+        def callback(**kwargs):
+            path = kwargs.get(TemporaryEnvironment.TEMPDIR, '')
+            assert path != ''
+            with open(tmp_path, 'wb') as f:
+                f.write(path)
+
+        try:
+            with TemporaryEnvironment(exit_callback=callback) as temp:
+                path = temp.path()
+                raise RuntimeError()
+        except RuntimeError:
+            pass
+
+        with open(tmp_path, 'rb') as f:
+            assert f.read() == path
+
+        os.unlink(tmp_path)

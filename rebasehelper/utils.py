@@ -22,6 +22,7 @@ import fnmatch
 import subprocess
 import tempfile
 #import pycurl
+import shutil
 
 from rebasehelper.logger import logger
 from rebasehelper import settings
@@ -333,3 +334,48 @@ class PathHelper(object):
     def get_temp_dir():
         """ Returns a path to new temporary directory. """
         return tempfile.mkdtemp(prefix=settings.REBASE_HELPER_PREFIX)
+
+
+class TemporaryEnvironment(object):
+    """ Class representing a temporary environment (directory) that can be used
+     as a workspace. It can be used with with statement. """
+
+    TEMPDIR = 'TEMPDIR'
+
+    def __init__(self, exit_callback=None, **kwargs):
+        self._env = {}
+        self._exit_callback = exit_callback
+
+    def __enter__(self):
+        self._env[self.TEMPDIR] = PathHelper.get_temp_dir()
+        logger.debug("TemporaryEnvironment: Created environment in '{0}'".format(self.path()))
+        return self
+
+    def __exit__(self, type, value, traceback):
+        # run callback before removing the environment
+        try:
+            self._exit_callback(**self.env())
+        except TypeError:
+            pass
+        else:
+            logger.debug("TemporaryEnvironment: Exit callback executed successfully")
+
+        shutil.rmtree(self.path())
+        logger.debug("TemporaryEnvironment: Destroyed environment in '{0}'".format(self.path()))
+
+    def __str__(self):
+        return "<TemporaryEnvironment path='{0}'>".format(self.path())
+
+    def path(self):
+        """
+        Returns path to the temporary environment.
+        :return: abs path to the environment
+        """
+        return self._env.get(self.TEMPDIR, '')
+
+    def env(self):
+        """
+        Returns copy of _env dictionary.
+        :return: copy of _env dictionary
+        """
+        return self._env.copy()
