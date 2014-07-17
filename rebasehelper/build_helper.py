@@ -32,6 +32,7 @@ def register_build_tool(build_tool):
     build_tools[build_tool.CMD] = build_tool
     return build_tool    
 
+
 class BuildTemporaryEnvironment(TemporaryEnvironment):
     """
     Class representing temporary environment for MockBuildTool.
