@@ -245,7 +245,7 @@ class Application(object):
         except RuntimeError:
             # Building failed
             sys.exit(1)
-        logger.info('Building package done')
+        logger.info('Building packages done')
 
     def pkgdiff_packages(self):
         """
