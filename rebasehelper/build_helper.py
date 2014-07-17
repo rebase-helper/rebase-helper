@@ -51,24 +51,22 @@ class BuildTemporaryEnvironment(TemporaryEnvironment):
 
     def __enter__(self):
         obj = super(BuildTemporaryEnvironment, self).__enter__()
+        log_message = "BuildTemporaryEnvironment: Copying '{0}' to '{1}'"
         # create the directory structure
         self._create_directory_sctructure()
         # copy sources
         for source in self.sources:
-            logger.debug("BuildTemporaryEnvironment: Copying '{0}' to '{1}'".format(source,
-                                                                                    self._env[self.TEMPDIR_SOURCES]))
+            logger.debug(log_message.format(source, self._env[self.TEMPDIR_SOURCES]))
             shutil.copy(source, self._env[self.TEMPDIR_SOURCES])
         # copy patches
         for patch in self.patches:
-            logger.debug("BuildTemporaryEnvironment: Copying '{0}' to '{1}'".format(patch,
-                                                                                    self._env[self.TEMPDIR_SOURCES]))
+            logger.debug(log_message.format(patch, self._env[self.TEMPDIR_SOURCES]))
             shutil.copy(patch, self._env[self.TEMPDIR_SOURCES])
         # copy SPEC file
         spec_name = os.path.basename(self.spec)
         self._env[self.TEMPDIR_SPEC] = os.path.join(self._env[self.TEMPDIR_SPECS], spec_name)
         shutil.copy(self.spec, self._env[self.TEMPDIR_SPEC])
-        logger.debug("BuildTemporaryEnvironment: Copying '{0}' to '{1}'".format(self.spec,
-                                                                                self._env[self.TEMPDIR_SPEC]))
+        logger.debug(log_message.format(self.spec, self._env[self.TEMPDIR_SPEC]))
 
         return obj
 
@@ -87,13 +85,14 @@ class BuildTemporaryEnvironment(TemporaryEnvironment):
         :return:
         """
         os.makedirs(results_dir)
+        log_message = "BuildTemporaryEnvironment: Copying '{0}' '{1}' to '{2}'"
         # copy logs
         for log in PathHelper.find_all_files(kwargs[self.TEMPDIR_RESULTS], '*.log'):
-            logger.debug("BuildTemporaryEnvironment: Copying log '{0}' to '{1}'".format(log, results_dir))
+            logger.debug(log_message.format('log', log, results_dir))
             shutil.copy(log, results_dir)
         # copy packages
         for package in PathHelper.find_all_files(kwargs[self.TEMPDIR], '*.rpm'):
-            logger.debug("BuildTemporaryEnvironment: Copying package '{0}' to '{1}'".format(package, results_dir))
+            logger.debug(log_message.format('package', package, results_dir))
             shutil.copy(package, results_dir)
 
 
