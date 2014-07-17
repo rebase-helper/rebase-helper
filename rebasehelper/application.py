@@ -240,8 +240,11 @@ class Application(object):
         new_patches = get_value_from_kwargs(self.kwargs, settings.FULL_PATCHES, source='new')
         self.kwargs['new']['patches'] = [p[0] for p in new_patches.itervalues()]
 
-        logger.info('Building packages using {0} ... running'.format(self.conf.buildtool))
-        builder.build_packages(**self.kwargs)
+        try:
+            builder.build_packages(**self.kwargs)
+        except RuntimeError:
+            # Building failed
+            sys.exit(1)
         logger.info('Building package done')
 
     def pkgdiff_packages(self):
