@@ -257,7 +257,7 @@ class MockBuildTool(BuildToolBase):
         logger.debug("MockBuildTool: Successfully built RPMs: '{0}'".format(str(rpms)))
 
         # gather logs
-        logs.append([l for l in PathHelper.find_all_files(rpm_results_dir, '*.log')])
+        logs.extend([l for l in PathHelper.find_all_files(rpm_results_dir, '*.log')])
         logger.debug("MockBuildTool: logs: '{0}'".format(str(logs)))
 
         return {'srpm': srpm,
@@ -417,7 +417,7 @@ class RpmbuildBuildTool(BuildToolBase):
         logger.debug("RpmbuildBuildTool: Successfully built RPMs: '{0}'".format(str(rpms)))
 
         # gather logs
-        logs.append([l for l in PathHelper.find_all_files(rpm_results_dir, '*.log')])
+        logs.extend([l for l in PathHelper.find_all_files(rpm_results_dir, '*.log')])
         logger.debug("RpmbuildBuildTool: logs: '{0}'".format(str(logs)))
 
         return {'srpm': srpm,
