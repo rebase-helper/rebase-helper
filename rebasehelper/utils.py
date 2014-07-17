@@ -47,7 +47,9 @@ def check_empty_patch(patch_name):
 
 
 def get_temporary_name():
-    return tempfile.mkstemp(prefix=settings.REBASE_HELPER_PREFIX, text=True)[1]
+    handle, filename = tempfile.mkstemp(prefix=settings.REBASE_HELPER_PREFIX, text=True)
+    os.close(handle)
+    return filename
 
 
 def remove_temporary_name(name):
