@@ -138,7 +138,7 @@ class Application(object):
         os.makedirs(self.results_dir)
 
         if os.path.exists(self.workspace_dir):
-            logger.warning("Workspace direcotry '{0}' exists, removing it".format(os.path.basename(self.workspace_dir)))
+            logger.warning("Workspace directory '{0}' exists, removing it".format(os.path.basename(self.workspace_dir)))
             shutil.rmtree(self.workspace_dir)
         os.makedirs(self.workspace_dir)
 
