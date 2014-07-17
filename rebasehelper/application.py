@@ -131,14 +131,14 @@ class Application(object):
         Check if workspace and results dir exist, and remove them if yes.
         :return:
         """
+        # TODO: We may not want to delete the directory in the future
         if os.path.exists(self.results_dir):
-            logger.warning("'{0}' exists, removing...".format(self.results_dir))
+            logger.warning("Results directory '{0}' exists, removing it".format(os.path.basename(self.results_dir)))
             shutil.rmtree(self.results_dir)
         os.makedirs(self.results_dir)
 
-        # TODO: We may not want to delete the directory in the future
         if os.path.exists(self.workspace_dir):
-            logger.warning("'{0}' exists, removing...".format(self.workspace_dir))
+            logger.warning("Workspace direcotry '{0}' exists, removing it".format(os.path.basename(self.workspace_dir)))
             shutil.rmtree(self.workspace_dir)
         os.makedirs(self.workspace_dir)
 
