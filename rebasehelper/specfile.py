@@ -326,6 +326,8 @@ class SpecFile(object):
         lines = self.get_content_rebase()
         removed_patches = []
         for index, line in enumerate(lines):
+            if line.startswith('#')
+                continue
             if not line.startswith('Patch'):
                 continue
             fields = line.strip().split()
