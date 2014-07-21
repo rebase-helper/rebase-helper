@@ -122,6 +122,14 @@ class Application(object):
             logger.error("Could not find any SPEC file in the current directory '{0}'".format(self.execution_dir))
             sys.exit(1)
 
+    def _delete_workspace_dir(self):
+        """
+        Deletes workspace directory and loggs message
+        :return:
+        """
+        logger.debug("Removing the workspace directory '{0}'".format(self.workspace_dir))
+        shutil.rmtree(self.workspace_dir)
+
     def _check_workspace_dir(self):
         """
         Check if workspace dir exists, and removes it if yes.
@@ -129,7 +137,7 @@ class Application(object):
         """
         if os.path.exists(self.workspace_dir):
             logger.warning("Workspace directory '{0}' exists, removing it".format(os.path.basename(self.workspace_dir)))
-            shutil.rmtree(self.workspace_dir)
+            self._delete_workspace_dir()
         os.makedirs(self.workspace_dir)
 
     def _check_results_dir(self):
@@ -142,14 +150,6 @@ class Application(object):
             logger.warning("Results directory '{0}' exists, removing it".format(os.path.basename(self.results_dir)))
             shutil.rmtree(self.results_dir)
         os.makedirs(self.results_dir)
-
-    def _delete_workspace_dir(self):
-        """
-        Deletes workspace directory and loggs message
-        :return:
-        """
-        logger.debug("Removing the workspace directory '{0}'".format(self.workspace_dir))
-        shutil.rmtree(self.workspace_dir)
 
     @staticmethod
     def extract_archive(archive_path, destination):
