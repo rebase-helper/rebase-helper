@@ -19,8 +19,7 @@
 
 import argparse
 
-from rebasehelper.constants import *
-from rebasehelper.logger import logger
+from rebasehelper.constants import PROGRAM_DESCRIPTION
 
 
 class CLI(object):
@@ -29,15 +28,8 @@ class CLI(object):
     def __init__(self, args=None):
         """ parse arguments """
         self.parser = argparse.ArgumentParser(description=PROGRAM_DESCRIPTION)
-
-        #self.parser.usage = "%%prog [-v] <sources>"
-
         self.add_args()
-        if args:
-            self.args = self.parser.parse_args(args)
-        else:
-            self.args = self.parser.parse_args()
-        logger.debug(self.args)
+        self.args = self.parser.parse_args(args)
 
     def add_args(self):
         self.parser.add_argument(
@@ -100,17 +92,17 @@ class CLI(object):
             help="Suppress to download sources from web"
         )
         self.parser.add_argument(
-            "sources",
-            metavar='SOURCES',
-            help="Specify new upstream sources"
-        )
-        self.parser.add_argument(
             "-c",
             "--continue",
             default=False,
             action="store_true",
             dest='cont',
             help="Use if you want to continue with rebase previously interrupted"
+        )
+        self.parser.add_argument(
+            "sources",
+            metavar='SOURCES',
+            help="Specify new upstream sources"
         )
 
     def __getattr__(self, name):

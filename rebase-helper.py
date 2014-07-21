@@ -19,16 +19,23 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import sys
-import os
 from rebasehelper.cli import CLI
 from rebasehelper.application import Application
+from rebasehelper.logger import logger
 
 def main(args=None):
-    cli = CLI()
-    app = Application(cli)
-    ret = app.run()
-    return ret
+    try:
+        cli = CLI(args)
+        app = Application(cli)
+        app.run()
+    except KeyboardInterrupt:
+        logger.info(' Exiting due to Keyboard Interrupt')
+    except Exception as e:
+        logger.error('{0}'.format(e.message))
+        sys.exit(1)
+
+    sys.exit(0)
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main(sys.argv[1:]))
