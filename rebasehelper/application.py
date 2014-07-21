@@ -107,8 +107,7 @@ class Application(object):
             self.conf.sources = new_sources
 
         if not self.conf.sources:
-            logger.error('You have to define a new sources.')
-            sys.exit(1)
+            raise ValueError('You have to define new sources.')
         else:
             self.new_sources = os.path.abspath(self.conf.sources)
 
@@ -119,8 +118,7 @@ class Application(object):
         self.spec_file_path = PathHelper.find_first_file(self.execution_dir, '*.spec')
 
         if not self.spec_file_path:
-            logger.error("Could not find any SPEC file in the current directory '{0}'".format(self.execution_dir))
-            sys.exit(1)
+            raise IOError("Could not find any SPEC file in the current directory '{0}'".format(self.execution_dir))
 
     def _delete_workspace_dir(self):
         """
@@ -163,15 +161,13 @@ class Application(object):
         try:
             archive = Archive(archive_path)
         except NotImplementedError as e:
-            logger.error("{0}, '{1}'".format(e.message, archive_path))
-            logger.error("Supported archive types are '{0}'".format(str(Archive.get_supported_archives())))
-            sys.exit(1)
+            raise NotImplementedError('{0}. Supported archives are {1}'.format(
+                e.message, Archive.get_supported_archives()))
 
         try:
             archive.extract(destination)
-        except IOError as e:
-            logger.error("Archive '{0}' can not be extracted: '{1}'".format(archive_path, e.message))
-            sys.exit(1)
+        except IOError:
+            raise IOError("Archive '{0}' can not be extracted".format(archive_path))
 
     @staticmethod
     def extract_sources(archive_path, destination):
@@ -183,8 +179,7 @@ class Application(object):
         try:
             sources_dir = os.listdir(destination)[0]
         except IndexError:
-            # TODO Maybe we should raise a RuntimeError
-            sources_dir = ""
+            raise RuntimeError('Extraction of sources failed!')
 
         return os.path.join(destination, sources_dir)
 
@@ -202,28 +197,18 @@ class Application(object):
 
     def patch_sources(self, sources):
         # Patch sources
-        return_value = None
+        # TODO: WTF??
         if not patch_helper.check_difftool_argument(self.conf.difftool):
             sys.exit(1)
         self.kwargs['old_dir'] = sources[0]
         self.kwargs['new_dir'] = sources[1]
         self.kwargs['diff_tool'] = self.conf.difftool
         patch = patch_helper.Patch(self.conf.patchtool)
-        try:
-            self.kwargs['new']['patches'] = patch.patch(**self.kwargs)
-        except Exception as e:
-            logger.error(e.message)
-            return_value = 1
+
+        self.kwargs['new']['patches'] = patch.patch(**self.kwargs)
 
         update_patches = self.spec_file.write_updated_patches(**self.kwargs)
         self.kwargs['summary_info'] = update_patches
-        if self.conf.patch_only:
-            # TODO: We should solve the run path somehow better to not duplicate code
-            self.print_summary()
-            if not self.conf.keep_workspace:
-                self._delete_workspace_dir()
-            return_value = 0
-        return return_value
 
     def build_packages(self):
         """
@@ -232,20 +217,15 @@ class Application(object):
         try:
             builder = Builder(self.conf.buildtool)
         except NotImplementedError as e:
-            logger.error("{0}, '{1}'".format(e.message, self.conf.buildtool))
-            logger.error("Supported build tools are '{0}'".format(str(Builder.get_supported_tools())))
-            sys.exit(1)
+            raise NotImplementedError('{0}. Supported build tools are {1}'.format(
+                e.message, Builder.get_supported_tools()))
 
         old_patches = get_value_from_kwargs(self.kwargs, settings.FULL_PATCHES)
         self.kwargs['old']['patches'] = [p[0] for p in old_patches.itervalues()]
         new_patches = get_value_from_kwargs(self.kwargs, settings.FULL_PATCHES, source='new')
         self.kwargs['new']['patches'] = [p[0] for p in new_patches.itervalues()]
 
-        try:
-            builder.build_packages(**self.kwargs)
-        except RuntimeError:
-            # Building failed
-            sys.exit(1)
+        builder.build_packages(**self.kwargs)
         logger.info('Building packages done')
 
     def pkgdiff_packages(self):
@@ -256,8 +236,8 @@ class Application(object):
         try:
             pkgchecker = Checker(self.conf.pkgcomparetool)
         except NotImplementedError:
-            logger.error('You have to specify one of these check tools {0}'.format(Checker.get_supported_tools()))
-            sys.exit(1)
+            raise NotImplementedError('You have to specify one of these check tools {0}'.format(
+                Checker.get_supported_tools()))
         else:
             logger.info('Comparing packages using {0} ... running'.format(self.conf.pkgcomparetool))
             self.kwargs['pkgcompareinfo'] = pkgchecker.run_check(**self.kwargs)
@@ -273,16 +253,15 @@ class Application(object):
             logger.setLevel(logging.DEBUG)
 
         sources = self.prepare_sources()
+
         if not self.conf.build_only:
-            return_value = self.patch_sources(sources)
-            if return_value is not None:
-                sys.exit(return_value)
+            self.patch_sources(sources)
 
-        # Build packages
-        self.build_packages()
-
-        # Perform checks
-        self.pkgdiff_packages()
+        if not self.conf.patch_only:
+            # Build packages
+            self.build_packages()
+            # Perform checks
+            self.pkgdiff_packages()
 
         # print summary information
         self.print_summary()
