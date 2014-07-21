@@ -225,8 +225,7 @@ class MockBuildTool(BuildToolBase):
             srpm = cls._build_srpm(tmp_spec, tmp_sources_dir, tmp_results_dir)
 
         if srpm is None:
-            logger.error("Building SRPM failed!")
-            raise RuntimeError()
+            raise RuntimeError("Building SRPM failed!")
         else:
             logger.info("Building SRPM finished successfully")
 
@@ -249,8 +248,7 @@ class MockBuildTool(BuildToolBase):
                 os.unlink(tmp_srpm)
 
         if rpms is None:
-            logger.error("Building RPMs failed!")
-            raise RuntimeError()
+            raise RuntimeError("Building RPMs failed!")
         else:
             logger.info("Building RPM finished successfully")
 
@@ -387,8 +385,7 @@ class RpmbuildBuildTool(BuildToolBase):
             srpm = cls._build_srpm(tmp_spec, tmp_dir, tmp_results_dir)
 
         if srpm is None:
-            logger.error("Building SRPM failed!")
-            raise RuntimeError()
+            raise RuntimeError("Building SRPM failed!")
         else:
             logger.info("Building SRPM finished successfully")
 
@@ -408,8 +405,7 @@ class RpmbuildBuildTool(BuildToolBase):
             rpms = cls._build_rpm(srpm, tmp_dir, tmp_results_dir)
 
         if rpms is None:
-            logger.error("RpmbuildBuildTool: Building RPMs failed!")
-            raise RuntimeError()
+            raise RuntimeError("RpmbuildBuildTool: Building RPMs failed!")
         else:
             logger.info("Building RPMs finished successfully")
 
@@ -473,16 +469,6 @@ class Builder(object):
         :param kwargs:
         :return: new and old packages
         """
-        if 'old' not in kwargs:
-            logger.error('Builder class expects old specfile, sources and patches.')
-            raise RuntimeError
-        if 'new' not in kwargs:
-            logger.error('Builder class expects new specfile, sources and patches.')
-            raise RuntimeError
-        if 'workspace_dir' not in kwargs:
-            logger.error('Builder class expects workspace_dir.')
-            raise RuntimeError
-
         for path in ['old', 'new']:
             input_structure = kwargs.get(path)
             input_structure['results_dir'] = os.path.join(kwargs.get('results_dir'), path)
