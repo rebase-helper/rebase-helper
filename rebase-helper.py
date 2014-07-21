@@ -29,9 +29,10 @@ def main(args=None):
         app = Application(cli)
         app.run()
     except KeyboardInterrupt:
-        logger.info(' Exiting due to Keyboard Interrupt')
+        logger.info('\nExiting due to Keyboard Interrupt')
     except Exception as e:
-        logger.error('{0}'.format(e.message))
+        # TODO: maybe we should catch only specific exception to find unknown bugs
+        logger.error('\n{0}'.format(e.message))
         sys.exit(1)
 
     sys.exit(0)
