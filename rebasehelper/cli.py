@@ -18,8 +18,6 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import argparse
-import sys
-import logging
 
 from rebasehelper.constants import *
 from rebasehelper.logger import logger
@@ -111,6 +109,7 @@ class CLI(object):
             "--continue",
             default=False,
             action="store_true",
+            dest='cont',
             help="Use if you want to continue with rebase previously interrupted"
         )
 

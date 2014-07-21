@@ -40,7 +40,7 @@ class TestCLI(object):
                 'outputtool': 'xml',
                 'keep_workspace': True,
                 'not_download_sources': True,
-                'continue': True}
+                'cont': True}
         arguments = ['--build-only', '--patch-only', 'test-1.0.3.tar.gz', '--verbose', '--patchtool',
                      'patch_test', '--buildtool', 'rpmbuild', '--difftool', 'vimdiff', '--pkgcomparetool',
                      'rpmdiff', '--outputtool', 'xml', '--keep-workspace', '--not-download-sources', '--continue']

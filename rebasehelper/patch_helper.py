@@ -219,7 +219,7 @@ class PatchTool(PatchBase):
         else:
             # This check is applied only in case of new_sources
             # If rebase-helper is called with --continue option
-            if cls.kwargs.get('continue'):
+            if cls.kwargs.get('continue', False):
                 applied = cls.check_already_applied_patch(patch[0])
                 if not applied:
                     patch[0] = cls.get_rebased_patch_from_kwargs(patch[0])

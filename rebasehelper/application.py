@@ -57,26 +57,22 @@ class Application(object):
         # Directory where results should be put
         self.kwargs['results_dir'] = self.results_dir = os.path.join(self.execution_dir,
                                                                      settings.REBASE_HELPER_RESULTS_DIR)
-        self.kwargs['continue'] = 0
 
-        args_dict = vars(self.conf.args)
-        if not args_dict.get('continue', 0):
-            self._check_working_dirs()
+        # check the workspace dir
+        self._check_workspace_dir()
+        # if not continuing, check the results dir
+        if not self.conf.cont:
+            self._check_results_dir()
 
         self._get_spec_file()
         self.spec_file = SpecFile(self.spec_file_path, self.conf.sources, download=not self.conf.not_download_sources)
         self.kwargs['old'] = {}
         self.kwargs['new'] = {}
+        # TODO: Remove the value from kwargs and use only CLI attribute!
+        self.kwargs['continue'] = self.conf.cont
         self._initialize_data()
-        if args_dict.get('continue'):
-            # Cleaning sources directories
-            old_sources = os.path.join(self.execution_dir, settings.OLD_SOURCES_DIR)
-            if os.path.exists(old_sources):
-                shutil.rmtree(old_sources)
-            new_sources = os.path.join(self.execution_dir, settings.NEW_SOURCES_DIR)
-            if os.path.exists(new_sources):
-                shutil.rmtree(new_sources)
-            self.kwargs['continue'] = args_dict.get('continue')
+
+        if self.conf.cont:
             self.kwargs['new']['patches'] = self._find_old_data()
 
     def _find_old_data(self):
@@ -126,9 +122,19 @@ class Application(object):
             logger.error("Could not find any SPEC file in the current directory '{0}'".format(self.execution_dir))
             sys.exit(1)
 
-    def _check_working_dirs(self):
+    def _check_workspace_dir(self):
         """
-        Check if workspace and results dir exist, and remove them if yes.
+        Check if workspace dir exists, and removes it if yes.
+        :return:
+        """
+        if os.path.exists(self.workspace_dir):
+            logger.warning("Workspace directory '{0}' exists, removing it".format(os.path.basename(self.workspace_dir)))
+            shutil.rmtree(self.workspace_dir)
+        os.makedirs(self.workspace_dir)
+
+    def _check_results_dir(self):
+        """
+        Check if  results dir exists, and removes it if yes.
         :return:
         """
         # TODO: We may not want to delete the directory in the future
@@ -136,11 +142,6 @@ class Application(object):
             logger.warning("Results directory '{0}' exists, removing it".format(os.path.basename(self.results_dir)))
             shutil.rmtree(self.results_dir)
         os.makedirs(self.results_dir)
-
-        if os.path.exists(self.workspace_dir):
-            logger.warning("Workspace directory '{0}' exists, removing it".format(os.path.basename(self.workspace_dir)))
-            shutil.rmtree(self.workspace_dir)
-        os.makedirs(self.workspace_dir)
 
     def _delete_workspace_dir(self):
         """
