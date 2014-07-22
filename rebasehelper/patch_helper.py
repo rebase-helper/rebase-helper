@@ -17,14 +17,19 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+import os
+import sys
 import random
 import string
 
-from rebasehelper.diff_helper import *
+
 from rebasehelper import settings
+from rebasehelper.logger import logger
 from rebasehelper.utils import get_temporary_name, remove_temporary_name, get_content_file
-from rebasehelper.utils import check_empty_patch
+from rebasehelper.utils import check_empty_patch, get_message
+from rebasehelper.utils import ProcessHelper
 from rebasehelper.specfile import get_rebase_name
+from rebasehelper.diff_helper import Diff
 
 
 patch_tools = {}

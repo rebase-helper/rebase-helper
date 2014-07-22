@@ -25,11 +25,13 @@ import logging
 from rebasehelper.archive import Archive
 from rebasehelper.specfile import SpecFile
 from rebasehelper.logger import logger
-from rebasehelper import settings, patch_helper
+from rebasehelper import settings
 from rebasehelper import output_tool
 from rebasehelper.utils import get_value_from_kwargs, PathHelper
 from rebasehelper.checker import Checker
 from rebasehelper.build_helper import Builder
+from rebasehelper.patch_helper import Patch
+from rebasehelper.diff_helper import check_difftool_argument
 
 
 class Application(object):
@@ -197,13 +199,13 @@ class Application(object):
 
     def patch_sources(self, sources):
         # Patch sources
-        # TODO: WTF??
-        if not patch_helper.check_difftool_argument(self.conf.difftool):
+        # TODO: Whaaaat??
+        if not check_difftool_argument(self.conf.difftool):
             sys.exit(1)
         self.kwargs['old_dir'] = sources[0]
         self.kwargs['new_dir'] = sources[1]
         self.kwargs['diff_tool'] = self.conf.difftool
-        patch = patch_helper.Patch(self.conf.patchtool)
+        patch = Patch(self.conf.patchtool)
 
         self.kwargs['new']['patches'] = patch.patch(**self.kwargs)
 
