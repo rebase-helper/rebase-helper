@@ -139,14 +139,16 @@ class Application(object):
         Deletes old result dir
         :return:
         """
-        shutil.rmtree(os.path.join(self.results_dir, 'old'))
+        if os.path.isdir(os.path.join(self.results_dir, 'old')):
+            shutil.rmtree(os.path.join(self.results_dir, 'old'))
 
     def _delete_new_results_dir(self):
         """
         Deletes new result dir
         :return:
         """
-        shutil.rmtree(os.path.join(self.results_dir, 'new'))
+        if os.path.isdir(os.path.join(self.results_dir, 'new')):
+            shutil.rmtree(os.path.join(self.results_dir, 'new'))
 
     def _delete_workspace_dir(self):
         """
