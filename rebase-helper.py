@@ -23,6 +23,7 @@ from rebasehelper.cli import CLI
 from rebasehelper.application import Application
 from rebasehelper.logger import logger
 
+
 def main(args=None):
     try:
         cli = CLI(args)
@@ -31,9 +32,9 @@ def main(args=None):
     except KeyboardInterrupt:
         logger.info('\nInterrupted by user')
     # TODO: We need to use own exception!
-    except Exception as e:
-        logger.error('\n{0}'.format(e.message))
-        sys.exit(1)
+    #except Exception as e:
+    #    logger.error('\n{0}'.format(e.message))
+    #    sys.exit(1)
 
     sys.exit(0)
 
