@@ -199,9 +199,6 @@ class Application(object):
 
     def patch_sources(self, sources):
         # Patch sources
-        # TODO: Whaaaat??
-        if not check_difftool_argument(self.conf.difftool):
-            sys.exit(1)
         self.kwargs['old_dir'] = sources[0]
         self.kwargs['new_dir'] = sources[1]
         self.kwargs['diff_tool'] = self.conf.difftool
