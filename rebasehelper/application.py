@@ -60,6 +60,9 @@ class Application(object):
                                                                      settings.REBASE_HELPER_RESULTS_DIR)
 
         self._get_spec_file()
+        # if not continuing, check the results dir
+        if not self.conf.cont and not self.conf.build_only:
+            self._check_results_dir()
         self.spec_file = SpecFile(self.spec_file_path, self.conf.sources, download=not self.conf.not_download_sources)
         self.kwargs['old'] = {}
         self.kwargs['new'] = {}
@@ -69,10 +72,7 @@ class Application(object):
 
         # check the workspace dir
         self._check_workspace_dir()
-        # if not continuing, check the results dir
-        if not self.conf.cont or not self.conf.build_only:
-            self._check_results_dir()
-        else:
+        if self.conf.build_only:
             self._delete_old_builds()
             self._find_old_data()
 
