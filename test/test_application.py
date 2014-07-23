@@ -106,8 +106,8 @@ class TestApplication(object):
         expected_dict = {
             'new': {
                 'sources': ['/home/phracek/work/programming/rebase-helper/test/test-source.sh',
-                             '/home/phracek/work/programming/rebase-helper/test/source-tests.sh',
-                             '/home/phracek/work/programming/rebase-helper/test/test-1.0.3.tar.gz'],
+                            '/home/phracek/work/programming/rebase-helper/test/source-tests.sh',
+                            '/home/phracek/work/programming/rebase-helper/test/test-1.0.3.tar.gz'],
                 'version': '1.0.3',
                 'name': 'test',
                 'tarball': 'test-1.0.3.tar.gz',
@@ -153,7 +153,9 @@ class TestApplication(object):
             cli = CLI(self.cmd_line_args)
             app = Application(cli)
             sources = app.prepare_sources()
-            assert app.kwargs == expected_dict
+            for key, val in app.kwargs.items():
+                if key in expected_dict:
+                    assert val == expected_dict[key]
         except OSError as oer:
             os.chdir(cwd)
         os.chdir(cwd)
