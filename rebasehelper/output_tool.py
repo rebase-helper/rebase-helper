@@ -132,11 +132,12 @@ class TextOutputTool(BaseOutputTool):
         :return:
         """
         cls.print_message_and_separator(message="\n\nSummary information:")
-        summary = kwargs['summary_info']
         pkgs = ['old', 'new']
         if kwargs.get('old', None) is None:
             return None
-        cls.print_patches(kwargs.get('old', None).get(settings.FULL_PATCHES, None), summary)
+        summary = kwargs.get('summary_info', None)
+        if summary is not None:
+            cls.print_patches(kwargs.get('old', None).get(settings.FULL_PATCHES, None), summary)
         for pkg in pkgs:
             type_pkg = kwargs.get(pkg)
             cls.print_rpms(type_pkg, pkg.capitalize())

@@ -31,7 +31,6 @@ from rebasehelper.utils import get_value_from_kwargs, PathHelper
 from rebasehelper.checker import Checker
 from rebasehelper.build_helper import Builder
 from rebasehelper.patch_helper import Patch
-from rebasehelper.diff_helper import check_difftool_argument
 
 
 class Application(object):
@@ -60,12 +59,6 @@ class Application(object):
         self.kwargs['results_dir'] = self.results_dir = os.path.join(self.execution_dir,
                                                                      settings.REBASE_HELPER_RESULTS_DIR)
 
-        # check the workspace dir
-        self._check_workspace_dir()
-        # if not continuing, check the results dir
-        if not self.conf.cont:
-            self._check_results_dir()
-
         self._get_spec_file()
         self.spec_file = SpecFile(self.spec_file_path, self.conf.sources, download=not self.conf.not_download_sources)
         self.kwargs['old'] = {}
@@ -74,17 +67,28 @@ class Application(object):
         self.kwargs['continue'] = self.conf.cont
         self._initialize_data()
 
-        if self.conf.cont:
-            self.kwargs['new']['patches'] = self._find_old_data()
+        # check the workspace dir
+        self._check_workspace_dir()
+        # if not continuing, check the results dir
+        if not self.conf.cont or not self.conf.build_only:
+            self._check_results_dir()
+        else:
+            self._delete_old_builds()
+            self._find_old_data()
 
     def _find_old_data(self):
         """
         Function find data previously done
         """
         patches = []
+        new_patches = self.kwargs['new'][settings.FULL_PATCHES]
         for file_name in PathHelper.find_all_files(self.kwargs.get('results_dir', ''), '*.patch'):
-            patches.append(file_name)
-        return patches
+            for key, value in new_patches.items():
+                if os.path.basename(file_name) in value[0]:
+                    value[0] = file_name
+                    break
+        self.kwargs['new']['patches'] = self.kwargs['new'][settings.FULL_PATCHES]
+        update_patches = self.spec_file.write_updated_patches(**self.kwargs)
 
     def _initialize_data(self):
         """
@@ -121,6 +125,28 @@ class Application(object):
 
         if not self.spec_file_path:
             raise IOError("Could not find any SPEC file in the current directory '{0}'".format(self.execution_dir))
+
+    def _delete_old_builds(self):
+        """
+        Deletes the old and new result dir from previous build
+        :return:
+        """
+        self._delete_new_results_dir()
+        self._delete_old_results_dir()
+
+    def _delete_old_results_dir(self):
+        """
+        Deletes old result dir
+        :return:
+        """
+        shutil.rmtree(os.path.join(self.results_dir, 'old'))
+
+    def _delete_new_results_dir(self):
+        """
+        Deletes new result dir
+        :return:
+        """
+        shutil.rmtree(os.path.join(self.results_dir, 'new'))
 
     def _delete_workspace_dir(self):
         """
