@@ -103,6 +103,7 @@ class SpecFile(object):
         Function reads a content rebase.spec file
         """
         lines = get_content_file(self.get_rebased_spec(), "r", method=True)
+        lines = [x for x in lines if not x.startswith('#')]
         return lines
 
     def _get_patches_flags(self):
@@ -119,24 +120,27 @@ class SpecFile(object):
         # {num: (flags, index of application)}
         return patch_flags
 
+    def _get_spec_information(self, version):
+        kwargs = {}
+        kwargs[settings.FULL_PATCHES] = self._get_patches()
+        kwargs['sources'] = self._get_all_sources()
+        kwargs['name'] = self._get_package_name(self.spc)
+        kwargs['version'] = self._get_spec_versions(version)
+        return kwargs
+
     def get_old_information(self):
         kwargs = {}
         self.spc = rpm.spec(self.spec_file)
-        kwargs['sources'] = self._get_all_sources()
-        kwargs[settings.FULL_PATCHES] = self._get_patches()
-        kwargs['version'] = self._get_spec_versions()[0]
-        kwargs['name'] = self._get_package_name(self.spc)
+        kwargs = self._get_spec_information('old')
         kwargs['tarball'] = self._get_old_tarball()
         return kwargs
 
     def get_new_information(self):
         kwargs = {}
         self.spc = rpm.spec(self.rebased_spec)
-        kwargs['sources'] = self._get_all_sources()
-        kwargs[settings.FULL_PATCHES] = self._get_patches()
-        kwargs['version'] = self._get_spec_versions()[1]
-        kwargs['name'] = self._get_package_name(self.spc)
+        kwargs = self._get_spec_information('new')
         kwargs['tarball'] = self._get_new_tarball()
+
         return kwargs
 
     def _get_version_from_spec(self, spec_file):
@@ -146,14 +150,17 @@ class SpecFile(object):
             return None
         return version
 
-    def _get_spec_versions(self):
+    def _get_spec_versions(self, version):
         """
         Function return an old and a new versions
         :return:
         """
-        old_version = self._get_version_from_spec(rpm.spec(self.spec_file))
-        new_version = self._get_version_from_spec(rpm.spec(self.rebased_spec))
-        return [old_version, new_version]
+        if version == 'old':
+            spec = rpm.spec(self.spec_file)
+        else:
+            spec = rpm.spec(self.rebased_spec)
+        version = self._get_version_from_spec(spec)
+        return version
 
     def _get_package_name(self, spec_file):
         hdr = spec_file.sourceHeader
@@ -233,21 +240,28 @@ class SpecFile(object):
         Function returns a old sources from specfile
         """
         self.spc = rpm.spec(self.spec_file)
-        sources = self._get_sources()
-        old_source_name = [x for x in sources if x[1] == 0]
-        old_source_name = old_source_name[0][0]
+        old_source_name = self._get_full_source_name()
         source_name = get_source_name(old_source_name)
         self._download_source(old_source_name, source_name)
         return source_name
+
+    def _get_full_source_name(self):
+        sources = self._get_sources()
+        new_source_name = ""
+        for src in sources:
+            # We need only a sources
+            if src[1] != 0:
+                continue
+            # We need to get only a name
+            new_source_name = src[0]
+        return new_source_name
 
     def _get_new_tarball(self):
         """
         Function gets a new tarball if it does not exist.
         """
         self.spc = rpm.spec(self.rebased_spec)
-        sources = self._get_sources()
-        new_source_name = [x for x in sources if x[1] == 0]
-        new_source_name = new_source_name[0][0]
+        new_source_name = self._get_full_source_name()
         url_path = new_source_name.split('/')[:-1]
         url_path.append(self.new_sources)
         if not os.path.exists(self.new_sources):
@@ -270,6 +284,13 @@ class SpecFile(object):
                     continue
                 lines[index] = '#' + line
 
+    def _update_spec_version(self, lines, version):
+        for index, line in enumerate(lines):
+            if not line.startswith('Version'):
+                continue
+            lines[index] = line.replace(self._get_spec_versions('old'), version)
+        write_to_file(self.get_rebased_spec(), "w", lines)
+
     def _update_new_version(self):
         """
         Function updates a version in spec file based on input argument
@@ -285,27 +306,17 @@ class SpecFile(object):
 
         if not tarball_ext:
             # CLI argument is probably just a version without name and extension
-            for index, line in enumerate(lines):
-                if not line.startswith('Version'):
-                    continue
-                lines[index] = line.replace(self._get_spec_versions()[0], self.new_sources)
-            write_to_file(self.get_rebased_spec(), "w", lines)
+            self._update_spec_version(lines, self.new_sources)
             # We need to reload the spec file
             self.spc = rpm.spec(self.rebased_spec)
-            sources = self._get_sources()
-            old_source_name = [x for x in sources if x[1] == 0]
-            old_source_name = old_source_name[0][0]
+            old_source_name = self._get_full_source_name()
             self.new_sources = get_source_name(old_source_name)
             return self.new_sources
         tarball_name = self.new_sources.replace(tarball_ext, '')
         regex = re.compile(r'^\w+-?_?(.*)')
         match = re.search(regex, tarball_name)
         if match:
-            for index, line in enumerate(lines):
-                if not line.startswith('Version'):
-                    continue
-                lines[index] = line.replace(self._get_spec_versions()[0], match.group(1))
-            write_to_file(self.get_rebased_spec(), "w", lines)
+            self._update_spec_version(lines, match.group(1))
         return None
 
     def write_updated_patches(self, **kwargs):
@@ -326,8 +337,6 @@ class SpecFile(object):
         lines = self.get_content_rebase()
         removed_patches = []
         for index, line in enumerate(lines):
-            if line.startswith('#'):
-                continue
             if not line.startswith('Patch'):
                 continue
             fields = line.strip().split()
