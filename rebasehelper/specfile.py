@@ -246,15 +246,17 @@ class SpecFile(object):
         return source_name
 
     def _get_full_source_name(self):
+        """
+        Function returns a source name provided by Source [0]
+        List has format [(<name>, <type, 1), (other source)]
+        <type> has values:
+        - 0 means Source 0
+        - 1 means Source > 0
+        - 2 means Patches
+        """
         sources = self._get_sources()
-        new_source_name = ""
-        for src in sources:
-            # We need only a sources
-            if src[1] != 0:
-                continue
-            # We need to get only a name
-            new_source_name = src[0]
-        return new_source_name
+        source = [src[0] for src in sources if src[1] == 0]
+        return source[0]
 
     def _get_new_tarball(self):
         """
