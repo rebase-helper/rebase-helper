@@ -168,8 +168,8 @@ class PatchTool(PatchBase):
         rebased_patch = get_rebase_name(patch[0])
         patched_files = cls.get_failed_patched_files(patch[0])
         if not patched_files:
-            logger.error('We are not able to get a list of failed files.')
-            raise RuntimeError
+            raise RuntimeError('We are not able to get a list of failed files.')
+
         cls.kwargs['suffix'] = cls.suffix
         cls.kwargs['failed_files'] = patched_files
 
@@ -237,8 +237,7 @@ class PatchTool(PatchBase):
         if ret_code != 0:
             # unexpected
             if cls.source_dir == cls.old_sources:
-                logger.error('Failed to patch old sources')
-                raise RuntimeError()
+                raise RuntimeError('Failed to patch old sources')
 
             get_message("Applying patch {0} to new source failed. Press Enter to start merge-tool.".
                         format(os.path.basename(patch[0])),

@@ -18,7 +18,6 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import os
-import sys
 import shutil
 import logging
 
@@ -31,6 +30,7 @@ from rebasehelper.utils import get_value_from_kwargs, PathHelper
 from rebasehelper.checker import Checker
 from rebasehelper.build_helper import Builder
 from rebasehelper.patch_helper import Patch
+from rebasehelper.exceptions import RebaseHelperError
 
 
 class Application(object):
@@ -113,7 +113,7 @@ class Application(object):
             self.conf.sources = new_sources
 
         if not self.conf.sources:
-            raise ValueError('You have to define new sources.')
+            raise RebaseHelperError('You have to define new sources.')
         else:
             self.new_sources = os.path.abspath(self.conf.sources)
 
@@ -124,7 +124,8 @@ class Application(object):
         self.spec_file_path = PathHelper.find_first_file(self.execution_dir, '*.spec')
 
         if not self.spec_file_path:
-            raise IOError("Could not find any SPEC file in the current directory '{0}'".format(self.execution_dir))
+            raise RebaseHelperError("Could not find any SPEC file in the current directory '{0}'".format(
+                self.execution_dir))
 
     def _delete_old_builds(self):
         """
@@ -191,13 +192,13 @@ class Application(object):
         try:
             archive = Archive(archive_path)
         except NotImplementedError as e:
-            raise NotImplementedError('{0}. Supported archives are {1}'.format(
+            raise RebaseHelperError('{0}. Supported archives are {1}'.format(
                 e.message, Archive.get_supported_archives()))
 
         try:
             archive.extract(destination)
         except IOError:
-            raise IOError("Archive '{0}' can not be extracted".format(archive_path))
+            raise RebaseHelperError("Archive '{0}' can not be extracted".format(archive_path))
 
     @staticmethod
     def extract_sources(archive_path, destination):
@@ -209,7 +210,7 @@ class Application(object):
         try:
             sources_dir = os.listdir(destination)[0]
         except IndexError:
-            raise RuntimeError('Extraction of sources failed!')
+            raise RebaseHelperError('Extraction of sources failed!')
 
         return os.path.join(destination, sources_dir)
 
@@ -232,7 +233,10 @@ class Application(object):
         self.kwargs['diff_tool'] = self.conf.difftool
         patch = Patch(self.conf.patchtool)
 
-        self.kwargs['new']['patches'] = patch.patch(**self.kwargs)
+        try:
+            self.kwargs['new']['patches'] = patch.patch(**self.kwargs)
+        except RuntimeError as e:
+            raise RebaseHelperError(e.message)
 
         update_patches = self.spec_file.write_updated_patches(**self.kwargs)
         self.kwargs['summary_info'] = update_patches
@@ -244,7 +248,7 @@ class Application(object):
         try:
             builder = Builder(self.conf.buildtool)
         except NotImplementedError as e:
-            raise NotImplementedError('{0}. Supported build tools are {1}'.format(
+            raise RebaseHelperError('{0}. Supported build tools are {1}'.format(
                 e.message, Builder.get_supported_tools()))
 
         old_patches = get_value_from_kwargs(self.kwargs, settings.FULL_PATCHES)
@@ -252,7 +256,10 @@ class Application(object):
         new_patches = get_value_from_kwargs(self.kwargs, settings.FULL_PATCHES, source='new')
         self.kwargs['new']['patches'] = [p[0] for p in new_patches.itervalues()]
 
-        builder.build_packages(**self.kwargs)
+        try:
+            builder.build_packages(**self.kwargs)
+        except RuntimeError as e:
+            raise RebaseHelperError(e.message)
         logger.info('Building packages done')
 
     def pkgdiff_packages(self):
@@ -263,7 +270,7 @@ class Application(object):
         try:
             pkgchecker = Checker(self.conf.pkgcomparetool)
         except NotImplementedError:
-            raise NotImplementedError('You have to specify one of these check tools {0}'.format(
+            raise RebaseHelperError('You have to specify one of these check tools {0}'.format(
                 Checker.get_supported_tools()))
         else:
             logger.info('Comparing packages using {0} ... running'.format(self.conf.pkgcomparetool))

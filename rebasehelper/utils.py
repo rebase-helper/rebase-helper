@@ -73,8 +73,8 @@ def get_content_file(path, perms, method=False):
             data = f.read() if not method else f.readlines()
         return data
     except IOError:
-        logger.error('Unable to open file %s' % path)
-        raise
+        raise IOError("Unable to open file '{0}'".format(path))
+
 
 
 def get_value_from_kwargs(kwargs, field, source='old'):
@@ -106,8 +106,7 @@ def write_to_file(path, perms, data):
         with open(path, perms) as f:
             f.write(data) if isinstance(data, str) else f.writelines(data)
     except IOError:
-        logger.error('Unable to access file %s' % path)
-        raise
+        raise IOError("Unable to write data to file '{0}'".format(path))
 
 
 def get_message(message="", any=False):
