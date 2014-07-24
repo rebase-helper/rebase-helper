@@ -74,7 +74,8 @@ class TestApplication(object):
             'tarball': 'test-1.0.2.tar.gz'}
         cwd = os.getcwd()
         os.chdir(os.path.join(cwd, 'test'))
-        os.makedirs(settings.REBASE_HELPER_RESULTS_DIR)
+        if not os.path.isdir(settings.REBASE_HELPER_RESULTS_DIR):
+            os.makedirs(settings.REBASE_HELPER_RESULTS_DIR)
         spec = SpecFile(self.spec_file, new_sources=self.list_names[self.TAR_GZ2], download=False)
         result_dic = spec.get_old_information()
         shutil.rmtree(settings.REBASE_HELPER_RESULTS_DIR)
@@ -157,7 +158,7 @@ class TestApplication(object):
                 if key in expected_dict:
                     assert val == expected_dict[key]
         except OSError as oer:
-            os.chdir(cwd)
+            pass
         os.chdir(cwd)
 
 
