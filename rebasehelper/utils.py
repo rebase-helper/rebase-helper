@@ -278,20 +278,26 @@ class ProcessHelper(object):
         else:
             local_env = None
 
+        if out_file:
+            stdout = subprocess.PIPE
+        else:
+            stdout = None
+
         sp = subprocess.Popen(cmd,
                               stdin=in_file,
-                              stdout=subprocess.PIPE,
+                              stdout=stdout,
                               stderr=subprocess.STDOUT,
                               cwd=cwd,
                               env=local_env,
                               shell=shell)
 
-        # read the output
-        for line in sp.stdout:
-            if out_file is not None:
+        if out_file is not None:
+            # read the output
+            for line in sp.stdout:
                 out_file.write(line)
-            else:
-                logger.debug(line.rstrip("\n"))
+            # TODO: Need to figure out how to send output to stdout (without logger) and to logger
+            #else:
+            #   logger.debug(line.rstrip("\n"))
 
         # we need to rewind the file object pointer to the beginning
         try:
@@ -430,3 +436,12 @@ class RpmHelper(object):
             if not RpmHelper.is_package_installed(pkg):
                 return False
         return True
+
+    @staticmethod
+    def install_build_dependencies(spec_path=None):
+        """
+        Install all build requires for a package using PolicyKits
+        :param spec_path: absolute path to SPEC file
+        :return:
+        """
+        return ProcessHelper.run_subprocess(['pkexec', 'yum-builddep', spec_path])
