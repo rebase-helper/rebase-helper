@@ -438,10 +438,13 @@ class RpmHelper(object):
         return True
 
     @staticmethod
-    def install_build_dependencies(spec_path=None):
+    def install_build_dependencies(spec_path=None, assume_yes=False):
         """
         Install all build requires for a package using PolicyKits
         :param spec_path: absolute path to SPEC file
         :return:
         """
-        return ProcessHelper.run_subprocess(['pkexec', 'yum-builddep', spec_path])
+        cmd = ['pkexec', 'yum-builddep', spec_path]
+        if assume_yes:
+            cmd.append('-y')
+        return ProcessHelper.run_subprocess(cmd)
