@@ -370,8 +370,6 @@ class RpmbuildBuildTool(BuildToolBase):
                  'logs' -> list with absolute paths to build_logs
         """
 
-        # TODO: check for dependencies from SRPM! If they are missing, the build will fail
-
         rpms = None
         srpm = None
 

@@ -26,7 +26,7 @@ from rebasehelper.specfile import SpecFile
 from rebasehelper.logger import logger
 from rebasehelper import settings
 from rebasehelper import output_tool
-from rebasehelper.utils import get_value_from_kwargs, PathHelper
+from rebasehelper.utils import get_value_from_kwargs, PathHelper, RpmHelper, get_message
 from rebasehelper.checker import Checker
 from rebasehelper.build_helper import Builder
 from rebasehelper.patch_helper import Patch
@@ -214,6 +214,19 @@ class Application(object):
 
         return os.path.join(destination, sources_dir)
 
+    def check_build_requires(self, spec):
+        """
+        Check if all build dependencies are installed. If not, asks user they should be installed.
+        If yes, it installs build dependencies using PolicyKit.
+        :param spec: SpecFile object
+        :return:
+        """
+        req_pkgs = spec.get_requires()
+        if not RpmHelper.all_packages_installed(req_pkgs):
+            if get_message('\nSome build dependencies are missing. Do you want to install them now? (y/n) ') in ['y', 'yes']:
+                if RpmHelper.install_build_dependencies(spec.spec_file) != 0:
+                    raise RebaseHelperError('Failed to install build dependencies')
+
     def prepare_sources(self):
         """
         Function prepares a sources.
@@ -292,6 +305,9 @@ class Application(object):
             self.patch_sources(sources)
 
         if not self.conf.patch_only:
+            # check build dependencies for rpmbuild
+            if self.conf.buildtool == 'rpmbuild':
+                self.check_build_requires(self.spec_file)
             # Build packages
             self.build_packages()
             # Perform checks
