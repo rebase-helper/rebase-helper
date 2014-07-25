@@ -77,3 +77,8 @@ class TestSpecHelper(object):
         test_patches = self.spec_file._get_patches()
         os.chdir(cwd)
         assert expected_patches == test_patches
+
+    def test_get_requires(self):
+        expected = set(['openssl-devel', 'pkgconfig', 'texinfo', 'gettext', 'autoconf'])
+        req = self.spec_file.get_requires()
+        assert len(expected.intersection(req)) == 5

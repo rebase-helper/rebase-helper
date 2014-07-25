@@ -15,6 +15,8 @@ Patch1: test-testing.patch
 Patch2: test-testing2.patch
 Patch3: test-testing3.patch
 
+BuildRequires: openssl-devel, pkgconfig, texinfo, gettext, autoconf
+
 %description
 The libpng package contains a library of functions for creating and
 manipulating PNG (Portable Network Graphics) image format files.  PNG

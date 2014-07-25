@@ -20,7 +20,7 @@
 try:
     from functools import reduce
 except ImportError:
-    pass # we're on Python 2 => ok
+    pass  # we're on Python 2 => ok
 import os
 try:
     import rpm
@@ -165,6 +165,9 @@ class SpecFile(object):
     def _get_package_name(self, spec_file):
         hdr = spec_file.sourceHeader
         return hdr[rpm.RPMTAG_NAME]
+
+    def get_requires(self):
+        return self.spc.sourceHeader[rpm.RPMTAG_REQUIRES]
 
     def is_patch_git_generated(self, full_patch_name):
         """
