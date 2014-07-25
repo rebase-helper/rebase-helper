@@ -29,6 +29,7 @@ import StringIO
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.utils import PathHelper
 from rebasehelper.utils import TemporaryEnvironment
+from rebasehelper.utils import RpmHelper
 
 
 class TestProcessHelper(object):
@@ -400,3 +401,21 @@ class TestTemporaryEnvironment(object):
             assert f.read() == path
 
         os.unlink(tmp_path)
+
+
+class TestRpmHelper(object):
+    """ RpmHelper class tests. """
+
+    def test_is_package_installed_existing(self):
+        assert RpmHelper.is_package_installed('kernel') is True
+        assert RpmHelper.is_package_installed('filesystem') is True
+
+    def test_is_package_installed_non_existing(self):
+        assert RpmHelper.is_package_installed('non-existing-package') is False
+        assert RpmHelper.is_package_installed('another-non-existing-package') is False
+
+    def test_all_packages_installed_existing(self):
+        assert RpmHelper.all_packages_installed(['kernel', 'filesystem']) is True
+
+    def test_all_packages_installed_one_non_existing(self):
+        assert RpmHelper.all_packages_installed(['kernel', 'filesystem', 'non-existing-package']) is False

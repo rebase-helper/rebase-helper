@@ -23,6 +23,7 @@ import subprocess
 import tempfile
 #import pycurl
 import shutil
+import rpm
 
 from rebasehelper.logger import logger
 from rebasehelper import settings
@@ -398,3 +399,34 @@ class TemporaryEnvironment(object):
         :return: copy of _env dictionary
         """
         return self._env.copy()
+
+
+class RpmHelper(object):
+    """
+    Helper class for doing various tasks RPM database, ...
+    """
+
+    @staticmethod
+    def is_package_installed(pkg_name=None):
+        """
+        Checks whether package with passed name is installed.
+
+        :param package_name: package name we want to check for
+        :return: True if installed, False if not installed
+        """
+        ts = rpm.TransactionSet()
+        mi = ts.dbMatch('name', pkg_name)
+        return len(mi) > 0
+
+    @staticmethod
+    def all_packages_installed(pkg_names=None):
+        """
+        Check if all packages in passed list are installed.
+
+        :param pkg_names: iterable with package named to check for
+        :return: True if all packages are installed, False if at least one package is not installed.
+        """
+        for pkg in pkg_names:
+            if not RpmHelper.is_package_installed(pkg):
+                return False
+        return True
