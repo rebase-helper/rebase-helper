@@ -409,7 +409,7 @@ class TemporaryEnvironment(object):
 
 class RpmHelper(object):
     """
-    Helper class for doing various tasks RPM database, ...
+    Helper class for doing various tasks with RPM database, packages, ...
     """
 
     @staticmethod
