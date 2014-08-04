@@ -16,17 +16,3 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
-
-import sys
-import os
-from rebasehelper.cli import CLI
-from rebasehelper.application import Application
-
-
-def rebase_helper(args=None):
-    cli = CLI()
-    app = Application(cli)
-    ret = app.run()
-
-if __name__ == "__main__":
-    sys.exit(main())
