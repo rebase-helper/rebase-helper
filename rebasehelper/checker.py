@@ -67,7 +67,7 @@ class PkgDiffTool(BaseChecker):
             return False
 
     @classmethod
-    def _create_xml(cls, name, input_structure={}):
+    def _create_xml(cls, name, input_structure):
         file_name = os.path.join(cls.workspace_dir, name + ".xml")
         tags = {'version': input_structure.get('version', ""),
                 'group': input_structure.get('name', ''),
