@@ -19,15 +19,17 @@
 
 import os
 import shutil
-from rebasehelper import specfile
+from rebasehelper.specfile import SpecFile
 from rebasehelper import settings
 from rebasehelper.logger import logger
+from rebasehelper.application import Application
 
 
 class TestSpecHelper(object):
     """ SpecHelper tests """
     dir_name = ""
     spec_file = None
+    rebase_spec_file = None
     test_spec = 'test.spec'
     result_dir = ""
     workspace_dir = ""
@@ -40,8 +42,8 @@ class TestSpecHelper(object):
             shutil.rmtree(self.result_dir)
         os.makedirs(self.result_dir)
         file_name = os.path.join(self.dir_name, self.test_spec)
-        self.spec_file = specfile.SpecFile(file_name, '', download=False)
-        self.spec_file.get_old_information()
+        self.spec_file = SpecFile(file_name, '', download=False)
+        self.spec_file.get_information()
 
     def teardown(self):
         if os.path.exists(self.result_dir):
@@ -49,15 +51,9 @@ class TestSpecHelper(object):
         if os.path.exists(self.workspace_dir):
             shutil.rmtree(self.workspace_dir)
 
-    def test_spec_file(self):
-        spec_path = os.path.join(self.dir_name,
-                                 settings.REBASE_HELPER_RESULTS_DIR,
-                                 self.test_spec)
-        assert os.path.exists(spec_path)
-
     def test_old_tarball(self):
         expected_tarball = 'test-1.0.2.tar.gz'
-        test_tarball = self.spec_file._get_old_tarball()
+        test_tarball = self.spec_file.get_tarball()
         assert test_tarball == expected_tarball
 
     def test_all_sources(self):

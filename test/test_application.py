@@ -37,7 +37,7 @@ class TestApplication(object):
     dir_name = os.path.join(os.path.dirname(__file__))
     spec_file = 'test.spec'
     rebased_spec = os.path.join(settings.REBASE_HELPER_RESULTS_DIR, spec_file)
-    cmd_line_args = ['--not-download-sources', 'test-1.0.3.tar.gz']
+    cmd_line_args = ['--not-download-sources', '1.0.3']
     result_dir = ""
     workspace_dir = ""
 
@@ -59,49 +59,6 @@ class TestApplication(object):
         for tarball in self.list_archives:
             if os.path.exists(tarball):
                 os.unlink(tarball)
-
-    def test_old_information(self):
-        expected_results = {
-            'sources': ['/home/phracek/work/programming/rebase-helper/test/test-source.sh',
-                        '/home/phracek/work/programming/rebase-helper/test/source-tests.sh',
-                        '/home/phracek/work/programming/rebase-helper/test/test-1.0.2.tar.gz'],
-            'version': '1.0.2',
-            'name': 'test',
-            'patches_full': {
-                1: ['/home/phracek/work/programming/rebase-helper/test/test-testing.patch', ' ', 0, False],
-                2: ['/home/phracek/work/programming/rebase-helper/test/test-testing2.patch', '-p1', 1, False],
-                3: ['/home/phracek/work/programming/rebase-helper/test/test-testing3.patch', '-p1', 2, False]},
-            'tarball': 'test-1.0.2.tar.gz'}
-        cwd = os.getcwd()
-        os.chdir(os.path.join(cwd, 'test'))
-        if not os.path.isdir(settings.REBASE_HELPER_RESULTS_DIR):
-            os.makedirs(settings.REBASE_HELPER_RESULTS_DIR)
-        spec = SpecFile(self.spec_file, new_sources=self.list_names[self.TAR_GZ2], download=False)
-        result_dic = spec.get_old_information()
-        shutil.rmtree(settings.REBASE_HELPER_RESULTS_DIR)
-        os.chdir(cwd)
-        assert expected_results == result_dic
-
-    def test_new_information(self):
-        expected_results = {
-            'sources': ['/home/phracek/work/programming/rebase-helper/test/test-source.sh',
-                        '/home/phracek/work/programming/rebase-helper/test/source-tests.sh',
-                        '/home/phracek/work/programming/rebase-helper/test/test-1.0.2.tar.gz'],
-            'version': '1.0.2',
-            'name': 'test',
-            'patches_full': {
-                1: ['/home/phracek/work/programming/rebase-helper/test/test-testing.patch', ' ', 0, False],
-                2: ['/home/phracek/work/programming/rebase-helper/test/test-testing2.patch', '-p1', 1, False],
-                3: ['/home/phracek/work/programming/rebase-helper/test/test-testing3.patch', '-p1', 2, False]},
-            'tarball': 'test-1.0.3.tar.gz'}
-        cwd = os.getcwd()
-        os.chdir(os.path.join(cwd, 'test'))
-        os.makedirs(settings.REBASE_HELPER_RESULTS_DIR)
-        spec = SpecFile(self.spec_file, new_sources=self.list_names[self.TAR_GZ2], download=False)
-        result_dic = spec.get_new_information()
-        shutil.rmtree(settings.REBASE_HELPER_RESULTS_DIR)
-        os.chdir(cwd)
-        assert expected_results == result_dic
 
     def test_application_sources(self):
         expected_dict = {
