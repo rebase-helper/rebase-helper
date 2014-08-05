@@ -78,6 +78,10 @@ class PatchBase(object):
 
 @register_patch_tool
 class PatchTool(PatchBase):
+    """
+    Class for patch command used for patching old and new
+    sources
+    """
     CMD = 'patch'
     suffix = None
     fuzz = 0
@@ -96,6 +100,15 @@ class PatchTool(PatchBase):
 
     @classmethod
     def run_process(cls, cmd, cwd=None, input_name=None, output_name=None):
+        """
+        Function executes a process and
+        returns return code and contain of the file
+        :param cmd:
+        :param cwd:
+        :param input_name:
+        :param output_name:
+        :return:
+        """
         temp_name = output_name
         if not output_name:
             temp_name = get_temporary_name()
@@ -144,14 +157,14 @@ class PatchTool(PatchBase):
             result = [x for x in applied_rules if x in data]
             if result:
                 continue
-            file_list = [x for x in cls.patched_files if source_file in x]
+            #file_list = [x for x in cls.patched_files if source_file in x]
             if source_file in failed_files:
                 continue
             failed_files.append(source_file)
         return failed_files
 
     @classmethod
-    def generate_diff(cls, patch, source_dir):
+    def generate_diff(cls, patch):
         # gendiff new_source + self.suffix > patch[0]
         logger.debug("PatchTool: Generating patch using gendiff")
         cmd = ['gendiff']
@@ -179,7 +192,7 @@ class PatchTool(PatchBase):
         ret_code = diff_cls.mergetool(**cls.kwargs)
 
         # Generating diff
-        cls.generate_diff(rebased_patch, cls.source_dir)
+        cls.generate_diff(rebased_patch)
 
         # Showing difference between original and new patch
         diff_cls.diff(patch[0], rebased_patch)
@@ -241,7 +254,7 @@ class PatchTool(PatchBase):
 
             get_message("Applying patch {0} to new source failed. Press Enter to start merge-tool.".
                         format(os.path.basename(patch[0])),
-                        any=True)
+                        any_input=True)
             logger.warning('Applying patch failed. '
                            'Starting merge-tool to fix conflicts manually.')
             # Running diff_helper in order to merge patch to the upstream version

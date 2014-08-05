@@ -48,6 +48,11 @@ def check_empty_patch(patch_name):
 
 
 def get_temporary_name():
+    """
+    Function returns a temporary name
+    on the base of settings.REBASE_HELPER_PREFIX
+    :return:
+    """
     handle, filename = tempfile.mkstemp(prefix=settings.REBASE_HELPER_PREFIX, text=True)
     os.close(handle)
     return filename
@@ -70,12 +75,11 @@ def get_content_file(path, perms, method=False):
     if method is True then file is read by function readlines
     """
     try:
-        with open(path, perms) as f:
-            data = f.read() if not method else f.readlines()
+        with open(path, perms) as file_name:
+            data = file_name.read() if not method else file_name.readlines()
         return data
     except IOError:
         raise IOError("Unable to open file '{0}'".format(path))
-
 
 
 def get_value_from_kwargs(kwargs, field, source='old'):
@@ -104,17 +108,17 @@ def write_to_file(path, perms, data):
     :return:
     """
     try:
-        with open(path, perms) as f:
-            f.write(data) if isinstance(data, str) else f.writelines(data)
+        with open(path, perms) as file_name:
+            file_name.write(data) if isinstance(data, str) else file_name.writelines(data)
     except IOError:
         raise IOError("Unable to write data to file '{0}'".format(path))
 
 
-def get_message(message="", any=False):
+def get_message(message="", any_input=False):
     """
     Function for command line messages
     :param message: prompt string
-    :param any: if True, return input without checking it first
+    :param any_input: if True, return input without checking it first
     :return: user input
     """
     output = ['yes', 'y', 'no', 'n']
@@ -123,7 +127,7 @@ def get_message(message="", any=False):
             var = raw_input(message).lower()
         except KeyboardInterrupt:
             return None
-        if any:
+        if any_input:
             return var
         if var not in output:
             logger.info('You have to choose one of y/n.')
@@ -139,7 +143,7 @@ class DownloadHelper(object):
     @staticmethod
     def download_source(url, destination_name):
         # There is some code for using pycurl
-        #with open(destination_name, 'wb') as f:
+        # with open(destination_name, 'wb') as f:
         #    curl = pycurl.Curl()
         #    curl.setopt(pycurl.URL, url)
         #    curl.setopt(pycurl.CONNECTTIMEOUT, 30)

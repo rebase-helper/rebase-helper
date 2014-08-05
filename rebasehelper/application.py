@@ -97,7 +97,6 @@ class Application(object):
         """
         Function find data previously done
         """
-        patches = []
         new_patches = self.kwargs['new'][settings.FULL_PATCHES]
         for file_name in PathHelper.find_all_files(self.kwargs.get('results_dir', ''), '*.patch'):
             for key, value in new_patches.items():
@@ -106,6 +105,7 @@ class Application(object):
                     break
         self.kwargs['new']['patches'] = self.kwargs['new'][settings.FULL_PATCHES]
         update_patches = self.spec_file.write_updated_patches(**self.kwargs)
+        self.kwargs['summary_info'] = update_patches
 
     def _initialize_data(self):
         """
@@ -209,9 +209,9 @@ class Application(object):
         """
         try:
             archive = Archive(archive_path)
-        except NotImplementedError as e:
+        except NotImplementedError as ni_e:
             raise RebaseHelperError('{0}. Supported archives are {1}'.format(
-                e.message, Archive.get_supported_archives()))
+                ni_e.message, Archive.get_supported_archives()))
 
         try:
             archive.extract(destination)
@@ -266,8 +266,8 @@ class Application(object):
 
         try:
             self.kwargs['new']['patches'] = patch.patch(**self.kwargs)
-        except RuntimeError as e:
-            raise RebaseHelperError(e.message)
+        except RuntimeError as run_e:
+            raise RebaseHelperError(run_e.message)
 
         update_patches = self.rebase_spec_file.write_updated_patches(**self.kwargs)
         self.kwargs['summary_info'] = update_patches
@@ -278,9 +278,9 @@ class Application(object):
         """
         try:
             builder = Builder(self.conf.buildtool)
-        except NotImplementedError as e:
+        except NotImplementedError as ni_e:
             raise RebaseHelperError('{0}. Supported build tools are {1}'.format(
-                e.message, Builder.get_supported_tools()))
+                ni_e.message, Builder.get_supported_tools()))
 
         old_patches = get_value_from_kwargs(self.kwargs, settings.FULL_PATCHES)
         self.kwargs['old']['patches'] = [p[0] for p in old_patches.itervalues()]
@@ -289,8 +289,8 @@ class Application(object):
 
         try:
             builder.build_packages(**self.kwargs)
-        except RuntimeError as e:
-            raise RebaseHelperError(e.message)
+        except RuntimeError as run_e:
+            raise RebaseHelperError(run_e.message)
         logger.info('Building packages done')
 
     def pkgdiff_packages(self):

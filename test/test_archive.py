@@ -19,9 +19,6 @@
 
 import os
 import shutil
-from rebasehelper import specfile
-from rebasehelper import settings
-from rebasehelper.logger import logger
 from rebasehelper.archive import *
 from rebasehelper.utils import get_content_file
 
