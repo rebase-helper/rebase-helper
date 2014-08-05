@@ -26,9 +26,8 @@ try:
     import rpm
 except ImportError:
     pass
-import shutil
 import re
-from rebasehelper.utils import ProcessHelper, DownloadHelper
+from rebasehelper.utils import DownloadHelper
 from rebasehelper.logger import logger
 from rebasehelper import settings
 from rebasehelper.utils import get_content_file,  write_to_file
@@ -56,17 +55,36 @@ class SpecFile(object):
     """
     Class who manipulates with SPEC file
     """
-    values = []
+    spec_file = ""
+    download = False
+    spec_content = []
+    spc = None
+    hdr = None
+    sources = None
+    source_files = None
+    patches = None
 
-    def __init__(self, specfile, new_sources, download=True):
-        self.spec_file = specfile
+    def __init__(self, spec_file, sources=None, download=True):
+        self.spec_file = spec_file
         self.download = download
-        self.rebased_spec = get_rebase_name(specfile)
-        shutil.copy(self.spec_file, self.rebased_spec)
-        self.old_spc = None
-        self.new_spc = None
-        self.spc = None
-        self.new_sources = new_sources
+        self._update_data()
+        if sources:
+            self.new_sources = sources
+            self.set_spec_version()
+
+    def _update_data(self):
+        # Load rpm information
+        self.spc = rpm.spec(self.spec_file)
+        # Content of whole SPEC file
+        self.spec_content = self._get_content_spec()
+        # HEADER of SPEC file
+        self.hdr = self.spc.sourceHeader
+        # ALL sources mentioned in SPEC file
+        self.sources = self.spc.sources
+        # All patches mentioned in SPEC file
+        self.patches = [x for x in self.sources if x[2] == 2]
+        # All source file mentioned in SPEC file Source[0-9]*
+        self.source_files = [x for x in self.sources if x[2] == 0 or x[2] == 1]
 
     def get_patch_option(self, line):
         """
@@ -82,27 +100,20 @@ class SpecFile(object):
         else:
             return spl[0], spl[1]
 
-    def get_rebased_spec(self):
-        """
-        Function returns rebase.spec file
-        """
-        return self.rebased_spec
-
-    def get_patch_number(self, line):
+    def _get_patch_number(self, fields):
         """
         Function returns patch number
         :param line:
         :return: patch_num
         """
-        fields = line.strip().split()
         patch_num = fields[0].replace('Patch', '')[:-1]
         return patch_num
 
-    def get_content_rebase(self):
+    def _get_content_spec(self):
         """
         Function reads a content rebase.spec file
         """
-        lines = get_content_file(self.get_rebased_spec(), "r", method=True)
+        lines = get_content_file(self.spec_file, "r", method=True)
         lines = [x for x in lines if not x.startswith('#')]
         return lines
 
@@ -111,63 +122,38 @@ class SpecFile(object):
         For all patches: get flags passed to %patch macro and index of application
         """
         patch_flags = {}
-        lines = self.get_content_rebase()
-        lines = [x for x in lines if x.startswith(settings.PATCH_PREFIX)]
-        for index, line in enumerate(lines):
+        patches = [x for x in self.spec_content if x.startswith(settings.PATCH_PREFIX)]
+        for index, line in enumerate(patches):
             num, option = self.get_patch_option(line)
             num = num.replace(settings.PATCH_PREFIX, '')
             patch_flags[int(num)] = (option, index)
         # {num: (flags, index of application)}
         return patch_flags
 
-    def _get_spec_information(self, version):
+    def get_information(self):
         kwargs = {}
         kwargs[settings.FULL_PATCHES] = self._get_patches()
         kwargs['sources'] = self._get_all_sources()
-        kwargs['name'] = self._get_package_name(self.spc)
-        kwargs['version'] = self._get_spec_versions(version)
+        kwargs['name'] = self._get_package_name()
+        kwargs['version'] = self._get_spec_version()
+        kwargs['tarball'] = self.get_tarball()
         return kwargs
 
-    def get_old_information(self):
-        kwargs = {}
-        self.spc = rpm.spec(self.spec_file)
-        kwargs = self._get_spec_information('old')
-        kwargs['tarball'] = self._get_old_tarball()
-        return kwargs
-
-    def get_new_information(self):
-        kwargs = {}
-        self.spc = rpm.spec(self.rebased_spec)
-        kwargs = self._get_spec_information('new')
-        kwargs['tarball'] = self._get_new_tarball()
-
-        return kwargs
-
-    def _get_version_from_spec(self, spec_file):
-        hdr = spec_file.sourceHeader
-        version = hdr[rpm.RPMTAG_VERSION]
-        if not version:
-            return None
-        return version
-
-    def _get_spec_versions(self, version):
+    def _get_spec_version(self):
         """
         Function return an old and a new versions
         :return:
         """
-        if version == 'old':
-            spec = rpm.spec(self.spec_file)
-        else:
-            spec = rpm.spec(self.rebased_spec)
-        version = self._get_version_from_spec(spec)
+        version = self.hdr[rpm.RPMTAG_VERSION]
+        if not version:
+            return None
         return version
 
-    def _get_package_name(self, spec_file):
-        hdr = spec_file.sourceHeader
-        return hdr[rpm.RPMTAG_NAME]
+    def _get_package_name(self):
+        return self.hdr[rpm.RPMTAG_NAME]
 
     def get_requires(self):
-        return self.spc.sourceHeader[rpm.RPMTAG_REQUIRES]
+        return self.hdr[rpm.RPMTAG_REQUIRES]
 
     def is_patch_git_generated(self, full_patch_name):
         """
@@ -191,8 +177,7 @@ class SpecFile(object):
         patches = {}
         patch_flags = self._get_patches_flags()
         cwd = os.getcwd()
-        sources = [x for x in self.spc.sources if x[2] == 2]
-        for source in sources:
+        for source in self.patches:
             filename, num, patch_type = source
             full_patch_name = os.path.join(cwd, filename)
             if not os.path.exists(full_patch_name):
@@ -203,13 +188,6 @@ class SpecFile(object):
                                 patch_flags[num][1], self.is_patch_git_generated(full_patch_name)]
         # list of [name, flags, index, git_generated]
         return patches
-
-    def _get_sources(self):
-        """
-        Function returns a all sources
-        """
-        sources = [x for x in self.spc.sources if x[2] == 0 or x[2] == 1]
-        return sources
 
     def _download_source(self, source_name, download_name):
         """
@@ -225,27 +203,26 @@ class SpecFile(object):
         Function returns all sources mentioned in specfile
         """
         cwd = os.getcwd()
-        sources = self._get_sources()
+        sources = []
         remote_files = ['http:', 'https:', 'ftp:']
-        for index, src in enumerate(sources):
+        for index, src in enumerate(self.source_files):
             new_name = get_source_name(src[0])
             if int(src[1]) == 0:
-                sources[index] = os.path.join(cwd, new_name)
+                sources.append(os.path.join(cwd, new_name))
             else:
                 remote = [x for x in remote_files if src[0].startswith(x)]
                 if remote:
                     self._download_source(src[0], new_name)
-                sources[index] = os.path.join(cwd, new_name)
+                sources.append(os.path.join(cwd, new_name))
         return sources
 
-    def _get_old_tarball(self):
+    def get_tarball(self):
         """
         Function returns a old sources from specfile
         """
-        self.spc = rpm.spec(self.spec_file)
-        old_source_name = self._get_full_source_name()
-        source_name = get_source_name(old_source_name)
-        self._download_source(old_source_name, source_name)
+        full_source_name = self._get_full_source_name()
+        source_name = get_source_name(full_source_name)
+        self._download_source(full_source_name, source_name)
         return source_name
 
     def _get_full_source_name(self):
@@ -257,27 +234,9 @@ class SpecFile(object):
         - 1 means Source > 0
         - 2 means Patches
         """
-        sources = self._get_sources()
-        source = [src[0] for src in sources if src[1] == 0]
+        source = [src[0] for src in self.source_files if src[1] == 0]
+        # We need just a name
         return source[0]
-
-    def _get_new_tarball(self):
-        """
-        Function gets a new tarball if it does not exist.
-        """
-        self.spc = rpm.spec(self.rebased_spec)
-        new_source_name = self._get_full_source_name()
-        url_path = new_source_name.split('/')[:-1]
-        url_path.append(self.new_sources)
-        if not os.path.exists(self.new_sources):
-            self._download_source('/'.join(url_path), self.new_sources)
-        return self.new_sources
-
-    def get_tarballs(self):
-        old_sources = self._get_old_tarball()
-        new_sources = self._update_new_version()
-        self._get_new_tarball()
-        return old_sources, new_sources
 
     def _remove_empty_patches(self, lines, patch_num):
         """
@@ -289,19 +248,18 @@ class SpecFile(object):
                     continue
                 lines[index] = '#' + line
 
-    def _update_spec_version(self, lines, version):
+    def _update_spec_version(self, lines):
         for index, line in enumerate(lines):
             if not line.startswith('Version'):
                 continue
-            lines[index] = line.replace(self._get_spec_versions('old'), version)
-        write_to_file(self.get_rebased_spec(), "w", lines)
+            lines[index] = line.replace(self._get_spec_version(), self.new_sources)
+        write_to_file(self.spec_file, "w", lines)
+        self._update_data()
 
-    def _update_new_version(self):
+    def set_spec_version(self):
         """
         Function updates a version in spec file based on input argument
         """
-        lines = get_content_file(self.get_rebased_spec(), "r", method=True)
-        self.spc = rpm.spec(self.rebased_spec)
 
         tarball_ext = None
         for ext in Archive.get_supported_archives():
@@ -311,9 +269,8 @@ class SpecFile(object):
 
         if not tarball_ext:
             # CLI argument is probably just a version without name and extension
-            self._update_spec_version(lines, self.new_sources)
+            self._update_spec_version(self.spec_content)
             # We need to reload the spec file
-            self.spc = rpm.spec(self.rebased_spec)
             old_source_name = self._get_full_source_name()
             self.new_sources = get_source_name(old_source_name)
             return self.new_sources
@@ -321,7 +278,7 @@ class SpecFile(object):
         regex = re.compile(r'^\w+-?_?(.*)')
         match = re.search(regex, tarball_name)
         if match:
-            self._update_spec_version(lines, match.group(1))
+            self._update_spec_version(self.spec_content)
         return None
 
     def write_updated_patches(self, **kwargs):
@@ -339,13 +296,12 @@ class SpecFile(object):
         update_patches['deleted'] = []
         update_patches['modified'] = []
 
-        lines = self.get_content_rebase()
         removed_patches = []
-        for index, line in enumerate(lines):
+        for index, line in enumerate(self.spec_content):
             if not line.startswith('Patch'):
                 continue
             fields = line.strip().split()
-            patch_num = self.get_patch_number(line)
+            patch_num = self._get_patch_number(fields)
             if int(patch_num) not in patches:
                 continue
             patch_name = patches[int(patch_num)][0]
@@ -358,8 +314,9 @@ class SpecFile(object):
                     update_patches['deleted'].append(patch_name)
                 else:
                     update_patches['modified'].append(patch_name)
-            lines[index] = comment + ' '.join(fields[:-1]) + ' ' + os.path.basename(patch_name) + '\n'
-        self._remove_empty_patches(lines, removed_patches)
+            self.spec_content[index] = comment + ' '.join(fields[:-1]) + ' ' + os.path.basename(patch_name) + '\n'
+        self._remove_empty_patches(self.spec_content, removed_patches)
 
-        write_to_file(self.get_rebased_spec(), "w", lines)
+        write_to_file(self.spec_file, "w", self.spec_content)
+        self._update_data()
         return update_patches
