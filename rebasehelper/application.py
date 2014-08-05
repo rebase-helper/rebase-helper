@@ -22,7 +22,7 @@ import shutil
 import logging
 
 from rebasehelper.archive import Archive
-from rebasehelper.specfile import SpecFile
+from rebasehelper.specfile import SpecFile, get_rebase_name
 from rebasehelper.logger import logger
 from rebasehelper import settings
 from rebasehelper import output_tool
@@ -41,6 +41,8 @@ class Application(object):
     new_sources = ""
     spec_file = None
     spec_file_path = None
+    rebase_spec_file = None
+    rebase_spec_file_path = None
 
     def __init__(self, cli_conf=None):
         """
@@ -63,7 +65,8 @@ class Application(object):
         # if not continuing, check the results dir
         if not self.conf.cont and not self.conf.build_only:
             self._check_results_dir()
-        self.spec_file = SpecFile(self.spec_file_path, self.conf.sources, download=not self.conf.not_download_sources)
+        self._prepare_spec_objects()
+
         self.kwargs['old'] = {}
         self.kwargs['new'] = {}
         # TODO: Remove the value from kwargs and use only CLI attribute!
@@ -75,6 +78,20 @@ class Application(object):
         if self.conf.build_only:
             self._delete_old_builds()
             self._find_old_data()
+
+    def _prepare_spec_objects(self):
+        """
+        Prepare spec files and initialize objects
+        :return:
+        """
+        self.rebase_spec_file_path = get_rebase_name(self.spec_file_path)
+        shutil.copy(self.spec_file_path, self.rebase_spec_file_path)
+
+        self.spec_file = SpecFile(self.spec_file_path,
+                                  download=not self.conf.not_download_sources)
+        self.rebase_spec_file = SpecFile(self.rebase_spec_file_path,
+                                         sources=self.conf.sources,
+                                         download=not self.conf.not_download_sources)
 
     def _find_old_data(self):
         """
@@ -95,19 +112,20 @@ class Application(object):
         Function fill dictionary with default data
         """
         # Get all tarballs before self.kwargs initialization
-        self.old_sources, new_sources = self.spec_file.get_tarballs()
+        self.old_sources = self.spec_file.get_tarball()
+        new_sources = self.rebase_spec_file.get_tarball()
 
         # Fill self.kwargs with related items
         old_values = {}
         old_values['spec'] = self.spec_file_path
         self.kwargs['old'] = old_values
-        self.kwargs['old'].update(self.spec_file.get_old_information())
+        self.kwargs['old'].update(self.spec_file.get_information())
 
         # Fill self.kwargs with related items
         new_values = {}
-        new_values['spec'] = self.spec_file.get_rebased_spec()
+        new_values['spec'] = self.rebase_spec_file_path
         self.kwargs['new'] = new_values
-        self.kwargs['new'].update(self.spec_file.get_new_information())
+        self.kwargs['new'].update(self.rebase_spec_file.get_information())
         self.old_sources = os.path.abspath(self.old_sources)
         if new_sources:
             self.conf.sources = new_sources
@@ -251,7 +269,7 @@ class Application(object):
         except RuntimeError as e:
             raise RebaseHelperError(e.message)
 
-        update_patches = self.spec_file.write_updated_patches(**self.kwargs)
+        update_patches = self.rebase_spec_file.write_updated_patches(**self.kwargs)
         self.kwargs['summary_info'] = update_patches
 
     def build_packages(self):
