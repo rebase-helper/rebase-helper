@@ -35,6 +35,9 @@ from rebasehelper.utils import check_empty_patch
 from rebasehelper.archive import Archive
 
 
+PATCH_PREFIX = '%patch'
+
+
 def get_source_name(name):
     """
     Function returns a source name from full URL address
@@ -131,10 +134,10 @@ class SpecFile(object):
         For all patches: get flags passed to %patch macro and index of application
         """
         patch_flags = {}
-        patches = [x for x in self.spec_content if x.startswith(settings.PATCH_PREFIX)]
+        patches = [x for x in self.spec_content if x.startswith(PATCH_PREFIX)]
         for index, line in enumerate(patches):
             num, option = self.get_patch_option(line)
-            num = num.replace(settings.PATCH_PREFIX, '')
+            num = num.replace(PATCH_PREFIX, '')
             patch_flags[int(num)] = (option, index)
         # {num: (flags, index of application)}
         return patch_flags

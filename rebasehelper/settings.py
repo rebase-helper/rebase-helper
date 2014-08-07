@@ -29,7 +29,5 @@ NEW_SOURCES = 'new_sources'
 OLD_SOURCES_DIR = os.path.join(REBASE_HELPER_WORKSPACE_DIR, OLD_SOURCES)
 NEW_SOURCES_DIR = os.path.join(REBASE_HELPER_WORKSPACE_DIR, NEW_SOURCES)
 
-# TODO: move this to specfile.py ??
-PATCH_PREFIX = '%patch'
 # The variable for access to full information about patches
 FULL_PATCHES = 'patches_full'
