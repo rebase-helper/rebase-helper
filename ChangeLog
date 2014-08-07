@@ -1,3 +1,15 @@
+News in version 0.4.1:
+- logging rebase-helper output to rebase-helper-results directory
+- rewrite SpecFile class
+
+News in version 0.3.1:
+- new build class
+- build-only option
+- installing build dependencies in case of rpmbuildtool
+- more tests
+- RebaseHelperError class for catching exceptions
+- Several fixes
+
 News in version 0.3.0:
 - pkgdiff class for comparing RPM files
 - test suite for archive class and spec file
