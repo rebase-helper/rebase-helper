@@ -75,8 +75,8 @@ def get_content_file(path, perms, method=False):
     if method is True then file is read by function readlines
     """
     try:
-        with open(path, perms) as file_name:
-            data = file_name.read() if not method else file_name.readlines()
+        with open(path, perms) as inputfile:
+            data = inputfile.read() if not method else inputfile.readlines()
         return data
     except IOError:
         raise IOError("Unable to open file '{0}'".format(path))
@@ -108,8 +108,11 @@ def write_to_file(path, perms, data):
     :return:
     """
     try:
-        with open(path, perms) as file_name:
-            file_name.write(data) if isinstance(data, str) else file_name.writelines(data)
+        with open(path, perms) as outputfile:
+            if isinstance(data, str):
+                outputfile.write(data)
+            else:
+                outputfile.writelines(data)
     except IOError:
         raise IOError("Unable to write data to file '{0}'".format(path))
 
