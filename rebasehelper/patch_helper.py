@@ -157,7 +157,7 @@ class PatchTool(PatchBase):
             result = [x for x in applied_rules if x in data]
             if result:
                 continue
-            #file_list = [x for x in cls.patched_files if source_file in x]
+            # file_list = [x for x in cls.patched_files if source_file in x]
             if source_file in failed_files:
                 continue
             failed_files.append(source_file)
@@ -178,6 +178,12 @@ class PatchTool(PatchBase):
 
     @classmethod
     def execute_diff_helper(cls, patch):
+        """
+        Function rebases a patch with help of diff program
+        on new upstream version
+        :param patch: Patch name
+        :return:
+        """
         rebased_patch = get_rebase_name(patch[0])
         patched_files = cls.get_failed_patched_files(patch[0])
         if not patched_files:
