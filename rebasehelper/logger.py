@@ -18,7 +18,22 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import logging
+import settings
+import os
 
 logger = logging.getLogger('rebase_helper')
+consoleHandler = logging.StreamHandler()
 logger.setLevel(logging.INFO)
-logger.addHandler(logging.StreamHandler())
+logger.addHandler(consoleHandler)
+
+
+def add_log_file_handler(log_file):
+    log_formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
+    try:
+        file_handler = logging.FileHandler(log_file, 'a')
+        file_handler.setFormatter(log_formatter)
+        file_handler.setLevel(logging.DEBUG)
+        logger.addHandler(file_handler)
+    except (IOError, OSError):
+        return False
+    return True

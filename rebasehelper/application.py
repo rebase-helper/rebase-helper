@@ -23,7 +23,7 @@ import logging
 
 from rebasehelper.archive import Archive
 from rebasehelper.specfile import SpecFile, get_rebase_name
-from rebasehelper.logger import logger
+from rebasehelper.logger import logger, add_log_file_handler
 from rebasehelper import settings
 from rebasehelper import output_tool
 from rebasehelper.utils import get_value_from_kwargs, PathHelper, RpmHelper, get_message
@@ -43,6 +43,7 @@ class Application(object):
     spec_file_path = None
     rebase_spec_file = None
     rebase_spec_file_path = None
+    rebase_log_file = ""
 
     def __init__(self, cli_conf=None):
         """
@@ -65,6 +66,8 @@ class Application(object):
         # if not continuing, check the results dir
         if not self.conf.cont and not self.conf.build_only:
             self._check_results_dir()
+        self.rebase_log_file = os.path.join(self.results_dir, settings.REBASE_HELPER_LOG)
+        add_log_file_handler(self.rebase_log_file)
         self._prepare_spec_objects()
 
         self.kwargs['old'] = {}
@@ -336,6 +339,11 @@ class Application(object):
 
         if not self.conf.keep_workspace:
             self._delete_workspace_dir()
+
+        # TODO rebase-helper-results directory is deleted always
+        # then it can be commented/deleted later on
+        if os.path.exists(self.rebase_log_file):
+            os.unlink(self.rebase_log_file)
 
 
 if __name__ == '__main__':
