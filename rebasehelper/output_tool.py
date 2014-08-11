@@ -133,7 +133,7 @@ class TextOutputTool(BaseOutputTool):
         """
         dir_name = kwargs.get('results_dir', None)
         if dir_name is not None:
-            output_log_file = os.path.join(dir_name, 'output.log')
+            output_log_file = os.path.join(dir_name, settings.OUTPUT_TOOL_LOG)
             final_message = "Summary output is also available in log {0}\n".format(output_log_file)
             LoggerHelper.add_file_handler_to_logger(logger_output, output_log_file, formatter=False)
 
