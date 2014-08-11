@@ -53,6 +53,12 @@ class Application(object):
         :return:
         """
         self.conf = cli_conf
+
+        if self.conf.verbose:
+            LoggerHelper.add_stream_handler(logger, logging.DEBUG)
+        else:
+            LoggerHelper.add_stream_handler(logger, logging.INFO)
+
         # The directory in which rebase-helper was executed
         self.execution_dir = os.getcwd()
         # Temporary workspace for Builder, checks, ...
@@ -61,12 +67,13 @@ class Application(object):
         # Directory where results should be put
         self.kwargs['results_dir'] = self.results_dir = os.path.join(self.execution_dir,
                                                                      settings.REBASE_HELPER_RESULTS_DIR)
-        self._add_debug_log_file()
 
-        self._get_spec_file()
         # if not continuing, check the results dir
         if not self.conf.cont and not self.conf.build_only:
             self._check_results_dir()
+
+        self._add_debug_log_file()
+        self._get_spec_file()
         self._prepare_spec_objects()
 
         self.kwargs['old'] = {}
@@ -90,7 +97,8 @@ class Application(object):
         try:
             LoggerHelper.add_file_handler(logger,
                                           debug_log_file,
-                                          logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
+                                          logging.Formatter("%(asctime)s %(levelname)s %(message)s"),
+                                          logging.DEBUG)
         except (IOError, OSError):
             logger.warning("Can not create debug log '{0}'".format(debug_log_file))
         else:
@@ -332,9 +340,6 @@ class Application(object):
         output.print_information(**self.kwargs)
 
     def run(self):
-        if self.conf.verbose:
-            logger.setLevel(logging.DEBUG)
-
         sources = self.prepare_sources()
 
         if not self.conf.build_only:

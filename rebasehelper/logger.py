@@ -36,13 +36,11 @@ class LoggerHelper(object):
         :return: created logger
         """
         logger = logging.getLogger(logger_name)
-        console_handler = logging.StreamHandler()
         logger.setLevel(level)
-        logger.addHandler(console_handler)
         return logger
 
     @staticmethod
-    def add_stream_handler(logger, level=logging.DEBUG):
+    def add_stream_handler(logger, level=None):
         """
         Adds console handler with given severity.
 
@@ -51,11 +49,12 @@ class LoggerHelper(object):
         :return: None
         """
         console_handler = logging.StreamHandler()
-        console_handler.setLevel(level)
+        if level:
+            console_handler.setLevel(level)
         logger.addHandler(console_handler)
 
     @staticmethod
-    def add_file_handler(logger, path, formatter=None, level=logging.DEBUG):
+    def add_file_handler(logger, path, formatter=None, level=None):
         """
         Adds FileHandler to a given logger
 
@@ -64,15 +63,15 @@ class LoggerHelper(object):
         :return: None
         """
         file_handler = logging.FileHandler(path, 'w')
+        if level:
+            file_handler.setLevel(level)
         if formatter:
             file_handler.setFormatter(formatter)
-        file_handler.setLevel(level)
         logger.addHandler(file_handler)
 
 
 #  the main Rebase-Helper logger
 logger = LoggerHelper.get_basic_logger('rebase-helper')
-LoggerHelper.add_stream_handler(logger, logging.INFO)
 #  logger for output tool
-logger_output = LoggerHelper.get_basic_logger('rebase-helper.output')
-LoggerHelper.add_stream_handler(logger_output, logging.INFO)
+logger_output = LoggerHelper.get_basic_logger('rebase-helper.output-tool', logging.INFO)
+LoggerHelper.add_stream_handler(logger_output)
