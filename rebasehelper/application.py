@@ -23,7 +23,7 @@ import logging
 
 from rebasehelper.archive import Archive
 from rebasehelper.specfile import SpecFile, get_rebase_name
-from rebasehelper.logger import logger, add_log_file_handler
+from rebasehelper.logger import logger, LoggerHelper
 from rebasehelper import settings
 from rebasehelper import output_tool
 from rebasehelper.utils import get_value_from_kwargs, PathHelper, RpmHelper, get_message
@@ -67,7 +67,7 @@ class Application(object):
         if not self.conf.cont and not self.conf.build_only:
             self._check_results_dir()
         self.rebase_log_file = os.path.join(self.results_dir, settings.REBASE_HELPER_LOG)
-        add_log_file_handler(self.rebase_log_file)
+        LoggerHelper.add_file_handler_to_logger(logger, self.rebase_log_file)
         self._prepare_spec_objects()
 
         self.kwargs['old'] = {}

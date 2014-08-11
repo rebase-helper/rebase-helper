@@ -21,7 +21,7 @@
 import sys
 import os
 
-from rebasehelper.logger import logger
+from rebasehelper.logger import logger, LoggerHelper, logger_output
 from rebasehelper import settings
 
 output_tools = {}
@@ -67,14 +67,14 @@ class TextOutputTool(BaseOutputTool):
 
     @classmethod
     def print_message_and_separator(cls, message="", separator='='):
-        logger.info(message)
-        logger.info(separator * len(message))
+        logger_output.info(message)
+        logger_output.info(separator * len(message))
 
     @classmethod
     def print_patches(cls, patches, summary):
-        logger.info("\nPatches:")
+        logger_output.info("\nPatches:")
         if not patches:
-            logger.info("Patches were neither modified nor deleted.")
+            logger_output.info("Patches were neither modified nor deleted.")
             return
         max_number = max(x for x in [len(str(y)) for y in patches.keys()]) + 2
         max_name = max(x for x in [len(os.path.basename(y[0])) for y in patches.values()]) + 2
@@ -84,9 +84,9 @@ class TextOutputTool(BaseOutputTool):
                 found = [x for x in patches if patch_name in x]
                 if not found:
                     continue
-                logger.info("Patch{0} {1} [{2}]".format(str(key).ljust(max_number),
-                                                        patch_name.ljust(max_name),
-                                                        status))
+                logger_output.info("Patch{0} {1} [{2}]".format(str(key).ljust(max_number),
+                                                               patch_name.ljust(max_name),
+                                                               status))
                 break
 
     @classmethod
@@ -102,14 +102,14 @@ class TextOutputTool(BaseOutputTool):
                 continue
             message = "{0} package(s): are in directory {1} :"
             if isinstance(srpm, str):
-                logger.info(message.format(type_rpm.upper(),
+                logger_output.info(message.format(type_rpm.upper(),
                                            os.path.dirname(rpms.get(srpm, ""))))
-                logger.info("- {0}".format(os.path.basename(srpm)))
+                logger_output.info("- {0}".format(os.path.basename(srpm)))
             else:
-                logger.info(message.format(type_rpm.upper(),
+                logger_output.info(message.format(type_rpm.upper(),
                                            os.path.dirname(srpm[0])))
                 for pkg in srpm:
-                    logger.info("- {0}".format(os.path.basename(pkg)))
+                    logger_output.info("- {0}".format(os.path.basename(pkg)))
 
     @classmethod
     def print_build_logs(cls, rpms, version):
@@ -120,9 +120,9 @@ class TextOutputTool(BaseOutputTool):
         """
         if rpms.get('logs', None) is None:
             return
-        logger.info('Available {0} logs:'.format(version))
+        logger_output.info('Available {0} logs:'.format(version))
         for logs in rpms.get('logs', None):
-            logger.info('- {0}'.format(logs))
+            logger_output.info('- {0}'.format(logs))
 
 
     @classmethod
@@ -131,6 +131,12 @@ class TextOutputTool(BaseOutputTool):
         Function is used for printing summary informations
         :return:
         """
+        dir_name = kwargs.get('results_dir', None)
+        if dir_name is not None:
+            output_log_file = os.path.join(dir_name, 'output.log')
+            final_message = "Summary output is also available in log {0}\n".format(output_log_file)
+            LoggerHelper.add_file_handler_to_logger(logger_output, output_log_file, formatter=False)
+
         cls.print_message_and_separator(message="\n\nSummary information:")
         pkgs = ['old', 'new']
         if kwargs.get('old', None) is None:
@@ -144,6 +150,9 @@ class TextOutputTool(BaseOutputTool):
             cls.print_build_logs(type_pkg, pkg.capitalize())
 
         cls.print_pkgdiff_tool(**kwargs)
+        if dir_name is not None:
+            logger.info(final_message)
+
 
     @classmethod
     def print_pkgdiff_tool(cls, **kwargs):
@@ -151,9 +160,9 @@ class TextOutputTool(BaseOutputTool):
         Function prints a summary information about pkgcomparetool
         """
         try:
-            logger.info("Results from pkgcompare check are stored in directory: '{0}'".format(kwargs['pkgcompareinfo']))
+            logger_output.info("Results from pkgcompare check are stored in directory: '{0}'".format(kwargs['pkgcompareinfo']))
         except KeyError as ke:
-            logger.error('Results from pkgcompare check could not be found.')
+            logger_output.error('Results from pkgcompare check could not be found.')
 
 
 class OutputTool(object):

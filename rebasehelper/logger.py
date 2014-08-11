@@ -18,22 +18,44 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import logging
-import settings
-import os
+from rebasehelper.exceptions import RebaseHelperError
 
+
+class LoggerHelper(object):
+
+    @staticmethod
+    def setup_logger(logger_name, level=logging.INFO):
+        """
+        Sets logger for rebase-helper
+        :param logger_name: Logger name
+        :param level: Initial level
+        :return: logger for later on usage
+        """
+        logger_name = logging.getLogger(logger_name)
+        console_handler = logging.StreamHandler()
+        logger_name.setLevel(level)
+        logger_name.addHandler(console_handler)
+
+    @staticmethod
+    def add_file_handler_to_logger(logger_name, log_file, formatter=True, level=logging.DEBUG):
+        """
+        Adds log_file to logger
+        :param logger: To which logger handler is assigned
+        :param log_file: log_file used for logging rebase-helper actions
+        :return:
+        """
+        try:
+            file_handler = logging.FileHandler(log_file, 'a')
+            if formatter:
+                log_formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
+                file_handler.setFormatter(log_formatter)
+            file_handler.setLevel(level)
+            logger_name.addHandler(file_handler)
+        except (IOError, OSError):
+            raise RebaseHelperError('Adding log file {0} to logger failed.'.format(log_file))
+
+
+LoggerHelper.setup_logger('rebase_helper')
 logger = logging.getLogger('rebase_helper')
-consoleHandler = logging.StreamHandler()
-logger.setLevel(logging.INFO)
-logger.addHandler(consoleHandler)
-
-
-def add_log_file_handler(log_file):
-    log_formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
-    try:
-        file_handler = logging.FileHandler(log_file, 'a')
-        file_handler.setFormatter(log_formatter)
-        file_handler.setLevel(logging.DEBUG)
-        logger.addHandler(file_handler)
-    except (IOError, OSError):
-        return False
-    return True
+LoggerHelper.setup_logger('output_rebase_helper')
+logger_output = logging.getLogger('output_rebase_helper')
