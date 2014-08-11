@@ -273,16 +273,18 @@ class SpecFile(object):
                     continue
                 lines[index] = '#' + line
 
-    def _update_spec_version(self, lines):
+    def _update_spec_version(self, version):
         """
         Function updates a version in SPEC file
         based on self.new_sources variable
         """
-        for index, line in enumerate(lines):
+        for index, line in enumerate(self.spec_content):
             if not line.startswith('Version'):
                 continue
-            lines[index] = line.replace(self._get_spec_version(), self.new_sources)
-        write_to_file(self.spec_file, "w", lines)
+            logger.debug("SpecFile: Updating version in SPEC from '{0}' with '{1}'".format(self._get_spec_version(),
+                                                                                           version))
+            self.spec_content[index] = line.replace(self._get_spec_version(), version)
+        write_to_file(self.spec_file, "w", self.spec_content)
         self._update_data()
 
     def set_spec_version(self):
@@ -290,24 +292,26 @@ class SpecFile(object):
         Function updates a version in spec file based on input argument
         """
 
-        tarball_ext = None
+        archive_ext = None
         for ext in Archive.get_supported_archives():
             if self.new_sources.endswith(ext):
-                tarball_ext = ext
+                archive_ext = ext
                 break
 
-        if not tarball_ext:
+        if not archive_ext:
             # CLI argument is probably just a version without name and extension
-            self._update_spec_version(self.spec_content)
+            self._update_spec_version(self.new_sources)
             # We need to reload the spec file
             old_source_name = self._get_full_source_name()
             self.new_sources = get_source_name(old_source_name)
             return self.new_sources
-        tarball_name = self.new_sources.replace(tarball_ext, '')
+        tarball_name = self.new_sources.replace(archive_ext, '')
         regex = re.compile(r'^\w+-?_?(.*)')
         match = re.search(regex, tarball_name)
         if match:
-            self._update_spec_version(self.spec_content)
+            new_version = match.group(1)
+            logger.debug("SpecFile: Version extracted from archive '{0}'".format(new_version))
+            self._update_spec_version(new_version)
         return None
 
     def write_updated_patches(self, **kwargs):
