@@ -39,7 +39,7 @@ class TestOutputTool(object):
                                      1: ['mytest2.patch', 1, '-p1']},
                     'srpm': './test-1.2.2-1.src.rpm',
                     'rpm': ['./test-1.2.2-1.rpm', './test-devel-1.2.2-1.rpm']},
-            'summary_info': {'deleted': ['mytest2.patch']}
+            'summary_info': {'deleted': ['mytest2.patch']},
             'results_dir': result_dir
             }
     output_log = os.path.join(os.path.dirname(__file__), 'output.log')
