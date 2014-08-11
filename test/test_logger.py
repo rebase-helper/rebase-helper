@@ -17,22 +17,33 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+import tempfile
+import os
+import shutil
+from rebasehelper.logger import LoggerHelper
 
-import logging
 
-from rebasehelper.logger import logger
+class TestLoggerHelper(object):
+    """ RebaseHelperLogger class tests. """
 
+    def setup(self):
+        self.WORKING_DIR = tempfile.mkdtemp(prefix="rebase-helper-test-")
+        os.chdir(self.WORKING_DIR)
 
-class TestLoggingHandler(logging.Handler):
-    def __init__(self):
-        logging.Handler.__init__(self)
-        self.msgs = []
+    def teardown(self):
+        os.chdir(tempfile.gettempdir())
+        shutil.rmtree(self.WORKING_DIR)
+        self.WORKING_DIR = tempfile.gettempdir()
 
-    def emit(self, record):
-        self.msgs.append((record.levelname, record.getMessage()))
+    def test_get_basic_logger(self):
+        #  TODO: Add the test
+        assert False
 
-    @classmethod
-    def create_fresh_handler(cls):
-        tlh = cls()
-        logger.addHandler(tlh)
-        return tlh
+    def test_add_stream_handler(self):
+        #  TODO: Add the test
+        assert False
+
+    def test_add_file_handler(self):
+        #  TODO: Add the test
+        assert False
+

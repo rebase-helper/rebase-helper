@@ -18,44 +18,61 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import logging
-from rebasehelper.exceptions import RebaseHelperError
+import os
 
 
 class LoggerHelper(object):
+    """
+    Helper class for setting up a logger
+    """
 
     @staticmethod
-    def setup_logger(logger_name, level=logging.INFO):
+    def get_basic_logger(logger_name, level=logging.DEBUG):
         """
-        Sets logger for rebase-helper
+        Sets-up a basic logger without any handler
+
         :param logger_name: Logger name
-        :param level: Initial level
-        :return: logger for later on usage
+        :param level: severity level
+        :return: created logger
         """
-        logger_name = logging.getLogger(logger_name)
+        logger = logging.getLogger(logger_name)
         console_handler = logging.StreamHandler()
-        logger_name.setLevel(level)
-        logger_name.addHandler(console_handler)
+        logger.setLevel(level)
+        logger.addHandler(console_handler)
+        return logger
 
     @staticmethod
-    def add_file_handler_to_logger(logger_name, log_file, formatter=True, level=logging.DEBUG):
+    def add_stream_handler(logger, level=logging.DEBUG):
         """
-        Adds log_file to logger
-        :param logger: To which logger handler is assigned
-        :param log_file: log_file used for logging rebase-helper actions
-        :return:
+        Adds console handler with given severity.
+
+        :param logger: logger object to add the handler to
+        :param level: severity level
+        :return: None
         """
-        try:
-            file_handler = logging.FileHandler(log_file, 'a')
-            if formatter:
-                log_formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
-                file_handler.setFormatter(log_formatter)
-            file_handler.setLevel(level)
-            logger_name.addHandler(file_handler)
-        except (IOError, OSError):
-            raise RebaseHelperError('Adding log file {0} to logger failed.'.format(log_file))
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(level)
+        logger.addHandler(console_handler)
+
+    @staticmethod
+    def add_file_handler(logger, path, formatter=None, level=logging.DEBUG):
+        """
+        Adds FileHandler to a given logger
+
+        :param logger: Logger object to which the file handler will be added
+        :param path: Path to file where the debug log will be written
+        :return: None
+        """
+        file_handler = logging.FileHandler(path, 'w')
+        if formatter:
+            file_handler.setFormatter(formatter)
+        file_handler.setLevel(level)
+        logger.addHandler(file_handler)
 
 
-LoggerHelper.setup_logger('rebase_helper')
-logger = logging.getLogger('rebase_helper')
-LoggerHelper.setup_logger('output_rebase_helper')
-logger_output = logging.getLogger('output_rebase_helper')
+#  the main Rebase-Helper logger
+logger = LoggerHelper.get_basic_logger('rebase-helper')
+LoggerHelper.add_stream_handler(logger, logging.INFO)
+#  logger for output tool
+logger_output = LoggerHelper.get_basic_logger('rebase-helper.output')
+LoggerHelper.add_stream_handler(logger_output, logging.INFO)

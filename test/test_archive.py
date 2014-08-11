@@ -24,7 +24,7 @@ from rebasehelper.utils import get_content_file
 
 
 class TestArchive(object):
-    """ Archive Test"""
+    """ Archive Test """
     TAR_GZ = "tar_gz"
     TAR_XZ = "tar_xz"
     ZIP = "zip"

@@ -21,7 +21,8 @@
 import sys
 import os
 
-from rebasehelper.logger import logger, LoggerHelper, logger_output
+from rebasehelper.exceptions import RebaseHelperError
+from rebasehelper.logger import LoggerHelper, logger, logger_output
 from rebasehelper import settings
 
 output_tools = {}
@@ -135,7 +136,10 @@ class TextOutputTool(BaseOutputTool):
         if dir_name is not None:
             output_log_file = os.path.join(dir_name, settings.OUTPUT_TOOL_LOG)
             final_message = "Summary output is also available in log {0}\n".format(output_log_file)
-            LoggerHelper.add_file_handler_to_logger(logger_output, output_log_file, formatter=False)
+            try:
+                LoggerHelper.add_file_handler(logger_output, output_log_file)
+            except (OSError, IOError):
+                raise RebaseHelperError("Can not create results file '{0}'".format(output_log_file))
 
         cls.print_message_and_separator(message="\n\nSummary information:")
         pkgs = ['old', 'new']

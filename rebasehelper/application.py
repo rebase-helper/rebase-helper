@@ -43,7 +43,7 @@ class Application(object):
     spec_file_path = None
     rebase_spec_file = None
     rebase_spec_file_path = None
-    rebase_log_file = ""
+    debug_log_file = None
 
     def __init__(self, cli_conf=None):
         """
@@ -61,13 +61,12 @@ class Application(object):
         # Directory where results should be put
         self.kwargs['results_dir'] = self.results_dir = os.path.join(self.execution_dir,
                                                                      settings.REBASE_HELPER_RESULTS_DIR)
+        self._add_debug_log_file()
 
         self._get_spec_file()
         # if not continuing, check the results dir
         if not self.conf.cont and not self.conf.build_only:
             self._check_results_dir()
-        self.rebase_log_file = os.path.join(self.results_dir, settings.REBASE_HELPER_LOG)
-        LoggerHelper.add_file_handler_to_logger(logger, self.rebase_log_file)
         self._prepare_spec_objects()
 
         self.kwargs['old'] = {}
@@ -81,6 +80,22 @@ class Application(object):
         if self.conf.build_only:
             self._delete_old_builds()
             self._find_old_data()
+
+    def _add_debug_log_file(self):
+        """
+
+        :return:
+        """
+        debug_log_file = os.path.join(self.results_dir, settings.REBASE_HELPER_LOG)
+        try:
+            LoggerHelper.add_file_handler(logger,
+                                          debug_log_file,
+                                          logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
+        except (IOError, OSError):
+            logger.warning("Can not create debug log '{0}'".format(debug_log_file))
+        else:
+            self.debug_log_file = debug_log_file
+
 
     def _prepare_spec_objects(self):
         """
@@ -340,11 +355,8 @@ class Application(object):
         if not self.conf.keep_workspace:
             self._delete_workspace_dir()
 
-        # TODO rebase-helper-results directory is deleted always
-        # then it can be commented/deleted later on
-        if os.path.exists(self.rebase_log_file):
-            os.unlink(self.rebase_log_file)
-
+        if self.debug_log_file:
+            logger.info("Detailed debug log is located in '{0}'".format(self.debug_log_file))
 
 if __name__ == '__main__':
     a = Application(None)
