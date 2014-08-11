@@ -125,11 +125,11 @@ class MeldDiffTool(DiffBase):
         suffix = kwargs.get('suffix')
         failed_files = kwargs.get('failed_files')
 
-        if old_dir == None:
+        if old_dir is None:
             raise TypeError("MeldDiffTool:run_mergetool: missing old_dir")
-        if new_dir == None:
+        if new_dir is None:
             raise TypeError("MeldDiffTool:run_mergetool: missing new_dir")
-        if suffix == None:
+        if suffix is None:
             raise TypeError("MeldDiffTool:run_mergetool: missing suffix")
         else:
             suffix = "." + suffix
