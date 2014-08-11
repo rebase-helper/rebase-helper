@@ -33,3 +33,4 @@ NEW_SOURCES_DIR = os.path.join(REBASE_HELPER_WORKSPACE_DIR, NEW_SOURCES)
 FULL_PATCHES = 'patches_full'
 
 REBASE_HELPER_LOG = 'rebase-helper.log'
+OUTPUT_TOOL_LOG = 'output.log'

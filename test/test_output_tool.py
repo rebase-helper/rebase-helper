@@ -18,19 +18,18 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import os
-import shutil
-import logging
 
-from logging import FileHandler
 from rebasehelper import output_tool
-from rebasehelper.logger import logger
 from rebasehelper.utils import get_content_file
+from rebasehelper import settings
 
 
 class TestOutputTool(object):
     """
     Class is used for testing OutputTool
     """
+    result_dir = os.path.join(os.getcwd(), 'test', settings.REBASE_HELPER_RESULTS_DIR)
+
     data = {'old': {'patches_full': {0: ['mytest.patch', '-p1', 0],
                                      1: ['mytest2.patch', '-p1', 1]},
                     'srpm': './test-1.2.0-1.src.rpm',
@@ -41,16 +40,9 @@ class TestOutputTool(object):
                     'srpm': './test-1.2.2-1.src.rpm',
                     'rpm': ['./test-1.2.2-1.rpm', './test-devel-1.2.2-1.rpm']},
             'summary_info': {'deleted': ['mytest2.patch']}
+            'results_dir': result_dir
             }
     output_log = os.path.join(os.path.dirname(__file__), 'output.log')
-
-    def setup(self):
-        logger.addHandler(FileHandler(self.output_log, mode='w'))
-        logger.setLevel(logging.INFO)
-
-    def teardown(self):
-        if os.path.exists(self.output_log):
-            shutil.rmtree(self.output_log)
 
     def test_text_output(self):
         expected_output = """Summary information:
@@ -77,7 +69,8 @@ RPM package(s): are in directory . :
 Results from pkgcompare check could not be found."""
         output = output_tool.OutputTool('text')
         output.print_information(**self.data)
-        real_output = get_content_file(self.output_log, 'r')
-        if os.path.exists(self.output_log):
-            os.unlink(self.output_log)
+
+        real_output = get_content_file(os.path.join(self.result_dir,
+                                                    settings.OUTPUT_TOOL_LOG),
+                                       'r', method=True)
         assert real_output.strip() == expected_output
