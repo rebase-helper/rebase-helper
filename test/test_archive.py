@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # This tool helps you to rebase package to the latest version
-# Copyright (C) 2013 Petr Hracek
+# Copyright (C) 2013-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,108 +16,79 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Authors: Petr Hracek <phracek@redhat.com>
+#          Tomas Hozza <thozza@redhat.com>
 
 import os
-import shutil
-from rebasehelper.archive import *
-from rebasehelper.utils import get_content_file
+from base_test import BaseTest
+from rebasehelper.archive import Archive
 
 
-class TestArchive(object):
+class TestArchive(BaseTest):
     """ Archive Test """
-    TAR_GZ = "tar_gz"
-    TAR_XZ = "tar_xz"
-    ZIP = "zip"
-    TAR_BZ2 = "tar_bz2"
-    list_archives = {TAR_BZ2: tarfile.TarFile,
-                     TAR_GZ: tarfile.TarFile,
-                     TAR_XZ: lzma.LZMAFile,
-                     ZIP: zipfile.ZipFile
-                     }
-    list_names = {TAR_BZ2: 'tar_bz2.tar.bz2',
-                  TAR_GZ: 'tar_gz.tar.gz',
-                  TAR_XZ: 'tar_xz.tar.xz',
-                  ZIP: 'zip.zip'
-                  }
-    dir_name = os.path.join(os.path.dirname(__file__))
-    extr = "extract"
-    test_file = 'test_file'
+    TAR_GZ = 'archive.tar.gz'
+    TGZ = 'archive.tgz'
+    TAR_XZ = 'archive.tar.xz'
+    TAR_BZ2 = 'archive.tar.bz2'
+    ZIP = 'archive.zip'
 
-    def extract_sources(self, name):
-        archive_name = os.path.join(self.dir_name, self.list_names[name])
-        archive_dir = os.path.join(self.dir_name, self.extr + "-" + name)
-        archive = Archive(archive_name)
-        archive.extract(archive_dir)
-        return archive_dir
+    ARCHIVED_FILE = 'file.txt'
+    ARCHIVED_FILE_CONTENT = 'simple testing file'
 
-    def get_extract_file(self, archive_dir):
-        lines = get_content_file(os.path.join(archive_dir, self.test_file),
-                                 'r',
-                                 method=True)
-        return lines
+    #  These files located in TEST_FILES_DIR will be copied into the testing environment
+    TEST_FILES = {
+        TAR_GZ: TAR_GZ,
+        TGZ: TGZ,
+        TAR_XZ: TAR_XZ,
+        TAR_BZ2: TAR_BZ2,
+        ZIP: ZIP
+    }
 
-    def setup(self):
-        for key, value in self.list_archives.items():
-            arch_name = os.path.join(self.dir_name, self.list_names[key])
-            if key == self.TAR_XZ:
-                xz_file = value(arch_name, 'w')
-                archive = tarfile.open(mode='w', fileobj=xz_file)
-                for file_name in os.listdir(os.path.join(self.dir_name, key)):
-                    archive.add(os.path.join('test', key, file_name))
-            elif key == self.ZIP:
-                archive = value(arch_name, 'w', zipfile.ZIP_DEFLATED)
-                for root, dirs, files in os.walk(os.path.join(self.dir_name, key)):
-                    archive.write(root, '.')
-                    for file_name in files:
-                        filePath = os.path.join(root, file_name)
-                        inzipFile = filePath.replace(self.dir_name, "", 1).lstrip("\\/")
-                        archive.write(filePath, inzipFile)
-                archive.close()
-            elif key == self.TAR_GZ:
-                archive = value.open(arch_name, 'w:gz')
-                for file_name in os.listdir(os.path.join(self.dir_name, key)):
-                    archive.add(os.path.join(self.dir_name, key, file_name), arcname=file_name)
-                archive.close()
-            elif key == self.TAR_BZ2:
-                archive = value.open(arch_name, 'w:bz2')
-                for file_name in os.listdir(os.path.join(self.dir_name, key)):
-                    archive.add(os.path.join(self.dir_name, key, file_name), arcname=file_name)
-                archive.close()
-        assert True
+    def extraction_test(self, archive):
+        """
+        Generic test for extraction of all types of archives
+        """
+        EXTARCT_DIR = os.path.join(os.getcwd(), 'dir')
+        EXTRACTED_FILE = os.path.join(EXTARCT_DIR, self.ARCHIVED_FILE)
 
-    def teardown(self):
-        for key, value in self.list_archives.items():
-            arch_name = os.path.join(self.dir_name, self.list_names[key])
-            if os.path.exists(arch_name):
-                os.unlink(arch_name)
-            dir_name = os.path.join(self.dir_name, self.extr + "-" + key)
-            if os.path.isdir(dir_name):
-                shutil.rmtree(dir_name)
+        archive = Archive(archive)
+        archive.extract(EXTARCT_DIR)
 
-    def test_bz2_archive(self):
-        archive_dir = self.extract_sources(self.TAR_BZ2)
-        assert os.path.isdir(archive_dir)
-        lines = self.get_extract_file(archive_dir)
-        expected_contain = "{0} archive".format(self.TAR_BZ2.replace('_', '.'))
-        assert lines[0].strip() == expected_contain
+        #  check if the dir was created
+        assert os.path.isdir(EXTARCT_DIR)
+        #  check if the file was extracted
+        assert os.path.isfile(EXTRACTED_FILE)
+        #  check the content
+        with open(EXTRACTED_FILE) as f:
+            assert f.read().strip() == self.ARCHIVED_FILE_CONTENT
 
-    def test_gz_archive(self):
-        archive_dir = self.extract_sources(self.TAR_GZ)
-        assert os.path.isdir(archive_dir)
-        lines = self.get_extract_file(archive_dir)
-        expected_contain = "{0} archive".format(self.TAR_GZ.replace('_', '.'))
-        assert lines[0].strip() == expected_contain
+    def test_tar_bz2_archive(self):
+        """
+        Test .tar.bz2 archive extraction.
+        """
+        self.extraction_test(self.TAR_BZ2)
+
+    def test_tar_gz_archive(self):
+        """
+        Test .tar.gz archive extraction.
+        """
+        self.extraction_test(self.TAR_GZ)
+
+    def test_tgz_archive(self):
+        """
+        Test .tgz archive extraction.
+        """
+        self.extraction_test(self.TGZ)
+
+    def test_tar_xz_archive(self):
+        """
+        Test .tar.xz archive extraction.
+        """
+        self.extraction_test(self.TAR_XZ)
 
     def test_zip_archive(self):
-        archive_dir = self.extract_sources(self.ZIP)
-        assert os.path.isdir(archive_dir)
-        lines = self.get_extract_file(os.path.join(archive_dir, "zip"))
-        expected_contain = "{0} archive".format(self.ZIP.replace('_', '.'))
-        assert lines[0].strip() == expected_contain
-
-    #def test_xz_archive(self):
-    #    archive_name = os.path.join(self.dir_name, self.list_names[self.TAR_XZ])
-    #    archive_dir = os.path.join(self.dir_name, self.extr+self.TAR_XZ)
-    #    logger.info(archive_dir)
-    #    archive = Archive(archive_name)
-    #    archive.extract(archive_dir)
+        """
+        Test .zip archive extraction.
+        """
+        self.extraction_test(self.ZIP)
