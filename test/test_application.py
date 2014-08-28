@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # This tool helps you to rebase package to the latest version
-# Copyright (C) 2013 Petr Hracek
+# Copyright (C) 2013-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,97 +16,84 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Authors: Petr Hracek <phracek@redhat.com>
+#          Tomas Hozza <thozza@redhat.com
 
 import os
-import tarfile
-import shutil
+
+from base_test import BaseTest
 from rebasehelper.cli import CLI
 from rebasehelper.application import Application
 from rebasehelper import settings
-from rebasehelper.specfile import SpecFile
 
 
-class TestApplication(object):
+class TestApplication(BaseTest):
     """ Application tests """
-    TAR_GZ = "tar_gz"
-    TAR_GZ2 = "tar_gz2"
-    list_archives = [TAR_GZ, TAR_GZ2]
-    list_names = {TAR_GZ: 'test-1.0.2.tar.gz',
-                  TAR_GZ2: 'test-1.0.3.tar.gz',
-                  }
-    dir_name = os.path.join(os.path.dirname(__file__))
-    spec_file = 'test.spec'
-    rebased_spec = os.path.join(settings.REBASE_HELPER_RESULTS_DIR, spec_file)
+
+    OLD_SOURCES = 'test-1.0.2.tar.xz'
+    NEW_SOURCES = 'test-1.0.3.tar.xz'
+    SPEC_FILE = 'test.spec'
+    PATCH_1 = 'test-testing.patch'
+    PATCH_2 = 'test-testing2.patch'
+    PATCH_3 = 'test-testing3.patch'
+
+    TEST_FILES = [
+        OLD_SOURCES,
+        NEW_SOURCES,
+        SPEC_FILE,
+        PATCH_1,
+        PATCH_2,
+        PATCH_3
+    ]
+
     cmd_line_args = ['--not-download-sources', '1.0.3']
-    result_dir = ""
-    workspace_dir = ""
-
-    def setup(self):
-        self.result_dir = os.path.join(self.dir_name, settings.REBASE_HELPER_RESULTS_DIR)
-        self.workspace_dir = os.path.join(self.dir_name, settings.REBASE_HELPER_WORKSPACE_DIR)
-        for tarball in self.list_archives:
-            arch_name = os.path.join(self.dir_name, self.list_names[tarball])
-            archive = tarfile.TarFile.open(arch_name, 'w:gz')
-            for file_name in os.listdir(os.path.join(self.dir_name, tarball)):
-                archive.add(os.path.join(self.dir_name, tarball, file_name), arcname=file_name)
-            archive.close()
-
-    def teardown(self):
-        if os.path.exists(self.result_dir):
-            shutil.rmtree(self.result_dir)
-        if os.path.exists(self.workspace_dir):
-            shutil.rmtree(self.workspace_dir)
-        for tarball in self.list_archives:
-            if os.path.exists(tarball):
-                os.unlink(tarball)
 
     def test_application_sources(self):
         expected_dict = {
             'new': {
-                'sources': ['/home/phracek/work/programming/rebase-helper/test/test-source.sh',
-                            '/home/phracek/work/programming/rebase-helper/test/source-tests.sh',
-                            '/home/phracek/work/programming/rebase-helper/test/test-1.0.3.tar.gz'],
+                'sources': [os.path.join(self.WORKING_DIR, 'test-source.sh'),
+                            os.path.join(self.WORKING_DIR, 'source-tests.sh'),
+                            os.path.join(self.WORKING_DIR, self.NEW_SOURCES)],
                 'version': '1.0.3',
                 'name': 'test',
-                'tarball': 'test-1.0.3.tar.gz',
-                'spec': '/home/phracek/work/programming/rebase-helper/test/rebase-helper-results/test.spec',
-                'patches_full': {1: ['/home/phracek/work/programming/rebase-helper/test/test-testing.patch',
+                'tarball': self.NEW_SOURCES,
+                'spec': os.path.join(self.WORKING_DIR, settings.REBASE_HELPER_RESULTS_DIR, self.SPEC_FILE),
+                'patches_full': {1: [os.path.join(self.WORKING_DIR, self.PATCH_1),
                                      ' ',
                                      0,
                                      False],
-                                 2: ['/home/phracek/work/programming/rebase-helper/test/test-testing2.patch',
+                                 2: [os.path.join(self.WORKING_DIR, self.PATCH_2),
                                      '-p1',
                                      1,
                                      False],
-                                 3: ['/home/phracek/work/programming/rebase-helper/test/test-testing3.patch',
+                                 3: [os.path.join(self.WORKING_DIR, self.PATCH_3),
                                      '-p1',
                                      2,
                                      False]}},
-            'workspace_dir': '/home/phracek/work/programming/rebase-helper/test/rebase-helper-workspace',
+            'workspace_dir': os.path.join(self.WORKING_DIR, settings.REBASE_HELPER_WORKSPACE_DIR),
             'old': {
-                'sources': ['/home/phracek/work/programming/rebase-helper/test/test-source.sh',
-                            '/home/phracek/work/programming/rebase-helper/test/source-tests.sh',
-                            '/home/phracek/work/programming/rebase-helper/test/test-1.0.2.tar.gz'],
+                'sources': [os.path.join(self.WORKING_DIR, 'test-source.sh'),
+                            os.path.join(self.WORKING_DIR, 'source-tests.sh'),
+                            os.path.join(self.WORKING_DIR, self.OLD_SOURCES)],
                 'version': '1.0.2',
                 'name': 'test',
-                'tarball': 'test-1.0.2.tar.gz',
-                'spec': '/home/phracek/work/programming/rebase-helper/test/test.spec',
-                'patches_full': {1: ['/home/phracek/work/programming/rebase-helper/test/test-testing.patch',
+                'tarball': self.OLD_SOURCES,
+                'spec': os.path.join(self.WORKING_DIR, self.SPEC_FILE),
+                'patches_full': {1: [os.path.join(self.WORKING_DIR, self.PATCH_1),
                                      ' ',
                                      0,
                                      False],
-                                 2: ['/home/phracek/work/programming/rebase-helper/test/test-testing2.patch',
+                                 2: [os.path.join(self.WORKING_DIR, self.PATCH_2),
                                      '-p1',
                                      1,
                                      False],
-                                 3: ['/home/phracek/work/programming/rebase-helper/test/test-testing3.patch',
+                                 3: [os.path.join(self.WORKING_DIR, self.PATCH_3),
                                      '-p1',
                                      2,
                                      False]}},
-            'results_dir': '/home/phracek/work/programming/rebase-helper/test/rebase-helper-results'}
+            'results_dir': os.path.join(self.WORKING_DIR, settings.REBASE_HELPER_RESULTS_DIR)}
 
-        cwd = os.getcwd()
-        os.chdir(os.path.join(cwd, 'test'))
         try:
             cli = CLI(self.cmd_line_args)
             app = Application(cli)
@@ -116,7 +103,6 @@ class TestApplication(object):
                     assert val == expected_dict[key]
         except OSError as oer:
             pass
-        os.chdir(cwd)
 
 
 
