@@ -18,63 +18,47 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import os
-import shutil
+
+from base_test import BaseTest
 from rebasehelper.specfile import SpecFile
-from rebasehelper import settings
-from rebasehelper.logger import logger
-from rebasehelper.application import Application
 
 
-class TestSpecHelper(object):
-    """ SpecHelper tests """
-    dir_name = ""
-    spec_file = None
-    rebase_spec_file = None
-    test_spec = 'test.spec'
-    result_dir = ""
-    workspace_dir = ""
+class TestSpecFile(BaseTest):
+    """ SpecFile tests """
+    OLD_ARCHIVE = 'test-1.0.2.tar.xz'
+    SPEC_FILE = 'test.spec'
+    SOURCE_0 = 'test-source.sh'
+    SOURCE_1 = 'source-tests.sh'
+    PATCH_1 = 'test-testing.patch'
+    PATCH_2 = 'test-testing2.patch'
+    PATCH_3 = 'test-testing3.patch'
+
+    TEST_FILES = [
+        SPEC_FILE,
+        PATCH_1,
+        PATCH_2,
+        PATCH_3
+    ]
 
     def setup(self):
-        self.dir_name = os.path.dirname(__file__)
-        self.result_dir = os.path.join(self.dir_name, settings.REBASE_HELPER_RESULTS_DIR)
-        self.workspace_dir = os.path.join(self.dir_name, settings.REBASE_HELPER_WORKSPACE_DIR)
-        if os.path.exists(self.result_dir):
-            shutil.rmtree(self.result_dir)
-        os.makedirs(self.result_dir)
-        file_name = os.path.join(self.dir_name, self.test_spec)
-        self.spec_file = SpecFile(file_name, '', download=False)
-        self.spec_file.get_information()
-
-    def teardown(self):
-        if os.path.exists(self.result_dir):
-            shutil.rmtree(self.result_dir)
-        if os.path.exists(self.workspace_dir):
-            shutil.rmtree(self.workspace_dir)
+        super(TestSpecFile, self).setup()
+        self.SPEC_FILE_OBJECT = SpecFile(self.SPEC_FILE, download=False)
 
     def test_old_tarball(self):
-        expected_tarball = 'test-1.0.2.tar.gz'
-        test_tarball = self.spec_file.get_tarball()
-        assert test_tarball == expected_tarball
+        assert self.SPEC_FILE_OBJECT.get_tarball() == self.OLD_ARCHIVE
 
     def test_all_sources(self):
-        sources = ['test-source.sh', 'source-tests.sh', 'test-1.0.2.tar.gz']
-        expected_sources = [os.path.join(os.getcwd(), x) for x in sources]
-        test_sources = self.spec_file._get_all_sources()
-        logger.info(test_sources)
-        assert expected_sources == test_sources
+        sources = [self.SOURCE_0, self.SOURCE_1, self.OLD_ARCHIVE]
+        sources = [os.path.join(self.WORKING_DIR, f) for f in sources]
+        assert len(set(sources).intersection(set(self.SPEC_FILE_OBJECT._get_all_sources()))) == 3
 
     def test_list_patches(self):
-        cwd = os.getcwd()
-        dir_name = os.path.join(cwd, self.dir_name)
-        expected_patches = {1: [os.path.join(dir_name, 'test-testing.patch'), ' ', 0, False],
-                            2: [os.path.join(dir_name, 'test-testing2.patch'), '-p1', 1, False],
-                            3: [os.path.join(dir_name, 'test-testing3.patch'), '-p1', 2, False],}
-        os.chdir(os.path.dirname(__file__))
-        test_patches = self.spec_file._get_patches()
-        os.chdir(cwd)
-        assert expected_patches == test_patches
+        expected_patches = {1: [os.path.join(self.WORKING_DIR, self.PATCH_1), ' ', 0, False],
+                            2: [os.path.join(self.WORKING_DIR, self.PATCH_2), '-p1', 1, False],
+                            3: [os.path.join(self.WORKING_DIR, self.PATCH_3), '-p1', 2, False]}
+        assert self.SPEC_FILE_OBJECT._get_patches() == expected_patches
 
     def test_get_requires(self):
         expected = set(['openssl-devel', 'pkgconfig', 'texinfo', 'gettext', 'autoconf'])
-        req = self.spec_file.get_requires()
+        req = self.SPEC_FILE_OBJECT.get_requires()
         assert len(expected.intersection(req)) == 5
