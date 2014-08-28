@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # This tool helps you to rebase package to the latest version
-# Copyright (C) 2013 Petr Hracek
+# Copyright (C) 2013-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,6 +16,9 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Authors: Petr Hracek <phracek@redhat.com>
+#          Tomas Hozza <thozza@redhat.com>
 
 import os
 import tempfile
@@ -24,6 +27,7 @@ import random
 import string
 import StringIO
 
+from base_test import BaseTest
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.utils import PathHelper
 from rebasehelper.utils import TemporaryEnvironment
@@ -33,7 +37,7 @@ from rebasehelper.utils import RpmHelper
 class TestProcessHelper(object):
     """ ProcessHelper tests """
 
-    class TestRunSubprocess(object):
+    class TestRunSubprocess(BaseTest):
         """ ProcessHelper - run_subprocess() tests """
         TEMP_FILE = "temp_file"
         TEMP_DIR = "temp_dir"
@@ -45,15 +49,6 @@ class TestProcessHelper(object):
         LS_COMMAND = ["ls"]
         CAT_COMMAND = ["cat"]
         WORKING_DIR = tempfile.gettempdir()
-
-        def setup(self):
-            self.WORKING_DIR = tempfile.mkdtemp(prefix="rebase-helper-test-")
-            os.chdir(self.WORKING_DIR)
-
-        def teardown(self):
-            os.chdir(tempfile.gettempdir())
-            shutil.rmtree(self.WORKING_DIR)
-            self.WORKING_DIR = tempfile.gettempdir()
 
         def test_simple_cmd(self):
             ret = ProcessHelper.run_subprocess(self.TOUCH_COMMAND)
@@ -142,7 +137,7 @@ class TestProcessHelper(object):
             assert out_buff.readline().strip('\n') == self.PHRASE
             out_buff.close()
 
-    class TestRunSubprocessCwd(object):
+    class TestRunSubprocessCwd(BaseTest):
         """ ProcessHelper - run_subprocess_cwd() tests """
         TEMP_FILE = "temp_file"
         TEMP_DIR = "temp_dir"
@@ -152,15 +147,6 @@ class TestProcessHelper(object):
         TOUCH_COMMAND = ["touch", TEMP_FILE]
         LS_COMMAND = ["ls"]
         WORKING_DIR = tempfile.gettempdir()
-
-        def setup(self):
-            self.WORKING_DIR = tempfile.mkdtemp(prefix="rebase-helper-test-")
-            os.chdir(self.WORKING_DIR)
-
-        def teardown(self):
-            os.chdir(tempfile.gettempdir())
-            shutil.rmtree(self.WORKING_DIR)
-            self.WORKING_DIR = tempfile.gettempdir()
 
         def test_simple_cmd_changed_work_dir(self):
             os.mkdir(self.TEMP_DIR)
@@ -180,20 +166,11 @@ class TestProcessHelper(object):
             assert os.path.exists(self.OUT_FILE)
             assert open(self.OUT_FILE).readline().strip("\n") == self.TEMP_FILE
 
-    class TestRunSubprocessCwdEnv(object):
+    class TestRunSubprocessCwdEnv(BaseTest):
         """ ProcessHelper - run_subprocess_cwd_env() tests """
         OUT_FILE = "output_file"
         PHRASE = "hello world"
         WORKING_DIR = tempfile.gettempdir()
-
-        def setup(self):
-            self.WORKING_DIR = tempfile.mkdtemp(prefix="rebase-helper-test-")
-            os.chdir(self.WORKING_DIR)
-
-        def teardown(self):
-            os.chdir(tempfile.gettempdir())
-            shutil.rmtree(self.WORKING_DIR)
-            self.WORKING_DIR = tempfile.gettempdir()
 
         def test_setting_new_env(self):
             # make copy of existing environment
@@ -237,7 +214,7 @@ class TestProcessHelper(object):
 class TestPathHelper(object):
     """ PathHelper tests """
 
-    class TestPathHelperFindBase(object):
+    class TestPathHelperFindBase(BaseTest):
         """ Base class for find methods """
         WORKING_DIR = tempfile.gettempdir()
         dirs = ["dir1",
@@ -261,18 +238,12 @@ class TestPathHelper(object):
                  "dir1/baz/bar/ffile"]
 
         def setup(self):
-            self.WORKING_DIR = tempfile.mkdtemp(prefix="rebase-helper-test-")
-            os.chdir(self.WORKING_DIR)
+            super(TestPathHelper.TestPathHelperFindBase, self).setup()
             for d in self.dirs:
                 os.mkdir(d)
             for f in self.files:
                 with open(f, "w") as fd:
                     fd.write(f)
-
-        def teardown(self):
-            os.chdir(tempfile.gettempdir())
-            shutil.rmtree(self.WORKING_DIR)
-            self.WORKING_DIR = tempfile.gettempdir()
 
     class TestFindFirstDirWithFile(TestPathHelperFindBase):
         """ PathHelper - find_first_dir_with_file() tests """
