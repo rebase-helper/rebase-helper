@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # This tool helps you to rebase package to the latest version
-# Copyright (C) 2013 Petr Hracek
+# Copyright (C) 2013-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,35 +16,38 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Authors: Petr Hracek <phracek@redhat.com>
+#          Tomas Hozza <thozza@redhat.com>
 
 import os
 
-from rebasehelper import output_tool
-from rebasehelper.utils import get_content_file
-from rebasehelper import settings
+from base_test import BaseTest
+from rebasehelper.output_tool import OutputTool
 
 
-class TestOutputTool(object):
+class TestOutputTool(BaseTest):
     """
     Class is used for testing OutputTool
     """
-    result_dir = os.path.join(os.getcwd(), 'test', settings.REBASE_HELPER_RESULTS_DIR)
+    LOG_FILE = 'output.log'
 
-    data = {'old': {'patches_full': {0: ['mytest.patch', '-p1', 0],
-                                     1: ['mytest2.patch', '-p1', 1]},
-                    'srpm': './test-1.2.0-1.src.rpm',
-                    'rpm': ['./test-1.2.0-1.rpm', './test-devel-1.2.0-1.rpm']
-                    },
-            'new': {'patches_full': {0: ['mytest.patch', 0, '-p1'],
-                                     1: ['mytest2.patch', 1, '-p1']},
-                    'srpm': './test-1.2.2-1.src.rpm',
-                    'rpm': ['./test-1.2.2-1.rpm', './test-devel-1.2.2-1.rpm']},
-            'summary_info': {'deleted': ['mytest2.patch']},
-            'results_dir': result_dir
-            }
-    output_log = os.path.join(os.path.dirname(__file__), 'output.log')
+    def get_data(self):
+        data = {'old': {'patches_full': {0: ['mytest.patch', '-p1', 0],
+                                         1: ['mytest2.patch', '-p1', 1]},
+                        'srpm': './test-1.2.0-1.src.rpm',
+                        'rpm': ['./test-1.2.0-1.rpm', './test-devel-1.2.0-1.rpm']
+                        },
+                'new': {'patches_full': {0: ['mytest.patch', 0, '-p1'],
+                                         1: ['mytest2.patch', 1, '-p1']},
+                        'srpm': './test-1.2.2-1.src.rpm',
+                        'rpm': ['./test-1.2.2-1.rpm', './test-devel-1.2.2-1.rpm']},
+                'summary_info': {'deleted': ['mytest2.patch']},
+                'results_dir': self.WORKING_DIR
+                }
+        return data
 
-    def test_text_output(self):
+    def get_expected_output(self):
         expected_output = """Summary information:
 ======================
 
@@ -67,10 +70,11 @@ RPM package(s): are in directory . :
 - test-1.2.2-1.rpm
 - test-devel-1.2.2-1.rpm
 Results from pkgcompare check could not be found."""
-        output = output_tool.OutputTool('text')
-        output.print_information(**self.data)
+        return expected_output
 
-        real_output = get_content_file(os.path.join(self.result_dir,
-                                                    settings.OUTPUT_TOOL_LOG),
-                                       'r', method=True)
-        assert real_output.strip() == expected_output
+    def test_text_output(self):
+        output = OutputTool('text')
+        output.print_information(**self.get_data())
+
+        with open(os.path.join(self.WORKING_DIR, self.LOG_FILE)) as f:
+            assert f.read().strip() == self.get_expected_output()

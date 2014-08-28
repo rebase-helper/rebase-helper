@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # This tool helps you to rebase package to the latest version
-# Copyright (C) 2013 Petr Hracek
+# Copyright (C) 2013-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,24 +16,15 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Authors: Tomas Hozza <thozza@redhat.com>
 
-import tempfile
-import os
-import shutil
+from base_test import BaseTest
 from rebasehelper.logger import LoggerHelper
 
 
-class TestLoggerHelper(object):
+class TestLoggerHelper(BaseTest):
     """ RebaseHelperLogger class tests. """
-
-    def setup(self):
-        self.WORKING_DIR = tempfile.mkdtemp(prefix="rebase-helper-test-")
-        os.chdir(self.WORKING_DIR)
-
-    def teardown(self):
-        os.chdir(tempfile.gettempdir())
-        shutil.rmtree(self.WORKING_DIR)
-        self.WORKING_DIR = tempfile.gettempdir()
 
     def test_get_basic_logger(self):
         #  TODO: Add the test
