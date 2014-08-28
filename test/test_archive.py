@@ -37,13 +37,13 @@ class TestArchive(BaseTest):
     ARCHIVED_FILE_CONTENT = 'simple testing file'
 
     #  These files located in TEST_FILES_DIR will be copied into the testing environment
-    TEST_FILES = {
-        TAR_GZ: TAR_GZ,
-        TGZ: TGZ,
-        TAR_XZ: TAR_XZ,
-        TAR_BZ2: TAR_BZ2,
-        ZIP: ZIP
-    }
+    TEST_FILES = [
+        TAR_GZ,
+        TGZ,
+        TAR_XZ,
+        TAR_BZ2,
+        ZIP
+    ]
 
     def extraction_test(self, archive):
         """

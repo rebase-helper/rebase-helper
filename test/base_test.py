@@ -35,7 +35,7 @@ class BaseTest(object):
     TESTS_DIR = os.path.join(os.getcwd(), 'test')
     TEST_FILES_DIR = os.path.join(TESTS_DIR, 'testing_files')
 
-    TEST_FILES = {}
+    TEST_FILES = []
 
     def setup(self):
         """
@@ -44,7 +44,7 @@ class BaseTest(object):
         self.WORKING_DIR = tempfile.mkdtemp(prefix="rebase-helper-test-")
         os.chdir(self.WORKING_DIR)
         # copy files into the testing environment directory
-        for file_name in self.TEST_FILES.itervalues():
+        for file_name in self.TEST_FILES:
             shutil.copy(os.path.join(self.TEST_FILES_DIR, file_name), os.getcwd())
 
     def teardown(self):
