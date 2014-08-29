@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+#
 # This tool helps you to rebase package to the latest version
 # Copyright (C) 2013-2014 Red Hat, Inc.
 #
@@ -17,7 +17,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 #
-# Authors: Tomas Hozza <thozza@redhat.com>
+# Authors: Petr Hracek <phracek@redhat.com>
+#          Tomas Hozza <thozza@redhat.com>
 
 from base_test import BaseTest
 from rebasehelper.logger import LoggerHelper
