@@ -24,13 +24,13 @@ import os
 
 from base_test import BaseTest
 from rebasehelper.output_tool import OutputTool
+from rebasehelper.settings import REBASE_HELPER_RESULTS_LOG
 
 
 class TestOutputTool(BaseTest):
     """
     Class is used for testing OutputTool
     """
-    LOG_FILE = 'output.log'
 
     def get_data(self):
         data = {'old': {'patches_full': {0: ['mytest.patch', '-p1', 0],
@@ -76,5 +76,5 @@ Results from pkgcompare check could not be found."""
         output = OutputTool('text')
         output.print_information(**self.get_data())
 
-        with open(os.path.join(self.WORKING_DIR, self.LOG_FILE)) as f:
+        with open(os.path.join(self.WORKING_DIR, REBASE_HELPER_RESULTS_LOG)) as f:
             assert f.read().strip() == self.get_expected_output()
