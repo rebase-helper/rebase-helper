@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # This tool helps you to rebase package to the latest version
-# Copyright (C) 2013 Petr Hracek
+# Copyright (C) 2013-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,12 +16,16 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Authors: Petr Hracek <phracek@redhat.com>
+#          Tomas Hozza <thozza@redhat.com>
 
 
 import os
+
 from rebasehelper.utils import ProcessHelper
-from rebasehelper.utils import write_to_file
 from rebasehelper.logger import logger
+from rebasehelper.exceptions import RebaseHelperError
 
 check_tools = {}
 
@@ -76,7 +80,13 @@ class PkgDiffTool(BaseChecker):
         for key, value in tags.items():
             new_value = value if isinstance(value, str) else '\n'.join(value)
             lines.append('<{0}>\n{1}\n</{0}>\n'.format(key, new_value))
-        write_to_file(file_name, "w", lines)
+
+        try:
+            with open(file_name, 'w') as f:
+                f.writelines(lines)
+        except IOError:
+            raise RebaseHelperError("Unable to create XML file for pkgdiff tool '{0}'".format(file_name))
+
         return file_name
 
     @classmethod
@@ -125,7 +135,7 @@ class Checker(object):
 
     def run_check(self, **kwargs):
         """ Run the check """
-        logger.debug("Checker: Running tests on packages using '%s'" % self._tool_name)
+        logger.debug("Checker: Running tests on packages using '{0}'".format(self._tool_name))
         return self._tool.run_check(**kwargs)
 
     @classmethod
