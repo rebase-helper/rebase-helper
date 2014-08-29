@@ -138,8 +138,8 @@ class Application(object):
         Function fill dictionary with default data
         """
         # Get all tarballs before self.kwargs initialization
-        self.old_sources = self.spec_file.get_tarball()
-        new_sources = self.rebase_spec_file.get_tarball()
+        self.old_sources = self.spec_file.get_archive()
+        new_sources = self.rebase_spec_file.get_archive()
 
         # Fill self.kwargs with related items
         old_values = {}

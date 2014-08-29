@@ -25,7 +25,9 @@ from rebasehelper.specfile import SpecFile
 
 class TestSpecFile(BaseTest):
     """ SpecFile tests """
-    OLD_ARCHIVE = 'test-1.0.2.tar.xz'
+    NAME = 'test'
+    VERSION = '1.0.2'
+    OLD_ARCHIVE = NAME + '-' + VERSION + '.tar.xz'
     SPEC_FILE = 'test.spec'
     SOURCE_0 = 'test-source.sh'
     SOURCE_1 = 'source-tests.sh'
@@ -44,19 +46,51 @@ class TestSpecFile(BaseTest):
         super(TestSpecFile, self).setup()
         self.SPEC_FILE_OBJECT = SpecFile(self.SPEC_FILE, download=False)
 
+    def test_get_version(self):
+        assert self.SPEC_FILE_OBJECT.get_version() == self.VERSION
+
+    def test_set_version(self):
+        NEW_VERSION = '1.2.3.4.5'
+        self.SPEC_FILE_OBJECT.set_version(NEW_VERSION)
+        self.SPEC_FILE_OBJECT.save()
+        assert self.SPEC_FILE_OBJECT.get_version() == NEW_VERSION
+
+    def test_get_package_name(self):
+        assert self.SPEC_FILE_OBJECT.get_package_name() == self.NAME
+
+    def test__write_spec_file_to_disc(self):
+        new_content = [
+            'testing line 1\n',
+            'testing line 2\n'
+        ]
+        self.SPEC_FILE_OBJECT.spec_content = new_content
+        self.SPEC_FILE_OBJECT._write_spec_file_to_disc()
+        with open(self.SPEC_FILE) as spec:
+            assert new_content == spec.readlines()
+
+    def test__update_filtered_spec_content(self):
+        new_content_1 = [
+            'testing line 1\n',
+            '#testing line 2\n'
+        ]
+        expected_content_1 = ['testing line 1\n']
+        self.SPEC_FILE_OBJECT.spec_content = new_content_1
+        self.SPEC_FILE_OBJECT._update_filtered_spec_content()
+        assert self.SPEC_FILE_OBJECT.spec_filtered_content == expected_content_1
+
     def test_old_tarball(self):
-        assert self.SPEC_FILE_OBJECT.get_tarball() == self.OLD_ARCHIVE
+        assert self.SPEC_FILE_OBJECT.get_archive() == self.OLD_ARCHIVE
 
     def test_all_sources(self):
         sources = [self.SOURCE_0, self.SOURCE_1, self.OLD_ARCHIVE]
         sources = [os.path.join(self.WORKING_DIR, f) for f in sources]
-        assert len(set(sources).intersection(set(self.SPEC_FILE_OBJECT._get_all_sources()))) == 3
+        assert len(set(sources).intersection(set(self.SPEC_FILE_OBJECT.get_sources()))) == 3
 
-    def test_list_patches(self):
-        expected_patches = {1: [os.path.join(self.WORKING_DIR, self.PATCH_1), ' ', 0, False],
+    def test_get_patches(self):
+        expected_patches = {1: [os.path.join(self.WORKING_DIR, self.PATCH_1), '', 0, False],
                             2: [os.path.join(self.WORKING_DIR, self.PATCH_2), '-p1', 1, False],
                             3: [os.path.join(self.WORKING_DIR, self.PATCH_3), '-p1', 2, False]}
-        assert self.SPEC_FILE_OBJECT._get_patches() == expected_patches
+        assert self.SPEC_FILE_OBJECT.get_patches() == expected_patches
 
     def test_get_requires(self):
         expected = set(['openssl-devel', 'pkgconfig', 'texinfo', 'gettext', 'autoconf'])
