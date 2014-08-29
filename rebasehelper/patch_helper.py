@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # This tool helps you to rebase package to the latest version
-# Copyright (C) 2013 Petr Hracek
+# Copyright (C) 2013-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,16 +16,18 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Authors: Petr Hracek <phracek@redhat.com>
+#          Tomas Hozza <thozza@redhat.com>
 
 import os
 import sys
 import random
 import string
-
+from StringIO import StringIO
 
 from rebasehelper import settings
 from rebasehelper.logger import logger
-from rebasehelper.utils import get_temporary_name, remove_temporary_name, get_content_file
 from rebasehelper.utils import check_empty_patch, get_message
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.specfile import get_rebase_name
@@ -99,26 +101,6 @@ class PatchTool(PatchBase):
             return False
 
     @classmethod
-    def run_process(cls, cmd, cwd=None, input_name=None, output_name=None):
-        """
-        Function executes a process and
-        returns return code and contain of the file
-        :param cmd:
-        :param cwd:
-        :param input_name:
-        :param output_name:
-        :return:
-        """
-        temp_name = output_name
-        if not output_name:
-            temp_name = get_temporary_name()
-        ret_code = ProcessHelper.run_subprocess_cwd(cmd, cwd=cwd, input=input_name, output=temp_name)
-        output_data = get_content_file(temp_name, 'r', method=True)
-        if not output_name:
-            remove_temporary_name(temp_name)
-        return ret_code, output_data
-
-    @classmethod
     def patch_command(cls, patch_name, patch_flags):
         """
         Patch command whom patches as the
@@ -133,7 +115,12 @@ class PatchTool(PatchBase):
         cmd.append('--fuzz={0}'.format(cls.fuzz))
         cmd.append('--force')  # don't ask questions
 
-        ret_code, cls.output_data = cls.run_process(cmd, cwd=cls.source_dir, input_name=patch_name)
+        output = StringIO()
+        ret_code = ProcessHelper.run_subprocess_cwd(cmd=cmd,
+                                                    cwd=cls.source_dir,
+                                                    input=patch_name,
+                                                    output=output)
+        cls.output_data = output.readlines()
         return ret_code
 
     @classmethod
@@ -142,9 +129,13 @@ class PatchTool(PatchBase):
         Function gets a lists of patched files from patch command.
         """
         cmd = ['lsdiff', patch_name]
-        ret_code, cls.patched_files = cls.run_process(cmd, cwd=cls.source_dir)
+        output = StringIO()
+        ret_code = ProcessHelper.run_subprocess_cwd(cmd=cmd,
+                                                    cwd=cls.source_dir,
+                                                    output=output)
         if ret_code != 0:
             return None
+        cls.patched_files = output.readlines()
         failed_files = []
         applied_rules = ['succeeded']
         source_file = ""
@@ -171,9 +162,9 @@ class PatchTool(PatchBase):
         cmd.append(os.path.basename(cls.new_sources))
         cmd.append('.' + cls.suffix)
 
-        ret_code, gendiff_output = cls.run_process(cmd,
-                                                   cwd=os.path.join(os.getcwd(), settings.NEW_SOURCES_DIR),
-                                                   output_name=patch)
+        ret_code = ProcessHelper.run_subprocess_cwd(cmd=cmd,
+                                                    cwd=os.path.join(os.getcwd(), settings.NEW_SOURCES_DIR),
+                                                    output=patch)
         return ret_code
 
     @classmethod
@@ -195,7 +186,7 @@ class PatchTool(PatchBase):
         logger.debug('Input to MergeTool: {0}'.format(cls.kwargs))
         diff_cls = Diff(cls.kwargs.get('diff_tool', None))
         # Running Merge Tool
-        ret_code = diff_cls.mergetool(**cls.kwargs)
+        diff_cls.mergetool(**cls.kwargs)
 
         # Generating diff
         cls.generate_diff(rebased_patch)
