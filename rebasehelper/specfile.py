@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # This tool helps you to rebase package to the latest version
-# Copyright (C) 2013 Petr Hracek
+# Copyright (C) 2013-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,6 +16,9 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Authors: Petr Hracek <phracek@redhat.com>
+#          Tomas Hozza <thozza@redhat.com>
 
 try:
     from functools import reduce
@@ -30,9 +33,9 @@ import re
 from rebasehelper.utils import DownloadHelper
 from rebasehelper.logger import logger
 from rebasehelper import settings
-from rebasehelper.utils import get_content_file, write_to_file
 from rebasehelper.utils import check_empty_patch
 from rebasehelper.archive import Archive
+from rebasehelper.exceptions import RebaseHelperError
 
 
 PATCH_PREFIX = '%patch'
@@ -125,8 +128,11 @@ class SpecFile(object):
         """
         Function reads a content rebase.spec file
         """
-        lines = get_content_file(self.spec_file, "r", method=True)
-        lines = [x for x in lines if not x.startswith('#')]
+        try:
+            with open(self.spec_file) as f:
+                lines = [x for x in f.readlines() if not x.startswith('#')]
+        except IOError:
+            raise RebaseHelperError("Unable to open and read SPEC file '{0}'".format(self.spec_file))
         return lines
 
     def _get_patches_flags(self):
@@ -223,6 +229,17 @@ class SpecFile(object):
         if not os.path.exists(download_name):
             ret_code = DownloadHelper.download_source(source_name, download_name)
 
+    def _write_spec_file_to_disc(self):
+        """
+        Write the current SPEC file to the disc
+        """
+        logger.debug("SpecFile: Writing SPEC file '{0}' to the disc".format(self.spec_file))
+        try:
+            with open(self.spec_file, "w") as f:
+                f.writelines(self.spec_content)
+        except IOError:
+            raise RebaseHelperError("Unable to write updated data to SPEC file '{0}'".format(self.spec_file))
+
     def _get_all_sources(self):
         """
         Function returns all sources mentioned in specfile
@@ -284,7 +301,7 @@ class SpecFile(object):
             logger.debug("SpecFile: Updating version in SPEC from '{0}' with '{1}'".format(self._get_spec_version(),
                                                                                            version))
             self.spec_content[index] = line.replace(self._get_spec_version(), version)
-        write_to_file(self.spec_file, "w", self.spec_content)
+        self.write_updated_patches()
         self._update_data()
 
     def set_spec_version(self):
@@ -350,6 +367,8 @@ class SpecFile(object):
             self.spec_content[index] = comment + ' '.join(fields[:-1]) + ' ' + os.path.basename(patch_name) + '\n'
         self._remove_empty_patches(self.spec_content, removed_patches)
 
-        write_to_file(self.spec_file, "w", self.spec_content)
+        self._write_spec_file_to_disc()
+
+        #  TODO: The following method reads the SPEC content once again - need rework
         self._update_data()
         return update_patches
