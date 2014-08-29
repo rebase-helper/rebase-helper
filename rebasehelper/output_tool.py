@@ -136,7 +136,7 @@ class TextOutputTool(BaseOutputTool):
         """
         dir_name = kwargs.get('results_dir', None)
         if dir_name is not None:
-            output_log_file = os.path.join(dir_name, settings.OUTPUT_TOOL_LOG)
+            output_log_file = os.path.join(dir_name, settings.REBASE_HELPER_RESULTS_LOG)
             final_message = "Summary output is also available in log {0}\n".format(output_log_file)
             try:
                 LoggerHelper.add_file_handler(logger_output, output_log_file)

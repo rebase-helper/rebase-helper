@@ -32,5 +32,5 @@ NEW_SOURCES_DIR = os.path.join(REBASE_HELPER_WORKSPACE_DIR, NEW_SOURCES)
 # The variable for access to full information about patches
 FULL_PATCHES = 'patches_full'
 
-REBASE_HELPER_LOG = 'rebase-helper.log'
-OUTPUT_TOOL_LOG = 'output.log'
+REBASE_HELPER_DEBUG_LOG = REBASE_HELPER_PREFIX + 'debug.log'
+REBASE_HELPER_RESULTS_LOG = REBASE_HELPER_PREFIX + 'results.log'

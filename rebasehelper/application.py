@@ -90,10 +90,10 @@ class Application(object):
 
     def _add_debug_log_file(self):
         """
-
+        Add the application wide debug log file
         :return:
         """
-        debug_log_file = os.path.join(self.results_dir, settings.REBASE_HELPER_LOG)
+        debug_log_file = os.path.join(self.results_dir, settings.REBASE_HELPER_DEBUG_LOG)
         try:
             LoggerHelper.add_file_handler(logger,
                                           debug_log_file,
