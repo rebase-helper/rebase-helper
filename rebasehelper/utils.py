@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 # This tool helps you to rebase package to the latest version
-# Copyright (C) 2013 Petr Hracek
+# Copyright (C) 2013-2014 Red Hat, Inc.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,6 +16,9 @@
 # You should have received a copy of the GNU General Public License along
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Authors: Petr Hracek <phracek@redhat.com>
+#          Tomas Hozza <thozza@redhat.com>
 
 import os
 import fnmatch
@@ -24,6 +27,7 @@ import tempfile
 #import pycurl
 import shutil
 import rpm
+from StringIO import StringIO
 
 from rebasehelper.logger import logger
 from rebasehelper import settings
@@ -35,51 +39,12 @@ def check_empty_patch(patch_name):
     """
     cmd = ["lsdiff"]
     cmd.append(patch_name)
-    temp_name = get_temporary_name()
-    ret_code = ProcessHelper.run_subprocess(cmd, output=temp_name)
-    if ret_code != 0:
-        return False
-    lines = get_content_file(temp_name, 'r', method=True)
-    remove_temporary_name(temp_name)
-    if not lines:
+    output = StringIO()
+    ret_code = ProcessHelper.run_subprocess(cmd, output=output)
+    if ret_code == 0 and not output.readlines():
         return True
     else:
         return False
-
-
-def get_temporary_name():
-    """
-    Function returns a temporary name
-    on the base of settings.REBASE_HELPER_PREFIX
-    :return:
-    """
-    handle, filename = tempfile.mkstemp(prefix=settings.REBASE_HELPER_PREFIX, text=True)
-    os.close(handle)
-    return filename
-
-
-def remove_temporary_name(name):
-    """
-    Function removes generated temporary name
-    :param name: temporary name
-    :return:
-    """
-    if os.path.exists(name):
-        os.unlink(name)
-
-
-def get_content_file(path, perms, method=False):
-    """
-    Function returns a file content
-    if method is False then file is read by function read
-    if method is True then file is read by function readlines
-    """
-    try:
-        with open(path, perms) as inputfile:
-            data = inputfile.read() if not method else inputfile.readlines()
-        return data
-    except IOError:
-        raise IOError("Unable to open file '{0}'".format(path))
 
 
 def get_value_from_kwargs(kwargs, field, source='old'):
@@ -97,24 +62,6 @@ def get_value_from_kwargs(kwargs, field, source='old'):
     if field not in kwargs[source]:
         raise
     return kwargs[source][field]
-
-
-def write_to_file(path, perms, data):
-    """
-    Function writes a data to file
-    :param path: path to file
-    :param perms: permission like "w"
-    :param data: string or list
-    :return:
-    """
-    try:
-        with open(path, perms) as outputfile:
-            if isinstance(data, str):
-                outputfile.write(data)
-            else:
-                outputfile.writelines(data)
-    except IOError:
-        raise IOError("Unable to write data to file '{0}'".format(path))
 
 
 def get_message(message="", any_input=False):
