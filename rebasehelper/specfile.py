@@ -75,6 +75,7 @@ class SpecFile(object):
     sources = None
     source_files = None
     patches = None
+    parsed_spec_file = ""
 
     def __init__(self, path, sources=None, download=True):
         self.path = path
@@ -104,6 +105,7 @@ class SpecFile(object):
         self.patches = [x for x in self.sources if x[2] == 2]
         # All source file mentioned in SPEC file Source[0-9]*
         self.source_files = [x for x in self.sources if x[2] == 0 or x[2] == 1]
+        self.sections = self._split_sections(['%files', '%changelog'])
 
     def get_patch_option(self, line):
         """
@@ -116,6 +118,47 @@ class SpecFile(object):
             return spl[0], ''
         else:
             return spl[0], spl[1]
+
+    def _get_specific_section(self, s_section, e_section):
+        """
+        remove substring from string surrounded by regex
+        Regexes are tuples: (regex, remove from start pos?), e.g.:
+          ('<div id="main-table">', False)
+        """
+        s_search = re.search(s_section, self.parsed_spec_file)
+        if not s_search:
+            return None
+        else:
+            s_pos = s_search.start()
+
+        if e_section:
+            e_search = re.search(e_section, self.parsed_spec_file)
+            e_pos = e_search.start()
+            return self.parsed_spec_file[s_pos:e_pos]
+        else:
+            return self.parsed_spec_file[s_pos:]
+
+    def _split_sections(self, section=[]):
+        # rpm-python does not provide any directive for getting %files section
+        # Therefore we should do that workaround
+        cmd = ['rpmspec', '--parse', self.spec_file]
+        temp_name = get_temporary_name()
+        ret_code = ProcessHelper.run_subprocess(cmd, output=temp_name)
+        self.parsed_spec_file = get_content_file(temp_name, 'r', method=False)
+        headers_re = [re.compile('^' + x + '\s*\w*', re.M) for x in section]
+
+        section_starts = []
+        for header in headers_re:
+            for match in header.findall(self.parsed_spec_file):
+                section_starts.append(match)
+        sections = []
+        for i in range(len(section_starts)):
+            if len(section_starts) > i + 1:
+                curr_section = self._get_specific_section(section_starts[i], section_starts[i+1])
+            else:
+                curr_section = self._get_specific_section(section_starts[i], None)
+            sections.append((section_starts[i], curr_section))
+        return sections
 
     def _get_patch_number(self, fields):
         """

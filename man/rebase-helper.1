@@ -1,0 +1,65 @@
+.\" Copyright Petr Hracek, 2014
+.\"
+.\" This page is distributed under GPL.
+.\"
+.TH REBASE-HELPER 1 2014-09-04 "" "Linux User's Manual"
+.SH NAME
+rebase-helper \- helps you to rebase package to the latest upstream version
+
+.SH SYNOPSIS
+.B rebase-helper
+[\fIOPTION\fR]... \fISOURCES\fR
+
+.SH DESCRIPTION
+\fBrebase-helper\fP is the tool which helps you to rebase package
+to the latest upstream version defined by SOURCES argument
+
+Mandatory arguments to long options are mandatory for short options too.
+.TP
+\fB\-b\fR, \fB\-\-build-only\fR
+build SRPM and RPMs
+
+.TP
+\fB\-p\fR, \fB\-\-patch-only\fR
+apply patches to new upstream version
+
+.TP
+\fB\-\-buildtool\fR=\fIBUILDTOOL\fR
+tool for building old and new sources.
+Supported [mock, rpmbuild].
+
+.TP
+\fB\-\-patchtool\fR=\fIPATHTOOL\fR
+tool for patching new sources with old patches.
+Supported [patch].
+
+.TP
+\fB\-\-difftool\fR=\fIDIFFTOOL\fR
+tool for comparing old and new patched sources.
+Supported [meld].
+
+.TP
+\fB\-\-pkgcomparetool\fR=\fIPKGCOMPARETOOL\fR
+select a tool which compares both RPM packages.
+Supported [pkgdiff].
+
+.TP
+\fB\-\-outputtool\fR=\fIOUTPUTTOOL\fR
+select a tool for showing information from rebase-helper process.
+Supported [text].
+
+.TP
+\fB\-\-not\-download\-sources\fr
+suppress download sources from web
+
+.TP
+\fB\-c\fR, \fB\-\-continue\fR
+select the choice if you want to continue with rebase previously interrupted
+
+.TP
+\fB\-v\fR
+output is more verbose
+
+.TP
+\fB\-w\fR, \fB\-\-keep\-workspace\fR
+select the choice if you want to keep workspace directory after finishing
