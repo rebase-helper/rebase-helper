@@ -251,7 +251,8 @@ class MockBuildTool(BuildToolBase):
                 os.unlink(tmp_srpm)
 
         if rpms is None:
-            raise RuntimeError("Building RPMs failed!")
+            # We need to be inform what directory to analyze and what spec file failed
+            raise RuntimeError("Building RPMs failed!", rpm_results_dir, spec)
         else:
             logger.info("Building RPM finished successfully")
 

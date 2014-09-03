@@ -30,7 +30,8 @@ try:
 except ImportError:
     pass
 import re
-from rebasehelper.utils import DownloadHelper
+from StringIO import StringIO
+from rebasehelper.utils import DownloadHelper, ProcessHelper
 from rebasehelper.logger import logger
 from rebasehelper import settings
 from rebasehelper.utils import check_empty_patch
@@ -105,7 +106,7 @@ class SpecFile(object):
         self.patches = [x for x in self.sources if x[2] == 2]
         # All source file mentioned in SPEC file Source[0-9]*
         self.source_files = [x for x in self.sources if x[2] == 0 or x[2] == 1]
-        self.sections = self._split_sections(['%files', '%changelog'])
+        self.rpm_sections = self._split_spec_sections(['%files', '%changelog'])
 
     def get_patch_option(self, line):
         """
@@ -119,11 +120,9 @@ class SpecFile(object):
         else:
             return spl[0], spl[1]
 
-    def _get_specific_section(self, s_section, e_section):
+    def _find_spec_section(self, s_section, e_section):
         """
         remove substring from string surrounded by regex
-        Regexes are tuples: (regex, remove from start pos?), e.g.:
-          ('<div id="main-table">', False)
         """
         s_search = re.search(s_section, self.parsed_spec_file)
         if not s_search:
@@ -138,13 +137,13 @@ class SpecFile(object):
         else:
             return self.parsed_spec_file[s_pos:]
 
-    def _split_sections(self, section=[]):
+    def _split_spec_sections(self, section=[]):
         # rpm-python does not provide any directive for getting %files section
         # Therefore we should do that workaround
-        cmd = ['rpmspec', '--parse', self.spec_file]
-        temp_name = get_temporary_name()
-        ret_code = ProcessHelper.run_subprocess(cmd, output=temp_name)
-        self.parsed_spec_file = get_content_file(temp_name, 'r', method=False)
+        cmd = ['rpmspec', '--parse', self.path]
+        output = StringIO()
+        ret_code = ProcessHelper.run_subprocess(cmd=cmd, output=output)
+        self.parsed_spec_file = ''.join(output.readlines())
         headers_re = [re.compile('^' + x + '\s*\w*', re.M) for x in section]
 
         section_starts = []
@@ -154,11 +153,20 @@ class SpecFile(object):
         sections = []
         for i in range(len(section_starts)):
             if len(section_starts) > i + 1:
-                curr_section = self._get_specific_section(section_starts[i], section_starts[i+1])
+                curr_section = self._find_spec_section(section_starts[i], section_starts[i+1])
             else:
-                curr_section = self._get_specific_section(section_starts[i], None)
-            sections.append((section_starts[i], curr_section))
+                curr_section = self._find_spec_section(section_starts[i], None)
+            sections.append((section_starts[i], curr_section.split('\n')))
+        # Now remove %changelog and %files debuginfo section
+        sections = [x for x in sections if not x[0].startswith('%changelog')]
+        sections = [x for x in sections if not x[0].startswith('%files debuginfo')]
         return sections
+
+    def get_files_sections(self):
+        pkg_files = []
+        for section in self.rpm_sections:
+            pkg_files.extend([f for f in section[1] if f.startswith('/')])
+        return pkg_files
 
     def _get_patch_number(self, fields):
         """

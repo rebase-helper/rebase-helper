@@ -33,6 +33,7 @@ from rebasehelper.checker import Checker
 from rebasehelper.build_helper import Builder
 from rebasehelper.patch_helper import Patch
 from rebasehelper.exceptions import RebaseHelperError
+from rebasehelper.build_log_analyzer import BuildLogAnalyzer
 
 
 class Application(object):
@@ -106,7 +107,6 @@ class Application(object):
         else:
             self.debug_log_file = debug_log_file
 
-
     def _prepare_spec_objects(self):
         """
         Prepare spec files and initialize objects
@@ -120,6 +120,7 @@ class Application(object):
         self.rebase_spec_file = SpecFile(self.rebase_spec_file_path,
                                          sources=self.conf.sources,
                                          download=not self.conf.not_download_sources)
+        self.kwargs['file_list'] = self.spec_file.get_files_sections()
 
     def _find_old_data(self):
         """
@@ -318,6 +319,16 @@ class Application(object):
         try:
             builder.build_packages(**self.kwargs)
         except RuntimeError as run_e:
+            dir_name = run_e.args[1]
+            spec_name = run_e.args[2]
+            files = BuildLogAnalyzer.parse_log(dir_name, 'build.log')
+            if files['missing']:
+                logger.warning('Following files:\n{f}\nare missing in {spec} .'.
+                               format(f='\n'.join(files['missing']),
+                                      spec=spec_name))
+            if files['sources']:
+                logger.warning('Following files:\n{f}\nare missing in sources.'.
+                               format(f='\n'.join(files['sources'])))
             raise RebaseHelperError(run_e.message)
         logger.info('Building packages done')
 
