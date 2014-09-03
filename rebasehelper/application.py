@@ -311,10 +311,9 @@ class Application(object):
             raise RebaseHelperError('{0}. Supported build tools are {1}'.format(
                 ni_e.message, Builder.get_supported_tools()))
 
-        old_patches = get_value_from_kwargs(self.kwargs, settings.FULL_PATCHES)
-        self.kwargs['old']['patches'] = [p[0] for p in old_patches.itervalues()]
-        new_patches = get_value_from_kwargs(self.kwargs, settings.FULL_PATCHES, source='new')
-        self.kwargs['new']['patches'] = [p[0] for p in new_patches.itervalues()]
+        for version in ['old', 'new']:
+            patches = get_value_from_kwargs(self.kwargs, settings.FULL_PATCHES, source=version)
+            self.kwargs[version]['patches'] = [p[0] for p in patches.itervalues()]
 
         try:
             builder.build_packages(**self.kwargs)
