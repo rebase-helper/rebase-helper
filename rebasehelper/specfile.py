@@ -390,8 +390,9 @@ class SpecFile(object):
             old_source_name = self._get_full_source_name()
             self.new_sources = get_source_name(old_source_name)
             return self.new_sources
+        # TODO: We should move the version extraction code to a separate method and add extensive tests!
         tarball_name = self.new_sources.replace(archive_ext, '')
-        regex = re.compile(r'^\w+-?_?(.*)')
+        regex = re.compile(r'^\w+-?_?v?(.*)')
         match = re.search(regex, tarball_name)
         if match:
             new_version = match.group(1)
