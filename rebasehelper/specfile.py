@@ -137,7 +137,7 @@ class SpecFile(object):
         else:
             return self.parsed_spec_file[s_pos:]
 
-    def _split_spec_sections(self, section=[]):
+    def _split_spec_sections(self, section):
         # rpm-python does not provide any directive for getting %files section
         # Therefore we should do that workaround
         cmd = ['rpmspec', '--parse', self.path]
