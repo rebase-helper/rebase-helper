@@ -142,7 +142,7 @@ class SpecFile(object):
         # Therefore we should do that workaround
         cmd = ['rpmspec', '--parse', self.path]
         output = StringIO()
-        ret_code = ProcessHelper.run_subprocess(cmd=cmd, output=output)
+        ProcessHelper.run_subprocess(cmd=cmd, output=output)
         self.parsed_spec_file = ''.join(output.readlines())
         headers_re = [re.compile('^' + x + '\s*\w*', re.M) for x in section]
 
