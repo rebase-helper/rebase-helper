@@ -30,7 +30,10 @@ try:
 except ImportError:
     pass
 import re
-from StringIO import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 from rebasehelper.utils import DownloadHelper, ProcessHelper
 from rebasehelper.logger import logger
 from rebasehelper import settings
@@ -334,9 +337,10 @@ class SpecFile(object):
                         sec_content = regex.sub('\\1' + '\n'.join(files) + sep,
                                                 sec_content)
                     else:
-                        sec_content = begin_comment + sep
-                        sec_content += '\n'.join(files) + sep
-                        sec_content += end_comment + sep
+                        new_content = begin_comment + sep
+                        new_content += '\n'.join(files) + sep
+                        new_content += end_comment + sep
+                        sec_content = new_content + sec_content
                     self.rpm_sections[key] = (sec_name, sec_content)
                     break
 

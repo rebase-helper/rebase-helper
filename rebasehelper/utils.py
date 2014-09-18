@@ -27,7 +27,10 @@ import tempfile
 #import pycurl
 import shutil
 import rpm
-from StringIO import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 from rebasehelper.logger import logger
 from rebasehelper import settings

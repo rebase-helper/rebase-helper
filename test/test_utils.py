@@ -24,7 +24,10 @@ import os
 import tempfile
 import random
 import string
-import StringIO
+try:
+    import StringIO
+except ImportError:
+    from io import StringIO
 
 from .base_test import BaseTest
 from rebasehelper.utils import ProcessHelper
