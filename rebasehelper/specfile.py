@@ -44,7 +44,6 @@ from rebasehelper.exceptions import RebaseHelperError
 
 PATCH_PREFIX = '%patch'
 
-
 def get_source_name(name):
     """
     Function returns a source name from full URL address
@@ -537,3 +536,36 @@ class SpecFile(object):
         self._write_spec_file_to_disc()
         #  Update internal variables
         self._update_data()
+
+    @staticmethod
+    def extract_version_from_archive_name(archive_path, source_string=''):
+        """
+        Method extracts the version from archive name based on the source string from SPEC file.
+
+        :param archive_path: archive name or path with archive name from which to extract the version
+        :param source_string: Source string from SPEC file used to construct version extraction regex
+        :return: string with extracted version or None if extraction failed
+        """
+        fallback_regex_str = '^\w+-?_?v?([.0-9]*).*({0})'.format('|'.join(Archive.get_supported_archives()))
+        # match = re.search(regex, tarball_name)
+        name = os.path.basename(archive_path)
+        url_base = get_source_name(source_string)
+
+        logger.debug("Extracting version from '{0}' using '{1}'".format(name, url_base))
+        regex_str = re.sub(r'%{version}', r'([.0-9]*).*', url_base, flags=re.IGNORECASE)
+
+        # if no substitution was made, use the fallback regex
+        if regex_str == url_base:
+            logger.debug('Using fallback regex to extract version from archive name.')
+            regex_str = fallback_regex_str
+
+        logger.debug("Extracting version using regex '{0}'".format(regex_str))
+        regex = re.compile(regex_str)
+        match = regex.search(name)
+        if match:
+            version = match.group(1)
+            logger.debug("Extracted version '{0}'".format(version))
+            return version
+        else:
+            logger.debug('Failed to extract version from archive name!')
+            return None
