@@ -20,7 +20,7 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
-from base_test import BaseTest
+from .base_test import BaseTest
 from rebasehelper.logger import LoggerHelper
 
 

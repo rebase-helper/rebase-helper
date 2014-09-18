@@ -22,7 +22,7 @@
 
 import os
 
-from base_test import BaseTest
+from .base_test import BaseTest
 from rebasehelper.specfile import SpecFile
 
 

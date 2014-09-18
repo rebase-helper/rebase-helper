@@ -21,7 +21,7 @@
 #          Tomas Hozza <thozza@redhat.com>
 
 import os
-from base_test import BaseTest
+from .base_test import BaseTest
 from rebasehelper.archive import Archive
 
 

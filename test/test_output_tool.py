@@ -22,7 +22,7 @@
 
 import os
 
-from base_test import BaseTest
+from .base_test import BaseTest
 from rebasehelper.output_tool import OutputTool
 from rebasehelper.settings import REBASE_HELPER_RESULTS_LOG
 

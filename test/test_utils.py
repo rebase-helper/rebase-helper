@@ -26,7 +26,7 @@ import random
 import string
 import StringIO
 
-from base_test import BaseTest
+from .base_test import BaseTest
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.utils import PathHelper
 from rebasehelper.utils import TemporaryEnvironment
