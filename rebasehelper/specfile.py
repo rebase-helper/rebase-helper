@@ -77,6 +77,17 @@ class SpecFile(object):
     source_files = None
     patches = None
     parsed_spec_file = ""
+    rpm_sections = {}
+
+    defined_sections = ['%headers',
+                        '%files',
+                        '%changelog',
+                        '%build',
+                        '%check',
+                        '%install',
+                        '%description',
+                        '%package',
+                        '%prep']
 
     def __init__(self, path, sources=None, download=True):
         self.path = path
@@ -106,7 +117,7 @@ class SpecFile(object):
         self.patches = [x for x in self.sources if x[2] == 2]
         # All source file mentioned in SPEC file Source[0-9]*
         self.source_files = [x for x in self.sources if x[2] == 0 or x[2] == 1]
-        self.rpm_sections = self._split_spec_sections(['%files', '%changelog'])
+        self.rpm_sections = self._split_sections()
 
     def get_patch_option(self, line):
         """
@@ -120,52 +131,68 @@ class SpecFile(object):
         else:
             return spl[0], spl[1]
 
-    def _find_spec_section(self, s_section, e_section):
-        """
-        remove substring from string surrounded by regex
-        """
-        s_search = re.search(s_section, self.parsed_spec_file)
-        if not s_search:
-            return None
-        else:
-            s_pos = s_search.start()
+    def _create_spec_from_sections(self):
+        # Spec file has defined order
+        # First we write a header
+        new_spec_file = ""
 
-        if e_section:
-            e_search = re.search(e_section, self.parsed_spec_file)
-            e_pos = e_search.start()
-            return self.parsed_spec_file[s_pos:e_pos]
-        else:
-            return self.parsed_spec_file[s_pos:]
+        try:
+            for key, value in sorted(self.rpm_sections.iteritems()):
+                sec_name, section = value
+                if '%header' in sec_name:
+                    new_spec_file = section
+                else:
+                    new_spec_file += sec_name + '\n' + section
+        except KeyError:
+            raise RebaseHelperError("Unable to find a specific section in SPEC file")
 
-    def _split_spec_sections(self, section):
+        try:
+            with open(self.path, 'w') as f:
+                f.write(new_spec_file)
+        except IOError:
+            raise RebaseHelperError("Unable to open and write new SPEC file '{0}'".format(self.path))
+
+    def _split_sections(self):
+        """
+        Function split spec file to defined sections
+        :return: position and content of section in format like
+            [0, (%files, <all rows within %files section>,
+             1, (%files debug, <all rows within %files debug section>]
+        """
         # rpm-python does not provide any directive for getting %files section
         # Therefore we should do that workaround
-        cmd = ['rpmspec', '--parse', self.path]
-        output = StringIO()
-        ProcessHelper.run_subprocess(cmd=cmd, output=output)
-        self.parsed_spec_file = ''.join(output.readlines())
-        headers_re = [re.compile('^' + x + '\s*\w*', re.M) for x in section]
+        self.parsed_spec_file = ''.join(self.spec_content)
+        headers_re = [re.compile('^' + x, re.M) for x in self.defined_sections]
 
         section_starts = []
+        # First of all we need to find a specific sections
         for header in headers_re:
-            for match in header.findall(self.parsed_spec_file):
-                section_starts.append(match)
-        sections = []
+            for match in header.finditer(self.parsed_spec_file):
+                section_starts.append(match.start())
+
+        section_starts.sort()
+        header_end = section_starts[0] if section_starts else len(self.parsed_spec_file)
+        sections = {}
+        sections[0] = ('%header', self.parsed_spec_file[:header_end])
+
         for i in range(len(section_starts)):
+            # We cut a relevant section to field
             if len(section_starts) > i + 1:
-                curr_section = self._find_spec_section(section_starts[i], section_starts[i+1])
+                curr_section = self.parsed_spec_file[section_starts[i]:section_starts[i+1]]
             else:
-                curr_section = self._find_spec_section(section_starts[i], None)
-            sections.append((section_starts[i], curr_section.split('\n')))
-        # Now remove %changelog and %files debuginfo section
-        sections = [x for x in sections if not x[0].startswith('%changelog')]
-        sections = [x for x in sections if not x[0].startswith('%files debuginfo')]
+                curr_section = self.parsed_spec_file[section_starts[i]:]
+            for header in headers_re:
+                if header.match(curr_section):
+                    fields = curr_section.split('\n')
+                    sections[i+1] = (fields[0], '\n'.join(fields[1:]))
         return sections
 
     def get_files_sections(self):
         pkg_files = []
-        for section in self.rpm_sections:
-            pkg_files.extend([f for f in section[1] if f.startswith('/')])
+        for key, section in self.rpm_sections.iteritems():
+            tag, sec = section
+            if '%files' in tag:
+                pkg_files.extend([f for f in sec.split('\n') if f.startswith('/')])
         return pkg_files
 
     def _get_patch_number(self, fields):
@@ -273,6 +300,55 @@ class SpecFile(object):
                                 patch_flags[num][1], self.is_patch_git_generated(full_patch_name)]
         # list of [name, flags, index, git_generated]
         return patches
+
+    def _update_spec_path(self, files):
+        type_mapping = {'/usr/lib': '%{_libdir}',
+                        '/usr/bin': '%{_bindir}',
+                        '/usr/sbin': '%{_sbindir}',
+                        '/usr/include': '%{_includedir}'}
+        for index, filename in enumerate(files):
+            for key, value in type_mapping.iteritems():
+                if filename.startswith(key):
+                    fields = filename.split('/')[3:]
+                    files[index] = value + '/' + '/'.join(fields)
+        return files
+
+    def correct_spec(self, files):
+        """
+        Function repairs spec file according to new sources.
+        :param files:
+        :return:
+        """
+        begin_comment = '#BEGIN THIS MODIFIED BY REBASE-HELPER'
+        end_comment = '#END THIS MODIFIED BY REBASE-HELPER'
+        sep = '\n'
+        # Files which are missing in SPEC file.
+        if 'missing' in files:
+            files = self._update_spec_path(files['missing'])
+            # TODO TRY TO USE REGEX
+            for key, value in self.rpm_sections.iteritems():
+                sec_name, sec_content = value
+                match = re.search(r'^%files\s*$', sec_name)
+                if match:
+                    if begin_comment in sec_content:
+                        regex = re.compile('(^' + begin_comment + '\s*)')
+                        sec_content = regex.sub('\\1' + '\n'.join(files) + sep,
+                                                sec_content)
+                    else:
+                        sec_content = begin_comment + sep
+                        sec_content += '\n'.join(files) + sep
+                        sec_content + end_comment + sep
+                    self.rpm_sections[key] = (sec_name, sec_content)
+                    break
+
+        # Files which does not exist in SOURCES.
+        # Should be removed from SPEC file.
+        if 'sources' in files:
+            files = self._update_spec_path(files['sources'])
+            for index, line in enumerate(self.spec_content):
+                if [f for f in files if f in line]:
+                    self.spec_content[index] = begin_comment + line + end_comment
+        self._create_spec_from_sections()
 
     def _download_source(self, source_name, destination):
         """

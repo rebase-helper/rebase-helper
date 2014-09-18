@@ -313,23 +313,35 @@ class Application(object):
 
         for version in ['old', 'new']:
             patches = get_value_from_kwargs(self.kwargs, settings.FULL_PATCHES, source=version)
-            self.kwargs[version]['patches'] = [p[0] for p in patches.itervalues()]
+            build_dict = self.kwargs[version]
+            build_dict['patches'] = [p[0] for p in patches.itervalues()]
+            build_dict['results_dir'] = os.path.join(self.results_dir, version)
 
-        try:
-            builder.build_packages(**self.kwargs)
-        except RuntimeError as run_e:
-            dir_name = run_e.args[1]
-            spec_name = run_e.args[2]
-            files = BuildLogAnalyzer.parse_log(dir_name, 'build.log')
-            if files['missing']:
-                logger.warning('Following files:\n{f}\nare missing in {spec} .'.
-                               format(f='\n'.join(files['missing']),
-                                      spec=spec_name))
-            if files['sources']:
-                logger.warning('Following files:\n{f}\nare missing in sources.'.
-                               format(f='\n'.join(files['sources'])))
-            raise RebaseHelperError(run_e.message)
-        logger.info('Building packages done')
+            build_test = 0
+            results_dir = build_dict.get('results_dir', '')
+            while int(build_test) != 1:
+                try:
+                    builder.build_packages(**build_dict)
+                    build_test = 1
+                except RuntimeError as run_e:
+                    files = BuildLogAnalyzer.parse_log(os.path.join(results_dir, 'RPM'), 'build.log')
+                    if files['missing']:
+                        logger.warning('Following files:\n{f}\nare missing in {spec} .'.
+                                       format(f='\n'.join(files['missing']),
+                                              spec=build_dict.get('spec')))
+                    if files['sources']:
+                        logger.warning('Following files:\n{f}\nare missing in sources.'.
+                                       format(f='\n'.join(files['sources'])))
+                    shutil.rmtree(results_dir)
+                    if version in results_dir:
+                        self.spec_file.correct_spec(files)
+                    else:
+                        self.rebase_spec_file.correct_spec(files)
+                    if int(build_test) == 2:
+                        raise RebaseHelperError(run_e.message)
+                    else:
+                        build_test = 2
+            logger.info('Building packages done')
 
     def pkgdiff_packages(self):
         """
