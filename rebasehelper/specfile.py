@@ -325,7 +325,6 @@ class SpecFile(object):
         # Files which are missing in SPEC file.
         if 'missing' in files:
             files = self._update_spec_path(files['missing'])
-            # TODO TRY TO USE REGEX
             for key, value in self.rpm_sections.iteritems():
                 sec_name, sec_content = value
                 match = re.search(r'^%files\s*$', sec_name)
@@ -337,7 +336,7 @@ class SpecFile(object):
                     else:
                         sec_content = begin_comment + sep
                         sec_content += '\n'.join(files) + sep
-                        sec_content + end_comment + sep
+                        sec_content += end_comment + sep
                     self.rpm_sections[key] = (sec_name, sec_content)
                     break
 
@@ -345,9 +344,12 @@ class SpecFile(object):
         # Should be removed from SPEC file.
         if 'sources' in files:
             files = self._update_spec_path(files['sources'])
-            for index, line in enumerate(self.spec_content):
-                if [f for f in files if f in line]:
-                    self.spec_content[index] = begin_comment + line + end_comment
+            print files
+            for key, value in self.rpm_sections.iteritems():
+                sec_name, sec_content = value
+                match = re.search(r'^%files', sec_name)
+                if match:
+                    pass
         self._create_spec_from_sections()
 
     def _download_source(self, source_name, destination):
