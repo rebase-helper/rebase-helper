@@ -1,5 +1,5 @@
 rebase-helper
-=============
+------------------------------
 
 This tool helps you to rebase package to the latest version
 
@@ -19,3 +19,6 @@ How the rebase-helper works:
 - rebuild srpm -> RPMs (Builder)
 - Run rpmdiff tool for finding libraries and header changes.
 - Inform user what libraries and header files were changed.
+
+
+[**Landscape.io scans of rebase-helper**](https://landscape.io/github/phracek/rebase-helper/)
