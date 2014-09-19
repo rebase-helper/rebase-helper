@@ -541,18 +541,21 @@ class SpecFile(object):
     def extract_version_from_archive_name(archive_path, source_string=''):
         """
         Method extracts the version from archive name based on the source string from SPEC file.
+        It extracts also an extra version such as 'b1', 'rc1', ...
 
         :param archive_path: archive name or path with archive name from which to extract the version
         :param source_string: Source string from SPEC file used to construct version extraction regex
-        :return: string with extracted version or None if extraction failed
+        :return: tuple of strings with (extracted version, extra version) or (None, None) if extraction failed
         """
-        fallback_regex_str = '^\w+-?_?v?([.0-9]*).*({0})'.format('|'.join(Archive.get_supported_archives()))
+        version_regex_string = '([.0-9]*)(\w*)'
+        fallback_regex_str = '^\w+-?_?v?{0}({1})'.format(version_regex_string,
+                                                         '|'.join(Archive.get_supported_archives()))
         # match = re.search(regex, tarball_name)
         name = os.path.basename(archive_path)
         url_base = get_source_name(source_string)
 
         logger.debug("Extracting version from '{0}' using '{1}'".format(name, url_base))
-        regex_str = re.sub(r'%{version}', r'([.0-9]*).*', url_base, flags=re.IGNORECASE)
+        regex_str = re.sub(r'%{version}', version_regex_string, url_base, flags=re.IGNORECASE)
 
         # if no substitution was made, use the fallback regex
         if regex_str == url_base:
@@ -564,8 +567,10 @@ class SpecFile(object):
         match = regex.search(name)
         if match:
             version = match.group(1)
-            logger.debug("Extracted version '{0}'".format(version))
-            return version
+            extra_version = match.group(2)
+            logger.debug("Extracted version '{0}' with extra string {1}".format(version,
+                                                                                extra_version))
+            return version, extra_version
         else:
             logger.debug('Failed to extract version from archive name!')
-            return None
+            return None, None

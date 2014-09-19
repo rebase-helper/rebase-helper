@@ -102,15 +102,15 @@ class TestSpecFile(BaseTest):
 
     def test_extract_version_from_archive_name(self):
         # Basic tests
-        assert SpecFile.extract_version_from_archive_name('test-1.0.1.tar.gz') == '1.0.1'
-        assert SpecFile.extract_version_from_archive_name('/home/user/test-1.0.1.tar.gz') == '1.0.1'
+        assert SpecFile.extract_version_from_archive_name('test-1.0.1.tar.gz') == ('1.0.1', '')
+        assert SpecFile.extract_version_from_archive_name('/home/user/test-1.0.1.tar.gz') == ('1.0.1', '')
         assert SpecFile.extract_version_from_archive_name('test-1.0.1.tar.gz',
-                                                          'ftp://ftp.test.org/test-%{version}.tar.gz') == '1.0.1'
+                                                          'ftp://ftp.test.org/test-%{version}.tar.gz') == ('1.0.1', '')
         assert SpecFile.extract_version_from_archive_name('/home/user/test-1.0.1.tar.gz',
-                                                          'ftp://ftp.test.org/test-%{version}.tar.gz') == '1.0.1'
+                                                          'ftp://ftp.test.org/test-%{version}.tar.gz') == ('1.0.1', '')
         # Real world tests
         assert SpecFile.extract_version_from_archive_name('cups-1.7.5-source.tar.bz2',
-                                                          'http://www.cups.org/software/%{version}/cups-%{version}-source.tar.bz2') == '1.7.5'
+                                                          'http://www.cups.org/software/%{version}/cups-%{version}-source.tar.bz2') == ('1.7.5', '')
         # the 'rc1' can't be in the version number
         assert SpecFile.extract_version_from_archive_name('bind-9.9.5rc2.tar.gz',
-                                                          'ftp://ftp.isc.org/isc/bind9/%{VERSION}/bind-%{VERSION}.tar.gz') == '9.9.5'
+                                                          'ftp://ftp.isc.org/isc/bind9/%{VERSION}/bind-%{VERSION}.tar.gz') == ('9.9.5', 'rc2')
