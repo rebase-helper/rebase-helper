@@ -123,6 +123,12 @@ class TestSpecFile(BaseTest):
         assert len(set(paths)) == len(expected_paths)
         assert len(expected_paths.intersection(set(paths))) == len(expected_paths)
 
+    def test_split_version_string(self):
+        assert SpecFile.split_version_string() == (None, None)
+        assert SpecFile.split_version_string('1.0.1') == ('1.0.1', '')
+        assert SpecFile.split_version_string('1.0.1b1') == ('1.0.1', 'b1')
+        assert SpecFile.split_version_string('1.0.1rc1') == ('1.0.1', 'rc1')
+
     def test_extract_version_from_archive_name(self):
         # Basic tests
         assert SpecFile.extract_version_from_archive_name('test-1.0.1.tar.gz') == ('1.0.1', '')

@@ -599,6 +599,27 @@ class SpecFile(object):
         self._update_data()
 
     @staticmethod
+    def split_version_string(version_string=''):
+        """
+        Method splits version string into version and possibly extra string as 'rc1' or 'b1', ...
+
+        :param version_string: version string such as '1.1.1' or '1.2.3b1', ...
+        :return: tuple of strings with (extracted version, extra version) or (None, None) if extraction failed
+        """
+        version_split_regex_str = '([.0-9]+)(\w*)'
+        version_split_regex = re.compile(version_split_regex_str)
+        logger.debug("split_version_string: Splitting string '{0}'".format(version_string))
+        match = version_split_regex.search(version_string)
+        if match:
+            version = match.group(1)
+            extra_version = match.group(2)
+            logger.debug("split_version_string: Divided version '{0}' and extra string {1}".format(version,
+                                                                                                   extra_version))
+            return version, extra_version
+        else:
+            return None, None
+
+    @staticmethod
     def extract_version_from_archive_name(archive_path, source_string=''):
         """
         Method extracts the version from archive name based on the source string from SPEC file.
@@ -608,15 +629,15 @@ class SpecFile(object):
         :param source_string: Source string from SPEC file used to construct version extraction regex
         :return: tuple of strings with (extracted version, extra version) or (None, None) if extraction failed
         """
-        version_regex_string = '([.0-9]*)(\w*)'
-        fallback_regex_str = '^\w+-?_?v?{0}({1})'.format(version_regex_string,
+        version_regex_str = '([.0-9]+\w*)'
+        fallback_regex_str = '^\w+-?_?v?{0}({1})'.format(version_regex_str,
                                                          '|'.join(Archive.get_supported_archives()))
         # match = re.search(regex, tarball_name)
         name = os.path.basename(archive_path)
         url_base = get_source_name(source_string)
 
         logger.debug("Extracting version from '{0}' using '{1}'".format(name, url_base))
-        regex_str = re.sub(r'%{version}', version_regex_string, url_base, flags=re.IGNORECASE)
+        regex_str = re.sub(r'%{version}', version_regex_str, url_base, flags=re.IGNORECASE)
 
         # if no substitution was made, use the fallback regex
         if regex_str == url_base:
@@ -628,10 +649,8 @@ class SpecFile(object):
         match = regex.search(name)
         if match:
             version = match.group(1)
-            extra_version = match.group(2)
-            logger.debug("Extracted version '{0}' with extra string {1}".format(version,
-                                                                                extra_version))
-            return version, extra_version
+            logger.debug("Extracted version '{0}'".format(version))
+            return SpecFile.split_version_string(version)
         else:
             logger.debug('Failed to extract version from archive name!')
-            return None, None
+            return SpecFile.split_version_string('')
