@@ -58,6 +58,13 @@ class TestSpecFile(BaseTest):
         self.SPEC_FILE_OBJECT.save()
         assert self.SPEC_FILE_OBJECT.get_version() == NEW_VERSION
 
+    def test_set_version_using_archive(self):
+        NEW_VERSION = '1.2.3.4.5'
+        ARCHIVE_NAME = 'test-{0}.tar.xz'.format(NEW_VERSION)
+        self.SPEC_FILE_OBJECT.set_version_using_archive(ARCHIVE_NAME)
+        self.SPEC_FILE_OBJECT.save()
+        assert self.SPEC_FILE_OBJECT.get_version() == NEW_VERSION
+
     def test_get_package_name(self):
         assert self.SPEC_FILE_OBJECT.get_package_name() == self.NAME
 

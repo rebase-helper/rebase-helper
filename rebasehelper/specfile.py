@@ -35,6 +35,8 @@ try:
 except ImportError:
     from io import StringIO
 
+import shutil
+import copy
 from rebasehelper.utils import DownloadHelper
 from rebasehelper.logger import logger
 from rebasehelper import settings
@@ -94,18 +96,14 @@ class SpecFile(object):
                         '%package',
                         '%prep']
 
-    def __init__(self, path, sources=None, download=True):
+    def __init__(self, path, download=True):
         self.path = path
         self.download = download
         #  Read the content of the whole SPEC file
         self._read_spec_content()
         #  SPEC file content filtered from commented lines
         self._update_filtered_spec_content()
-
         self._update_data()
-        if sources:
-            self.new_sources = sources
-            self.set_spec_version()
 
     def _update_data(self):
         """
@@ -123,6 +121,19 @@ class SpecFile(object):
         # All source file mentioned in SPEC file Source[0-9]*
         self.source_files = [x for x in self.sources if x[2] == 0 or x[2] == 1]
         self.rpm_sections = self._split_sections()
+
+    def copy(self, new_path=None):
+        """
+        Create a copy of the current object and copy the SPEC file the new object
+        represents to a new location.
+
+        :param new_path: new path to which to copy the SPEC file
+        :return: copy of the current object
+        """
+        if new_path:
+            shutil.copy(self.path, new_path)
+        new_object = SpecFile(new_path, self.download)
+        return new_object
 
     def get_patch_option(self, line):
         """
@@ -503,8 +514,10 @@ class SpecFile(object):
 
     def set_version(self, version):
         """
-        Function updates a version in SPEC file
-        based on self.new_sources variable
+        Method to update the version in the SPEC file
+
+        :param version: string with new version
+        :return:
         """
         for index, line in enumerate(self.spec_content):
             if not line.startswith('Version'):
@@ -512,36 +525,22 @@ class SpecFile(object):
             logger.debug("SpecFile: Updating version in SPEC from '{0}' with '{1}'".format(self.get_version(),
                                                                                            version))
             self.spec_content[index] = line.replace(self.get_version(), version)
+            break
+        #  save changes to the disc
+        self.save()
 
-    def set_spec_version(self):
+    def set_version_using_archive(self, archive_path):
         """
-        Function updates a version in spec file based on input argument
-        """
-        #  TODO: This logic should go to application. SPEC should get only new version!
-        archive_ext = None
-        for ext in Archive.get_supported_archives():
-            if self.new_sources.endswith(ext):
-                archive_ext = ext
-                break
+        Method to update the version in the SPEC file using a archive path. The version
+        is extracted from the archive name.
 
-        if not archive_ext:
-            # CLI argument is probably just a version without name and extension
-            self.set_version(self.new_sources)
-            self.save()
-            # We need to reload the spec file
-            old_source_name = self._get_full_source_name()
-            self.new_sources = get_source_name(old_source_name)
-            return self.new_sources
-        # TODO: We should move the version extraction code to a separate method and add extensive tests!
-        tarball_name = self.new_sources.replace(archive_ext, '')
-        regex = re.compile(r'^\w+-?_?v?(.*)')
-        match = re.search(regex, tarball_name)
-        if match:
-            new_version = match.group(1)
-            logger.debug("SpecFile: Version extracted from archive '{0}'".format(new_version))
-            self.set_version(new_version)
-            self.save()
-        return None
+        :param archive_path:
+        :return:
+        """
+        version, extra_version = SpecFile.extract_version_from_archive_name(archive_path,
+                                                                            self._get_raw_source_string(0))
+        # TODO: Handle the extra version to change the release number
+        self.set_version(version)
 
     def write_updated_patches(self, **kwargs):
         """

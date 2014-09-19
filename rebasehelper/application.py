@@ -113,13 +113,19 @@ class Application(object):
         :return:
         """
         self.rebase_spec_file_path = get_rebase_name(self.spec_file_path)
-        shutil.copy(self.spec_file_path, self.rebase_spec_file_path)
 
         self.spec_file = SpecFile(self.spec_file_path,
                                   download=not self.conf.not_download_sources)
-        self.rebase_spec_file = SpecFile(self.rebase_spec_file_path,
-                                         sources=self.conf.sources,
-                                         download=not self.conf.not_download_sources)
+        #  create an object representing the rebased SPEC file
+        self.rebase_spec_file = self.spec_file.copy(self.rebase_spec_file_path)
+        #  check if argument passed as new source is a file or just a version
+        if os.path.isfile(os.path.join(self.execution_dir, self.conf.sources)):
+            logger.debug("Application: argument passed as a new source is a file")
+            self.rebase_spec_file.set_version_using_archive(self.conf.sources)
+        else:
+            logger.debug("Application: argument passed as a new source is a version")
+            self.rebase_spec_file.set_version(self.conf.sources)
+
         self.kwargs['file_list'] = self.spec_file.get_files_sections()
 
     def _find_old_data(self):
