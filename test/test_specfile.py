@@ -98,7 +98,22 @@ class TestSpecFile(BaseTest):
     def test_get_requires(self):
         expected = set(['openssl-devel', 'pkgconfig', 'texinfo', 'gettext', 'autoconf'])
         req = self.SPEC_FILE_OBJECT.get_requires()
-        assert len(expected.intersection(req)) == 5
+        assert len(expected.intersection(req)) == len(expected)
+
+    def test_get_paths_with_rpm_macros(self):
+        raw_paths = ['/usr/bin/binary1',
+                     '/usr/sbin/binary2',
+                     '/usr/include/header.h',
+                     '/usr/lib/library1.so',
+                     '/usr/lib64/library2.so']
+        expected_paths = set(['%{_bindir}/binary1',
+                              '%{_sbindir}/binary2',
+                              '%{_includedir}/header.h',
+                              '%{_libdir}/library1.so',
+                              '%{_libdir}/library2.so'])
+        paths = SpecFile.get_paths_with_rpm_macros(raw_paths)
+        assert len(set(paths)) == len(expected_paths)
+        assert len(expected_paths.intersection(set(paths))) == len(expected_paths)
 
     def test_extract_version_from_archive_name(self):
         # Basic tests

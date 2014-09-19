@@ -303,16 +303,23 @@ class SpecFile(object):
         # list of [name, flags, index, git_generated]
         return patches
 
-    def _update_spec_path(self, files):
-        type_mapping = {'/usr/lib': '%{_libdir}',
-                        '/usr/bin': '%{_bindir}',
-                        '/usr/sbin': '%{_sbindir}',
-                        '/usr/include': '%{_includedir}'}
+    @staticmethod
+    def get_paths_with_rpm_macros(files):
+        """
+        Method modifies paths in passed list to use RPM macros
+
+        :param files: list of absolute paths
+        :return: modified list of paths with RPM macros
+        """
+        macro_mapping = {'/usr/lib64': '%{_libdir}',
+                         '/usr/lib': '%{_libdir}',
+                         '/usr/bin': '%{_bindir}',
+                         '/usr/sbin': '%{_sbindir}',
+                         '/usr/include': '%{_includedir}'}
         for index, filename in enumerate(files):
-            for key, value in type_mapping.iteritems():
-                if filename.startswith(key):
-                    fields = filename.split('/')[3:]
-                    files[index] = value + '/' + '/'.join(fields)
+            for abs_path, macro in macro_mapping.iteritems():
+                if filename.startswith(abs_path):
+                    files[index] = filename.replace(abs_path, macro)
         return files
 
     def correct_spec(self, files):
@@ -326,7 +333,7 @@ class SpecFile(object):
         sep = '\n'
         # Files which are missing in SPEC file.
         if 'missing' in files:
-            files = self._update_spec_path(files['missing'])
+            files = SpecFile.get_paths_with_rpm_macros(files['missing'])
             for key, value in self.rpm_sections.iteritems():
                 sec_name, sec_content = value
                 match = re.search(r'^%files\s*$', sec_name)
@@ -346,7 +353,7 @@ class SpecFile(object):
         # Files which does not exist in SOURCES.
         # Should be removed from SPEC file.
         if 'sources' in files:
-            files = self._update_spec_path(files['sources'])
+            files = SpecFile.get_paths_with_rpm_macros(files['sources'])
             print files
             for key, value in self.rpm_sections.iteritems():
                 sec_name, sec_content = value
