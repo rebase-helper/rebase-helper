@@ -319,11 +319,14 @@ class Application(object):
 
             build_test = 0
             results_dir = build_dict.get('results_dir', '')
-            while int(build_test) != 1:
+            build_success = False
+            while int(build_test) < 10:
                 try:
                     builder.build_packages(**build_dict)
-                    build_test = 1
+                    build_test = 99
+                    build_success = True
                 except RuntimeError as run_e:
+                    logger.info('Build failed {0}. {1}'.format(build_test, run_e.message))
                     files = BuildLogAnalyzer.parse_log(os.path.join(results_dir, 'RPM'), 'build.log')
                     if files['missing']:
                         logger.warning('Following files:\n{f}\nare missing in {spec} .'.
@@ -333,15 +336,16 @@ class Application(object):
                         logger.warning('Following files:\n{f}\nare missing in sources.'.
                                        format(f='\n'.join(files['sources'])))
                     shutil.rmtree(results_dir)
-                    if version in results_dir:
-                        self.spec_file.correct_spec(files)
+                    if version == 'old':
+                        self.spec_file.modify_spec_files_section(files)
                     else:
-                        self.rebase_spec_file.correct_spec(files)
-                    if int(build_test) == 2:
-                        raise RebaseHelperError(run_e.message)
-                    else:
-                        build_test = 2
-            logger.info('Building packages done')
+                        self.rebase_spec_file.modify_spec_files_section(files)
+                    build_test += 1
+            if build_success:
+                logger.info('Building packages done')
+            else:
+                raise RebaseHelperError("Rebase-helper builds package several time and it's still failing. "
+                                        "Look at the logs")
 
     def pkgdiff_packages(self):
         """

@@ -135,3 +135,25 @@ class TestSpecFile(BaseTest):
         # the 'rc1' can't be in the version number
         assert SpecFile.extract_version_from_archive_name('bind-9.9.5rc2.tar.gz',
                                                           'ftp://ftp.isc.org/isc/bind9/%{VERSION}/bind-%{VERSION}.tar.gz') == ('9.9.5', 'rc2')
+        assert len(expected.intersection(req)) == 5
+
+    def test_spec_missing_file(self):
+        files = {'missing': ['/usr/bin/test2']}
+        self.SPEC_FILE_OBJECT.modify_spec_files_section(files)
+        section = self.SPEC_FILE_OBJECT.get_spec_section('%files')
+        assert '%{_bindir}/test2' in section
+
+    def test_spec_remove_file(self):
+        files = {'sources': ['/usr/lib/test.so']}
+        self.SPEC_FILE_OBJECT.modify_spec_files_section(files)
+        section = self.SPEC_FILE_OBJECT.get_spec_section('%files devel')
+        assert '%{_libdir}/test.so' not in section
+
+    def test_spec_missing_and_remove_file(self):
+        files = {'missing': ['/usr/bin/test2'],
+                 'sources': ['/usr/lib/test.so']}
+        self.SPEC_FILE_OBJECT.modify_spec_files_section(files)
+        section = self.SPEC_FILE_OBJECT.get_spec_section('%files')
+        assert '%{_bindir}/test2' in section
+        section = self.SPEC_FILE_OBJECT.get_spec_section('%files devel')
+        assert '%{_libdir}/test.so' not in section

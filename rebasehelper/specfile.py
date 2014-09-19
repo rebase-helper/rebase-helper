@@ -34,7 +34,8 @@ try:
     from StringIO import StringIO
 except ImportError:
     from io import StringIO
-from rebasehelper.utils import DownloadHelper, ProcessHelper
+
+from rebasehelper.utils import DownloadHelper
 from rebasehelper.logger import logger
 from rebasehelper import settings
 from rebasehelper.utils import check_empty_patch
@@ -80,6 +81,8 @@ class SpecFile(object):
     patches = None
     parsed_spec_file = ""
     rpm_sections = {}
+    begin_comment = '#BEGIN THIS MODIFIED BY REBASE-HELPER'
+    end_comment = '#END THIS MODIFIED BY REBASE-HELPER'
 
     defined_sections = ['%headers',
                         '%files',
@@ -196,6 +199,12 @@ class SpecFile(object):
             if '%files' in tag:
                 pkg_files.extend([f for f in sec.split('\n') if f.startswith('/')])
         return pkg_files
+
+    def get_spec_section(self, section_name):
+        for sec_name, section in self.rpm_sections.itervalues():
+            if sec_name == section_name:
+                return section
+        return None
 
     def _get_patch_number(self, fields):
         """
@@ -330,51 +339,80 @@ class SpecFile(object):
                          '/usr/lib': '%{_libdir}',
                          '/usr/bin': '%{_bindir}',
                          '/usr/sbin': '%{_sbindir}',
-                         '/usr/include': '%{_includedir}'}
+                         '/usr/include': '%{_includedir}',
+                         '/usr/share/man': '%{_mandir}'}
         for index, filename in enumerate(files):
             for abs_path, macro in macro_mapping.iteritems():
                 if filename.startswith(abs_path):
                     files[index] = filename.replace(abs_path, macro)
         return files
 
-    def correct_spec(self, files):
+    def _correct_missing_files(self, missing):
+        sep = '\n'
+        for key, value in self.rpm_sections.iteritems():
+            sec_name, sec_content = value
+            match = re.search(r'^%files\s*$', sec_name)
+            if match:
+                if self.begin_comment in sec_content:
+                    # We need only files which are not included yet.
+                    upd_files = [f for f in missing if f not in sec_content]
+                    regex = re.compile('(^' + self.begin_comment + '\s*)')
+                    sec_content = regex.sub('\\1' + '\n'.join(upd_files) + sep,
+                                            sec_content)
+                else:
+                    # This code adds begin_comment, files and end_comment
+                    # with separator
+                    new_content = self.begin_comment + sep
+                    new_content += '\n'.join(missing) + sep
+                    new_content += self.end_comment + sep
+                    # Now adds the new_content before current content
+                    sec_content = new_content + sec_content
+                self.rpm_sections[key] = (sec_name, sec_content)
+                break
+
+    def _correct_removed_files(self, sources):
+        sep = '\n'
+        for key, value in self.rpm_sections.iteritems():
+            sec_name, sec_content = value
+            # Only sections %files are interesting
+            match = re.search(r'^%files', sec_name)
+            if match:
+                # Check what files are in section
+                # and comment only relevant
+                f_exists = [f for f in sources if os.path.basename(f) in sec_content]
+                if not f_exists:
+                    continue
+                for f in f_exists:
+                    sec_content = sec_content.split('\n')
+                    for index, row in enumerate(sec_content):
+                        if f in row:
+                            sec_content[index] = self.begin_comment + sep
+                            sec_content[index] += "#" + row + sep + self.end_comment + sep
+                self.rpm_sections[key] = (sec_name, '\n'.join(sec_content))
+
+    def modify_spec_files_section(self, files):
         """
         Function repairs spec file according to new sources.
         :param files:
         :return:
         """
-        begin_comment = '#BEGIN THIS MODIFIED BY REBASE-HELPER'
-        end_comment = '#END THIS MODIFIED BY REBASE-HELPER'
-        sep = '\n'
         # Files which are missing in SPEC file.
-        if 'missing' in files:
-            files = SpecFile.get_paths_with_rpm_macros(files['missing'])
-            for key, value in self.rpm_sections.iteritems():
-                sec_name, sec_content = value
-                match = re.search(r'^%files\s*$', sec_name)
-                if match:
-                    if begin_comment in sec_content:
-                        regex = re.compile('(^' + begin_comment + '\s*)')
-                        sec_content = regex.sub('\\1' + '\n'.join(files) + sep,
-                                                sec_content)
-                    else:
-                        new_content = begin_comment + sep
-                        new_content += '\n'.join(files) + sep
-                        new_content += end_comment + sep
-                        sec_content = new_content + sec_content
-                    self.rpm_sections[key] = (sec_name, sec_content)
-                    break
+        try:
+            if files['missing']:
+                upd_files = SpecFile.get_paths_with_rpm_macros(files['missing'])
+                self._correct_missing_files(upd_files)
+        except KeyError:
+            pass
 
         # Files which does not exist in SOURCES.
         # Should be removed from SPEC file.
-        if 'sources' in files:
-            files = SpecFile.get_paths_with_rpm_macros(files['sources'])
-            print files
-            for key, value in self.rpm_sections.iteritems():
-                sec_name, sec_content = value
-                match = re.search(r'^%files', sec_name)
-                if match:
-                    pass
+        try:
+            if files['sources']:
+                upd_files = SpecFile.get_paths_with_rpm_macros(files['sources'])
+                self._correct_removed_files(upd_files)
+        except KeyError:
+            pass
+
         self._create_spec_from_sections()
 
     def _download_source(self, source_name, destination):

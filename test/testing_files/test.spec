@@ -19,14 +19,13 @@ Patch3: test-testing3.patch
 BuildRequires: openssl-devel, pkgconfig, texinfo, gettext, autoconf
 
 %description
-The libpng package contains a library of functions for creating and
-manipulating PNG (Portable Network Graphics) image format files.  PNG
-is a bit-mapped graphics format similar to the GIF format.  PNG was
-created to replace the GIF format, since GIF uses a patented data
-compression algorithm.
+Testing spec file
 
-Libpng should be installed if you need to manipulate PNG format image
-files.
+%package devel
+Summary: A testing devel package
+
+%description devel
+Testing devel spec file
 
 %prep
 %setup -q
@@ -48,6 +47,13 @@ make DESTDIR=$RPM_BUILD_ROOT install
 %if %{?_with_check:1}%{!?_with_check:0}
 make check
 %endif
+
+%files
+%{_bindir}/file.txt
+
+%files devel
+%{_bindir}/test_example
+%{_libdir}/my_test.so
 
 %changelog
 * Tue Sep 24 2013 Petr Hracek <phracek@redhat.com> 1.0.0-1

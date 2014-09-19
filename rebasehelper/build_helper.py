@@ -471,9 +471,5 @@ class Builder(object):
         :param kwargs:
         :return: new and old packages
         """
-        for path in ['old', 'new']:
-            input_structure = kwargs.get(path)
-            input_structure['results_dir'] = os.path.join(kwargs.get('results_dir'), path)
-            logger.info("Building packages from sources '{0}'".format(input_structure.get('tarball', '')))
-            results = self.build(**input_structure)
-            kwargs[path].update(results)
+        logger.info("Building packages from sources '{0}'".format(kwargs.get('tarball', '')))
+        results = self.build(**kwargs)
