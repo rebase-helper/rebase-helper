@@ -11,6 +11,7 @@ URL: http://testing.org
 Source0: ftp://ftp.test.org/test-%{version}.tar.xz
 Source1: source-tests.sh
 Source2: ftp://test.com/test-source.sh
+#Source3: source-tests.sh
 Patch1: test-testing.patch
 Patch2: test-testing2.patch
 Patch3: test-testing3.patch

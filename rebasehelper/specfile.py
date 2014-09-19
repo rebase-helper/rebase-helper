@@ -303,6 +303,21 @@ class SpecFile(object):
         # list of [name, flags, index, git_generated]
         return patches
 
+    def _get_raw_source_string(self, source_num):
+        """
+        Method returns raw string, possibly with RPM macros, of a Source with passed number.
+
+        :param source_num: number of the source of which to get the raw string
+        :return: string of the source or None if there is no such source
+        """
+        source_rexex_str = '^Source{0}:[ \t]*(.*?)$'.format(source_num)
+        source_rexex = re.compile(source_rexex_str)
+
+        for line in self.spec_content:
+            match = source_rexex.search(line)
+            if match:
+                return match.group(1)
+
     @staticmethod
     def get_paths_with_rpm_macros(files):
         """

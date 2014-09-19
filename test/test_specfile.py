@@ -81,6 +81,12 @@ class TestSpecFile(BaseTest):
         self.SPEC_FILE_OBJECT._update_filtered_spec_content()
         assert self.SPEC_FILE_OBJECT.spec_filtered_content == expected_content_1
 
+    def test__get_raw_source_string(self):
+        assert self.SPEC_FILE_OBJECT._get_raw_source_string(0) == 'ftp://ftp.test.org/test-%{version}.tar.xz'
+        assert self.SPEC_FILE_OBJECT._get_raw_source_string(1) == 'source-tests.sh'
+        assert self.SPEC_FILE_OBJECT._get_raw_source_string(2) == 'ftp://test.com/test-source.sh'
+        assert self.SPEC_FILE_OBJECT._get_raw_source_string(3) == None
+
     def test_old_tarball(self):
         assert self.SPEC_FILE_OBJECT.get_archive() == self.OLD_ARCHIVE
 
