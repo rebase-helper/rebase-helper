@@ -21,6 +21,7 @@
 
 import re
 import os
+from rebasehelper.logger import logger
 
 
 class BuildLogAnalyzer(object):
@@ -58,14 +59,21 @@ class BuildLogAnalyzer(object):
         e_reg = 'EXCEPTION:'
         section = cls._find_section(log_name, s_reg, e_reg)
         if section:
+            logger.debug('Found problematic section: {0}'.format(section))
             files['missing'] = cls._get_files_from_string(section)
 
         # Test for finding files which are mentioned in spec file
         # but does not exist in sources
         s_reg = 'RPM build errors:'
-        section = cls._find_section(log_name, s_reg, e_reg).replace('File not found:', '')
+        section = cls._find_section(log_name, s_reg, e_reg)
         if section:
-            files['sources'] = cls._get_files_from_string(section)
+            section = section.replace('File not found by glob:', '').replace('File not found:', '')
+            logger.debug('Found problematic section: {0}'.format(section))
+            missing_files = cls._get_files_from_string(section)
+            # TODO We need to delete path more efectively from rpmbuild
+            for f in missing_files:
+                fields = f.split('/')[5:]
+                files['sources'].append('/'+'/'.join(fields))
         return files
 
     @classmethod
@@ -95,19 +103,21 @@ class BuildLogAnalyzer(object):
         sub_lines = None
         with open(log_name, 'r') as f:
             lines = f.read()
-            s_search = re.search(s_reg, lines)
-            s_pos = e_pos = 0
-            if s_search:
-                s_pos = s_search.start()
-            if e_reg:
-                e_search = re.search(e_reg, lines)
-                if e_search:
-                    e_pos = e_search.start()
-            if int(s_pos) == 0 or int(e_pos) == 0:
-                return None
-            if not e_reg:
-                sub_lines = lines[s_pos:]
-            else:
-                sub_lines = lines[s_pos:e_pos]
+        if not lines:
+            return None
+        s_search = re.search(s_reg, lines)
+        s_pos = e_pos = 0
+        if s_search:
+            s_pos = s_search.start()
+        if e_reg:
+            e_search = re.search(e_reg, lines)
+            if e_search:
+                e_pos = e_search.start()
+        if int(s_pos) == 0 or int(e_pos) == 0:
+            return None
+        if not e_reg:
+            sub_lines = lines[s_pos:]
+        else:
+            sub_lines = lines[s_pos:e_pos]
 
         return sub_lines
