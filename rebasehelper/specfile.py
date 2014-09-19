@@ -345,6 +345,7 @@ class SpecFile(object):
             for abs_path, macro in macro_mapping.iteritems():
                 if filename.startswith(abs_path):
                     files[index] = filename.replace(abs_path, macro)
+                    break
         return files
 
     def _correct_missing_files(self, missing):
