@@ -347,13 +347,22 @@ class SpecFile(object):
         :return: modified list of paths with RPM macros
         """
         macro_mapping = {'/usr/lib64': '%{_libdir}',
+                         '/usr/libexec': '%{_libexecdir}',
+                         '/usr/lib/systemd/system': '%{_unitdir}',
                          '/usr/lib': '%{_libdir}',
                          '/usr/bin': '%{_bindir}',
                          '/usr/sbin': '%{_sbindir}',
                          '/usr/include': '%{_includedir}',
-                         '/usr/share/man': '%{_mandir}'}
+                         '/usr/share/man': '%{_mandir}',
+                         '/usr/share/info': '%{_infodir}',
+                         '/usr/share/doc': '%{_docdir}',
+                         '/usr/share': '%{_datarootdir}',
+                         '/var/lib': '%{_sharedstatedir}',
+                         '/var/tmp': '%{_tmppath}',
+                         '/var': '%{_localstatedir}',
+                         }
         for index, filename in enumerate(files):
-            for abs_path, macro in macro_mapping.iteritems():
+            for abs_path, macro in sorted(macro_mapping.iteritems(), reverse=True):
                 if filename.startswith(abs_path):
                     files[index] = filename.replace(abs_path, macro)
                     break

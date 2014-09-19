@@ -119,13 +119,30 @@ class TestSpecFile(BaseTest):
                      '/usr/include/header.h',
                      '/usr/lib/library1.so',
                      '/usr/lib64/library2.so',
-                     '/usr/share/man/man1/test.1.gz']
+                     '/usr/libexec/script.sh',
+                     '/usr/lib/systemd/system/daemond.service',
+                     '/usr/share/man/man1/test.1.gz',
+                     '/usr/share/info/file.info',
+                     '/usr/share/doc/RFC.pdf',
+                     '/usr/share/config.site',
+                     '/var/lib/libvirt',
+                     '/var/tmp/abrt',
+                     '/var/lock']
+
         expected_paths = set(['%{_bindir}/binary1',
                               '%{_sbindir}/binary2',
                               '%{_includedir}/header.h',
                               '%{_libdir}/library1.so',
                               '%{_libdir}/library2.so',
-                              '%{_mandir}/man1/test.1.gz'])
+                              '%{_libexecdir}/script.sh',
+                              '%{_unitdir}/daemond.service',
+                              '%{_mandir}/man1/test.1.gz',
+                              '%{_infodir}/file.info',
+                              '%{_docdir}/RFC.pdf',
+                              '%{_datarootdir}/config.site',
+                              '%{_sharedstatedir}/libvirt',
+                              '%{_tmppath}/abrt',
+                              '%{_localstatedir}/lock'])
         paths = SpecFile.get_paths_with_rpm_macros(raw_paths)
         assert len(set(paths)) == len(expected_paths)
         assert len(expected_paths.intersection(set(paths))) == len(expected_paths)
