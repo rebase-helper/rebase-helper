@@ -322,7 +322,7 @@ class Application(object):
             build_success = False
             while int(build_test) < 10:
                 try:
-                    builder.build_packages(**build_dict)
+                    builder.build(**build_dict)
                     build_test = 99
                     build_success = True
                 except RuntimeError as run_e:

@@ -458,18 +458,3 @@ class Builder(object):
         :return: list of supported build tools
         """
         return build_tools.keys()
-
-    def build_packages(self, **kwargs):
-        """
-        Build old and new packages
-        Returns structure like
-        {new: {'srpm': <path_to_srpm>,
-                'rpm': <path_to_rpm>, <path_to_rpm>},
-        {old: {'srpm': <path_to_srpm>,
-                'rpm' : <path_to_rpm>, <path_to_rpm>},
-        }
-        :param kwargs:
-        :return: new and old packages
-        """
-        logger.info("Building packages from sources '{0}'".format(kwargs.get('tarball', '')))
-        results = self.build(**kwargs)
