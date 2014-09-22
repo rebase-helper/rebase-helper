@@ -51,29 +51,24 @@ class BuildLogAnalyzer(object):
         """
         files = {}
         files['missing'] = []
-        files['sources'] = []
+        files['obsoletes'] = []
 
         # Test for finding files which exists in sources
         # but are not mentioned in spec file
-        s_reg = 'error:\s+Installed\s+'
+        missing_reg = 'error:\s+Installed\s+'
+        missing_source_reg = 'RPM build errors:'
         e_reg = 'EXCEPTION:'
-        section = cls._find_section(log_name, s_reg, e_reg)
-        if section:
-            logger.debug('Found problematic section: {0}'.format(section))
-            files['missing'] = cls._get_files_from_string(section)
-
-        # Test for finding files which are mentioned in spec file
-        # but does not exist in sources
-        s_reg = 'RPM build errors:'
-        section = cls._find_section(log_name, s_reg, e_reg)
+        section = cls._find_section(log_name, missing_reg, e_reg)
         if section:
             section = section.replace('File not found by glob:', '').replace('File not found:', '')
-            logger.debug('Found problematic section: {0}'.format(section))
-            missing_files = cls._get_files_from_string(section)
-            # TODO We need to delete path more efectively from rpmbuild
-            for f in missing_files:
-                fields = f.split('/')[5:]
-                files['sources'].append('/'+'/'.join(fields))
+            logger.debug('Found missing files which are not in SPEC file: {0}'.format(section))
+            files['missing'] = cls._get_files_from_string(section)
+        else:
+            section = cls._find_section(log_name, missing_source_reg, e_reg)
+            if section:
+                logger.debug('Found files which does not exist in source: {0}'.format(section))
+                files['sources'] = cls._get_files_from_string(section)
+
         return files
 
     @classmethod
@@ -84,6 +79,11 @@ class BuildLogAnalyzer(object):
         """
         files = []
         for x in map(str.strip, section.split('\n')):
+            for dirs in ['usr', 'etc', 'opt', 'bin', 'var', 'sbin']:
+                pos = x.find(dirs)
+                if pos != -1:
+                    x = x[pos-1:]
+                    break
             if x.startswith('/') and x not in files:
                 files.append(x)
         return files

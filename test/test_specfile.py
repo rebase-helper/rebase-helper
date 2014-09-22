@@ -21,9 +21,11 @@
 #          Tomas Hozza <thozza@redhat.com>
 
 import os
+import shutil
 
 from .base_test import BaseTest
 from rebasehelper.specfile import SpecFile
+from rebasehelper.build_log_analyzer import BuildLogAnalyzer
 
 
 class TestSpecFile(BaseTest):
@@ -37,12 +39,16 @@ class TestSpecFile(BaseTest):
     PATCH_1 = 'test-testing.patch'
     PATCH_2 = 'test-testing2.patch'
     PATCH_3 = 'test-testing3.patch'
+    BUILD_MISSING_LOG = 'build_missing.log'
+    BUILD_OBSOLETES_LOG = 'build_obsoletes.log'
 
     TEST_FILES = [
         SPEC_FILE,
         PATCH_1,
         PATCH_2,
-        PATCH_3
+        PATCH_3,
+        BUILD_MISSING_LOG,
+        BUILD_OBSOLETES_LOG
     ]
 
     def setup(self):
@@ -175,16 +181,32 @@ class TestSpecFile(BaseTest):
         assert '%{_bindir}/test2' in section
 
     def test_spec_remove_file(self):
-        files = {'sources': ['/usr/lib/test.so']}
+        files = {'obsoletes': ['/usr/lib/test.so']}
         self.SPEC_FILE_OBJECT.modify_spec_files_section(files)
         section = self.SPEC_FILE_OBJECT.get_spec_section('%files devel')
         assert '%{_libdir}/test.so' not in section
 
     def test_spec_missing_and_remove_file(self):
         files = {'missing': ['/usr/bin/test2'],
-                 'sources': ['/usr/lib/test.so']}
+                 'obsoletes': ['/usr/lib/test.so']}
         self.SPEC_FILE_OBJECT.modify_spec_files_section(files)
         section = self.SPEC_FILE_OBJECT.get_spec_section('%files')
         assert '%{_bindir}/test2' in section
         section = self.SPEC_FILE_OBJECT.get_spec_section('%files devel')
         assert '%{_libdir}/test.so' not in section
+
+    def test_spec_missing_from_logfile(self):
+        print self.WORKING_DIR
+        shutil.move('build_missing.log', 'build.log')
+        files = BuildLogAnalyzer.parse_log(self.WORKING_DIR, 'build.log')
+        self.SPEC_FILE_OBJECT.modify_spec_files_section(files)
+        section = self.SPEC_FILE_OBJECT.get_spec_section('%files')
+        assert '%{_bindir}/test2' in section
+
+    def test_spec_obsolete_from_logfile(self):
+        shutil.move('build_obsoletes.log', 'build.log')
+        files = BuildLogAnalyzer.parse_log(self.WORKING_DIR, 'build.log')
+        self.SPEC_FILE_OBJECT.modify_spec_files_section(files)
+        section = self.SPEC_FILE_OBJECT.get_spec_section('%files')
+        assert '%{_libdir}/libtest.so' not in section
+

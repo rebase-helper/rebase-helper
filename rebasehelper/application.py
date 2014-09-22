@@ -332,15 +332,18 @@ class Application(object):
                     build_test = 99
                     build_success = True
                 except RuntimeError as run_e:
-                    logger.info('Build failed {0}. {1}'.format(build_test, run_e.message))
+                    logger.debug('Build failed {0}. {1}'.format(build_test, run_e.message))
+                    build_log = os.path.join(results_dir, 'RPM'), 'build.log'
                     files = BuildLogAnalyzer.parse_log(os.path.join(results_dir, 'RPM'), 'build.log')
+                    if not files['missing'] and not files['obsoletes']:
+                        raise RebaseHelperError("Rebase helper didn't find any trouble in {0} file".format(build_log))
                     if files['missing']:
-                        logger.warning('Following files:\n{f}\nare missing in {spec} .'.
+                        logger.warning('Following files are missing in {spec} file:\n{f}.'.
                                        format(f='\n'.join(files['missing']),
                                               spec=build_dict.get('spec')))
-                    if files['sources']:
-                        logger.warning('Following files:\n{f}\nare missing in sources.'.
-                                       format(f='\n'.join(files['sources'])))
+                    if files['obsoletes']:
+                        logger.warning('Following files are obsoletes in sources: \n{f}'.
+                                       format(f='\n'.join(files['obsoletes'])))
                     shutil.rmtree(results_dir)
                     if version == 'old':
                         self.spec_file.modify_spec_files_section(files)

@@ -1,0 +1,5 @@
++ exit 0
+RPM build errors:
+    File not found: /builddir/build/BUILDROOT/test-1.6.10-2.fc20.x86_64/usr/lib/test.so
+Child return code was: 1
+EXCEPTION: Command failed. See logs for output.

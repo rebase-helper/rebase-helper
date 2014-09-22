@@ -1,0 +1,10 @@
+Checking for unpackaged file(s): /usr/lib/rpm/check-files /builddir/build/BUILDROOT/testing-2.1.0.
+error: Installed (but unpackaged) file(s) found:
+   /usr/bin/test2
+    Installed (but unpackaged) file(s) found:
+   /usr/bin/test2
+RPM build errors:
+Child return code was: 1
+EXCEPTION: Command failed. See logs for output.
+ # ['bash', '--login', '-c', 'rpmbuild -bb --target x86_64 --nodeps  builddir/build/SPECS/test.spec']
+Traceback (most recent call last):

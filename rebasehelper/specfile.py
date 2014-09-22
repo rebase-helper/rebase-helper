@@ -83,8 +83,6 @@ class SpecFile(object):
     patches = None
     parsed_spec_file = ""
     rpm_sections = {}
-    begin_comment = '#BEGIN THIS MODIFIED BY REBASE-HELPER'
-    end_comment = '#END THIS MODIFIED BY REBASE-HELPER'
 
     defined_sections = ['%headers',
                         '%files',
@@ -368,31 +366,34 @@ class SpecFile(object):
                     break
         return files
 
+    @staticmethod
+    def add_new_string_with_comment(new_string):
+        sep = '\n'
+        new_content = settings.BEGIN_COMMENT + sep
+        new_content += new_string + sep
+        new_content += settings.END_COMMENT + sep
+        return new_content
+
     def _correct_missing_files(self, missing):
         sep = '\n'
         for key, value in self.rpm_sections.iteritems():
             sec_name, sec_content = value
             match = re.search(r'^%files\s*$', sec_name)
             if match:
-                if self.begin_comment in sec_content:
+                if settings.BEGIN_COMMENT in sec_content:
                     # We need only files which are not included yet.
                     upd_files = [f for f in missing if f not in sec_content]
-                    regex = re.compile('(^' + self.begin_comment + '\s*)')
+                    regex = re.compile('(' + settings.BEGIN_COMMENT + '\s*)')
                     sec_content = regex.sub('\\1' + '\n'.join(upd_files) + sep,
                                             sec_content)
                 else:
                     # This code adds begin_comment, files and end_comment
                     # with separator
-                    new_content = self.begin_comment + sep
-                    new_content += '\n'.join(missing) + sep
-                    new_content += self.end_comment + sep
-                    # Now adds the new_content before current content
-                    sec_content = new_content + sec_content
+                    sec_content = SpecFile.add_new_string_with_comment('\n'.join(missing)) + sec_content
                 self.rpm_sections[key] = (sec_name, sec_content)
                 break
 
     def _correct_removed_files(self, sources):
-        sep = '\n'
         for key, value in self.rpm_sections.iteritems():
             sec_name, sec_content = value
             # Only sections %files are interesting
@@ -407,8 +408,7 @@ class SpecFile(object):
                     sec_content = sec_content.split('\n')
                     for index, row in enumerate(sec_content):
                         if f in row:
-                            sec_content[index] = self.begin_comment + sep
-                            sec_content[index] += "#" + row + sep + self.end_comment + sep
+                            sec_content[index] = SpecFile.add_new_string_with_comment('#' + row)
                 self.rpm_sections[key] = (sec_name, '\n'.join(sec_content))
 
     def modify_spec_files_section(self, files):
