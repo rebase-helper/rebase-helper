@@ -58,9 +58,9 @@ class PkgDiffTool(BaseChecker):
     """ Pkgdiff compare tool. """
     CMD = "pkgdiff"
     pkgdiff_results_filename = 'pkgdiff_reports.html'
-    pkgdiff_results_path = pkgdiff_results_filename
     results_dir = ''
     workspace_dir = ''
+    pkgdiff_results_dir = ''
 
     @classmethod
     def match(cls, cmd=None):
@@ -71,7 +71,7 @@ class PkgDiffTool(BaseChecker):
 
     @classmethod
     def _create_xml(cls, name, input_structure):
-        file_name = os.path.join(cls.workspace_dir, name + ".xml")
+        file_name = os.path.join(cls.results_dir, name + ".xml")
         tags = {'version': input_structure.get('version', ""),
                 'group': input_structure.get('name', ''),
                 'packages': input_structure.get('rpm', [])}
@@ -93,7 +93,7 @@ class PkgDiffTool(BaseChecker):
         """ Compares  old and new RPMs using pkgdiff """
         cls.results_dir = kwargs.get('results_dir', '')
         cls.workspace_dir = os.path.join(kwargs.get('workspace_dir', ''), cls.CMD)
-        cls.pkgdiff_results_path = os.path.join(cls.results_dir, cls.pkgdiff_results_filename)
+        cls.pkgdiff_results_full_path = os.path.join(cls.results_dir, cls.pkgdiff_results_filename)
         # create the workspace directory
         os.makedirs(cls.workspace_dir)
 
@@ -104,11 +104,14 @@ class PkgDiffTool(BaseChecker):
             if old:
                 file_name = cls._create_xml(version, input_structure=old)
                 cmd.append(file_name)
+        cmd.append('-extra-info')
+        cmd.append(cls.results_dir)
         cmd.append('-report-path')
-        cmd.append(cls.pkgdiff_results_path)
+        cmd.append(cls.pkgdiff_results_full_path)
+        print cmd
         # TODO Should we return a value??
         ProcessHelper.run_subprocess(cmd, output=ProcessHelper.DEV_NULL)
-        return cls.pkgdiff_results_path
+        return cls.pkgdiff_results_full_path
 
 
 class Checker(object):
