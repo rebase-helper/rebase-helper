@@ -24,6 +24,7 @@
 
 from __future__ import print_function
 import subprocess
+import os
 from rebasehelper.version import VERSION
 try:
     from setuptools import setup, Command
@@ -44,11 +45,21 @@ class PyTest(Command):
     def finalize_options(self):
         pass
 
+    def runner_exists(self, runner):
+        syspaths = os.getenv('PATH').split(os.pathsep)
+        for p in syspaths:
+            if os.path.exists(os.path.join(p, runner)):
+                return True
+
+        return False
+
     def run(self):
         # only one test runner => just run the tests
-        runners = ['py.test-2.7', 'py.test-3.3']
+        supported = ['2.7', '3.3']
+        potential_runners = ['py.test-' + s for s in supported]
         if self.test_runner:
-            runners = [self.test_runner]
+            potential_runners = [self.test_runner]
+        runners = [pr for pr in potential_runners if self.runner_exists(pr)]
 
         for runner in runners:
             if len(runners) > 1:
