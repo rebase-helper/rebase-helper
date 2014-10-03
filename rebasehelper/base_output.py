@@ -29,17 +29,18 @@ class OutputData(object):
     def __init__(self):
         self.summary_information = {}
 
-    def update_info(self, name, text, data):
+    def update_info(self, name,  data):
         """
         Function insert a new field into summary_information
         section is called name and represents text and their
         relevant data.
         """
         if name in self.summary_information:
-            self.summary_information[name].append((text, data))
+            for key, value in data.iteritems():
+                self.summary_information[name][key] = value
         else:
-            self.summary_information[name] = []
-            self.summary_information[name].append((text, data))
+            self.summary_information[name] = {}
+            self.summary_information[name] = data
 
     def get_key(self, key):
         try:
@@ -48,13 +49,15 @@ class OutputData(object):
             return None
 
     def get_specific_value(self, key, value):
-        result = []
+        result = {}
         try:
             res = self.get_key(key)
-            for text, data in res:
+            for text, data in res.iteritems():
                 if text == value:
-                    result.append(data)
+                    result = data
         except KeyError:
+            return None
+        except AttributeError:
             return None
         else:
             return result
@@ -97,10 +100,11 @@ class OutputLogger(object):
 
     @classmethod
     def set_output(cls, name, text, data):
-        cls.out_logger.update_info(name, text, data)
+        new_dict = {text: data}
+        cls.out_logger.update_info(name, new_dict)
 
     @classmethod
-    def set_build_logs(cls, version, data):
+    def set_build_data(cls, version, data):
         cls.set_output('build', version, data)
 
     @classmethod
@@ -109,7 +113,15 @@ class OutputLogger(object):
 
     @classmethod
     def get_build(cls, version):
-        cls.out_logger.get_specific_value('build', version)
+        return cls.out_logger.get_specific_value('build', version)
+
+    @classmethod
+    def get_patches(cls, version):
+        return cls.out_logger.get_specific_value('patch', version)
+
+    @classmethod
+    def get_checkers(cls):
+        return cls.out_logger.get_key('checker')
 
     @classmethod
     def get_summary_info(cls):

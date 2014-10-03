@@ -48,33 +48,37 @@ class TestOutputTool(BaseTest):
         return data
 
     def get_expected_output(self):
-        expected_output = """Summary information:
-======================
-
-Patches:
-Patch1   mytest2.patch   [deleted]
+        expected_output = """Patches were neither modified nor deleted.
 
 Old (S)RPM packages:
 ---------------------
 SRPM package(s): are in directory  :
-- test-1.2.0-1.src.rpm
-RPM package(s): are in directory . :
-- test-1.2.0-1.rpm
-- test-devel-1.2.0-1.rpm
+- rpm-0.1.0.src.rpm
+RPM package(s): are in directory  :
+- rpm-0.1.0.x86_64.rpm
+-  rpm-devel-0.1.0.x86_64.rpm
+Available Old logs:
+- logfile1.log
+- logfile2.log
 
 New (S)RPM packages:
 ---------------------
 SRPM package(s): are in directory  :
-- test-1.2.2-1.src.rpm
-RPM package(s): are in directory . :
-- test-1.2.2-1.rpm
-- test-devel-1.2.2-1.rpm
-Results from pkgcompare check could not be found."""
+- rpm-0.2.0.src.rpm
+RPM package(s): are in directory  :
+- rpm-0.2.0.x86_64.rpm
+-  rpm-devel-0.2.0.x86_64.rpm
+Available New logs:
+- logfile3.log
+- logfile4.log"""
         return expected_output
 
     def test_text_output(self):
         output = OutputTool('text')
-        output.print_information(**self.get_data())
+        logfile = os.path.join(self.TESTS_DIR, REBASE_HELPER_RESULTS_LOG)
+        output.print_information(logfile)
 
-        with open(os.path.join(self.WORKING_DIR, REBASE_HELPER_RESULTS_LOG)) as f:
+        with open(logfile) as f:
             assert f.read().strip() == self.get_expected_output()
+
+        os.unlink(logfile)
