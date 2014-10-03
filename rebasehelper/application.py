@@ -34,6 +34,7 @@ from rebasehelper.build_helper import Builder
 from rebasehelper.patch_helper import Patch
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.build_log_analyzer import BuildLogAnalyzer
+from rebasehelper.base_output import OutputLogger
 
 
 class Application(object):
@@ -141,6 +142,7 @@ class Application(object):
         self.kwargs['new']['patches'] = self.kwargs['new'][settings.FULL_PATCHES]
         update_patches = self.spec_file.write_updated_patches(**self.kwargs)
         self.kwargs['summary_info'] = update_patches
+        OutputLogger.set_patch_output('Patches:', update_patches)
 
     def _initialize_data(self):
         """
@@ -169,6 +171,9 @@ class Application(object):
             raise RebaseHelperError('You have to define new sources.')
         else:
             self.new_sources = os.path.abspath(self.conf.sources)
+
+    def _get_rebase_helper_log(self):
+        return os.path.join(self.results_dir, settings.REBASE_HELPER_RESULTS_LOG)
 
     def _get_spec_file(self):
         """
@@ -306,6 +311,7 @@ class Application(object):
 
         update_patches = self.rebase_spec_file.write_updated_patches(**self.kwargs)
         self.kwargs['summary_info'] = update_patches
+        OutputLogger.set_patch_output('Patches:', update_patches)
 
     def build_packages(self):
         """
@@ -328,9 +334,10 @@ class Application(object):
             build_success = False
             while int(build_test) < 10:
                 try:
-                    builder.build(**build_dict)
+                    build_dict.update(builder.build(**build_dict))
                     build_test = 99
                     build_success = True
+                    OutputLogger.set_build_data(version, build_dict)
                 except RuntimeError as run_e:
                     logger.debug('Build failed {0}. {1}'.format(build_test, run_e.message))
                     build_log = os.path.join(results_dir, 'RPM'), 'build.log'
@@ -368,13 +375,14 @@ class Application(object):
                 Checker.get_supported_tools()))
         else:
             logger.info('Comparing packages using {0} ... running'.format(self.conf.pkgcomparetool))
-            self.kwargs['pkgcompareinfo'] = pkgchecker.run_check(**self.kwargs)
+            results = pkgchecker.run_check(**self.kwargs)
+            OutputLogger.set_checker_output(self.conf.pkgcomparetool, results)
             logger.info('Comparing packages done')
 
     def print_summary(self):
         output_tool.check_output_argument(self.conf.outputtool)
         output = output_tool.OutputTool(self.conf.outputtool)
-        output.print_information(**self.kwargs)
+        output.print_information(path=self._get_rebase_helper_log())
 
     def run(self):
         sources = self.prepare_sources()

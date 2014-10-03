@@ -26,6 +26,7 @@ import os
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.logger import LoggerHelper, logger, logger_output
 from rebasehelper import settings
+from rebasehelper.base_output import OutputLogger
 
 output_tools = {}
 
@@ -75,10 +76,10 @@ class TextOutputTool(BaseOutputTool):
 
     @classmethod
     def print_patches(cls, patches, summary):
-        logger_output.info("\nPatches:")
         if not patches:
             logger_output.info("Patches were neither modified nor deleted.")
             return
+        logger_output.info("\nPatches:")
         max_number = max(x for x in [len(str(y)) for y in patches.keys()]) + 2
         max_name = max(x for x in [len(os.path.basename(y[0])) for y in patches.values()]) + 2
         for key, value in patches.items():
@@ -129,46 +130,42 @@ class TextOutputTool(BaseOutputTool):
 
 
     @classmethod
-    def print_summary(cls, **kwargs):
+    def print_summary(cls, path):
         """
         Function is used for printing summary informations
         :return:
         """
-        dir_name = kwargs.get('results_dir', None)
-        if dir_name is not None:
-            output_log_file = os.path.join(dir_name, settings.REBASE_HELPER_RESULTS_LOG)
-            final_message = "Summary output is also available in log {0}\n".format(output_log_file)
-            try:
-                LoggerHelper.add_file_handler(logger_output, output_log_file)
-            except (OSError, IOError):
-                raise RebaseHelperError("Can not create results file '{0}'".format(output_log_file))
+        # First of all we would like to print all
+        # summary information
+        OutputLogger.set_info_text("Summary output is also available in log:", path)
+        logger.info('\n')
+        for key, value in OutputLogger.get_summary_info().iteritems():
+            logger.info("{0} {1}\n".format(key, value))
 
-        cls.print_message_and_separator(message="\n\nSummary information:")
-        pkgs = ['old', 'new']
-        if kwargs.get('old', None) is None:
-            return None
-        summary = kwargs.get('summary_info', None)
-        if summary is not None:
-            cls.print_patches(kwargs.get('old', None).get(settings.FULL_PATCHES, None), summary)
-        for pkg in pkgs:
-            type_pkg = kwargs.get(pkg)
-            cls.print_rpms(type_pkg, pkg.capitalize())
-            cls.print_build_logs(type_pkg, pkg.capitalize())
+        try:
+            LoggerHelper.add_file_handler(logger_output, path)
+        except (OSError, IOError):
+            raise RebaseHelperError("Can not create results file '{0}'".format(path))
 
-        cls.print_pkgdiff_tool(**kwargs)
-        if dir_name is not None:
-            logger.info(final_message)
+        type_pkgs = ['old', 'new']
+        cls.print_patches(OutputLogger.get_patches('old'), '\nSummary information about patches:')
+        for pkg in type_pkgs:
+            type_pkg = OutputLogger.get_build(pkg)
+            if type_pkg:
+                cls.print_rpms(type_pkg, pkg.capitalize())
+                cls.print_build_logs(type_pkg, pkg.capitalize())
 
+        cls.print_pkgdiff_tool()
 
     @classmethod
-    def print_pkgdiff_tool(cls, **kwargs):
+    def print_pkgdiff_tool(cls):
         """
         Function prints a summary information about pkgcomparetool
         """
-        try:
-            logger_output.info("Results from pkgcompare check are stored in directory: '{0}'".format(kwargs['pkgcompareinfo']))
-        except KeyError as ke:
-            logger_output.error('Results from pkgcompare check could not be found.')
+        checker_data = OutputLogger.get_checkers()
+        if checker_data:
+            for check, data in checker_data.iteritems():
+                logger_output.info("Results from {0} check are {1}.".format(check, data))
 
 
 class OutputTool(object):
@@ -189,7 +186,7 @@ class OutputTool(object):
         if self._tool is None:
             raise NotImplementedError("Unsupported output tool")
 
-    def print_information(self, **kwargs):
+    def print_information(self, path):
         """ Build sources. """
         logger.debug("OutputTool: Printing information using '{0}'".format(self._output_tool_name))
-        return self._tool.print_summary(**kwargs)
+        return self._tool.print_summary(path)

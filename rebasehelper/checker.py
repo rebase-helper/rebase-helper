@@ -25,6 +25,7 @@ import os
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.logger import logger
 from rebasehelper.exceptions import RebaseHelperError
+from rebasehelper.base_output import OutputLogger
 
 check_tools = {}
 
@@ -100,7 +101,7 @@ class PkgDiffTool(BaseChecker):
         versions = ['old', 'new']
         cmd = [cls.CMD]
         for version in versions:
-            old = kwargs.get(version, None)
+            old = OutputLogger.get_build(version)
             if old:
                 file_name = cls._create_xml(version, input_structure=old)
                 cmd.append(file_name)
@@ -108,9 +109,15 @@ class PkgDiffTool(BaseChecker):
         cmd.append(cls.results_dir)
         cmd.append('-report-path')
         cmd.append(cls.pkgdiff_results_full_path)
-        print cmd
-        # TODO Should we return a value??
-        ProcessHelper.run_subprocess(cmd, output=ProcessHelper.DEV_NULL)
+        ret_code = ProcessHelper.run_subprocess(cmd, output=ProcessHelper.DEV_NULL)
+        """
+         From pkgdiff source code:
+         ret_code 0 means unchanged
+         ret_code 1 means Changed
+         other return codes means error
+        """
+        if int(ret_code) != 0 and int(ret_code) != 1:
+            raise RebaseHelperError('Execution of {0} failed.\nCommand line is: {1}'.format(cls.CMD, cmd))
         return cls.pkgdiff_results_full_path
 
 
