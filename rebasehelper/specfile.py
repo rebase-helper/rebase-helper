@@ -36,7 +36,6 @@ except ImportError:
     from io import StringIO
 
 import shutil
-import copy
 from rebasehelper.utils import DownloadHelper
 from rebasehelper.logger import logger
 from rebasehelper import settings
