@@ -173,6 +173,8 @@ class TestSpecFile(BaseTest):
         # the 'rc1' can't be in the version number
         assert SpecFile.extract_version_from_archive_name('bind-9.9.5rc2.tar.gz',
                                                           'ftp://ftp.isc.org/isc/bind9/%{VERSION}/bind-%{VERSION}.tar.gz') == ('9.9.5', 'rc2')
+        assert SpecFile.extract_version_from_archive_name('dnsmasq-2.69rc1.tar.xz',
+                                                          'http://www.thekelleys.org.uk/dnsmasq/%{?extrapath}%{name}-%{version}%{?extraversion}.tar.xz') == ('2.69', 'rc1')
 
     def test_spec_missing_file(self):
         files = {'missing': ['/usr/bin/test2']}

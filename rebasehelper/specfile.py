@@ -659,4 +659,15 @@ class SpecFile(object):
             return SpecFile.split_version_string(version)
         else:
             logger.debug('Failed to extract version from archive name!')
+            #  try fallback regex if not used this time
+            if regex_str != fallback_regex_str:
+                logger.debug("Trying to extracting version using fallback regex '{0}'".format(fallback_regex_str))
+                regex = re.compile(fallback_regex_str)
+                match = regex.search(name)
+                if match:
+                    version = match.group(1)
+                    logger.debug("Extracted version '{0}'".format(version))
+                    return SpecFile.split_version_string(version)
+                else:
+                    logger.debug('Failed to extract version from archive name using fallback regex!')
             return SpecFile.split_version_string('')
