@@ -80,7 +80,6 @@ class SpecFile(object):
     sources = None
     source_files = None
     patches = None
-    parsed_spec_file = ""
     rpm_sections = {}
 
     defined_sections = ['%headers',
@@ -174,26 +173,26 @@ class SpecFile(object):
         """
         # rpm-python does not provide any directive for getting %files section
         # Therefore we should do that workaround
-        self.parsed_spec_file = ''.join(self.spec_content)
+        parsed_spec_file = ''.join(self.spec_content)
         headers_re = [re.compile('^' + x, re.M) for x in self.defined_sections]
 
         section_starts = []
         # First of all we need to find a specific sections
         for header in headers_re:
-            for match in header.finditer(self.parsed_spec_file):
+            for match in header.finditer(parsed_spec_file):
                 section_starts.append(match.start())
 
         section_starts.sort()
-        header_end = section_starts[0] if section_starts else len(self.parsed_spec_file)
+        header_end = section_starts[0] if section_starts else len(parsed_spec_file)
         sections = {}
-        sections[0] = ('%header', self.parsed_spec_file[:header_end])
+        sections[0] = ('%header', parsed_spec_file[:header_end])
 
         for i in range(len(section_starts)):
             # We cut a relevant section to field
             if len(section_starts) > i + 1:
-                curr_section = self.parsed_spec_file[section_starts[i]:section_starts[i+1]]
+                curr_section = parsed_spec_file[section_starts[i]:section_starts[i+1]]
             else:
-                curr_section = self.parsed_spec_file[section_starts[i]:]
+                curr_section = parsed_spec_file[section_starts[i]:]
             for header in headers_re:
                 if header.match(curr_section):
                     fields = curr_section.split('\n')
