@@ -146,23 +146,20 @@ class SpecFile(object):
     def _create_spec_from_sections(self):
         # Spec file has defined order
         # First we write a header
-        new_spec_file = ""
+        new_spec_file = []
 
         try:
             for key, value in sorted(self.rpm_sections.iteritems()):
                 sec_name, section = value
                 if '%header' in sec_name:
-                    new_spec_file = section
+                    new_spec_file.append(section)
                 else:
-                    new_spec_file += sec_name + '\n' + section
+                    new_spec_file.append(sec_name)
+                    new_spec_file.append(section)
         except KeyError:
             raise RebaseHelperError("Unable to find a specific section in SPEC file")
 
-        try:
-            with open(self.path, 'w') as f:
-                f.write(new_spec_file)
-        except IOError:
-            raise RebaseHelperError("Unable to open and write new SPEC file '{0}'".format(self.path))
+        return new_spec_file
 
     def _split_sections(self):
         """
@@ -432,7 +429,8 @@ class SpecFile(object):
         except KeyError:
             pass
 
-        self._create_spec_from_sections()
+        self.spec_content = self._create_spec_from_sections()
+        self.save()
 
     def _download_source(self, source_name, destination):
         """
