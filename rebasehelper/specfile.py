@@ -82,15 +82,14 @@ class SpecFile(object):
     patches = None
     rpm_sections = {}
 
-    defined_sections = ['%headers',
-                        '%files',
-                        '%changelog',
-                        '%build',
-                        '%check',
-                        '%install',
+    defined_sections = ['%package',
                         '%description',
-                        '%package',
-                        '%prep']
+                        '%prep',
+                        '%build',
+                        '%install',
+                        '%check',
+                        '%files',
+                        '%changelog']
 
     def __init__(self, path, download=True):
         self.path = path
@@ -152,10 +151,10 @@ class SpecFile(object):
             for key, value in sorted(self.rpm_sections.iteritems()):
                 sec_name, section = value
                 if '%header' in sec_name:
-                    new_spec_file.append(section)
+                    new_spec_file.extend(section)
                 else:
-                    new_spec_file.append(sec_name)
-                    new_spec_file.append(section)
+                    new_spec_file.append(sec_name + '\n')
+                    new_spec_file.extend(section)
         except KeyError:
             raise RebaseHelperError("Unable to find a specific section in SPEC file")
 
@@ -163,52 +162,64 @@ class SpecFile(object):
 
     def _split_sections(self):
         """
-        Function split spec file to defined sections
+        Function split spec file to well known SPEC sections
+
         :return: position and content of section in format like
-            [0, (%files, <all rows within %files section>,
-             1, (%files debug, <all rows within %files debug section>]
+            [0, (%files, [list of all rows within %files section],
+             1, (%files debug, [list of all rows within %files debug section]]
         """
         # rpm-python does not provide any directive for getting %files section
         # Therefore we should do that workaround
-        parsed_spec_file = ''.join(self.spec_content)
-        headers_re = [re.compile('^' + x, re.M) for x in self.defined_sections]
+        section_headers_re = [re.compile('^{0}.*'.format(x)) for x in self.defined_sections]
 
         section_starts = []
-        # First of all we need to find a specific sections
-        for header in headers_re:
-            for match in header.finditer(parsed_spec_file):
-                section_starts.append(match.start())
+        # First of all we need to find beginning of all sections
+        for line_num, line in enumerate(self.spec_content):
+            # it might be a section
+            if line.startswith('%'):
+                # check all possible section headers
+                for section_header in section_headers_re:
+                    if section_header.search(line):
+                        section_starts.append(line_num)
 
-        section_starts.sort()
-        header_end = section_starts[0] if section_starts else len(parsed_spec_file)
-        sections = {}
-        sections[0] = ('%header', parsed_spec_file[:header_end])
+        # determine the SPEC header
+        # it is everything until the beginning the first section
+        header_end = section_starts[0] if section_starts else len(self.spec_content)
+        sections = {0: ('%header', self.spec_content[:header_end])}
 
+        # now determine all previously found sections
         for i in range(len(section_starts)):
             # We cut a relevant section to field
-            if len(section_starts) > i + 1:
-                curr_section = parsed_spec_file[section_starts[i]:section_starts[i+1]]
+            if i + 1 < len(section_starts):
+                curr_section = self.spec_content[section_starts[i]:section_starts[i+1]]
             else:
-                curr_section = parsed_spec_file[section_starts[i]:]
-            for header in headers_re:
-                if header.match(curr_section):
-                    fields = curr_section.split('\n')
-                    sections[i+1] = (fields[0], fields[1:])
+                curr_section = self.spec_content[section_starts[i]:]
+            sections[i+1] = (curr_section[0].strip(), curr_section[1:])
+
         return sections
 
-    def get_files_sections(self):
+    def get_combined_files_sections(self):
+        """
+        Returns a list of files from all files sections combined
+
+        :return: list of files
+        """
         pkg_files = []
-        for key, section in self.rpm_sections.iteritems():
-            tag, sec = section
-            if '%files' in tag:
-                pkg_files.extend([f for f in sec if f.startswith('/')])
+        for name, section in self.rpm_sections.itervalues():
+            if name.startswith('%files'):
+                pkg_files.extend([f for f in section if f.strip()])
         return pkg_files
 
     def get_spec_section(self, section_name):
+        """
+        Returns the section of selected name
+
+        :param section_name: section name to get
+        :return: list of lines contained in the selected section
+        """
         for sec_name, section in self.rpm_sections.itervalues():
             if sec_name == section_name:
                 return section
-        return None
 
     def _get_patch_number(self, fields):
         """
@@ -362,12 +373,18 @@ class SpecFile(object):
         return files
 
     @staticmethod
-    def add_new_string_with_comment(new_string):
-        sep = '\n'
-        new_content = settings.BEGIN_COMMENT + sep
-        new_content += new_string + sep
-        new_content += settings.END_COMMENT + sep
-        return new_content
+    def construct_string_with_comment(lines):
+        """
+        Wraps the line in a rebase-helper specific comments
+
+        :param lines: line (or list of lines) to be wrapped
+        :return: list with lines
+        """
+        comm_lines = [settings.BEGIN_COMMENT]
+        for l in lines if not isinstance(lines, basestring) else [lines]:
+            comm_lines.append(l)
+        comm_lines.append(settings.END_COMMENT)
+        return comm_lines
 
     def _correct_missing_files(self, missing):
         sep = '\n'
@@ -384,7 +401,7 @@ class SpecFile(object):
                 else:
                     # This code adds begin_comment, files and end_comment
                     # with separator
-                    sec_content = SpecFile.add_new_string_with_comment('\n'.join(missing)) + sec_content
+                    sec_content = SpecFile.construct_string_with_comment(missing) + sec_content
                 self.rpm_sections[key] = (sec_name, sec_content)
                 break
 
@@ -403,7 +420,7 @@ class SpecFile(object):
                     sec_content = sec_content.split('\n')
                     for index, row in enumerate(sec_content):
                         if f in row:
-                            sec_content[index] = SpecFile.add_new_string_with_comment('#' + row)
+                            sec_content[index] = SpecFile.construct_string_with_comment('#' + row)
                 self.rpm_sections[key] = (sec_name, '\n'.join(sec_content))
 
     def modify_spec_files_section(self, files):
@@ -657,6 +674,7 @@ class SpecFile(object):
             return SpecFile.split_version_string(version)
         else:
             logger.debug('Failed to extract version from archive name!')
+            #  TODO: look at this if it could be rewritten in a better way!
             #  try fallback regex if not used this time
             if regex_str != fallback_regex_str:
                 logger.debug("Trying to extracting version using fallback regex '{0}'".format(fallback_regex_str))

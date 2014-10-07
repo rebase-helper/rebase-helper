@@ -176,6 +176,78 @@ class TestSpecFile(BaseTest):
         assert SpecFile.extract_version_from_archive_name('dnsmasq-2.69rc1.tar.xz',
                                                           'http://www.thekelleys.org.uk/dnsmasq/%{?extrapath}%{name}-%{version}%{?extraversion}.tar.xz') == ('2.69', 'rc1')
 
+    def test__split_sections(self):
+        expected_sections = {
+            0: ['%header', ['Summary: A testing spec file\n',
+                            'Name: test\n',
+                            'Version: 1.0.2\n',
+                            'Release: 1%{?dist}\n',
+                            'License: GPL2+\n',
+                            'Group: System Environment\n',
+                            'URL: http://testing.org\n',
+                            '\n',
+                            '# Note: non-current tarballs get moved to the history/ subdirectory,\n',
+                            '# so look there if you fail to retrieve the version you want\n',
+                            'Source0: ftp://ftp.test.org/test-%{version}.tar.xz\n',
+                            'Source1: source-tests.sh\n',
+                            'Source2: ftp://test.com/test-source.sh\n',
+                            '#Source3: source-tests.sh\n',
+                            'Patch1: test-testing.patch\n',
+                            'Patch2: test-testing2.patch\n',
+                            'Patch3: test-testing3.patch\n',
+                            '\n',
+                            'BuildRequires: openssl-devel, pkgconfig, texinfo, gettext, autoconf\n',
+                            '\n']],
+            1: ['%description', ['Testing spec file\n',
+                                 '\n']],
+            2: ['%package devel', ['Summary: A testing devel package\n',
+                                   '\n']],
+            3: ['%description devel', ['Testing devel spec file\n',
+                                       '\n']],
+            4: ['%prep', ['%setup -q\n',
+                          '%patch1\n',
+                          '%patch2 -p1\n',
+                          '%patch3 -p1 -b .testing3\n',
+                          '\n']],
+            5: ['%build', ['autoreconf -vi\n',
+                           '\n',
+                           '%configure\n',
+                           'make TEST\n',
+                           '\n']],
+            6: ['%install', ['make DESTDIR=$RPM_BUILD_ROOT install\n',
+                             '\n']],
+            7: ['%check', ['#to run make check use "--with check"\n',
+                           '%if %{?_with_check:1}%{!?_with_check:0}\n',
+                           'make check\n',
+                           '%endif\n',
+                           '\n']],
+            8: ['%files', ['%{_bindir}/file.txt\n',
+                           '\n']],
+            9: ['%files devel', ['%{_bindir}/test_example\n',
+                                 '%{_libdir}/my_test.so\n',
+                                 '\n']],
+            10: ['%changelog', ['* Tue Sep 24 2013 Petr Hracek <phracek@redhat.com> 1.0.0-1\n',
+                                '- Initial version\n',
+                                '\n']]
+        }
+        sections = self.SPEC_FILE_OBJECT._split_sections()
+        for key, value in expected_sections.iteritems():
+            assert sections[key][0] == value[0]
+            assert sections[key][1] == value[1]
+
+    def test_get_spec_section(self):
+        expected_section = ['%{_bindir}/file.txt\n',
+                            '\n']
+        section = self.SPEC_FILE_OBJECT.get_spec_section('%files')
+        assert section == expected_section
+
+    def test_get_files_sections(self):
+        expected_list = ['%{_bindir}/file.txt\n',
+                         '%{_bindir}/test_example\n',
+                         '%{_libdir}/my_test.so\n']
+        l = self.SPEC_FILE_OBJECT.get_combined_files_sections()
+        assert expected_list == l
+
     def test_spec_missing_file(self):
         files = {'missing': ['/usr/bin/test2']}
         self.SPEC_FILE_OBJECT.modify_spec_files_section(files)
@@ -198,7 +270,6 @@ class TestSpecFile(BaseTest):
         assert '%{_libdir}/test.so' not in section
 
     def test_spec_missing_from_logfile(self):
-        print self.WORKING_DIR
         shutil.move('build_missing.log', 'build.log')
         files = BuildLogAnalyzer.parse_log(self.WORKING_DIR, 'build.log')
         self.SPEC_FILE_OBJECT.modify_spec_files_section(files)
