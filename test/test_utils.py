@@ -25,7 +25,7 @@ import tempfile
 import random
 import string
 try:
-    import StringIO
+    from StringIO import StringIO
 except ImportError:
     from io import StringIO
 
@@ -65,7 +65,7 @@ class TestProcessHelper(object):
             assert open(self.OUT_FILE).readline().strip('\n') == self.PHRASE
 
         def test_simple_cmd_with_redirected_output_fileobject(self):
-            buff = StringIO.StringIO()
+            buff = StringIO()
             ret = ProcessHelper.run_subprocess(self.ECHO_COMMAND,
                                                output=buff)
             assert ret == 0
@@ -88,7 +88,7 @@ class TestProcessHelper(object):
             assert open(self.OUT_FILE).readline().strip('\n') == self.PHRASE
 
         def test_simple_cmd_with_input_fileobject_and_redirected_output_path(self):
-            in_buff = StringIO.StringIO()
+            in_buff = StringIO()
             in_buff.write(self.PHRASE)
 
             assert not os.path.exists(self.IN_FILE)
@@ -104,7 +104,7 @@ class TestProcessHelper(object):
             assert open(self.OUT_FILE).readline().strip('\n') == self.PHRASE
 
         def test_simple_cmd_with_input_path_and_redirected_output_fileobject(self):
-            out_buff = StringIO.StringIO()
+            out_buff = StringIO()
             with open(self.IN_FILE, 'w') as f:
                 f.write(self.PHRASE)
 
@@ -121,8 +121,8 @@ class TestProcessHelper(object):
             out_buff.close()
 
         def test_simple_cmd_with_input_fileobject_and_redirected_output_fileobject(self):
-            out_buff = StringIO.StringIO()
-            in_buff = StringIO.StringIO()
+            out_buff = StringIO()
+            in_buff = StringIO()
             in_buff.write(self.PHRASE)
 
             assert not os.path.exists(self.IN_FILE)
