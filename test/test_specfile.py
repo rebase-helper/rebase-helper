@@ -241,13 +241,6 @@ class TestSpecFile(BaseTest):
         section = self.SPEC_FILE_OBJECT.get_spec_section('%files')
         assert section == expected_section
 
-    def test_get_files_sections(self):
-        expected_list = ['%{_bindir}/file.txt\n',
-                         '%{_bindir}/test_example\n',
-                         '%{_libdir}/my_test.so\n']
-        l = self.SPEC_FILE_OBJECT.get_combined_files_sections()
-        assert expected_list == l
-
     def test_spec_missing_file(self):
         files = {'missing': ['/usr/bin/test2']}
         self.SPEC_FILE_OBJECT.modify_spec_files_section(files)

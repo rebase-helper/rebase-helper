@@ -198,18 +198,6 @@ class SpecFile(object):
 
         return sections
 
-    def get_combined_files_sections(self):
-        """
-        Returns a list of files from all files sections combined
-
-        :return: list of files
-        """
-        pkg_files = []
-        for name, section in self.rpm_sections.itervalues():
-            if name.startswith('%files'):
-                pkg_files.extend([f for f in section if f.strip()])
-        return pkg_files
-
     def get_spec_section(self, section_name):
         """
         Returns the section of selected name

@@ -127,8 +127,6 @@ class Application(object):
             logger.debug("Application: argument passed as a new source is a version")
             self.rebase_spec_file.set_version(self.conf.sources)
 
-        self.kwargs['file_list'] = self.spec_file.get_combined_files_sections()
-
     def _find_old_data(self):
         """
         Function find data previously done
