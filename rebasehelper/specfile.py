@@ -193,7 +193,7 @@ class SpecFile(object):
             for header in headers_re:
                 if header.match(curr_section):
                     fields = curr_section.split('\n')
-                    sections[i+1] = (fields[0], '\n'.join(fields[1:]))
+                    sections[i+1] = (fields[0], fields[1:])
         return sections
 
     def get_files_sections(self):
@@ -201,7 +201,7 @@ class SpecFile(object):
         for key, section in self.rpm_sections.iteritems():
             tag, sec = section
             if '%files' in tag:
-                pkg_files.extend([f for f in sec.split('\n') if f.startswith('/')])
+                pkg_files.extend([f for f in sec if f.startswith('/')])
         return pkg_files
 
     def get_spec_section(self, section_name):
