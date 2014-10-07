@@ -20,7 +20,7 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
-import os
+import six
 from rebasehelper.base_output import OutputLogger
 
 
@@ -55,7 +55,7 @@ class TestBaseOutput(object):
         expected_result = {'build': build_dict,
                            'patch': self.patches_data,
                            'information': expect_dict}
-        for key, value in expected_result.iteritems():
+        for key, value in six.iteritems(expected_result):
             assert value == expected_result[key]
 
     def test_base_output_info(self):
