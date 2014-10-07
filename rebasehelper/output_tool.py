@@ -22,10 +22,10 @@
 
 import sys
 import os
+import six
 
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.logger import LoggerHelper, logger, logger_output
-from rebasehelper import settings
 from rebasehelper.base_output import OutputLogger
 
 output_tools = {}
@@ -139,7 +139,7 @@ class TextOutputTool(BaseOutputTool):
         # summary information
         OutputLogger.set_info_text("Summary output is also available in log:", path)
         logger.info('\n')
-        for key, value in OutputLogger.get_summary_info().iteritems():
+        for key, value in six.iteritems(OutputLogger.get_summary_info()):
             logger.info("{0} {1}\n".format(key, value))
 
         try:
@@ -164,7 +164,7 @@ class TextOutputTool(BaseOutputTool):
         """
         checker_data = OutputLogger.get_checkers()
         if checker_data:
-            for check, data in checker_data.iteritems():
+            for check, data in six.iteritems(checker_data):
                 logger_output.info("Results from {0} check are {1}.".format(check, data))
 
 

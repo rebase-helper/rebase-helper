@@ -24,10 +24,8 @@ import os
 import tempfile
 import random
 import string
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
+import six
+from six import StringIO
 
 from .base_test import BaseTest
 from rebasehelper.utils import ProcessHelper
@@ -195,7 +193,7 @@ class TestProcessHelper(object):
 
         def test_setting_existing_env(self):
             # make copy of existing environment
-            en_variables = os.environ.copy().keys()
+            en_variables = list(os.environ.copy().keys())
 
             # there are no variables set on the system -> nothing to test
             if not en_variables:
@@ -339,13 +337,13 @@ class TestTemporaryEnvironment(object):
         def callback(**kwargs):
             path = kwargs.get(TemporaryEnvironment.TEMPDIR, '')
             assert path != ''
-            with open(tmp_path, 'wb') as f:
+            with open(tmp_path, 'w') as f:
                 f.write(path)
 
         with TemporaryEnvironment(exit_callback=callback) as temp:
             path = temp.path()
 
-        with open(tmp_path, 'rb') as f:
+        with open(tmp_path, 'r') as f:
             assert f.read() == path
 
         os.unlink(tmp_path)
@@ -358,7 +356,7 @@ class TestTemporaryEnvironment(object):
         def callback(**kwargs):
             path = kwargs.get(TemporaryEnvironment.TEMPDIR, '')
             assert path != ''
-            with open(tmp_path, 'wb') as f:
+            with open(tmp_path, 'w') as f:
                 f.write(path)
 
         try:
@@ -368,7 +366,7 @@ class TestTemporaryEnvironment(object):
         except RuntimeError:
             pass
 
-        with open(tmp_path, 'rb') as f:
+        with open(tmp_path, 'r') as f:
             assert f.read() == path
 
         os.unlink(tmp_path)

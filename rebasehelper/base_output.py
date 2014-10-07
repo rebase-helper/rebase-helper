@@ -20,6 +20,8 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
+import six
+
 
 class OutputData(object):
     """
@@ -36,7 +38,7 @@ class OutputData(object):
         relevant data.
         """
         if name in self.summary_information:
-            for key, value in data.iteritems():
+            for key, value in six.iteritems(data):
                 self.summary_information[name][key] = value
         else:
             self.summary_information[name] = {}
@@ -52,7 +54,7 @@ class OutputData(object):
         result = {}
         try:
             res = self.get_key(key)
-            for text, data in res.iteritems():
+            for text, data in six.iteritems(res):
                 if text == value:
                     result = data
         except KeyError:

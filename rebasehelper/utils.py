@@ -27,14 +27,11 @@ import tempfile
 #import pycurl
 import shutil
 import rpm
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
+import six
+from six import StringIO
 
 from rebasehelper.logger import logger
 from rebasehelper import settings
-
 
 def check_empty_patch(patch_name):
     """
@@ -216,10 +213,10 @@ class ProcessHelper(object):
         # check if in_file has fileno() method - which is needed for Popen
         try:
             in_file.fileno()
-        except AttributeError:
+        except:
             spooled_in_file = tempfile.SpooledTemporaryFile(mode='w+b')
             try:
-                in_data = in_file.read()
+                in_data = six.b(in_file.read())
             except AttributeError:
                 spooled_in_file.close()
             else:
@@ -251,7 +248,7 @@ class ProcessHelper(object):
         if out_file is not None:
             # read the output
             for line in sp.stdout:
-                out_file.write(line)
+                out_file.write(line.decode())
             # TODO: Need to figure out how to send output to stdout (without logger) and to logger
             #else:
             #   logger.debug(line.rstrip("\n"))

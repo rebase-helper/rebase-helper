@@ -22,6 +22,7 @@
 
 import os
 import shutil
+import six
 
 from .base_test import BaseTest
 from rebasehelper.specfile import SpecFile
@@ -231,7 +232,7 @@ class TestSpecFile(BaseTest):
                                 '\n']]
         }
         sections = self.SPEC_FILE_OBJECT._split_sections()
-        for key, value in expected_sections.iteritems():
+        for key, value in six.iteritems(expected_sections):
             assert sections[key][0] == value[0]
             assert sections[key][1] == value[1]
 

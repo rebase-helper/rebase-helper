@@ -20,22 +20,16 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
-try:
-    from functools import reduce
-except ImportError:
-    pass  # we're on Python 2 => ok
+
 import os
+import re
+import shutil
+import six
 try:
     import rpm
 except ImportError:
     pass
-import re
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
 
-import shutil
 from rebasehelper.utils import DownloadHelper
 from rebasehelper.logger import logger
 from rebasehelper import settings
@@ -148,7 +142,7 @@ class SpecFile(object):
         new_spec_file = []
 
         try:
-            for key, value in sorted(self.rpm_sections.iteritems()):
+            for key, value in sorted(six.iteritems(self.rpm_sections)):
                 sec_name, section = value
                 if '%header' in sec_name:
                     new_spec_file.extend(section)
@@ -205,7 +199,7 @@ class SpecFile(object):
         :param section_name: section name to get
         :return: list of lines contained in the selected section
         """
-        for sec_name, section in self.rpm_sections.itervalues():
+        for sec_name, section in six.itervalues(self.rpm_sections):
             if sec_name == section_name:
                 return section
 
@@ -263,21 +257,21 @@ class SpecFile(object):
         Method returns the version
         :return:
         """
-        return self.hdr[rpm.RPMTAG_VERSION]
+        return self.hdr[rpm.RPMTAG_VERSION].decode()
 
     def get_package_name(self):
         """
         Function returns a package name
         :return:
         """
-        return self.hdr[rpm.RPMTAG_NAME]
+        return self.hdr[rpm.RPMTAG_NAME].decode()
 
     def get_requires(self):
         """
         Function returns a package reuirements
         :return:
         """
-        return self.hdr[rpm.RPMTAG_REQUIRES]
+        return [r.decode() for r in self.hdr[rpm.RPMTAG_REQUIRES]]
 
     def is_patch_git_generated(self, full_patch_name):
         """
@@ -354,7 +348,7 @@ class SpecFile(object):
                          '/var': '%{_localstatedir}',
                          }
         for index, filename in enumerate(files):
-            for abs_path, macro in sorted(macro_mapping.iteritems(), reverse=True):
+            for abs_path, macro in sorted(six.iteritems(macro_mapping), reverse=True):
                 if filename.startswith(abs_path):
                     files[index] = filename.replace(abs_path, macro)
                     break
@@ -369,14 +363,14 @@ class SpecFile(object):
         :return: list with lines
         """
         comm_lines = [settings.BEGIN_COMMENT]
-        for l in lines if not isinstance(lines, basestring) else [lines]:
+        for l in lines if not isinstance(lines, six.string_types) else [lines]:
             comm_lines.append(l)
         comm_lines.append(settings.END_COMMENT)
         return comm_lines
 
     def _correct_missing_files(self, missing):
         sep = '\n'
-        for key, value in self.rpm_sections.iteritems():
+        for key, value in six.iteritems(self.rpm_sections):
             sec_name, sec_content = value
             match = re.search(r'^%files\s*$', sec_name)
             if match:
@@ -394,7 +388,7 @@ class SpecFile(object):
                 break
 
     def _correct_removed_files(self, sources):
-        for key, value in self.rpm_sections.iteritems():
+        for key, value in six.iteritems(self.rpm_sections):
             sec_name, sec_content = value
             # Only sections %files are interesting
             match = re.search(r'^%files', sec_name)
