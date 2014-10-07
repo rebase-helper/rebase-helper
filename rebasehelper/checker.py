@@ -90,6 +90,10 @@ class PkgDiffTool(BaseChecker):
         return file_name
 
     @classmethod
+    def process_xml_results(cls):
+        pass
+
+    @classmethod
     def run_check(cls, **kwargs):
         """ Compares  old and new RPMs using pkgdiff """
         cls.results_dir = kwargs.get('results_dir', '')
@@ -118,6 +122,7 @@ class PkgDiffTool(BaseChecker):
         """
         if int(ret_code) != 0 and int(ret_code) != 1:
             raise RebaseHelperError('Execution of {0} failed.\nCommand line is: {1}'.format(cls.CMD, cmd))
+        res_dict = cls.process_xml_file()
         return cls.pkgdiff_results_full_path
 
 
