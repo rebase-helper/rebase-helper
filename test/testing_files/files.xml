@@ -1,0 +1,20 @@
+<added>
+    /usr/sbin/test
+    /usr/lib64/libtest.so
+    /usr/lib64/libtest.so.1
+</added>
+<removed>
+    /usr/sbin/my_test
+    /usr/lib64/libtest2.so
+    /usr/lib64/libtest2.so.1
+</removed>
+<changed>
+    /usr/share/test.man
+</changed>
+<moved>
+    /usr/local/test.sh
+</moved>
+<renamed>
+    /usr/lib/libtest3.so.3
+    /usr/lib/libtest3.so
+</renamed>

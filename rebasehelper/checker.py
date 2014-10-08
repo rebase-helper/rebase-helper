@@ -26,6 +26,7 @@ from rebasehelper.utils import ProcessHelper
 from rebasehelper.logger import logger
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.base_output import OutputLogger
+from xml.etree import ElementTree
 
 check_tools = {}
 
@@ -91,7 +92,28 @@ class PkgDiffTool(BaseChecker):
 
     @classmethod
     def process_xml_results(cls):
-        pass
+        XML_FILES = ['files.xml', 'symbols.xml']
+        XML_TAGS = ['added', 'removed', 'changed', 'moved', 'renamed']
+        result_dict = {}
+        for tags in XML_TAGS:
+            result_dict[tags] = []
+        for file_name in [os.path.join(cls.results_dir, x) for x in XML_FILES]:
+            logger.info('Processing {0} file.'.format(file_name))
+            lines = ""
+            try:
+                with open(file_name, "r") as f:
+                    lines = f.readlines()
+                lines.insert(0, '<pkgdiff>')
+                lines.append('</pkgdiff>')
+                pkgdiff_tree = ElementTree.fromstringlist(lines)
+                for tag in XML_TAGS:
+                    for pkgdiff in pkgdiff_tree.findall(tag):
+                        result_dict[tag].extend(pkgdiff.text.split())
+
+            except IOError:
+                continue
+        return result_dict
+
 
     @classmethod
     def run_check(cls, **kwargs):
@@ -122,8 +144,7 @@ class PkgDiffTool(BaseChecker):
         """
         if int(ret_code) != 0 and int(ret_code) != 1:
             raise RebaseHelperError('Execution of {0} failed.\nCommand line is: {1}'.format(cls.CMD, cmd))
-        res_dict = cls.process_xml_file()
-        return cls.pkgdiff_results_full_path
+        return cls.process_xml_results()
 
 
 class Checker(object):
