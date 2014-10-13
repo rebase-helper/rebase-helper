@@ -77,9 +77,7 @@ class PyTest(Command):
             retcode = t.returncode or retcode
 
         raise SystemExit(retcode)
-#if sys.version_info > (2, 7):
-#    install_requires = ['pylzma']
-#else:
+
 install_requires = []
 
 setup(
