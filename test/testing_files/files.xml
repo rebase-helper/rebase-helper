@@ -1,10 +1,12 @@
 <added>
     /usr/sbin/test
+    /usr/sbin/pkg-1.0.2/binary_test
     /usr/lib64/libtest.so
     /usr/lib64/libtest.so.1
 </added>
 <removed>
     /usr/sbin/my_test
+    /usr/sbin/pkg-1.0.1/binary_test
     /usr/lib64/libtest2.so
     /usr/lib64/libtest2.so.1
 </removed>
@@ -13,6 +15,7 @@
 </changed>
 <moved>
     /usr/local/test.sh
+    /usr/sbin/pkg-1.0.1/binary_test;/usr/sbin/pkg-1.0.2/binary_test
 </moved>
 <renamed>
     /usr/lib/libtest3.so.3

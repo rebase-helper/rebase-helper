@@ -21,6 +21,7 @@
 #          Tomas Hozza <thozza@redhat.com>
 
 import os
+import six
 
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.logger import logger
@@ -63,6 +64,7 @@ class PkgDiffTool(BaseChecker):
     results_dir = ''
     workspace_dir = ''
     pkgdiff_results_dir = ''
+    results_dict = {}
 
     @classmethod
     def match(cls, cmd=None):
@@ -91,33 +93,57 @@ class PkgDiffTool(BaseChecker):
         return file_name
 
     @classmethod
-    def process_xml_results(cls):
+    def _fill_dictionary(cls):
+        """
+        Parsed files.xml and symbols.xml and fill dictionary
+        :return:
+        """
         XML_FILES = ['files.xml', 'symbols.xml']
         XML_TAGS = ['added', 'removed', 'changed', 'moved', 'renamed']
-        result_dict = {}
-        for tags in XML_TAGS:
-            result_dict[tags] = []
+        for tag in XML_TAGS:
+            cls.results_dict[tag] = []
         for file_name in [os.path.join(cls.results_dir, x) for x in XML_FILES]:
             logger.info('Processing {0} file.'.format(file_name))
-            lines = ""
             try:
                 with open(file_name, "r") as f:
                     lines = f.readlines()
-                lines.insert(0, '<pkgdiff>')
-                lines.append('</pkgdiff>')
-                pkgdiff_tree = ElementTree.fromstringlist(lines)
-                for tag in XML_TAGS:
-                    for pkgdiff in pkgdiff_tree.findall(tag):
-                        result_dict[tag].extend(pkgdiff.text.split())
-
+                    lines.insert(0, '<pkgdiff>')
+                    lines.append('</pkgdiff>')
+                    pkgdiff_tree = ElementTree.fromstringlist(lines)
+                    for tag in XML_TAGS:
+                        for pkgdiff in pkgdiff_tree.findall('.//' + tag):
+                            cls.results_dict[tag].extend(pkgdiff.text.split())
             except IOError:
                 continue
-        return result_dict
+
+    @classmethod
+    def _update_added_removed(cls, key):
+        update = []
+        removed_things = ['.build-id', '.dwz']
+        for items in cls.results_dict[key]:
+            # TODO for now we are skipping the .build-id files
+            removed = [x for x in removed_things if x in items]
+            if removed:
+                continue
+            # We find whether file exists in 'moved' section
+            # If yes then do not include in key set
+            found = [x for x in cls.results_dict['moved'] if items in x]
+            if not found:
+                update.append(items)
+        return update
+
+    @classmethod
+    def process_xml_results(cls):
+        cls._fill_dictionary()
+        for items in ['added', 'removed']:
+            cls.results_dict[items] = cls._update_added_removed(items)
+
+        return cls.results_dict
 
 
     @classmethod
     def run_check(cls, **kwargs):
-        """ Compares  old and new RPMs using pkgdiff """
+        """ Compares old and new RPMs using pkgdiff """
         cls.results_dir = kwargs.get('results_dir', '')
         cls.workspace_dir = os.path.join(kwargs.get('workspace_dir', ''), cls.CMD)
         cls.pkgdiff_results_full_path = os.path.join(cls.results_dir, cls.pkgdiff_results_filename)
@@ -144,6 +170,7 @@ class PkgDiffTool(BaseChecker):
         """
         if int(ret_code) != 0 and int(ret_code) != 1:
             raise RebaseHelperError('Execution of {0} failed.\nCommand line is: {1}'.format(cls.CMD, cmd))
+        OutputLogger.set_info_text('Result HTML page from pkgdiff is store in: ', cls.pkgdiff_results_full_path)
         return cls.process_xml_results()
 
 

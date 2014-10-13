@@ -40,7 +40,8 @@ class TestPkgDiff(BaseTest):
                                      '/usr/lib64/libtest2.so',
                                      '/usr/lib64/libtest2.so.1'],
                          'changed': ['/usr/share/test.man'],
-                         'moved': ['/usr/local/test.sh'],
+                         'moved': ['/usr/local/test.sh',
+                                   '/usr/sbin/pkg-1.0.1/binary_test;/usr/sbin/pkg-1.0.2/binary_test'],
                          'renamed': ['/usr/lib/libtest3.so.3',
                                      '/usr/lib/libtest3.so']}
         pkgdiff_tool = PkgDiffTool()
