@@ -22,6 +22,7 @@
 import os
 import shutil
 import logging
+import six
 
 from rebasehelper.archive import Archive
 from rebasehelper.specfile import SpecFile, get_rebase_name
@@ -373,8 +374,9 @@ class Application(object):
                 Checker.get_supported_tools()))
         else:
             logger.info('Comparing packages using {0} ... running'.format(self.conf.pkgcomparetool))
-            results = pkgchecker.run_check(**self.kwargs)
-            OutputLogger.set_checker_output(self.conf.pkgcomparetool, results)
+            results_dict = pkgchecker.run_check(**self.kwargs)
+            for key, val in six.iteritems(results_dict):
+                OutputLogger.set_checker_output(key+':\n', '\n'.join(val))
             logger.info('Comparing packages done')
 
     def print_summary(self):
