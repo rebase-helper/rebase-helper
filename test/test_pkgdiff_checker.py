@@ -21,6 +21,8 @@
 #          Tomas Hozza <thozza@redhat.com>
 
 import six
+import os
+
 from .base_test import BaseTest
 from rebasehelper.checker import PkgDiffTool
 
@@ -28,9 +30,17 @@ from rebasehelper.checker import PkgDiffTool
 class TestPkgDiff(BaseTest):
 
     FILE_XML = "files.xml"
+    PKGDIFF_HTML = "pkgdiff_reports.html"
     TEST_FILES = [
         FILE_XML,
+        PKGDIFF_HTML
     ]
+
+    def get_data(self):
+        data = {'moved': ['/usr/src/debug/iproute2-3.12.0/test/mytest.c',
+                          '/usr/src/debug/iproute2-3.12.0/test/mytest2.c'],
+                'changed': ['/usr/include/test.h']}
+        return data
 
     def test_pkgdiff_dictionary(self):
         expected_dict = {'added': ['/usr/sbin/test',
@@ -44,7 +54,16 @@ class TestPkgDiff(BaseTest):
                                    '/usr/sbin/pkg-1.0.1/binary_test;/usr/sbin/pkg-1.0.2/binary_test'],
                          'renamed': ['/usr/lib/libtest3.so.3',
                                      '/usr/lib/libtest3.so']}
-        pkgdiff_tool = PkgDiffTool()
-        pkgdiff_tool.results_dir = self.TESTS_DIR
-        res_dict = pkgdiff_tool.process_xml_results()
+        pdt = PkgDiffTool()
+        pdt.results_dir = self.TEST_FILES_DIR
+        res_dict = pdt._fill_dictionary(pdt.results_dir)
         assert res_dict == expected_dict
+
+    def test_pkgdiff_parse_report(self):
+        expected_dict = {'moved': ['/usr/src/debug/iproute2-3.12.0/test/mytest.c'],
+                         'changed': ['/usr/include/test.h']}
+        pdt = PkgDiffTool()
+        pdt.results_dir = self.TEST_FILES_DIR
+        res_dict = pdt._update_changed_moved(pdt.results_dir, self.get_data())
+        assert res_dict == expected_dict
+

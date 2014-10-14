@@ -22,6 +22,7 @@
 
 import os
 import six
+import re
 
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.logger import logger
@@ -63,8 +64,6 @@ class PkgDiffTool(BaseChecker):
     pkgdiff_results_filename = 'pkgdiff_reports.html'
     results_dir = ''
     workspace_dir = ''
-    pkgdiff_results_dir = ''
-    results_dict = {}
 
     @classmethod
     def match(cls, cmd=None):
@@ -93,16 +92,40 @@ class PkgDiffTool(BaseChecker):
         return file_name
 
     @classmethod
-    def _fill_dictionary(cls):
+    def _get_percentage(cls, result_dir, flag, file_list):
+        """
+        Function return percentage from pkgdiff_reuslt.html file
+        :param flag: If 'moved' or 'change' is used
+        :param moved_file: Which file we are tring looking for
+        :return: percentage
+        """
+        update_list = []
+        with open(os.path.join(result_dir, cls.pkgdiff_results_filename), "r") as f:
+            pkg_report = f.read()
+        if not pkg_report:
+            return file_list
+        for file_name in file_list:
+            reg_exp = '<td.*>' + file_name + '</td>\s*<td.*>' + flag + '</td>\s*<td.*>(.*)%</td>'
+            match = re.search(reg_exp, pkg_report, re.MULTILINE)
+            if match:
+                percent = match.group(1)
+                if float(percent) != 0:
+                    update_list.append(file_name)
+        return update_list
+
+    @classmethod
+    def _fill_dictionary(cls, result_dir):
         """
         Parsed files.xml and symbols.xml and fill dictionary
         :return:
         """
         XML_FILES = ['files.xml', 'symbols.xml']
         XML_TAGS = ['added', 'removed', 'changed', 'moved', 'renamed']
+        results_dict = {}
+
         for tag in XML_TAGS:
-            cls.results_dict[tag] = []
-        for file_name in [os.path.join(cls.results_dir, x) for x in XML_FILES]:
+            results_dict[tag] = []
+        for file_name in [os.path.join(result_dir, x) for x in XML_FILES]:
             logger.info('Processing {0} file.'.format(file_name))
             try:
                 with open(file_name, "r") as f:
@@ -112,34 +135,50 @@ class PkgDiffTool(BaseChecker):
                     pkgdiff_tree = ElementTree.fromstringlist(lines)
                     for tag in XML_TAGS:
                         for pkgdiff in pkgdiff_tree.findall('.//' + tag):
-                            cls.results_dict[tag].extend(pkgdiff.text.split())
+                            results_dict[tag].extend(pkgdiff.text.split())
             except IOError:
                 continue
+        for items in ['added', 'removed']:
+            results_dict[items] = cls._update_added_removed(results_dict, items)
+        return results_dict
 
     @classmethod
-    def _update_added_removed(cls, key):
+    def _update_added_removed(cls, results_dict, key):
         update = []
+        # TODO for now we are skipping the some files/directories
         removed_things = ['.build-id', '.dwz']
-        for items in cls.results_dict[key]:
-            # TODO for now we are skipping the .build-id files
+        for items in results_dict[key]:
             removed = [x for x in removed_things if x in items]
             if removed:
                 continue
             # We find whether file exists in 'moved' section
             # If yes then do not include in key set
-            found = [x for x in cls.results_dict['moved'] if items in x]
+            found = [x for x in results_dict['moved'] if items in x]
             if not found:
                 update.append(items)
         return update
 
     @classmethod
-    def process_xml_results(cls):
-        cls._fill_dictionary()
-        for items in ['added', 'removed']:
-            cls.results_dict[items] = cls._update_added_removed(items)
+    def _update_changed_moved(cls, result_dir, results_dict):
+        print 'dict', results_dict
+        for flag in ['changed', 'moved']:
+            results_dict[flag] = cls._get_percentage(result_dir, flag, results_dict[flag])
+        return results_dict
 
-        return cls.results_dict
+    @classmethod
+    def process_xml_results(cls, result_dir):
+        """
+        Function for filling dictionary with keys like 'added', 'removed'
+        :return: dict = {'added': [list_of_added],
+                         'removed': [list of removed],
+                         'changed': [list of changed],
+                         'moved': [list of moved]
+                        }
+        """
+        results_dict = cls._fill_dictionary(result_dir)
 
+        results_dict = cls._update_changed_moved(result_dir, results_dict)
+        return results_dict
 
     @classmethod
     def run_check(cls, **kwargs):
@@ -171,7 +210,7 @@ class PkgDiffTool(BaseChecker):
         if int(ret_code) != 0 and int(ret_code) != 1:
             raise RebaseHelperError('Execution of {0} failed.\nCommand line is: {1}'.format(cls.CMD, cmd))
         OutputLogger.set_info_text('Result HTML page from pkgdiff is store in: ', cls.pkgdiff_results_full_path)
-        return cls.process_xml_results()
+        return cls.process_xml_results(cls.results_dir)
 
 
 class Checker(object):
