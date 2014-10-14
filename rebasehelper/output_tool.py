@@ -165,7 +165,7 @@ class TextOutputTool(BaseOutputTool):
         checker_data = OutputLogger.get_checkers()
         if checker_data:
             for check, data in six.iteritems(checker_data):
-                logger_output.info("{0}:\n{1}.".format(check, data))
+                logger_output.info("{0}:\n{1}".format(check, data))
 
 
 class OutputTool(object):
