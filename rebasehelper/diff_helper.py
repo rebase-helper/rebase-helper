@@ -50,7 +50,7 @@ class DiffBase(object):
         Each method should overwrite method like run_check
     """
     @classmethod
-    def match(cls, *args, **kwargs):
+    def match(cls, cmd):
         """
         Checks if diff name matches
         """

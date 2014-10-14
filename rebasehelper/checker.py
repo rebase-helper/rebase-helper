@@ -43,7 +43,7 @@ class BaseChecker(object):
     """ Base class used for testing tool run on final pkgs. """
 
     @classmethod
-    def match(cls, *args, **kwargs):
+    def match(cls, cmd):
         """
         Checks if the tool name match the class implementation. If yes, returns
         True, otherwise returns False.

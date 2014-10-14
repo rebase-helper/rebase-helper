@@ -20,9 +20,6 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
-import six
-import os
-
 from .base_test import BaseTest
 from rebasehelper.checker import PkgDiffTool
 

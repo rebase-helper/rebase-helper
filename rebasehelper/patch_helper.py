@@ -67,7 +67,7 @@ class PatchBase(object):
     helpers = {}
 
     @classmethod
-    def match(cls, *args, **kwargs):
+    def match(cls, cmd):
         """
             Method checks whether it is usefull patch method
         """
@@ -269,7 +269,7 @@ class PatchTool(PatchBase):
         return patch
 
     @classmethod
-    def run_patch(cls, **kwargs):
+    def run_patch(cls, *args, **kwargs):
         """
         The function can be used for patching one
         directory against another
