@@ -91,6 +91,7 @@ class Application(object):
         self._check_workspace_dir()
         if self.conf.build_only:
             self._delete_old_builds()
+        if self.conf.cont or self.conf.build_only:
             self._find_old_data()
 
     def _add_debug_log_file(self):
@@ -132,14 +133,15 @@ class Application(object):
         """
         Function find data previously done
         """
-        new_patches = self.kwargs['new'][settings.FULL_PATCHES]
+        new_patches = self.kwargs['new'][settings.FULL_PATCHES].copy()
         for file_name in PathHelper.find_all_files(self.kwargs.get('results_dir', ''), '*.patch'):
             for key, value in new_patches.items():
                 if os.path.basename(file_name) in value[0]:
                     value[0] = file_name
+                    new_patches[key] = value
                     break
-        self.kwargs['new']['patches'] = self.kwargs['new'][settings.FULL_PATCHES]
-        update_patches = self.spec_file.write_updated_patches(**self.kwargs)
+        self.kwargs['new']['patches'] = self.kwargs['new'][settings.FULL_PATCHES].copy()
+        update_patches = self.rebase_spec_file.write_updated_patches(**self.kwargs)
         self.kwargs['summary_info'] = update_patches
         OutputLogger.set_patch_output('Patches:', update_patches)
 
