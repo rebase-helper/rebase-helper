@@ -23,6 +23,7 @@
 import os
 import six
 import re
+import settings
 
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.logger import logger
@@ -120,10 +121,9 @@ class PkgDiffTool(BaseChecker):
         :return:
         """
         XML_FILES = ['files.xml', 'symbols.xml']
-        XML_TAGS = ['added', 'removed', 'changed', 'moved', 'renamed']
         results_dict = {}
 
-        for tag in XML_TAGS:
+        for tag in settings.CHECKER_TAGS:
             results_dict[tag] = []
         for file_name in [os.path.join(result_dir, x) for x in XML_FILES]:
             logger.info('Processing {0} file.'.format(file_name))
@@ -133,7 +133,7 @@ class PkgDiffTool(BaseChecker):
                     lines.insert(0, '<pkgdiff>')
                     lines.append('</pkgdiff>')
                     pkgdiff_tree = ElementTree.fromstringlist(lines)
-                    for tag in XML_TAGS:
+                    for tag in settings.CHECKER_TAGS:
                         for pkgdiff in pkgdiff_tree.findall('.//' + tag):
                             results_dict[tag].extend(pkgdiff.text.split())
             except IOError:
@@ -160,7 +160,6 @@ class PkgDiffTool(BaseChecker):
 
     @classmethod
     def _update_changed_moved(cls, result_dir, results_dict):
-        print 'dict', results_dict
         for flag in ['changed', 'moved']:
             results_dict[flag] = cls._get_percentage(result_dir, flag, results_dict[flag])
         return results_dict
