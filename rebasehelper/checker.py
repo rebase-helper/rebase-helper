@@ -115,7 +115,7 @@ class PkgDiffTool(BaseChecker):
         return update_list
 
     @classmethod
-    def _fill_dictionary(cls, result_dir):
+    def fill_dictionary(cls, result_dir):
         """
         Parsed files.xml and symbols.xml and fill dictionary
         :return:
@@ -159,7 +159,7 @@ class PkgDiffTool(BaseChecker):
         return update
 
     @classmethod
-    def _update_changed_moved(cls, result_dir, results_dict):
+    def update_changed_moved(cls, result_dir, results_dict):
         for flag in ['changed', 'moved']:
             results_dict[flag] = cls._get_percentage(result_dir, flag, results_dict[flag])
         return results_dict
@@ -174,9 +174,9 @@ class PkgDiffTool(BaseChecker):
                          'moved': [list of moved]
                         }
         """
-        results_dict = cls._fill_dictionary(result_dir)
+        results_dict = cls.fill_dictionary(result_dir)
 
-        results_dict = cls._update_changed_moved(result_dir, results_dict)
+        results_dict = cls.update_changed_moved(result_dir, results_dict)
         return results_dict
 
     @classmethod

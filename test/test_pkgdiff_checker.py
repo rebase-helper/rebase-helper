@@ -53,7 +53,7 @@ class TestPkgDiff(BaseTest):
                                      '/usr/lib/libtest3.so']}
         pdt = PkgDiffTool()
         pdt.results_dir = self.TEST_FILES_DIR
-        res_dict = pdt._fill_dictionary(pdt.results_dir)
+        res_dict = pdt.fill_dictionary(pdt.results_dir)
         assert res_dict == expected_dict
 
     def test_pkgdiff_parse_report(self):
@@ -61,6 +61,6 @@ class TestPkgDiff(BaseTest):
                          'changed': ['/usr/include/test.h']}
         pdt = PkgDiffTool()
         pdt.results_dir = self.TEST_FILES_DIR
-        res_dict = pdt._update_changed_moved(pdt.results_dir, self.get_data())
+        res_dict = pdt.update_changed_moved(pdt.results_dir, self.get_data())
         assert res_dict == expected_dict
 
