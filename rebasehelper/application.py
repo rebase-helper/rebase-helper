@@ -378,7 +378,7 @@ class Application(object):
             logger.info('Comparing packages using {0} ... running'.format(self.conf.pkgcomparetool))
             results_dict = pkgchecker.run_check(**self.kwargs)
             for key, val in six.iteritems(results_dict):
-                if key:
+                if val:
                     OutputLogger.set_checker_output('Following files were ' + key, '\n'.join(val))
             logger.info('Comparing packages done')
 
