@@ -22,6 +22,7 @@
 
 import os
 import sys
+import six
 import random
 import string
 try:
@@ -200,11 +201,18 @@ class PatchTool(PatchBase):
 
     @classmethod
     def get_rebased_patch_from_kwargs(cls, patch):
+        """
+        Function finds patch in already rebases patches
+        :param patch:
+        :return:
+        """
         # Check if patch is in rebased patches
-        patches = [x for x in cls.kwargs['new']['patches'] if os.path.basename(patch) in x]
-        if not patches:
+        found = False
+        for value in six.itervalues(cls.rebased_patches):
+            if os.path.basename(patch) in value[0]:
+                return value[0]
+        if not found:
             return None
-        return patches[0]
 
     @classmethod
     def check_already_applied_patch(cls, patch):
@@ -214,17 +222,17 @@ class PatchTool(PatchBase):
         :return: - None if patch is empty
                  - Patch
         """
-        rebased_patches = cls.get_rebased_patch_from_kwargs(patch)
+        rebased_patch_name = cls.get_rebased_patch_from_kwargs(patch)
         # If patch is not rebased yet
-        if not rebased_patches:
+        if not rebased_patch_name:
             return patch
         # Check if patch is empty
-        if check_empty_patch(rebased_patches):
+        if check_empty_patch(rebased_patch_name):
             # If patch is empty then it isn't applied
             # and is removed
             return None
         # Return non empty rebased patch
-        return rebased_patches
+        return rebased_patch_name
 
     @classmethod
     def apply_patch(cls, patch):

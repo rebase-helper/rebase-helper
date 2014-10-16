@@ -49,6 +49,8 @@ class Application(object):
     rebase_spec_file = None
     rebase_spec_file_path = None
     debug_log_file = None
+    patches = None
+    rebased_patches = None
 
     def __init__(self, cli_conf=None):
         """
@@ -76,6 +78,10 @@ class Application(object):
         # if not continuing, check the results dir
         if not self.conf.cont and not self.conf.build_only:
             self._check_results_dir()
+        # This is used if user executes rebase-helper with --continue
+        # parameter even when directory does not exist
+        if not os.path.exists(self.results_dir):
+            os.makedirs(self.results_dir)
 
         self._add_debug_log_file()
         self._get_spec_file()
@@ -93,6 +99,7 @@ class Application(object):
             self._delete_old_builds()
         if self.conf.cont or self.conf.build_only:
             self._find_old_data()
+            self._delete_old_builds()
 
     def _add_debug_log_file(self):
         """
@@ -133,15 +140,15 @@ class Application(object):
         """
         Function find data previously done
         """
-        new_patches = self.kwargs['new'][settings.FULL_PATCHES].copy()
+        self.rebased_patches = self.kwargs['new'][settings.FULL_PATCHES].copy()
         for file_name in PathHelper.find_all_files(self.kwargs.get('results_dir', ''), '*.patch'):
-            for key, value in new_patches.items():
+            for key, value in self.rebased_patches.items():
                 if os.path.basename(file_name) in value[0]:
                     value[0] = file_name
-                    new_patches[key] = value
+                    self.rebased_patches[key] = value
                     break
-        self.kwargs['new']['patches'] = self.kwargs['new'][settings.FULL_PATCHES].copy()
-        update_patches = self.rebase_spec_file.write_updated_patches(**self.kwargs)
+
+        update_patches = self.rebase_spec_file.write_updated_patches(self.rebased_patches)
         self.kwargs['summary_info'] = update_patches
         OutputLogger.set_patch_output('Patches:', update_patches)
 
@@ -158,6 +165,7 @@ class Application(object):
         old_values['spec'] = self.spec_file_path
         self.kwargs['old'] = old_values
         self.kwargs['old'].update(self.spec_file.get_information())
+        self.patches = self.spec_file.get_patches()
 
         # Fill self.kwargs with related items
         new_values = {}
@@ -300,17 +308,19 @@ class Application(object):
 
     def patch_sources(self, sources):
         # Patch sources
-        self.kwargs['old_dir'] = sources[0]
-        self.kwargs['new_dir'] = sources[1]
         self.kwargs['diff_tool'] = self.conf.difftool
         patch = Patch(self.conf.patchtool)
 
         try:
-            self.kwargs['new']['patches'] = patch.patch(**self.kwargs)
+            self.rebased_patches = patch.patch(sources[0],
+                                               sources[1],
+                                               self.patches,
+                                               self.rebased_patches,
+                                               **self.kwargs)
         except RuntimeError as run_e:
             raise RebaseHelperError(run_e.message)
 
-        update_patches = self.rebase_spec_file.write_updated_patches(**self.kwargs)
+        update_patches = self.rebase_spec_file.write_updated_patches(self.rebased_patches)
         self.kwargs['summary_info'] = update_patches
         OutputLogger.set_patch_output('Patches:', update_patches)
 

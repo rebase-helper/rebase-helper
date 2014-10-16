@@ -546,15 +546,11 @@ class SpecFile(object):
         # TODO: Handle the extra version to change the release number
         self.set_version(version)
 
-    def write_updated_patches(self, **kwargs):
+    def write_updated_patches(self, patches):
         """
         Function writes the patches to -rebase.spec file
         """
         #  TODO: this method should not take whole kwargs as argument, take only what it needs.
-        new_files = kwargs.get('new', None)
-        if not new_files:
-            return None
-        patches = new_files.get('patches', None)
         if not patches:
             return None
 
@@ -578,7 +574,7 @@ class SpecFile(object):
                     if check_empty_patch(patch_name):
                         comment = '#'
                         removed_patches.append(patch_num)
-                        del patches[int(patch_num)]
+                        #del patches[int(patch_num)]
                         updated_patches['deleted'].append(patch_name)
                     else:
                         updated_patches['modified'].append(patch_name)
