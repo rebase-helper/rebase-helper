@@ -190,7 +190,7 @@ class PatchTool(PatchBase):
         logger.debug('Input to MergeTool: {0}'.format(cls.kwargs))
         diff_cls = Diff(cls.kwargs.get('diff_tool', None))
         # Running Merge Tool
-        diff_cls.mergetool(**cls.kwargs)
+        diff_cls.mergetool(cls.old_sources, cls.new_sources, **cls.kwargs)
 
         # Generating diff
         cls.generate_diff(rebased_patch)
@@ -277,17 +277,19 @@ class PatchTool(PatchBase):
         return patch
 
     @classmethod
-    def run_patch(cls, *args, **kwargs):
+    def run_patch(cls, old_dir, new_dir, patches, rebased_patches, **kwargs):
         """
         The function can be used for patching one
         directory against another
         """
         cls.kwargs = kwargs
-        cls.patches = kwargs['new'].get(settings.FULL_PATCHES, None)
-        cls.old_sources = kwargs.get('old_dir', None)
-        cls.new_sources = kwargs.get('new_dir', None)
+        cls.patches = patches
+        cls.rebased_patches = rebased_patches
+        cls.old_sources = old_dir
+        cls.new_sources = new_dir
         cls.output_data = []
         cls.patched_files = []
+
         # apply patches in the same order as in spec file, not according to their numbers
         for order in sorted(cls.patches.items(), key=lambda x: x[1][2]):
             try:
@@ -316,9 +318,9 @@ class Patch(object):
         if self._tool is None:
             raise NotImplementedError("Unsupported patch tool")
 
-    def patch(self, **kwargs):
+    def patch(self, old_dir, new_dir, patches, rebased_patches, **kwargs):
         logger.debug("Patch: Patching source by patch tool {0}".format(self._path_tool_name))
-        return self._tool.run_patch(**kwargs)
+        return self._tool.run_patch(old_dir, new_dir, patches, rebased_patches, **kwargs)
 
 
 

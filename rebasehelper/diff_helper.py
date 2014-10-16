@@ -91,7 +91,7 @@ class VimDiffTool(DiffBase):
         raise NotImplementedError()
 
     @classmethod
-    def run_mergetool(cls, **kwargs):
+    def run_mergetool(cls, old_dir, new_dir, **kwargs):
         raise NotImplementedError()
 
 
@@ -122,9 +122,7 @@ class MeldDiffTool(DiffBase):
 
 
     @classmethod
-    def run_mergetool(cls, **kwargs):
-        old_dir = kwargs.get('old_dir')
-        new_dir = kwargs.get('new_dir')
+    def run_mergetool(cls, old_dir, new_dir, **kwargs):
         suffix = kwargs.get('suffix')
         failed_files = kwargs.get('failed_files')
 
@@ -186,12 +184,12 @@ class Diff(object):
         return cls._tool.run_diff(old, new)
 
     @classmethod
-    def mergetool(cls, **kwargs):
+    def mergetool(cls, old_dir, new_dir, **kwargs):
         """
         Tool for resolving merge conflicts
         """
         logger.debug("Diff: mergetool..")
-        return cls._tool.run_mergetool(**kwargs)
+        return cls._tool.run_mergetool(old_dir, new_dir, **kwargs)
 
 if __name__ == '__main__':
     kwargs = {}

@@ -23,12 +23,12 @@
 import os
 import six
 import re
-import settings
 
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.logger import logger
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.base_output import OutputLogger
+from rebasehelper import settings
 from xml.etree import ElementTree
 
 check_tools = {}
