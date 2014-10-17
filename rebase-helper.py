@@ -25,4 +25,4 @@ import sys
 from rebasehelper.cli import CliHelper
 
 if __name__ == "__main__":
-    sys.exit(CliHelper.run())
+    sys.exit(CliHelper.run(sys.argv[1:]))
