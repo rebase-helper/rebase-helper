@@ -122,9 +122,9 @@ class CLI(object):
 class CliHelper(object):
 
     @staticmethod
-    def run(args):
+    def run():
         try:
-            cli = CLI(args)
+            cli = CLI(sys.argv[1:])
             app = Application(cli)
             app.run()
         except KeyboardInterrupt:
