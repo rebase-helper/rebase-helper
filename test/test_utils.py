@@ -52,6 +52,7 @@ class TestRandomFunctions(BaseTest):
         assert sys.stdout.readline() == QUESTION
         assert inp == ANSWER
 
+
 class TestProcessHelper(object):
     """ ProcessHelper tests """
 
