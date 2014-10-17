@@ -22,25 +22,7 @@
 #          Tomas Hozza <thozza@redhat.com>
 
 import sys
-from rebasehelper.cli import CLI
-from rebasehelper.application import Application
-from rebasehelper.logger import logger
-from rebasehelper.exceptions import RebaseHelperError
-
-
-def main(args=None):
-    try:
-        cli = CLI(args)
-        app = Application(cli)
-        app.run()
-    except KeyboardInterrupt:
-        logger.info('\nInterrupted by user')
-    except RebaseHelperError as e:
-        logger.error('\n{0}'.format(e.message))
-        sys.exit(1)
-
-    sys.exit(0)
-
+from rebasehelper.cli import CliHelper
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))
+    sys.exit(CliHelper.run())

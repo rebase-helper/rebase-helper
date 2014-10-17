@@ -26,6 +26,7 @@ from __future__ import print_function
 import subprocess
 import os
 from rebasehelper.version import VERSION
+from rebasehelper.cli import CliHelper
 try:
     from setuptools import setup, Command
 except:
@@ -91,7 +92,7 @@ setup(
     license='GPLv2+',
     packages=['rebasehelper'],
     include_package_data=True,
-    entry_points={'console_scripts':['rebase-helper=rebasehelper:rebase_helper']},
+    entry_points={'console_scripts': ['rebase-helper=rebasehelper.cli:CliHelper.run']},
     install_requires=install_requires,
     setup_requires=[],
     classifiers=['Development Status :: 4 - Beta',

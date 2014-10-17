@@ -21,8 +21,12 @@
 #          Tomas Hozza <thozza@redhat.com>
 
 import argparse
+import sys
 
 from rebasehelper.constants import PROGRAM_DESCRIPTION
+from rebasehelper.application import Application
+from rebasehelper.logger import logger
+from rebasehelper.exceptions import RebaseHelperError
 
 
 class CLI(object):
@@ -113,6 +117,23 @@ class CLI(object):
             return getattr(self.args, name)
         except AttributeError:
             return object.__getattribute__(self, name)
+
+
+class CliHelper(object):
+
+    @classmethod
+    def run(cls):
+        try:
+            cli = CLI(sys.argv[1:])
+            app = Application(cli)
+            app.run()
+        except KeyboardInterrupt:
+            logger.info('\nInterrupted by user')
+        except RebaseHelperError as e:
+            logger.error('\n{0}'.format(e.message))
+            sys.exit(1)
+
+        sys.exit(0)
 
 if __name__ == '__main__':
     x = CLI()

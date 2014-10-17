@@ -3,3 +3,4 @@ include Makefile
 include LICENSE
 recursive-include rebase-helper *.py rebase-helper
 include man/*
+recursive-include test * rebase-helper
