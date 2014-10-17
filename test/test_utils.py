@@ -24,15 +24,33 @@ import os
 import tempfile
 import random
 import string
-import six
+import sys
 from six import StringIO
 
 from .base_test import BaseTest
+from rebasehelper.utils import get_message
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.utils import PathHelper
 from rebasehelper.utils import TemporaryEnvironment
 from rebasehelper.utils import RpmHelper
 
+
+class TestRandomFunctions(BaseTest):
+    """ tests for any random functions that are not part of other classes. """
+
+    def test_get_message(self):
+        QUESTION = 'bla bla'
+        ANSWER = 'yes'
+
+        #  Use StringIO to be able to write and read to STDIN and from STDOUT
+        sys.stdin = StringIO(ANSWER)
+        sys.stdout = StringIO()
+
+        inp = get_message(QUESTION)
+        sys.stdout.seek(0)
+
+        assert sys.stdout.readline() == QUESTION
+        assert inp == ANSWER
 
 class TestProcessHelper(object):
     """ ProcessHelper tests """

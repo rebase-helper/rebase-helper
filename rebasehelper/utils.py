@@ -28,7 +28,7 @@ import tempfile
 import shutil
 import rpm
 import six
-import sys
+from six.moves import input
 from six import StringIO
 
 from rebasehelper.logger import logger
@@ -72,15 +72,10 @@ def get_message(message="", any_input=False):
     :param any_input: if True, return input without checking it first
     :return: user input
     """
-    if sys.version_info[0] < 3:
-        inp = raw_input
-    else:
-        inp = input
-
     output = ['yes', 'y', 'no', 'n']
     while True:
         try:
-            var = inp(message).lower()
+            var = input(message).lower()
         except KeyboardInterrupt:
             return None
         if any_input:
