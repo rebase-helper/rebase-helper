@@ -25,10 +25,7 @@ import sys
 import six
 import random
 import string
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
+from six import StringIO
 
 from rebasehelper import settings
 from rebasehelper.logger import logger

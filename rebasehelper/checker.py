@@ -23,10 +23,7 @@
 import os
 import six
 import re
-try:
-    from StringIO import StringIO
-except ImportError:
-    from io import StringIO
+from six import StringIO
 
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.logger import logger
