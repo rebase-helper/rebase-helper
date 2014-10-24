@@ -23,12 +23,17 @@
 import os
 import six
 import re
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.logger import logger
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.base_output import OutputLogger
 from rebasehelper import settings
+from rebasehelper.specfile import SpecFile
 from xml.etree import ElementTree
 
 check_tools = {}
@@ -51,12 +56,106 @@ class BaseChecker(object):
         raise NotImplementedError()
 
     @classmethod
-    def run_check(cls, *args, **kwargs):
+    def run_check(cls, results_dir):
         """
         Perform the check itself and return results.
         """
         raise NotImplementedError()
 
+@register_check_tool
+class RpmDiffTool(BaseChecker):
+    """ RpmDiff compare tool."""
+    CMD = "rpmdiff"
+
+    @classmethod
+    def match(cls, cmd=None):
+        if cmd == cls.CMD:
+            return True
+        else:
+            return False
+
+    @classmethod
+    def _get_rpms(cls, rpm_list):
+        rpm_dict = {}
+        for rpm_name in rpm_list:
+            rpm_dict[SpecFile.get_info_from_rpm(rpm_name, 'name')] = rpm_name
+        return rpm_dict
+
+    @classmethod
+    def _unpack_rpm(cls, rpm_name):
+        pass
+    @classmethod
+    def _analyze_logs(cls, output, results_dict):
+        removed_things = ['.build-id', '.dwz', 'PROVIDE', 'REQUIRES']
+        for line in output:
+            line = line.encode('ascii', 'ignore')
+            if [x for x in removed_things if x in line]:
+                continue
+
+            fields = line.strip().split()
+            logger.debug(fields)
+            if 'removed' in line:
+                results_dict['removed'].append(fields[1])
+                continue
+            if 'added' in line:
+                results_dict['added'].append(fields[1])
+                continue
+            #'S.5........' for regexp
+            regexp = '(S)+\.(5)+\.\.\.\.\.\.\.\.'
+            match = re.search(regexp, fields[0])
+            if match:
+                results_dict['changed'].append(fields[1])
+        return results_dict
+
+    @classmethod
+    def update_added_removed(cls, results_dict):
+        added = []
+        removed = []
+        for item in results_dict['removed']:
+            found = [x for x in results_dict['added'] if os.path.basename(item) in x]
+            if not found:
+                removed.append(item)
+
+        for item in results_dict['added']:
+            found = [x for x in results_dict['removed'] if os.path.basename(item) in x]
+            if not found:
+                removed.append(item)
+        results_dict['added'] = added
+        results_dict['removed'] = removed
+        return results_dict
+
+    @classmethod
+    def run_check(cls, results_dir):
+        """ Compares old and new RPMs using pkgdiff """
+        results_dict = {}
+
+        for tag in settings.CHECKER_TAGS:
+            results_dict[tag] = []
+        cls.results_dir = results_dir
+
+        # Only S (size), M(mode) and 5 (checksum) are now important
+        not_catched_flags = ['T', 'F', 'G', 'U', 'V', 'L', 'D', 'N']
+        old_pkgs = cls._get_rpms(OutputLogger.get_build('old').get('rpm', None))
+        new_pkgs = cls._get_rpms(OutputLogger.get_build('new').get('rpm', None))
+        for key, value in six.iteritems(old_pkgs):
+            cmd = [cls.CMD]
+            # TODO modify to online command
+            for x in not_catched_flags:
+                cmd.extend(['-i', x])
+            cmd.append(value)
+            # We would like to build correct old package against correct new packages
+            cmd.append(new_pkgs[key])
+            output = StringIO()
+            ret_code = ProcessHelper.run_subprocess(cmd, output=output)
+            results_dict = cls._analyze_logs(output, results_dict)
+
+        results_dict = cls.update_added_removed(results_dict)
+        # TODO Check for changed files and
+        # remove them from 'removed' and 'added'
+        #cls._unpack_rpm(old_pkgs)
+        #cls._unpack_rpm(new_pkgs)
+        #cls._find_file_diffs(old_pkgs, new_pkgs)
+        return results_dict
 
 @register_check_tool
 class PkgDiffTool(BaseChecker):
@@ -64,7 +163,6 @@ class PkgDiffTool(BaseChecker):
     CMD = "pkgdiff"
     pkgdiff_results_filename = 'pkgdiff_reports.html'
     results_dir = ''
-    workspace_dir = ''
 
     @classmethod
     def match(cls, cmd=None):
@@ -180,13 +278,10 @@ class PkgDiffTool(BaseChecker):
         return results_dict
 
     @classmethod
-    def run_check(cls, **kwargs):
+    def run_check(cls, results_dir):
         """ Compares old and new RPMs using pkgdiff """
-        cls.results_dir = kwargs.get('results_dir', '')
-        cls.workspace_dir = os.path.join(kwargs.get('workspace_dir', ''), cls.CMD)
+        cls.results_dir = results_dir
         cls.pkgdiff_results_full_path = os.path.join(cls.results_dir, cls.pkgdiff_results_filename)
-        # create the workspace directory
-        os.makedirs(cls.workspace_dir)
 
         versions = ['old', 'new']
         cmd = [cls.CMD]
@@ -233,10 +328,10 @@ class Checker(object):
     def __str__(self):
         return "<Checker tool_name='{_tool_name}' tool={_tool}>".format(**vars(self))
 
-    def run_check(self, **kwargs):
+    def run_check(self, results_dir):
         """ Run the check """
         logger.debug("Checker: Running tests on packages using '{0}'".format(self._tool_name))
-        return self._tool.run_check(**kwargs)
+        return self._tool.run_check(results_dir)
 
     @classmethod
     def get_supported_tools(cls):
