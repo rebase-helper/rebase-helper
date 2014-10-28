@@ -188,7 +188,7 @@ class Application(object):
         """
         Function gets the spec file from the execution_dir directory
         """
-        self.spec_file_path = PathHelper.find_first_file(self.execution_dir, '*.spec')
+        self.spec_file_path = PathHelper.find_first_file(self.execution_dir, '*.spec', 0)
 
         if not self.spec_file_path:
             raise RebaseHelperError("Could not find any SPEC file in the current directory '{0}'".format(
