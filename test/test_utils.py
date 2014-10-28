@@ -253,7 +253,8 @@ class TestPathHelper(object):
                  "dir1/foo/baz/file",
                  "dir1/baz/ffile",
                  "dir1/bar/file",
-                 "dir1/baz/bar/ffile"]
+                 "dir1/baz/bar/ffile",
+                 "dir1/baz/bar/test.spec"]
 
         def setup(self):
             super(TestPathHelper.TestPathHelperFindBase, self).setup()
@@ -270,7 +271,7 @@ class TestPathHelper(object):
                 "dir1", "file") == os.path.abspath(
                 os.path.dirname(self.files[9]))
             assert PathHelper.find_first_dir_with_file(
-                ".", "file") == os.path.abspath(os.path.dirname(self.files[0]))
+                os.path.curdir, "file") == os.path.abspath(os.path.dirname(self.files[0]))
             assert PathHelper.find_first_dir_with_file(
                 "dir1/baz", "file") is None
 
@@ -289,7 +290,7 @@ class TestPathHelper(object):
                 "dir1", "pythooon") == os.path.abspath(
                 os.path.dirname(self.files[4]))
             assert PathHelper.find_first_dir_with_file(
-                ".", "py*n") == os.path.abspath(os.path.dirname(self.files[4]))
+                os.path.curdir, "py*n") == os.path.abspath(os.path.dirname(self.files[4]))
             assert PathHelper.find_first_dir_with_file(
                 "dir1/bar", "pythooon") is None
 
@@ -299,7 +300,7 @@ class TestPathHelper(object):
             assert PathHelper.find_first_file(
                 "dir1", "file") == os.path.abspath(self.files[9])
             assert PathHelper.find_first_file(
-                ".", "file") == os.path.abspath(self.files[0])
+                os.path.curdir, "file") == os.path.abspath(self.files[0])
             assert PathHelper.find_first_file("dir1/baz", "file") is None
 
         def test_find_ffile(self):
@@ -313,8 +314,17 @@ class TestPathHelper(object):
             assert PathHelper.find_first_file(
                 "dir1", "pythooon") == os.path.abspath(self.files[4])
             assert PathHelper.find_first_file(
-                ".", "py*n") == os.path.abspath(self.files[4])
+                os.path.curdir, "py*n") == os.path.abspath(self.files[4])
             assert PathHelper.find_first_file("dir1/bar", "pythooon") is None
+
+        def test_find_with_recursion(self):
+            assert PathHelper.find_first_file(os.path.curdir, "*.spec", 0) is None
+            assert PathHelper.find_first_file(os.path.curdir, "*.spec", 1) is None
+            assert PathHelper.find_first_file(os.path.curdir, "*.spec", 2) is None
+            assert PathHelper.find_first_file(os.path.curdir, "*.spec", 3) == os.path.abspath(self.files[-1])
+
+        def test_find_without_recursion(self):
+            assert PathHelper.find_first_file(os.path.curdir, "*.spec") == os.path.abspath(self.files[-1])
 
 
 class TestTemporaryEnvironment(object):

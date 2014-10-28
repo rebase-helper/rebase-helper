@@ -280,7 +280,7 @@ class PathHelper(object):
     def find_first_dir_with_file(top_path, pattern):
         """ Finds a file that matches the given 'pattern' recursively
         starting in the 'top_path' directory. If found, returns full path
-        to the directory with first occurance of the file, otherwise
+        to the directory with first occurrence of the file, otherwise
         returns None. """
         for root, dirs, files in os.walk(top_path):
             for f in files:
@@ -289,21 +289,24 @@ class PathHelper(object):
         return None
 
     @staticmethod
-    def find_first_file(top_path, pattern):
+    def find_first_file(top_path, pattern, recursion_level=None):
         """ Finds a file that matches the given 'pattern' recursively
         starting in the 'top_path' directory. If found, returns full path
-        to the first occurance of the file, otherwise returns None. """
-        for root, dirs, files in os.walk(top_path):
+        to the first occurrence of the file, otherwise returns None. """
+        for loop, (root, dirs, files) in enumerate(os.walk(top_path)):
             for f in files:
                 if fnmatch.fnmatch(f, pattern):
                     return os.path.join(os.path.abspath(root), f)
+            if recursion_level is not None:
+                if loop == recursion_level:
+                    break
         return None
 
     @staticmethod
     def find_all_files(top_path, pattern):
         """ Finds a file that matches the given 'pattern' recursively
         starting in the 'top_path' directory. If found, returns full path
-        to the first occurance of the file, otherwise returns None. """
+        to the first occurrence of the file, otherwise returns None. """
         files_list = []
         for root, dirs, files in os.walk(top_path):
             for f in files:
