@@ -1,0 +1,46 @@
+Mock Version: 1.1.41
+ENTER do(['bash', '--login', '-c', 'rpmbuild -bs --target x86_64 --nodeps builddir/build/SPECS/wget.spec'], False, '/var/lib/mock/fedora-20-x86_64/root/', None, 0, True, False, 19268, 135, None, False, {'LANG': 'en_US.UTF-8', 'TERM': 'vt100', 'SHELL': '/bin/bash', 'CCACHE_DIR': '/tmp/ccache', 'HOSTNAME': 'mock', 'PROMPT_COMMAND': 'echo -n "<mock-chroot>"', 'HOME': '/builddir', 'PATH': '/usr/bin:/bin:/usr/sbin:/sbin', 'CCACHE_UMASK': '002'}, logger=<mockbuild.trace_decorator.getLog object at 0x1379790>)
+Executing command: ['bash', '--login', '-c', 'rpmbuild -bs --target x86_64 --nodeps builddir/build/SPECS/wget.spec'] with env {'LANG': 'en_US.UTF-8', 'TERM': 'vt100', 'SHELL': '/bin/bash', 'CCACHE_DIR': '/tmp/ccache', 'HOSTNAME': 'mock', 'PROMPT_COMMAND': 'echo -n "<mock-chroot>"', 'HOME': '/builddir', 'PATH': '/usr/bin:/bin:/usr/sbin:/sbin', 'CCACHE_UMASK': '002'}
+Building target platforms: x86_64
+Building for target x86_64
+Wrote: /builddir/build/SRPMS/wget-1.16-3.fc20.src.rpm
+Child return code was: 0
+LEAVE do --> 
+
+ENTER do(['bash', '--login', '-c', 'rpmbuild -bb --target x86_64 --nodeps  builddir/build/SPECS/wget.spec'], False, '/var/lib/mock/fedora-20-x86_64/root/', None, 0, True, False, 19268, 135, None, False, {'LANG': 'en_US.UTF-8', 'TERM': 'vt100', 'SHELL': '/bin/bash', 'CCACHE_DIR': '/tmp/ccache', 'HOSTNAME': 'mock', 'PROMPT_COMMAND': 'echo -n "<mock-chroot>"', 'HOME': '/builddir', 'PATH': '/usr/bin:/bin:/usr/sbin:/sbin', 'CCACHE_UMASK': '002'}, logger=<mockbuild.trace_decorator.getLog object at 0x1379790>)
+Executing command: ['bash', '--login', '-c', 'rpmbuild -bb --target x86_64 --nodeps  builddir/build/SPECS/wget.spec'] with env {'LANG': 'en_US.UTF-8', 'TERM': 'vt100', 'SHELL': '/bin/bash', 'CCACHE_DIR': '/tmp/ccache', 'HOSTNAME': 'mock', 'PROMPT_COMMAND': 'echo -n "<mock-chroot>"', 'HOME': '/builddir', 'PATH': '/usr/bin:/bin:/usr/sbin:/sbin', 'CCACHE_UMASK': '002'}
+Building target platforms: x86_64
+Building for target x86_64
+Executing(%prep): /bin/sh -e /var/tmp/rpm-tmp.8jyUPm
++ umask 022
++ cd /builddir/build/BUILD
++ cd /builddir/build/BUILD
++ rm -rf wget-1.16
++ /usr/bin/xz -dc /builddir/build/SOURCES/wget-1.16.tar.xz
++ /usr/bin/tar -xf -
++ STATUS=0
++ '[' 0 -ne 0 ']'
++ cd wget-1.16
++ /usr/bin/chmod -Rf a+rX,u+w,g-w,o-w .
+Patch #1 (wget-rh-modified.patch):
++ echo 'Patch #1 (wget-rh-modified.patch):'
++ /usr/bin/cat /builddir/build/SOURCES/wget-rh-modified.patch
++ /usr/bin/patch -p0 --fuzz=0
+patching file configure
+Hunk #1 FAILED at 561.
+1 out of 1 hunk FAILED -- saving rejects to file configure.rej
+RPM build errors:
+error: Bad exit status from /var/tmp/rpm-tmp.8jyUPm (%prep)
+    Bad exit status from /var/tmp/rpm-tmp.8jyUPm (%prep)
+Child return code was: 1
+EXCEPTION: Command failed. See logs for output.
+ # ['bash', '--login', '-c', 'rpmbuild -bb --target x86_64 --nodeps  builddir/build/SPECS/wget.spec']
+Traceback (most recent call last):
+  File "/usr/lib/python2.7/site-packages/mockbuild/trace_decorator.py", line 70, in trace
+    result = func(*args, **kw)
+  File "/usr/lib/python2.7/site-packages/mockbuild/util.py", line 378, in do
+    raise mockbuild.exception.Error, ("Command failed. See logs for output.\n # %s" % (command,), child.returncode)
+Error: Command failed. See logs for output.
+ # ['bash', '--login', '-c', 'rpmbuild -bb --target x86_64 --nodeps  builddir/build/SPECS/wget.spec']
+LEAVE do --> EXCEPTION RAISED
+
