@@ -277,3 +277,7 @@ class TestSpecFile(BaseTest):
         section = self.SPEC_FILE_OBJECT.get_spec_section('%files')
         assert '%{_libdir}/libtest.so' not in section
 
+    def test_is_test_suite_enabled(self):
+        found = self.SPEC_FILE_OBJECT.is_test_suite_enabled()
+        assert found == True
+
