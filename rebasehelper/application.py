@@ -126,6 +126,9 @@ class Application(object):
 
         self.spec_file = SpecFile(self.spec_file_path,
                                   download=not self.conf.not_download_sources)
+        # Check whether test suite is enabled at build time
+        if not self.spec_file.is_test_suite_enabled():
+            OutputLogger.set_info_text('WARNING', 'Test suite is not enabled at build time.')
         #  create an object representing the rebased SPEC file
         self.rebase_spec_file = self.spec_file.copy(self.rebase_spec_file_path)
         #  check if argument passed as new source is a file or just a version
@@ -189,7 +192,6 @@ class Application(object):
         Function gets the spec file from the execution_dir directory
         """
         self.spec_file_path = PathHelper.find_first_file(self.execution_dir, '*.spec', 0)
-
         if not self.spec_file_path:
             raise RebaseHelperError("Could not find any SPEC file in the current directory '{0}'".format(
                 self.execution_dir))
