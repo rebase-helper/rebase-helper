@@ -313,8 +313,8 @@ class SpecFile(object):
         patches = {}
         patch_flags = self._get_patches_flags()
         cwd = os.getcwd()
-        for source in self.patches:
-            filename, num, patch_type = source
+        for filename, num, patch_type in self.patches:
+            #filename, num, patch_type = source
             full_patch_name = os.path.join(cwd, filename)
             if not os.path.exists(full_patch_name):
                 logger.error('Patch {0} does not exist'.format(filename))
@@ -323,7 +323,7 @@ class SpecFile(object):
                 #  TODO: Why do we need to know here if patch is git generated??
                 patches[num] = [full_patch_name, patch_flags[num][0],
                                 patch_flags[num][1], self.is_patch_git_generated(full_patch_name)]
-        # list of [name, flags, index, git_generated]
+        # dist with <num>: [name, flags, index, git_generated]
         return patches
 
     def _get_raw_source_string(self, source_num):
@@ -464,8 +464,8 @@ class SpecFile(object):
         # Files which does not exist in SOURCES.
         # Should be removed from SPEC file.
         try:
-            if files['sources']:
-                upd_files = SpecFile.get_paths_with_rpm_macros(files['sources'])
+            if files['deleted']:
+                upd_files = SpecFile.get_paths_with_rpm_macros(files['deleted'])
                 self._correct_removed_files(upd_files)
         except KeyError:
             pass

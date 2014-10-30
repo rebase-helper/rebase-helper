@@ -36,6 +36,20 @@ def register_build_tool(build_tool):
     return build_tool    
 
 
+class SourcePackageBuildError(RuntimeError):
+    """
+    Error indicating failure to build Source Package.
+    """
+    pass
+
+
+class BinaryPackageBuildError(RuntimeError):
+    """
+    Error indicating failure to build Binary Package
+    """
+    pass
+
+
 class BuildTemporaryEnvironment(TemporaryEnvironment):
     """
     Class representing temporary environment for MockBuildTool.
@@ -228,7 +242,7 @@ class MockBuildTool(BuildToolBase):
             srpm = cls._build_srpm(tmp_spec, tmp_sources_dir, tmp_results_dir)
 
         if srpm is None:
-            raise RuntimeError("Building SRPM failed!")
+            raise SourcePackageBuildError("Building SRPM failed!")
         else:
             logger.info("Building SRPM finished successfully")
 
@@ -252,7 +266,7 @@ class MockBuildTool(BuildToolBase):
 
         if rpms is None:
             # We need to be inform what directory to analyze and what spec file failed
-            raise RuntimeError("Building RPMs failed!", rpm_results_dir, spec)
+            raise BinaryPackageBuildError("Building RPMs failed!", rpm_results_dir, spec)
         else:
             logger.info("Building RPM finished successfully")
 
@@ -387,7 +401,7 @@ class RpmbuildBuildTool(BuildToolBase):
             srpm = cls._build_srpm(tmp_spec, tmp_dir, tmp_results_dir)
 
         if srpm is None:
-            raise RuntimeError("Building SRPM failed!")
+            raise SourcePackageBuildError("Building SRPM failed!")
         else:
             logger.info("Building SRPM finished successfully")
 
@@ -407,7 +421,7 @@ class RpmbuildBuildTool(BuildToolBase):
             rpms = cls._build_rpm(srpm, tmp_dir, tmp_results_dir)
 
         if rpms is None:
-            raise RuntimeError("RpmbuildBuildTool: Building RPMs failed!")
+            raise BinaryPackageBuildError("RpmbuildBuildTool: Building RPMs failed!")
         else:
             logger.info("Building RPMs finished successfully")
 
@@ -445,10 +459,10 @@ class Builder(object):
     def __str__(self):
         return "<Builder tool_name='{_tool_name}' tool='{_tool}'>".format(**vars(self))
 
-    def build(self, **kwargs):
+    def build(self, *args, **kwargs):
         """ Build sources. """
         logger.debug("Builder: Building sources using '{0}'".format(self._tool_name))
-        return self._tool.build(**kwargs)
+        return self._tool.build(*args, **kwargs)
 
     @classmethod
     def get_supported_tools(cls):

@@ -51,7 +51,7 @@ class BuildLogAnalyzer(object):
         """
         files = {}
         files['missing'] = []
-        files['obsoletes'] = []
+        files['deleted'] = []
 
         # Test for finding files which exists in sources
         # but are not mentioned in spec file
@@ -67,7 +67,7 @@ class BuildLogAnalyzer(object):
             section = cls._find_section(log_name, missing_source_reg, e_reg)
             if section:
                 logger.debug('Found files which does not exist in source: {0}'.format(section))
-                files['sources'] = cls._get_files_from_string(section)
+                files['deleted'] = cls._get_files_from_string(section)
 
         return files
 

@@ -249,14 +249,14 @@ class TestSpecFile(BaseTest):
         assert '%{_bindir}/test2' in section
 
     def test_spec_remove_file(self):
-        files = {'obsoletes': ['/usr/lib/test.so']}
+        files = {'deleted': ['/usr/lib/test.so']}
         self.SPEC_FILE_OBJECT.modify_spec_files_section(files)
         section = self.SPEC_FILE_OBJECT.get_spec_section('%files devel')
         assert '%{_libdir}/test.so' not in section
 
     def test_spec_missing_and_remove_file(self):
         files = {'missing': ['/usr/bin/test2'],
-                 'obsoletes': ['/usr/lib/test.so']}
+                 'deleted': ['/usr/lib/test.so']}
         self.SPEC_FILE_OBJECT.modify_spec_files_section(files)
         section = self.SPEC_FILE_OBJECT.get_spec_section('%files')
         assert '%{_bindir}/test2' in section
@@ -279,5 +279,5 @@ class TestSpecFile(BaseTest):
 
     def test_is_test_suite_enabled(self):
         found = self.SPEC_FILE_OBJECT.is_test_suite_enabled()
-        assert found == True
+        assert found is True
 

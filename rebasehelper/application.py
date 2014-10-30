@@ -29,9 +29,9 @@ from rebasehelper.specfile import SpecFile, get_rebase_name
 from rebasehelper.logger import logger, LoggerHelper
 from rebasehelper import settings
 from rebasehelper import output_tool
-from rebasehelper.utils import get_value_from_kwargs, PathHelper, RpmHelper, get_message
+from rebasehelper.utils import PathHelper, RpmHelper, get_message
 from rebasehelper.checker import Checker
-from rebasehelper.build_helper import Builder
+from rebasehelper.build_helper import Builder, SourcePackageBuildError, BinaryPackageBuildError
 from rebasehelper.patch_helper import Patch
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.build_log_analyzer import BuildLogAnalyzer
@@ -322,8 +322,8 @@ class Application(object):
         except RuntimeError as run_e:
             raise RebaseHelperError(run_e.message)
 
+        logger.debug(self.rebased_patches)
         update_patches = self.rebase_spec_file.write_updated_patches(self.rebased_patches)
-        self.kwargs['summary_info'] = update_patches
         OutputLogger.set_patch_output('Patches:', update_patches)
 
     def build_packages(self):
@@ -337,44 +337,56 @@ class Application(object):
                 ni_e.message, Builder.get_supported_tools()))
 
         for version in ['old', 'new']:
-            patches = get_value_from_kwargs(self.kwargs, settings.FULL_PATCHES, source=version)
-            build_dict = self.kwargs[version]
-            build_dict['patches'] = [p[0] for p in patches.itervalues()]
-            build_dict['results_dir'] = os.path.join(self.results_dir, version)
+            build_dict = dict(self.kwargs[version])
+            logger.debug(build_dict)
+            patches = [p[0] for p in six.itervalues(build_dict[settings.FULL_PATCHES])]
+            results_dir = os.path.join(self.results_dir, version)
+            spec = build_dict.pop('spec')
+            sources = build_dict.pop('sources')
 
-            build_test = 0
-            results_dir = build_dict.get('results_dir', '')
-            build_success = False
-            while int(build_test) < 10:
+            failed_before = False
+            while True:
                 try:
-                    build_dict.update(builder.build(**build_dict))
-                    build_test = 99
-                    build_success = True
-                    OutputLogger.set_build_data(version, build_dict)
-                except RuntimeError as run_e:
-                    logger.debug('Build failed {0}. {1}'.format(build_test, run_e.message))
-                    build_log = os.path.join(results_dir, 'RPM'), 'build.log'
-                    files = BuildLogAnalyzer.parse_log(os.path.join(results_dir, 'RPM'), 'build.log')
-                    if not files['missing'] and not files['obsoletes']:
-                        raise RebaseHelperError("Rebase helper didn't find any trouble in {0} file".format(build_log))
-                    if files['missing']:
-                        logger.warning('Following files are missing in {spec} file:\n{f}.'.
-                                       format(f='\n'.join(files['missing']),
-                                              spec=build_dict.get('spec')))
-                    if files['obsoletes']:
-                        logger.warning('Following files are obsoletes in sources: \n{f}'.
-                                       format(f='\n'.join(files['obsoletes'])))
-                    shutil.rmtree(results_dir)
+                    build_results = builder.build(spec, sources, patches, results_dir, **build_dict)
+                    OutputLogger.set_build_data(version, build_results)
+                    break
+
+                except SourcePackageBuildError:
+                    #  always fail for original version
                     if version == 'old':
-                        self.spec_file.modify_spec_files_section(files)
+                        raise
+                    logger.error('Building source package failed.')
+                    #  TODO: implement log analyzer for SRPMs and add the checks here!!!
+                    raise
+
+                except BinaryPackageBuildError:
+                    #  always fail for original version
+                    if version == 'old':
+                        raise
+                    logger.error('Building binary packages failed.')
+                    build_log = os.path.join(results_dir, 'RPM', 'build.log')
+                    files = BuildLogAnalyzer.parse_log(os.path.join(results_dir, 'RPM'), 'build.log')
+
+                    if files['missing']:
+                        logger.info('Files not packaged in the SPEC file:\n{f}'.format(f='\n'.join(files['added'])))
+                    elif files['deleted']:
+                        logger.warning('Removed files packaged in SPEC file:\n{f}'.format(
+                            f='\n'.join(files['deleted'])))
                     else:
-                        self.rebase_spec_file.modify_spec_files_section(files)
-                    build_test += 1
-            if build_success:
-                logger.info('Building packages done')
-            else:
-                raise RebaseHelperError("Rebase-helper builds package several time and it's still failing. "
-                                        "Look at the logs")
+                        raise RebaseHelperError("Build failed, but no issues were found in the build log {0}".format(
+                            build_log))
+                    self.rebase_spec_file.modify_spec_files_section(files)
+
+                if failed_before:
+                    answer = get_message('Do you want rebase-helper to try build the packages one more time?')
+                    if answer not in ['yes', 'y']:
+                        raise KeyboardInterrupt
+                #  build just failed, otherwise we would break out of the while loop
+                failed_before = True
+
+                shutil.rmtree(os.path.join(results_dir, 'RPM'))
+                shutil.rmtree(os.path.join(results_dir, 'SRPM'))
+
 
     def pkgdiff_packages(self):
         """
@@ -387,12 +399,11 @@ class Application(object):
             raise RebaseHelperError('You have to specify one of these check tools {0}'.format(
                 Checker.get_supported_tools()))
         else:
-            logger.info('Comparing packages using {0} ... running'.format(self.conf.pkgcomparetool))
+            logger.info('Comparing packages using {0}...'.format(self.conf.pkgcomparetool))
             results_dict = pkgchecker.run_check(self.results_dir)
             for key, val in six.iteritems(results_dict):
                 if val:
                     OutputLogger.set_checker_output('Following files were ' + key, '\n'.join(val))
-            logger.info('Comparing packages done')
 
     def print_summary(self):
         output_tool.check_output_argument(self.conf.outputtool)
