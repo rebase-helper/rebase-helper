@@ -167,3 +167,12 @@ class Differ(object):
         Tool for resolving merge conflicts
         """
         self._tool.run_mergetool(old_dir, new_dir, suffix, failed_files)
+
+    @staticmethod
+    def get_supported_tools():
+        """
+        Returns a list of supported diff tools
+
+        :return: list of supported diff tools
+        """
+        return diff_tools.keys()
