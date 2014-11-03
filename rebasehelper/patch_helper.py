@@ -320,10 +320,17 @@ class Patcher(object):
     """
     Class representing a process of applying and generating rebased patch using specific tool.
     """
-    def __init__(self, patch=None):
-        if patch is None:
+
+    def __init__(self, tool=None):
+        """
+        Constructor
+
+        :param tool: tool to be used. If not supported, raises NotImplementedError
+        :return: None
+        """
+        if tool is None:
             raise TypeError("Expected argument 'tool' (pos 1) is missing")
-        self._path_tool_name = patch
+        self._path_tool_name = tool
         self._tool = None
 
         for patch_tool in patch_tools.values():
@@ -334,6 +341,16 @@ class Patcher(object):
             raise NotImplementedError("Unsupported patch tool")
 
     def patch(self, old_dir, new_dir, patches, rebased_patches, **kwargs):
+        """
+        Apply patches and generate rebased patches if needed
+
+        :param old_dir: path to dir with old patches
+        :param new_dir: path to dir with new patches
+        :param patches: old patches
+        :param rebased_patches: rebased patches
+        :param kwargs: --
+        :return:
+        """
         logger.debug("Patch: Patching source by patch tool {0}".format(self._path_tool_name))
         return self._tool.run_patch(old_dir, new_dir, patches, rebased_patches, **kwargs)
 
