@@ -152,6 +152,9 @@ class Differ(object):
         if self._tool is None:
             raise NotImplementedError("Unsupported diff tool")
 
+    def __str__(self):
+        return "<Differ tool_name='{_tool_name}' tool='{_tool}'>".format(**vars(self))
+
     def diff(self, old, new):
         """
         Diff between two files
