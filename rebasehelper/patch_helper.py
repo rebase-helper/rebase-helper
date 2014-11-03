@@ -351,7 +351,7 @@ class Patcher(object):
         :param kwargs: --
         :return:
         """
-        logger.debug("Patch: Patching source by patch tool {0}".format(self._path_tool_name))
+        logger.debug("Patcher: Patching source by patch tool {0}".format(self._path_tool_name))
         return self._tool.run_patch(old_dir, new_dir, patches, rebased_patches, **kwargs)
 
 
