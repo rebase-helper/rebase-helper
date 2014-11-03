@@ -71,7 +71,7 @@ class DiffBase(object):
         return NotImplementedError()
 
 
-@register_diff_tool
+#@register_diff_tool
 class VimDiffTool(DiffBase):
     """
     The class is used for diff between two directories or sources
@@ -91,7 +91,7 @@ class VimDiffTool(DiffBase):
         raise NotImplementedError()
 
     @classmethod
-    def run_mergetool(cls, old_dir, new_dir, **kwargs):
+    def run_mergetool(cls, **kwargs):
         raise NotImplementedError()
 
 
