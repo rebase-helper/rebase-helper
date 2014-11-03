@@ -156,7 +156,7 @@ class PatchTool(PatchBase):
         return failed_files
 
     @classmethod
-    def generate_diff(cls, patch, patch_path):
+    def generate_diff(cls, patch, patch_path_argumennt):
         """
         Path to the patch that should be generated
 
@@ -167,8 +167,8 @@ class PatchTool(PatchBase):
         # gendiff new_source + self.suffix > patch[0]
         logger.debug("PatchTool: Generating patch using gendiff")
         cmd = ['gendiff']
-        # -p0 has to be striped to 0 and check what path is used
-        if int(patch_path[2:]) == 0:
+        # strip '-p' from the path argument to determine the path
+        if int(patch_path_argumennt.strip('-p')) == 0:
             cmd.append('.')
             cwd = cls.new_sources
         else:
