@@ -113,21 +113,19 @@ class BuildLogAnalyzer(object):
 
     @classmethod
     def _find_make_error(cls, section):
-        found_make = False
         for x in map(str.strip, section.split('\n')):
             if 'make' in x and 'Error' in x:
                 logger.info('Package build failed')
-                found_make = True
-        return found_make
+                return True
+        return False
 
     @classmethod
     def _find_patch_error(cls, section):
-        found_patch = False
         section_lst = section.split('\n')
         for index, x in enumerate(map(str.strip, section_lst)):
             if 'FAILED' in x and 'RPM build errors' in section_lst[index+1]:
-                found_patch = True
-        return found_patch
+                return True
+        return False
 
     @classmethod
     def _get_files_from_string(cls, section):
