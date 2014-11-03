@@ -24,6 +24,27 @@ import os
 from rebasehelper.logger import logger
 
 
+class BuildLogAnalyzerMissingError(RuntimeError):
+    """
+    Error indicating build.log is missing
+    """
+    pass
+
+
+class BuildLogAnalyzerMakeError(RuntimeError):
+    """
+    Error indicating failure problem with building
+    """
+    pass
+
+
+class BuildLogAnalyzerPatchError(RuntimeError):
+    """
+    Error indicating failure problem with building
+    """
+    pass
+
+
 class BuildLogAnalyzer(object):
     """
     Class analyze the log provided by build programs
@@ -53,23 +74,60 @@ class BuildLogAnalyzer(object):
         files['missing'] = []
         files['deleted'] = []
 
+        with open(log_name, 'r') as f:
+            lines = f.read()
+        if not lines:
+            logger.debug('Problem with openning log {0}'.format(log_name))
+            raise BuildLogAnalyzerMissingError
+
         # Test for finding files which exists in sources
         # but are not mentioned in spec file
         missing_reg = 'error:\s+Installed\s+'
         missing_source_reg = 'RPM build errors:'
         e_reg = 'EXCEPTION:'
-        section = cls._find_section(log_name, missing_reg, e_reg)
+        section = cls._find_section(lines, missing_reg, e_reg)
         if section:
             section = section.replace('File not found by glob:', '').replace('File not found:', '')
             logger.debug('Found missing files which are not in SPEC file: {0}'.format(section))
             files['missing'] = cls._get_files_from_string(section)
         else:
-            section = cls._find_section(log_name, missing_source_reg, e_reg)
+            section = cls._find_section(lines, missing_source_reg, e_reg)
             if section:
-                logger.debug('Found files which does not exist in source: {0}'.format(section))
-                files['deleted'] = cls._get_files_from_string(section)
+                if cls._find_make_error(lines):
+                    raise BuildLogAnalyzerMakeError('Look at the build log {0}'.format(log_name))
+                else:
+                    if cls._find_patch_error(lines):
+                        raise BuildLogAnalyzerPatchError('Patching failed during building. Look at the build log {0}'.format(log_name))
+                    else:
+                        files_from_section = cls._get_files_from_string(section)
+                        if files_from_section:
+                            logger.debug('Found files which does not exist in source: {0}'.format(section))
+                            files['deleted'] = files_from_section
+                        else:
+                            logger.info('Not known issue')
+                            raise RuntimeError
+            else:
+                logger.info('We did not find a reason why build failed.\nLook at the build log {0}'.format(log_name))
 
         return files
+
+    @classmethod
+    def _find_make_error(cls, section):
+        found_make = False
+        for x in map(str.strip, section.split('\n')):
+            if 'make' in x and 'Error' in x:
+                logger.info('Package build failed')
+                found_make = True
+        return found_make
+
+    @classmethod
+    def _find_patch_error(cls, section):
+        found_patch = False
+        section_lst = section.split('\n')
+        for index, x in enumerate(map(str.strip, section_lst)):
+            if 'FAILED' in x and 'RPM build errors' in section_lst[index+1]:
+                found_patch = True
+        return found_patch
 
     @classmethod
     def _get_files_from_string(cls, section):
@@ -93,7 +151,7 @@ class BuildLogAnalyzer(object):
         return None
 
     @classmethod
-    def _find_section(cls, log_name, s_reg, e_reg=None):
+    def _find_section(cls, lines, s_reg, e_reg=None):
         """
         get string from substring
         :param log_name: file_name to analyze
@@ -101,10 +159,6 @@ class BuildLogAnalyzer(object):
         :param e_reg: End regular expression
         """
         sub_lines = None
-        with open(log_name, 'r') as f:
-            lines = f.read()
-        if not lines:
-            return None
         s_search = re.search(s_reg, lines)
         s_pos = e_pos = 0
         if s_search:

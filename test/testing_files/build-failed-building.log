@@ -1,0 +1,160 @@
+Mock Version: 1.1.41
+ENTER do(['bash', '--login', '-c', 'rpmbuild -bs --target x86_64 --nodeps builddir/build/SPECS/wget.spec'], False, '/var/lib/mock/fedora-20-x86_64/root/', None, 0, True, False, 1000, 135, None, False, {'LANG': 'en_US.utf8', 'TERM': 'vt100', 'SHELL': '/bin/bash', 'CCACHE_DIR': '/tmp/ccache', 'HOSTNAME': 'mock', 'PROMPT_COMMAND': 'echo -n "<mock-chroot>"', 'HOME': '/builddir', 'PATH': '/usr/bin:/bin:/usr/sbin:/sbin', 'CCACHE_UMASK': '002'}, logger=<mockbuild.trace_decorator.getLog object at 0x1b10e50>)
+Executing command: ['bash', '--login', '-c', 'rpmbuild -bs --target x86_64 --nodeps builddir/build/SPECS/wget.spec'] with env {'LANG': 'en_US.utf8', 'TERM': 'vt100', 'SHELL': '/bin/bash', 'CCACHE_DIR': '/tmp/ccache', 'HOSTNAME': 'mock', 'PROMPT_COMMAND': 'echo -n "<mock-chroot>"', 'HOME': '/builddir', 'PATH': '/usr/bin:/bin:/usr/sbin:/sbin', 'CCACHE_UMASK': '002'}
+Building target platforms: x86_64
+Building for target x86_64
+Wrote: /builddir/build/SRPMS/wget-1.15-3.fc20.src.rpm
+Child return code was: 0
+LEAVE do --> 
+
+ENTER do(['bash', '--login', '-c', 'rpmbuild -bb --target x86_64 --nodeps  builddir/build/SPECS/wget.spec'], False, '/var/lib/mock/fedora-20-x86_64/root/', None, 0, True, False, 1000, 135, None, False, {'LANG': 'en_US.utf8', 'TERM': 'vt100', 'SHELL': '/bin/bash', 'CCACHE_DIR': '/tmp/ccache', 'HOSTNAME': 'mock', 'PROMPT_COMMAND': 'echo -n "<mock-chroot>"', 'HOME': '/builddir', 'PATH': '/usr/bin:/bin:/usr/sbin:/sbin', 'CCACHE_UMASK': '002'}, logger=<mockbuild.trace_decorator.getLog object at 0x1b10e50>)
+Executing command: ['bash', '--login', '-c', 'rpmbuild -bb --target x86_64 --nodeps  builddir/build/SPECS/wget.spec'] with env {'LANG': 'en_US.utf8', 'TERM': 'vt100', 'SHELL': '/bin/bash', 'CCACHE_DIR': '/tmp/ccache', 'HOSTNAME': 'mock', 'PROMPT_COMMAND': 'echo -n "<mock-chroot>"', 'HOME': '/builddir', 'PATH': '/usr/bin:/bin:/usr/sbin:/sbin', 'CCACHE_UMASK': '002'}
+Building target platforms: x86_64
+Building for target x86_64
+Executing(%prep): /bin/sh -e /var/tmp/rpm-tmp.P92EUC
++ umask 022
++ cd /builddir/build/BUILD
++ cd /builddir/build/BUILD
++ rm -rf wget-1.15
++ /usr/bin/xz -dc /builddir/build/SOURCES/wget-1.15.tar.xz
++ /usr/bin/tar -xf -
++ STATUS=0
++ '[' 0 -ne 0 ']'
++ cd wget-1.15
++ /usr/bin/chmod -Rf a+rX,u+w,g-w,o-w .
++ echo 'Patch #1 (wget-rh-modified.patch):'
+Patch #1 (wget-rh-modified.patch):
++ /usr/bin/cat /builddir/build/SOURCES/wget-rh-modified.patch
++ /usr/bin/patch -p0 --fuzz=0
+patching file configure
+Hunk #1 succeeded at 581 (offset 20 lines).
+Patch #2 (wget-1.15-path.patch):
++ echo 'Patch #2 (wget-1.15-path.patch):'
++ /usr/bin/cat /builddir/build/SOURCES/wget-1.15-path.patch
++ /usr/bin/patch -p1 -b --suffix .path --fuzz=0
+patching file doc/sample.wgetrc.munged_for_texi_inclusion
+patching file doc/sample.wgetrc
+patching file doc/wget.info
+patching file doc/wget.texi
+patching file NEWS
+patching file README
++ exit 0
+Executing(%build): /bin/sh -e /var/tmp/rpm-tmp.N2niXq
++ umask 022
++ cd /builddir/build/BUILD
++ cd wget-1.15
++ pkg-config openssl
+++ pkg-config --cflags openssl
++ CPPFLAGS=
++ export CPPFLAGS
+++ pkg-config --libs openssl
++ LDFLAGS='-lssl -lcrypto '
++ export LDFLAGS
++ export FCFLAGS
++ LDFLAGS='-lssl -lcrypto '
++ export LDFLAGS
+++ find . -name config.guess -o -name config.sub
++ for i in '$(find . -name config.guess -o -name config.sub)'
+++ basename ./build-aux/config.guess
++ '[' -f /usr/lib/rpm/redhat/config.guess ']'
++ /usr/bin/rm -f ./build-aux/config.guess
+++ basename ./build-aux/config.guess
++ /usr/bin/cp -fv /usr/lib/rpm/redhat/config.guess ./build-aux/config.guess
+'/usr/lib/rpm/redhat/config.guess' -> './build-aux/config.guess'
++ for i in '$(find . -name config.guess -o -name config.sub)'
+++ basename ./build-aux/config.sub
++ '[' -f /usr/lib/rpm/redhat/config.sub ']'
++ /usr/bin/rm -f ./build-aux/config.sub
+++ basename ./build-aux/config.sub
+config.status: creating util/Makefile
+config.status: creating po/Makefile.in
+config.status: creating po/Makefile
+configure: Summary of build options:
+gcc -DHAVE_CONFIG_H -DSYSTEM_WGETRC=\"/etc/wgetrc\" -DLOCALEDIR=\"/usr/share/locale\" -I.  -I../lib -I../lib   -O2 -g -pipe -Wall -Wp,-D_FORTIFY_SOURCE=2 -fexceptions -fstack-protector-strong --param=ssp-buffer-size=4 -grecord-gcc-switches  -m64 -mtune=generic -c convert.c
+RUNNING TEST test_is_robots_txt_url...
+PASSED
+ALL TESTS PASSED
+Tests run: 9
+./run-px ..
+Running Test-auth-basic.px
+Can't locate HTTP/Daemon.pm in @INC (you may need to install the HTTP::Daemon module) (@INC contains: ../tests /usr/local/lib64/perl5 /usr/local/share/perl5 /usr/lib64/perl5/vendor_perl /usr/share/perl5/vendor_perl /usr/lib64/perl5 /usr/share/perl5 .) at ../tests/HTTPServer.pm line 6.
+BEGIN failed--compilation aborted at ../tests/HTTPServer.pm line 6.
+Compilation failed in require at ../tests/HTTPTest.pm line 6.
+BEGIN failed--compilation aborted at ../tests/HTTPTest.pm line 6.
+Compilation failed in require at ../tests/Test-auth-basic.px line 6.
+BEGIN failed--compilation aborted at ../tests/Test-auth-basic.px line 6.
+Running Test-auth-no-challenge.px
+Can't locate HTTP/Daemon.pm in @INC (you may need to install the HTTP::Daemon module) (@INC contains: ../tests /usr/local/lib64/perl5 /usr/local/share/perl5 /usr/lib64/perl5/vendor_perl /usr/share/perl5/vendor_perl /usr/lib64/perl5 /usr/share/perl5 .) at ../tests/HTTPServer.pm line 6.
+BEGIN failed--compilation aborted at ../tests/HTTPServer.pm line 6.
+Compilation failed in require at ../tests/HTTPTest.pm line 6.
+BEGIN failed--compilation aborted at ../tests/HTTPTest.pm line 6.
+Compilation failed in require at ../tests/Test-auth-no-challenge.px line 6.
+BEGIN failed--compilation aborted at ../tests/Test-auth-no-challenge.px line 6.
+Running Test-ftp.px
+bind: Invalid argument at ../tests/FTPServer.pm line 513.
+Running test Test-ftp
+Running Test-ftp-pasv-fail.px
+bind: Invalid argument at ../tests/FTPServer.pm line 513.
+Running test Test-ftp-pasv-fail
+BEGIN failed--compilation aborted at ../tests/HTTPTest.pm line 6.
+Compilation failed in require at ../tests/Test-HTTP-Content-Disposition.px line 6.
+BEGIN failed--compilation aborted at ../tests/Test-HTTP-Content-Disposition.px line 6.
+Running Test-i-ftp.px
+bind: Invalid argument at ../tests/FTPServer.pm line 513.
+Running test Test-i-ftp
+[33mSkip:[0m Test-auth-basic.px
+[33mSkip:[0m Test-auth-no-challenge.px
+[33mSkip:[0m Test-auth-no-challenge-url.px
+[33mSkip:[0m Test-auth-with-content-disposition.px
+[33mSkip:[0m Test-auth-retcode.px
+[33mSkip:[0m Test-cookies.px
+[33mSkip:[0m Test-cookies-401.px
+[33mSkip:[0m Test-proxy-auth-basic.px
+[33mSkip:[0m Test-proxied-https-auth.px
+[33mSkip:[0m Test-N-HTTP-Content-Disposition.px
+[33mSkip:[0m Test--spider.px
+[33mSkip:[0m Test-c-full.px
+[33mSkip:[0m Test-c-partial.px
+[33mSkip:[0m Test-c-shorter.px
+[33mSkip:[0m Test-c.px
+[33mSkip:[0m Test-E-k-K.px
+[33mSkip:[0m Test-E-k.px
+[35mUnknown:[0m Test-ftp.px
+[35mUnknown:[0m Test-ftp-pasv-fail.px
+[35mUnknown:[0m Test-ftp-bad-list.px
+[35mUnknown:[0m Test-ftp-recursive.px
+[35mUnknown:[0m Test-ftp-iri.px
+[35mUnknown:[0m Test-ftp-iri-fallback.px
+[33mSkip:[0m Test--spider-fail.px
+[33mSkip:[0m Test--spider-r-HTTP-Content-Disposition.px
+[33mSkip:[0m Test--spider-r--no-content-disposition.px
+[33mSkip:[0m Test--spider-r--no-content-disposition-trivial.px
+[33mSkip:[0m Test--spider-r.px
+[33mSkip:[0m Test--httpsonly-r.px
+[31m===================
+78 tests were run
+0 PASS, 0 FAIL
+63 SKIP, 15 UNKNOWN
+===================[0m
+make[3]: Leaving directory `/builddir/build/BUILD/wget-1.15/tests'
+make[2]: Leaving directory `/builddir/build/BUILD/wget-1.15/tests'
+make[1]: Leaving directory `/builddir/build/BUILD/wget-1.15'
+RPM build errors:
+make[3]: *** [run-px-tests] Error 15
+make[2]: *** [check-am] Error 2
+make[1]: *** [check-recursive] Error 1
+make: *** [check] Error 2
+error: Bad exit status from /var/tmp/rpm-tmp.KtTxWt (%check)
+    Bad exit status from /var/tmp/rpm-tmp.KtTxWt (%check)
+Child return code was: 1
+EXCEPTION: Command failed. See logs for output.
+ # ['bash', '--login', '-c', 'rpmbuild -bb --target x86_64 --nodeps  builddir/build/SPECS/wget.spec']
+Traceback (most recent call last):
+  File "/usr/lib/python2.7/site-packages/mockbuild/trace_decorator.py", line 70, in trace
+    result = func(*args, **kw)
+  File "/usr/lib/python2.7/site-packages/mockbuild/util.py", line 378, in do
+    raise mockbuild.exception.Error, ("Command failed. See logs for output.\n # %s" % (command,), child.returncode)
+Error: Command failed. See logs for output.
+ # ['bash', '--login', '-c', 'rpmbuild -bb --target x86_64 --nodeps  builddir/build/SPECS/wget.spec']
+LEAVE do --> EXCEPTION RAISED
+

@@ -34,8 +34,9 @@ from rebasehelper.checker import Checker
 from rebasehelper.build_helper import Builder, SourcePackageBuildError, BinaryPackageBuildError
 from rebasehelper.patch_helper import Patch
 from rebasehelper.exceptions import RebaseHelperError
-from rebasehelper.build_log_analyzer import BuildLogAnalyzer
+from rebasehelper.build_log_analyzer import BuildLogAnalyzer, BuildLogAnalyzerMissingError
 from rebasehelper.base_output import OutputLogger
+from rebasehelper.build_log_analyzer import BuildLogAnalyzerMakeError, BuildLogAnalyzerPatchError
 
 
 class Application(object):
@@ -364,8 +365,19 @@ class Application(object):
                     if version == 'old':
                         raise
                     logger.error('Building binary packages failed.')
-                    build_log = os.path.join(results_dir, 'RPM', 'build.log')
-                    files = BuildLogAnalyzer.parse_log(os.path.join(results_dir, 'RPM'), 'build.log')
+                    rpm_dir = os.path.join(results_dir, 'RPM')
+                    build_log = 'build.log'
+                    try:
+                        files = BuildLogAnalyzer.parse_log(rpm_dir, build_log)
+                    except BuildLogAnalyzerMissingError:
+                        logger.error('Build log {0} does not exist'.format(os.path.join(rpm_dir, build_log)))
+                        raise
+                    except BuildLogAnalyzerMakeError:
+                        logger.error('Building package failed during build.')
+                        raise
+                    except BuildLogAnalyzerPatchError:
+                        logger.error('Building package failed during patching.')
+                        raise
 
                     if files['missing']:
                         logger.info('Files not packaged in the SPEC file:\n{f}'.format(f='\n'.join(files['added'])))
@@ -386,7 +398,6 @@ class Application(object):
 
                 shutil.rmtree(os.path.join(results_dir, 'RPM'))
                 shutil.rmtree(os.path.join(results_dir, 'SRPM'))
-
 
     def pkgdiff_packages(self):
         """
