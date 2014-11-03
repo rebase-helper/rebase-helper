@@ -32,7 +32,7 @@ from rebasehelper.logger import logger
 from rebasehelper.utils import check_empty_patch, get_message
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.specfile import get_rebase_name
-from rebasehelper.diff_helper import Diff
+from rebasehelper.diff_helper import Differ
 
 
 patch_tools = {}
@@ -197,7 +197,7 @@ class PatchTool(PatchBase):
         cls.kwargs['failed_files'] = patched_files
 
         logger.debug('Input to MergeTool: {0}'.format(cls.kwargs))
-        diff_cls = Diff(cls.kwargs.get('diff_tool', None))
+        diff_cls = Differ(cls.kwargs.get('diff_tool', None))
         # Running Merge Tool
         diff_cls.mergetool(cls.old_sources, cls.new_sources, **cls.kwargs)
 

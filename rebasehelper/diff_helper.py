@@ -144,7 +144,7 @@ class MeldDiffTool(DiffBase):
                     sys.exit(0)
 
 
-class Diff(object):
+class Differ(object):
     """
     Class represents a processes for differences between sources
     """
