@@ -120,22 +120,9 @@ class MeldDiffTool(DiffBase):
         cmd = [cls.CMD, '--diff', old, new]
         return ProcessHelper.run_subprocess(cmd, output=ProcessHelper.DEV_NULL)
 
-
     @classmethod
-    def run_mergetool(cls, old_dir, new_dir, **kwargs):
-        suffix = kwargs.get('suffix')
-        failed_files = kwargs.get('failed_files')
-
-        if old_dir is None:
-            raise TypeError("MeldDiffTool:run_mergetool: missing old_dir")
-        if new_dir is None:
-            raise TypeError("MeldDiffTool:run_mergetool: missing new_dir")
-        if suffix is None:
-            raise TypeError("MeldDiffTool:run_mergetool: missing suffix")
-        else:
-            suffix = "." + suffix
-        if not failed_files:
-            raise TypeError("MeldDiffTool:run_mergetool: missing failed_files")
+    def run_mergetool(cls, old_dir, new_dir, suffix, failed_files):
+        suffix = "." + suffix
 
         logger.debug("MeldDiffTool: running merge")
 
@@ -184,14 +171,8 @@ class Diff(object):
         return cls._tool.run_diff(old, new)
 
     @classmethod
-    def mergetool(cls, old_dir, new_dir, **kwargs):
+    def mergetool(cls, old_dir, new_dir, suffix, failed_files):
         """
         Tool for resolving merge conflicts
         """
-        logger.debug("Diff: mergetool..")
-        return cls._tool.run_mergetool(old_dir, new_dir, **kwargs)
-
-if __name__ == '__main__':
-    kwargs = {}
-    diff = Diff('meld')
-    diff.diff(**kwargs)
+        cls._tool.run_mergetool(old_dir, new_dir, suffix, failed_files)
