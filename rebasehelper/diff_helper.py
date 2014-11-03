@@ -138,31 +138,29 @@ class Differ(object):
     """
     Class represents a processes for differences between sources
     """
-    @classmethod
-    def __init__(cls, tool=None):
+
+    def __init__(self, tool=None):
         if tool is None:
             raise TypeError("Expected argument 'tool' is missing.")
-        cls._tool_name = tool
-        cls._tool = None
+        self._tool_name = tool
+        self._tool = None
 
         for diff_tool in diff_tools.values():
-            if diff_tool.match(cls._tool_name):
-                cls._tool = diff_tool
+            if diff_tool.match(self._tool_name):
+                self._tool = diff_tool
 
-        if cls._tool is None:
+        if self._tool is None:
             raise NotImplementedError("Unsupported diff tool")
 
-    @classmethod
-    def diff(cls, old, new):
+    def diff(self, old, new):
         """
         Diff between two files
         """
         logger.debug("Diff: Diff between files {0} and {1}".format(old, new))
-        return cls._tool.run_diff(old, new)
+        return self._tool.run_diff(old, new)
 
-    @classmethod
-    def merge(cls, old_dir, new_dir, suffix, failed_files):
+    def merge(self, old_dir, new_dir, suffix, failed_files):
         """
         Tool for resolving merge conflicts
         """
-        cls._tool.run_mergetool(old_dir, new_dir, suffix, failed_files)
+        self._tool.run_mergetool(old_dir, new_dir, suffix, failed_files)
