@@ -208,17 +208,16 @@ class SpecFile(object):
         Returns whether test suite is enabled during the build time
         :return: True if enabled or False if not
         """
-        test_suite = False
         check_section = self.get_spec_section('%check')
         if not check_section:
-            return test_suite
+            return False
         # Remove commented lines
-        check_section = [x.strip() for x in check_section if not x.startswith('#')]
-        # This checks whether test or make keywords exists in section
-        found = [x for x in check_section if 'test' in x or 'make' in x]
-        if found:
-            test_suite = True
-        return test_suite
+        check_section = [x.strip() for x in check_section if not x.strip().startswith('#')]
+        # If there is at least one line with some command in %check we assume test suite is run
+        if check_section:
+            return True
+        else:
+            return False
 
     def _get_patch_number(self, fields):
         """
