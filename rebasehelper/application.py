@@ -32,7 +32,7 @@ from rebasehelper import output_tool
 from rebasehelper.utils import PathHelper, RpmHelper, get_message
 from rebasehelper.checker import Checker
 from rebasehelper.build_helper import Builder, SourcePackageBuildError, BinaryPackageBuildError
-from rebasehelper.patch_helper import Patch
+from rebasehelper.patch_helper import Patcher
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.build_log_analyzer import BuildLogAnalyzer, BuildLogAnalyzerMissingError
 from rebasehelper.base_output import OutputLogger
@@ -312,7 +312,7 @@ class Application(object):
     def patch_sources(self, sources):
         # Patch sources
         self.kwargs['diff_tool'] = self.conf.difftool
-        patch = Patch(self.conf.patchtool)
+        patch = Patcher(self.conf.patchtool)
 
         try:
             self.rebased_patches = patch.patch(sources[0],

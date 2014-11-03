@@ -316,7 +316,10 @@ class PatchTool(PatchBase):
         return cls.patches
 
 
-class Patch(object):
+class Patcher(object):
+    """
+    Class representing a process of applying and generating rebased patch using specific tool.
+    """
     def __init__(self, patch=None):
         if patch is None:
             raise TypeError("Expected argument 'tool' (pos 1) is missing")
