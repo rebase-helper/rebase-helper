@@ -157,6 +157,13 @@ class PatchTool(PatchBase):
 
     @classmethod
     def generate_diff(cls, patch, patch_path):
+        """
+        Path to the patch that should be generated
+
+        :param patch: name of the patch to be generated
+        :param patch_path_argumennt: patch command argument specifying which part of path in patch should be stripped
+        :return: return code of the gendiff command
+        """
         # gendiff new_source + self.suffix > patch[0]
         logger.debug("PatchTool: Generating patch using gendiff")
         cmd = ['gendiff']
@@ -169,10 +176,9 @@ class PatchTool(PatchBase):
             cwd = os.path.join(os.getcwd(), settings.NEW_SOURCES_DIR)
         cmd.append('.' + cls.suffix)
 
-        ret_code = ProcessHelper.run_subprocess_cwd(cmd=cmd,
-                                                    cwd=cwd,
-                                                    output=patch)
-        return ret_code
+        return ProcessHelper.run_subprocess_cwd(cmd=cmd,
+                                                cwd=cwd,
+                                                output=patch)
 
     @classmethod
     def execute_diff_helper(cls, patch):
