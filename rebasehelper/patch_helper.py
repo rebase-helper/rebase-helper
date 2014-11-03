@@ -199,7 +199,7 @@ class PatchTool(PatchBase):
         logger.debug('Input to MergeTool: {0}'.format(cls.kwargs))
         diff_cls = Differ(cls.kwargs.get('diff_tool', None))
         # Running Merge Tool
-        diff_cls.mergetool(cls.old_sources, cls.new_sources, **cls.kwargs)
+        diff_cls.merge(cls.old_sources, cls.new_sources, **cls.kwargs)
 
         # Generating diff
         cls.generate_diff(rebased_patch, patch[1])

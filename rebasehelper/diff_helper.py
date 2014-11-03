@@ -171,7 +171,7 @@ class Differ(object):
         return cls._tool.run_diff(old, new)
 
     @classmethod
-    def mergetool(cls, old_dir, new_dir, suffix, failed_files):
+    def merge(cls, old_dir, new_dir, suffix, failed_files):
         """
         Tool for resolving merge conflicts
         """
