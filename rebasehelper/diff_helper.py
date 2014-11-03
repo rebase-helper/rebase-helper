@@ -35,16 +35,6 @@ def register_diff_tool(diff_tool):
     return diff_tool
 
 
-def check_difftool_argument(difftool):
-    """
-    Function checks whether difftool argument is allowed
-    """
-    if difftool not in diff_tools.keys():
-        logger.error('You have to specify one of these difftools {0}'.format(diff_tools.keys()))
-        return False
-    return True
-
-
 class DiffBase(object):
     """ Class used for testing and other future stuff, ...
         Each method should overwrite method like run_check
