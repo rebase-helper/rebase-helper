@@ -149,14 +149,14 @@ class Diff(object):
     Class represents a processes for differences between sources
     """
     @classmethod
-    def __init__(cls, diff=None):
-        if diff is None:
-            raise TypeError("Expected argument 'diff' is missing.")
-        cls._diff_name = diff
-        cls._diff = None
+    def __init__(cls, tool=None):
+        if tool is None:
+            raise TypeError("Expected argument 'tool' is missing.")
+        cls._tool_name = tool
+        cls._tool = None
 
         for diff_tool in diff_tools.values():
-            if diff_tool.match(cls._diff_name):
+            if diff_tool.match(cls._tool_name):
                 cls._tool = diff_tool
 
         if cls._tool is None:
