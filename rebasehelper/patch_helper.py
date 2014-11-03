@@ -156,15 +156,21 @@ class PatchTool(PatchBase):
         return failed_files
 
     @classmethod
-    def generate_diff(cls, patch):
+    def generate_diff(cls, patch, patch_path):
         # gendiff new_source + self.suffix > patch[0]
         logger.debug("PatchTool: Generating patch using gendiff")
         cmd = ['gendiff']
-        cmd.append(os.path.basename(cls.new_sources))
+        # -p0 has to be striped to 0 and check what path is used
+        if int(patch_path[2:]) == 0:
+            cmd.append('.')
+            cwd = cls.new_sources
+        else:
+            cmd.append(os.path.basename(cls.new_sources))
+            cwd = os.path.join(os.getcwd(), settings.NEW_SOURCES_DIR)
         cmd.append('.' + cls.suffix)
 
         ret_code = ProcessHelper.run_subprocess_cwd(cmd=cmd,
-                                                    cwd=os.path.join(os.getcwd(), settings.NEW_SOURCES_DIR),
+                                                    cwd=cwd,
                                                     output=patch)
         return ret_code
 
@@ -190,7 +196,7 @@ class PatchTool(PatchBase):
         diff_cls.mergetool(cls.old_sources, cls.new_sources, **cls.kwargs)
 
         # Generating diff
-        cls.generate_diff(rebased_patch)
+        cls.generate_diff(rebased_patch, patch[1])
 
         # Showing difference between original and new patch
         diff_cls.diff(patch[0], rebased_patch)
@@ -281,7 +287,10 @@ class PatchTool(PatchBase):
         """
         cls.kwargs = kwargs
         cls.patches = patches
-        cls.rebased_patches = rebased_patches
+        if rebased_patches:
+            cls.rebased_patches = rebased_patches
+        else:
+            cls.rebased_patches = patches
         cls.old_sources = old_dir
         cls.new_sources = new_dir
         cls.output_data = []
@@ -293,7 +302,7 @@ class PatchTool(PatchBase):
                 cls.source_dir = cls.old_sources
                 cls.apply_patch(cls.patches[order[0]])
                 cls.source_dir = cls.new_sources
-                patch = cls.apply_patch(cls.patches[order[0]])
+                patch = cls.apply_patch(cls.rebased_patches[order[0]])
             except Exception:
                 raise Exception
             cls.patches[order[0]] = patch
