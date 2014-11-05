@@ -193,13 +193,10 @@ class PatchTool(PatchBase):
         if not patched_files:
             raise RuntimeError('We are not able to get a list of failed files.')
 
-        cls.kwargs['suffix'] = cls.suffix
-        cls.kwargs['failed_files'] = patched_files
-
         logger.debug('Input to MergeTool: {0}'.format(cls.kwargs))
         diff_cls = Differ(cls.kwargs.get('diff_tool', None))
         # Running Merge Tool
-        diff_cls.merge(cls.old_sources, cls.new_sources, **cls.kwargs)
+        diff_cls.merge(cls.old_sources, cls.new_sources, cls.suffix, patched_files)
 
         # Generating diff
         cls.generate_diff(rebased_patch, patch[1])
