@@ -301,13 +301,10 @@ class PatchTool(PatchBase):
 
         # apply patches in the same order as in spec file, not according to their numbers
         for order in sorted(cls.patches.items(), key=lambda x: x[1][2]):
-            try:
-                cls.source_dir = cls.old_sources
-                cls.apply_patch(cls.patches[order[0]])
-                cls.source_dir = cls.new_sources
-                patch = cls.apply_patch(cls.rebased_patches[order[0]])
-            except Exception:
-                raise Exception
+            cls.source_dir = cls.old_sources
+            cls.apply_patch(cls.patches[order[0]])
+            cls.source_dir = cls.new_sources
+            patch = cls.apply_patch(cls.rebased_patches[order[0]])
             cls.patches[order[0]] = patch
 
         return cls.patches
