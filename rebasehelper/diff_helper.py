@@ -21,10 +21,9 @@
 #          Tomas Hozza <thozza@redhat.com>
 
 import os
-import sys
 
 from rebasehelper.logger import logger
-from rebasehelper.utils import get_message
+from rebasehelper.utils import ConsoleHelper
 from rebasehelper.utils import ProcessHelper
 
 diff_tools = {}
@@ -128,10 +127,8 @@ class MeldDiffTool(DiffBase):
             ProcessHelper.run_subprocess(cmd, output=ProcessHelper.DEV_NULL)
 
             if len(failed_files) > 1 and index < len(failed_files) - 1:
-                accept = ['y', 'yes']
-                var = get_message(message="Do you want to merge another file? (y/n)")
-                if var not in accept:
-                    sys.exit(0)
+                if not ConsoleHelper.get_message('Do you want to merge another file'):
+                    raise KeyboardInterrupt
 
 
 class Differ(object):

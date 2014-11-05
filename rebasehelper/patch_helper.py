@@ -21,7 +21,6 @@
 #          Tomas Hozza <thozza@redhat.com>
 
 import os
-import sys
 import six
 import random
 import string
@@ -29,7 +28,7 @@ from six import StringIO
 
 from rebasehelper import settings
 from rebasehelper.logger import logger
-from rebasehelper.utils import check_empty_patch, get_message
+from rebasehelper.utils import check_empty_patch, ConsoleHelper
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.specfile import get_rebase_name
 from rebasehelper.diff_helper import Differ
@@ -266,19 +265,17 @@ class PatchTool(PatchBase):
             if cls.source_dir == cls.old_sources:
                 raise RuntimeError('Failed to patch old sources')
 
-            get_message("Applying patch {0} to new source failed. Press Enter to start merge-tool.".
-                        format(os.path.basename(patch[0])),
-                        any_input=True)
+            ConsoleHelper.get_message("Applying patch {0} to new source failed. Press Enter to start merge-tool.".
+                                      format(os.path.basename(patch[0])),
+                                      any_input=True)
             logger.warning('Applying patch failed. '
                            'Starting merge-tool to fix conflicts manually.')
             # Running diff_helper in order to merge patch to the upstream version
             patch[0] = cls.execute_diff_helper(patch)
 
             # User should clarify whether another patch will be applied
-            accept = ['y', 'yes']
-            var = get_message(message="Do you want to continue with another patch? (y/n)")
-            if var not in accept:
-                sys.exit(0)
+            if not ConsoleHelper.get_message('Do you want to continue with another patch'):
+                raise KeyboardInterrupt
 
         return patch
 

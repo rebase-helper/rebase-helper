@@ -19,6 +19,7 @@
 #
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
+
 import os
 import shutil
 import logging
@@ -29,7 +30,7 @@ from rebasehelper.specfile import SpecFile, get_rebase_name
 from rebasehelper.logger import logger, LoggerHelper
 from rebasehelper import settings
 from rebasehelper import output_tool
-from rebasehelper.utils import PathHelper, RpmHelper, get_message
+from rebasehelper.utils import PathHelper, RpmHelper, ConsoleHelper
 from rebasehelper.checker import Checker
 from rebasehelper.build_helper import Builder, SourcePackageBuildError, BinaryPackageBuildError
 from rebasehelper.patch_helper import Patcher
@@ -293,7 +294,7 @@ class Application(object):
         """
         req_pkgs = spec.get_requires()
         if not RpmHelper.all_packages_installed(req_pkgs):
-            if get_message('\nSome build dependencies are missing. Do you want to install them now? (y/n) ') in ['y', 'yes']:
+            if ConsoleHelper.get_message('\nSome build dependencies are missing. Do you want to install them now'):
                 if RpmHelper.install_build_dependencies(spec.spec_file) != 0:
                     raise RebaseHelperError('Failed to install build dependencies')
 
@@ -390,8 +391,7 @@ class Application(object):
                     self.rebase_spec_file.modify_spec_files_section(files)
 
                 if failed_before:
-                    answer = get_message('Do you want rebase-helper to try build the packages one more time?')
-                    if answer not in ['yes', 'y']:
+                    if not ConsoleHelper.get_message('Do you want rebase-helper to try build the packages one more time'):
                         raise KeyboardInterrupt
                 #  build just failed, otherwise we would break out of the while loop
                 failed_before = True

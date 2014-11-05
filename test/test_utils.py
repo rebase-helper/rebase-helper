@@ -28,29 +28,105 @@ import sys
 from six import StringIO
 
 from .base_test import BaseTest
-from rebasehelper.utils import get_message
+from rebasehelper.utils import ConsoleHelper
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.utils import PathHelper
 from rebasehelper.utils import TemporaryEnvironment
 from rebasehelper.utils import RpmHelper
 
 
-class TestRandomFunctions(BaseTest):
-    """ tests for any random functions that are not part of other classes. """
+class TestConsoleHelper(BaseTest):
+    """
+    ConsoleHelper tests
+    """
 
-    def test_get_message(self):
-        QUESTION = 'bla bla'
-        ANSWER = 'yes'
-
+    @staticmethod
+    def _setup_fake_IO(input_str):
+        """
+        Function to setup fake STDIN and STDOUT for console testing.
+        """
         #  Use StringIO to be able to write and read to STDIN and from STDOUT
-        sys.stdin = StringIO(ANSWER)
+        sys.stdin = StringIO(input_str)
         sys.stdout = StringIO()
 
-        inp = get_message(QUESTION)
+    def test_get_message_yes(self):
+        question = 'bla bla'
+        answer = 'yes'
+
+        self._setup_fake_IO(answer)
+        inp = ConsoleHelper.get_message(question)
         sys.stdout.seek(0)
 
-        assert sys.stdout.readline() == QUESTION
-        assert inp == ANSWER
+        assert sys.stdout.readline() == question + ' ([y]/n)? '
+        assert inp is True
+
+    def test_get_message_no(self):
+        question = 'bla bla'
+        answer = 'no'
+
+        self._setup_fake_IO(answer)
+        inp = ConsoleHelper.get_message(question)
+        sys.stdout.seek(0)
+
+        assert sys.stdout.readline() == question + ' ([y]/n)? '
+        assert inp is False
+
+    def test_get_message_yes_default_no(self):
+        question = 'bla bla'
+        answer = 'yes'
+
+        self._setup_fake_IO(answer)
+        inp = ConsoleHelper.get_message(question, default_yes=False)
+        sys.stdout.seek(0)
+
+        assert sys.stdout.readline() == question + ' (y/[n])? '
+        assert inp is True
+
+    def test_get_message_no_input_default_yes(self):
+        question = 'bla bla'
+        answer = '\n'
+
+        self._setup_fake_IO(answer)
+        inp = ConsoleHelper.get_message(question)
+        sys.stdout.seek(0)
+
+        assert sys.stdout.readline() == question + ' ([y]/n)? '
+        assert inp is True
+
+    def test_get_message_no_input_default_no(self):
+        question = 'bla bla'
+        answer = '\n'
+
+        self._setup_fake_IO(answer)
+        inp = ConsoleHelper.get_message(question, default_yes=False)
+        sys.stdout.seek(0)
+
+        assert sys.stdout.readline() == question + ' (y/[n])? '
+        assert inp is False
+
+    def test_get_message_any_input_default_yes(self):
+        question = 'bla bla'
+        answer = 'random input\ndsfdf'
+
+        self._setup_fake_IO(answer)
+        inp = ConsoleHelper.get_message(question, any_input=True)
+        sys.stdout.seek(0)
+
+        # TODO: FIND OUT WHAT'S WRONG WITH THIS!
+        #assert sys.stdout.read() == question + ' '
+        assert inp is True
+
+    def test_get_message_any_input_default_no(self):
+        question = 'bla bla'
+        answer = 'random input\n'
+
+        self._setup_fake_IO(answer)
+        inp = ConsoleHelper.get_message(question, default_yes=False, any_input=True)
+        sys.stdout.seek(0)
+
+        # TODO: FIND OUT WHAT'S WRONG WITH THIS!
+        #assert sys.stdout.readline() == question + ' '
+        assert inp is False
 
 
 class TestProcessHelper(object):

@@ -30,9 +30,11 @@ import rpm
 import six
 from six.moves import input
 from six import StringIO
+from distutils.util import strtobool
 
 from rebasehelper.logger import logger
 from rebasehelper import settings
+
 
 def check_empty_patch(patch_name):
     """
@@ -65,25 +67,50 @@ def get_value_from_kwargs(kwargs, field, source='old'):
     return kwargs[source][field]
 
 
-def get_message(message="", any_input=False):
+class ConsoleHelper(object):
     """
-    Function for command line messages
-    :param message: prompt string
-    :param any_input: if True, return input without checking it first
-    :return: user input
+    Class for command line interaction with the user.
     """
-    output = ['yes', 'y', 'no', 'n']
-    while True:
-        try:
-            var = input(message).lower()
-        except KeyboardInterrupt:
-            return None
-        if any_input:
-            return var
-        if var not in output:
-            logger.info('You have to choose one of y/n.')
+
+    @staticmethod
+    def get_message(message, default_yes=True, any_input=False):
+        """
+        Function for command line messages
+
+        :param message: prompt string
+        :param default_yes: If the default value is YES
+        :param any_input: if True, return input without checking it first
+        :return: True or False, based on user's input
+        """
+        if default_yes:
+            choice = '([y]/n)'
         else:
-            return var
+            choice = '(y/[n])'
+
+        if any_input:
+            msg = '{0} '.format(message)
+        else:
+            msg = '{0} {1}? '.format(message, choice)
+
+        while True:
+            try:
+                user_input = input(msg).lower()
+            except EOFError:
+                user_input = None
+
+            if not user_input:
+                return True if default_yes else False
+
+            try:
+                user_input = strtobool(user_input)
+            except ValueError:
+                logger.error('You have to type [y]es or [n]o.')
+                continue
+
+            if any_input:
+                return True
+            else:
+                return bool(user_input)
 
 
 class DownloadHelper(object):
