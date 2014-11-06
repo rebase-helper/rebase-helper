@@ -21,10 +21,13 @@
 #          Tomas Hozza <thozza@redhat.com>
 
 import os
+import sys
+from six import StringIO
 
 from rebasehelper.logger import logger
 from rebasehelper.utils import ConsoleHelper
 from rebasehelper.utils import ProcessHelper
+from rebasehelper import settings
 
 diff_tools = {}
 
@@ -32,6 +35,51 @@ diff_tools = {}
 def register_diff_tool(diff_tool):
     diff_tools[diff_tool.CMD] = diff_tool
     return diff_tool
+
+
+class GenericDiff(object):
+    """
+    Class used a generic function for patch generation
+    """
+
+    @staticmethod
+    def generate_diff(new_sources, suffix, patch, patch_path_argument):
+        """
+        Path to the patch that should be generated
+
+        :param patch: name of the patch to be generated
+        :param patch_path_argument: patch command argument specifying which part of path in patch should be stripped
+        :return: return code of the gendiff command
+        """
+        # gendiff new_source + self.suffix > patch[0]
+        logger.debug("PatchTool: Generating patch using gendiff")
+        cmd = ['gendiff']
+        # strip '-p' from the path argument to determine the path
+        if int(patch_path_argument.strip('-p')) == 0:
+            cmd.append('.')
+            cwd = new_sources
+        else:
+            cmd.append(os.path.basename(new_sources))
+            cwd = os.path.join(os.getcwd(), settings.NEW_SOURCES_DIR)
+        cmd.append('.' + suffix)
+
+        return ProcessHelper.run_subprocess_cwd(cmd=cmd,
+                                                cwd=cwd,
+                                                output=patch)
+
+    @staticmethod
+    def check_empty_patch(patch_name):
+        """
+        Function checks whether patch is empty or not
+        """
+        cmd = ["lsdiff"]
+        cmd.append(patch_name)
+        output = StringIO()
+        ret_code = ProcessHelper.run_subprocess(cmd, output=output)
+        if ret_code == 0 and not output.readlines():
+            return True
+        else:
+            return False
 
 
 class DiffBase(object):

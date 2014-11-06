@@ -36,20 +36,6 @@ from rebasehelper.logger import logger
 from rebasehelper import settings
 
 
-def check_empty_patch(patch_name):
-    """
-    Function checks whether patch is empty or not
-    """
-    cmd = ["lsdiff"]
-    cmd.append(patch_name)
-    output = StringIO()
-    ret_code = ProcessHelper.run_subprocess(cmd, output=output)
-    if ret_code == 0 and not output.readlines():
-        return True
-    else:
-        return False
-
-
 def get_value_from_kwargs(kwargs, field, source='old'):
     """
     Function returns a part of self.kwargs dictionary

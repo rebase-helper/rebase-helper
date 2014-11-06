@@ -33,12 +33,13 @@ except ImportError:
 from rebasehelper.utils import DownloadHelper
 from rebasehelper.logger import logger
 from rebasehelper import settings
-from rebasehelper.utils import check_empty_patch
 from rebasehelper.archive import Archive
 from rebasehelper.exceptions import RebaseHelperError
+from rebasehelper.diff_helper import GenericDiff
 
 
 PATCH_PREFIX = '%patch'
+
 
 def get_source_name(name):
     """
@@ -612,7 +613,7 @@ class SpecFile(object):
                 #  TODO: this method should not check this, but rather get final list of removed/empty patches (probably from Patch tool)
                 #  TODO: This while logic should go to Patch tool, not into SPEC file!
                 if settings.REBASE_HELPER_RESULTS_DIR in patch_name:
-                    if check_empty_patch(patch_name):
+                    if GenericDiff.check_empty_patch(patch_name):
                         comment = '#'
                         removed_patches.append(patch_num)
                         #del patches[int(patch_num)]

@@ -28,10 +28,10 @@ from six import StringIO
 
 from rebasehelper import settings
 from rebasehelper.logger import logger
-from rebasehelper.utils import check_empty_patch, ConsoleHelper
+from rebasehelper.utils import ConsoleHelper
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.specfile import get_rebase_name
-from rebasehelper.diff_helper import Differ
+from rebasehelper.diff_helper import Differ, GenericDiff
 
 
 patch_tools = {}
@@ -141,31 +141,6 @@ class PatchTool(PatchBase):
         return failed_files
 
     @classmethod
-    def generate_diff(cls, patch, patch_path_argument):
-        """
-        Path to the patch that should be generated
-
-        :param patch: name of the patch to be generated
-        :param patch_path_argument: patch command argument specifying which part of path in patch should be stripped
-        :return: return code of the gendiff command
-        """
-        # gendiff new_source + self.suffix > patch[0]
-        logger.debug("PatchTool: Generating patch using gendiff")
-        cmd = ['gendiff']
-        # strip '-p' from the path argument to determine the path
-        if int(patch_path_argument.strip('-p')) == 0:
-            cmd.append('.')
-            cwd = cls.new_sources
-        else:
-            cmd.append(os.path.basename(cls.new_sources))
-            cwd = os.path.join(os.getcwd(), settings.NEW_SOURCES_DIR)
-        cmd.append('.' + cls.suffix)
-
-        return ProcessHelper.run_subprocess_cwd(cmd=cmd,
-                                                cwd=cwd,
-                                                output=patch)
-
-    @classmethod
     def execute_diff_helper(cls, patch):
         """
         Function rebases a patch with help of diff program
@@ -184,7 +159,7 @@ class PatchTool(PatchBase):
         diff_cls.merge(cls.old_sources, cls.new_sources, cls.suffix, patched_files)
 
         # Generating diff
-        cls.generate_diff(rebased_patch, patch[1])
+        GenericDiff.generate_diff(cls.new_sources, cls.suffix, rebased_patch, patch[1])
 
         # Showing difference between original and new patch
         diff_cls.diff(patch[0], rebased_patch)
@@ -218,7 +193,7 @@ class PatchTool(PatchBase):
         if not rebased_patch_name:
             return patch
         # Check if patch is empty
-        if check_empty_patch(rebased_patch_name):
+        if GenericDiff.check_empty_patch(rebased_patch_name):
             # If patch is empty then it isn't applied
             # and is removed
             return None
