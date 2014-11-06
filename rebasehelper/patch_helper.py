@@ -166,7 +166,7 @@ class PatchTool(PatchBase):
         return rebased_patch
 
     @classmethod
-    def get_rebased_patch_from_kwargs(cls, patch):
+    def get_rebased_patch(cls, patch):
         """
         Function finds patch in already rebases patches
         :param patch:
@@ -188,7 +188,7 @@ class PatchTool(PatchBase):
         :return: - None if patch is empty
                  - Patch
         """
-        rebased_patch_name = cls.get_rebased_patch_from_kwargs(patch)
+        rebased_patch_name = cls.get_rebased_patch(patch)
         # If patch is not rebased yet
         if not rebased_patch_name:
             return patch
@@ -214,13 +214,13 @@ class PatchTool(PatchBase):
             if cls.kwargs.get('continue', False):
                 applied = cls.check_already_applied_patch(patch[0])
                 if not applied:
-                    patch[0] = cls.get_rebased_patch_from_kwargs(patch[0])
+                    patch[0] = cls.get_rebased_patch(patch[0])
                     return patch
                 patch[0] = applied
 
         logger.info("Applying patch '{0}' to '{1}'".format(os.path.basename(patch[0]),
                                                            os.path.basename(cls.source_dir)))
-        ret_code = cls.patch_command(get_path_to_patch(patch[0]), patch[1])
+        ret_code = cls.patch_command(patch[0], patch[1])
         if ret_code != 0:
             # unexpected
             if cls.source_dir == cls.old_sources:
