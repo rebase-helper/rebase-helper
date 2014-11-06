@@ -112,8 +112,7 @@ class TestConsoleHelper(BaseTest):
         inp = ConsoleHelper.get_message(question, any_input=True)
         sys.stdout.seek(0)
 
-        # TODO: FIND OUT WHAT'S WRONG WITH THIS!
-        #assert sys.stdout.read() == question + ' '
+        assert sys.stdout.readline() == question + ' '
         assert inp is True
 
     def test_get_message_any_input_default_no(self):
@@ -124,8 +123,7 @@ class TestConsoleHelper(BaseTest):
         inp = ConsoleHelper.get_message(question, default_yes=False, any_input=True)
         sys.stdout.seek(0)
 
-        # TODO: FIND OUT WHAT'S WRONG WITH THIS!
-        #assert sys.stdout.readline() == question + ' '
+        assert sys.stdout.readline() == question + ' '
         assert inp is False
 
 

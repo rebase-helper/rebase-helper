@@ -93,12 +93,9 @@ class ConsoleHelper(object):
             msg = '{0} {1}? '.format(message, choice)
 
         while True:
-            try:
-                user_input = input(msg).lower()
-            except EOFError:
-                user_input = None
+            user_input = input(msg).lower()
 
-            if not user_input:
+            if not user_input or any_input:
                 return True if default_yes else False
 
             try:
