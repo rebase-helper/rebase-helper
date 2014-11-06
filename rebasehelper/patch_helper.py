@@ -37,20 +37,6 @@ from rebasehelper.diff_helper import Differ
 patch_tools = {}
 
 
-def get_patch_name(name):
-    """
-    Function returns a patch name with suffix
-    :param name:
-    :return: patch name with suffix
-    """
-    name, extension = os.path.splitext(name)
-    return name + settings.REBASE_HELPER_SUFFIX + extension
-
-
-def get_path_to_patch(patch):
-    return os.path.join('..', '..', patch)
-
-
 def register_patch_tool(patch_tool):
     patch_tools[patch_tool.CMD] = patch_tool
     return patch_tool
