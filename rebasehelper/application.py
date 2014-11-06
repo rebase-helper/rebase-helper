@@ -349,8 +349,8 @@ class Application(object):
             failed_before = False
             while True:
                 try:
-                    build_results = builder.build(spec, sources, patches, results_dir, **build_dict)
-                    OutputLogger.set_build_data(version, build_results)
+                    build_dict.update(builder.build(spec, sources, patches, results_dir, **build_dict))
+                    OutputLogger.set_build_data(version, build_dict)
                     break
 
                 except SourcePackageBuildError:
