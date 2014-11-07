@@ -127,6 +127,7 @@ class Application(object):
         self.rebase_spec_file_path = get_rebase_name(self.spec_file_path)
 
         self.spec_file = SpecFile(self.spec_file_path,
+                                  self.execution_dir,
                                   download=not self.conf.not_download_sources)
         # Check whether test suite is enabled at build time
         if not self.spec_file.is_test_suite_enabled():
@@ -156,6 +157,17 @@ class Application(object):
         update_patches = self.rebase_spec_file.write_updated_patches(self.rebased_patches)
         self.kwargs['summary_info'] = update_patches
         OutputLogger.set_patch_output('Patches:', update_patches)
+
+    @staticmethod
+    def get_spec_information(specfile_object):
+        values = {}
+        values[settings.FULL_PATCHES] = specfile_object.get_patches()
+        values['sources'] = specfile_object.get_sources()
+        values['name'] = specfile_object.get_package_name()
+        values['version'] = specfile_object.get_version()
+        values['tarball'] = specfile_object.get_archive()
+        values['spec'] = specfile_object.get_specfile()
+        return values
 
     def _initialize_data(self):
         """

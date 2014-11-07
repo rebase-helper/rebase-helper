@@ -86,9 +86,10 @@ class SpecFile(object):
                         '%files',
                         '%changelog']
 
-    def __init__(self, path, download=True):
+    def __init__(self, path, working_dir, download=True ):
         self.path = path
         self.download = download
+        self.working_dir = working_dir
         #  Read the content of the whole SPEC file
         self._read_spec_content()
         #  SPEC file content filtered from commented lines
@@ -122,7 +123,7 @@ class SpecFile(object):
         """
         if new_path:
             shutil.copy(self.path, new_path)
-        new_object = SpecFile(new_path, self.download)
+        new_object = SpecFile(new_path, self.working_dir, self.download)
         return new_object
 
     def get_patch_option(self, line):
@@ -204,6 +205,13 @@ class SpecFile(object):
             if sec_name == section_name:
                 return section
 
+    def get_specfile(self):
+        """
+        Return only spec file path
+        :return:
+        """
+        return self.path
+
     def is_test_suite_enabled(self):
         """
         Returns whether test suite is enabled during the build time
@@ -254,21 +262,6 @@ class SpecFile(object):
         # {num: (flags, index of application)}
         return patch_flags
 
-    def get_information(self):
-        """
-        Function creates a dictionary and returns them
-        with all information from SPEC file
-        :return:
-        """
-        #  TODO: we should get rid of kwargs, also we should not create it in SPEC file object
-        kwargs = {}
-        kwargs[settings.FULL_PATCHES] = self.get_patches()
-        kwargs['sources'] = self.get_sources()
-        kwargs['name'] = self.get_package_name()
-        kwargs['version'] = self.get_version()
-        kwargs['tarball'] = self.get_archive()
-        return kwargs
-
     def get_version(self):
         """
         Method returns the version
@@ -312,10 +305,9 @@ class SpecFile(object):
         """
         patches = {}
         patch_flags = self._get_patches_flags()
-        cwd = os.getcwd()
         for filename, num, patch_type in self.patches:
             #filename, num, patch_type = source
-            full_patch_name = os.path.join(cwd, filename)
+            full_patch_name = os.path.join(self.working_dir, filename)
             if not os.path.exists(full_patch_name):
                 logger.error('Patch {0} does not exist'.format(filename))
                 continue
@@ -504,18 +496,15 @@ class SpecFile(object):
         Function returns all sources mentioned in specfile
         """
         #  TODO: this might not be a good idea - should we use EXECUTION DIR?
-        cwd = os.getcwd()
         sources = []
         remote_files = ['http:', 'https:', 'ftp:']
         for index, src in enumerate(self.source_files):
-            new_name = get_source_name(src[0])
-            if int(src[1]) == 0:
-                sources.append(os.path.join(cwd, new_name))
-            else:
+            new_name = os.path.join(self.working_dir, get_source_name(src[0]))
+            if int(src[1]) != 0:
                 remote = [x for x in remote_files if src[0].startswith(x)]
                 if remote:
                     self._download_source(src[0], new_name)
-                sources.append(os.path.join(cwd, new_name))
+            sources.append(new_name)
         return sources
 
     def get_archive(self):
