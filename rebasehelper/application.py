@@ -44,6 +44,8 @@ class Application(object):
     result_file = ""
     temp_dir = ""
     kwargs = {}
+    old_spec_information = {}
+    new_spec_information = {}
     old_sources = ""
     new_sources = ""
     spec_file = None
@@ -89,8 +91,6 @@ class Application(object):
         self._get_spec_file()
         self._prepare_spec_objects()
 
-        self.kwargs['old'] = {}
-        self.kwargs['new'] = {}
         # TODO: Remove the value from kwargs and use only CLI attribute!
         self.kwargs['continue'] = self.conf.cont
         self._initialize_data()
@@ -177,18 +177,11 @@ class Application(object):
         self.old_sources = self.spec_file.get_archive()
         new_sources = self.rebase_spec_file.get_archive()
 
-        # Fill self.kwargs with related items
-        old_values = {}
-        old_values['spec'] = self.spec_file_path
-        self.kwargs['old'] = old_values
-        self.kwargs['old'].update(self.spec_file.get_information())
         self.patches = self.spec_file.get_patches()
+        # Initialize dictionaries from  old and new spec
+        self.old_spec_information = self.get_spec_information(self.spec_file)
+        self.new_spec_information = self.get_spec_information(self.rebase_spec_file)
 
-        # Fill self.kwargs with related items
-        new_values = {}
-        new_values['spec'] = self.rebase_spec_file_path
-        self.kwargs['new'] = new_values
-        self.kwargs['new'].update(self.rebase_spec_file.get_information())
         self.old_sources = os.path.abspath(self.old_sources)
         if new_sources:
             self.conf.sources = new_sources
@@ -351,7 +344,7 @@ class Application(object):
                 ni_e.message, Builder.get_supported_tools()))
 
         for version in ['old', 'new']:
-            build_dict = dict(self.kwargs[version])
+            build_dict = dict(self.old_spec_information) if version == 'old' else dict(self.new_spec_information)
             logger.debug(build_dict)
             patches = [p[0] for p in six.itervalues(build_dict[settings.FULL_PATCHES])]
             results_dir = os.path.join(self.results_dir, version)
