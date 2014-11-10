@@ -158,17 +158,6 @@ class Application(object):
         self.kwargs['summary_info'] = update_patches
         OutputLogger.set_patch_output('Patches:', update_patches)
 
-    @staticmethod
-    def get_spec_information(specfile_object):
-        values = {}
-        values[settings.FULL_PATCHES] = specfile_object.get_patches()
-        values['sources'] = specfile_object.get_sources()
-        values['name'] = specfile_object.get_package_name()
-        values['version'] = specfile_object.get_version()
-        values['tarball'] = specfile_object.get_archive()
-        values['spec'] = specfile_object.get_specfile()
-        return values
-
     def _initialize_data(self):
         """
         Function fill dictionary with default data
@@ -178,9 +167,6 @@ class Application(object):
         new_sources = self.rebase_spec_file.get_archive()
 
         self.patches = self.spec_file.get_patches()
-        # Initialize dictionaries from  old and new spec
-        self.old_spec_information = self.get_spec_information(self.spec_file)
-        self.new_spec_information = self.get_spec_information(self.rebase_spec_file)
 
         self.old_sources = os.path.abspath(self.old_sources)
         if new_sources:
@@ -344,12 +330,15 @@ class Application(object):
                 ni_e.message, Builder.get_supported_tools()))
 
         for version in ['old', 'new']:
-            build_dict = dict(self.old_spec_information) if version == 'old' else dict(self.new_spec_information)
+            spec_object = self.spec_file if version == 'old' else self.rebase_spec_file
+            build_dict = {}
+            build_dict['name'] = spec_object.get_package_name()
+            build_dict['version'] = spec_object.get_version()
             logger.debug(build_dict)
-            patches = [p[0] for p in six.itervalues(build_dict[settings.FULL_PATCHES])]
+            patches = [p[0] for p in six.itervalues(spec_object.get_patches())]
             results_dir = os.path.join(self.results_dir, version)
-            spec = build_dict.pop('spec')
-            sources = build_dict.pop('sources')
+            spec = spec_object.get_specfile()
+            sources = spec_object.get_sources()
 
             failed_before = False
             while True:
