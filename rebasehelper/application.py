@@ -44,8 +44,6 @@ class Application(object):
     result_file = ""
     temp_dir = ""
     kwargs = {}
-    old_spec_information = {}
-    new_spec_information = {}
     old_sources = ""
     new_sources = ""
     spec_file = None
