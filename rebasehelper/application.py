@@ -144,7 +144,7 @@ class Application(object):
         """
         Function find data previously done
         """
-        self.rebased_patches = self.kwargs['new'][settings.FULL_PATCHES].copy()
+        self.rebased_patches = self.rebase_spec_file.get_patches()
         for file_name in PathHelper.find_all_files(self.kwargs.get('results_dir', ''), '*.patch'):
             for key, value in self.rebased_patches.items():
                 if os.path.basename(file_name) in value[0]:
