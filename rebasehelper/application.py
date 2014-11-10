@@ -348,29 +348,27 @@ class Application(object):
                 except SourcePackageBuildError:
                     #  always fail for original version
                     if version == 'old':
-                        raise
+                        raise RebaseHelperError('Creating old SRPM package failed.')
                     logger.error('Building source package failed.')
                     #  TODO: implement log analyzer for SRPMs and add the checks here!!!
                     raise
 
                 except BinaryPackageBuildError:
                     #  always fail for original version
-                    if version == 'old':
-                        raise
-                    logger.error('Building binary packages failed.')
                     rpm_dir = os.path.join(results_dir, 'RPM')
                     build_log = 'build.log'
+                    build_log_path = os.path.join(rpm_dir, build_log)
+                    if version == 'old':
+                        raise RebaseHelperError('Building old RPM package failed. Check log {0}'.format(build_log_path))
+                    logger.error('Building binary packages failed.')
                     try:
                         files = BuildLogAnalyzer.parse_log(rpm_dir, build_log)
                     except BuildLogAnalyzerMissingError:
-                        logger.error('Build log {0} does not exist'.format(os.path.join(rpm_dir, build_log)))
-                        raise
+                        raise RebaseHelperError('Build log {0} does not exist'.format(build_log_path))
                     except BuildLogAnalyzerMakeError:
-                        logger.error('Building package failed during build.')
-                        raise
+                        raise RebaseHelperError('Building package failed during build. Check log {0}'.format(build_log_path))
                     except BuildLogAnalyzerPatchError:
-                        logger.error('Building package failed during patching.')
-                        raise
+                        raise RebaseHelperError('Building package failed during patching. Check log {0}'.format(build_log_path))
 
                     if files['missing']:
                         logger.info('Files not packaged in the SPEC file:\n{f}'.format(f='\n'.join(files['added'])))
