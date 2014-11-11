@@ -79,7 +79,7 @@ class PyTest(Command):
 
         raise SystemExit(retcode)
 
-install_requires = []
+install_requires = ['pkgdiff >= 1.6.3']
 
 setup(
     name='rebasehelper',
