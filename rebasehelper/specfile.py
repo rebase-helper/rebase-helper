@@ -25,6 +25,7 @@ import os
 import re
 import shutil
 import six
+from difflib import SequenceMatcher
 try:
     import rpm
 except ImportError:
@@ -562,6 +563,67 @@ class SpecFile(object):
         #  save changes to the disc
         self.save()
 
+    def set_extra_version(self, extra_version):
+        """
+        Method to update the extra version in the SPEC file
+
+        :return:
+        """
+        extra_version_def = '%define REBASE_EXTRA_VER'
+        extra_version_re = re.compile('^{0}.*$'.format(extra_version_def))
+        extra_version_line_index = None
+        rebase_extra_version_def = '%define REBASE_VER %{version}%{REBASE_EXTRA_VER}\n'
+        new_extra_version_line = '%define REBASE_EXTRA_VER {0}\n'.format(extra_version)
+
+        logger.debug("SpecFile: Updating extra version in SPEC to '{0}'".format(extra_version))
+
+        #  try to find existing extra version definition
+        for index, line in enumerate(self.spec_content):
+            match = extra_version_re.search(line)
+            if match:
+                extra_version_line_index = index
+                break
+
+        if extra_version:
+            #  just update the existing extra version
+            if extra_version_line_index is not None:
+                self.spec_content[extra_version_line_index] = new_extra_version_line
+            #  we need to create the extra version definition
+            else:
+                # insert the REBASE_VER and REBASE_EXTRA_VER definitions
+                self.spec_content.insert(0, rebase_extra_version_def)
+                self.spec_content.insert(0, new_extra_version_line)
+
+                # TODO: redefine Release!
+
+                # change the Source0 definition
+                for index, line in enumerate(self.spec_content):
+                    if line.startswith('Source0'):
+                        # comment out the original Source0 line
+                        logger.debug("SpecFile: Commenting out original Source0 line '{0}'".format(line.strip()))
+                        self.spec_content[index] = '#{0}'.format(line)
+
+                        # construct new archive name with %{REBASE_VER}
+                        # replacing the version that will be used in Source0
+                        basename_raw = os.path.basename(line.strip())
+                        basename_expanded = os.path.basename(self._get_full_source_name())
+                        match_blocks = list(SequenceMatcher(None, basename_raw, basename_expanded).get_matching_blocks())
+                        new_basename_with_macro = '{0}{1}{2}'.format(basename_raw[:match_blocks[0][2]],
+                                                                     '%{REBASE_VER}',
+                                                                     basename_raw[match_blocks[1][0]:])
+                        logger.debug("SpecFile: New Source0 basename with macro '{0}'".format(new_basename_with_macro))
+                        # replace the archive name in old Source0 with new one
+                        new_source0_line = str.replace(line, basename_raw, new_basename_with_macro)
+                        logger.debug("SpecFile: Inserting new Source0 line '{0}'".format(new_source0_line.strip()))
+                        self.spec_content.insert(index + 1, new_source0_line)
+                        break
+        else:
+            # TODO: handle empty extra_version as removal of the definitions!
+            pass
+
+        #  save changes
+        self.save()
+
     def set_version_using_archive(self, archive_path):
         """
         Method to update the version in the SPEC file using a archive path. The version
@@ -572,8 +634,8 @@ class SpecFile(object):
         """
         version, extra_version = SpecFile.extract_version_from_archive_name(archive_path,
                                                                             self._get_raw_source_string(0))
-        # TODO: Handle the extra version to change the release number
         self.set_version(version)
+        self.set_extra_version(extra_version)
 
     def write_updated_patches(self, patches):
         """
