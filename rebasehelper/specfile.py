@@ -62,6 +62,7 @@ class SpecFile(object):
     spec_filtered_content = []
     spc = None
     hdr = None
+    extra_version = ''
     sources = None
     source_files = None
     patches = None
@@ -258,6 +259,13 @@ class SpecFile(object):
         :return:
         """
         return self.hdr[rpm.RPMTAG_VERSION].decode()
+
+    def get_extra_version(self):
+        """
+        Returns an extra version of the package - like b1, rc2, ...
+        :return: String
+        """
+        return self.extra_version
 
     def get_package_name(self):
         """
