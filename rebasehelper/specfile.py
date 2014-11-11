@@ -41,16 +41,6 @@ from rebasehelper.diff_helper import GenericDiff
 PATCH_PREFIX = '%patch'
 
 
-def get_source_name(name):
-    """
-    Function returns a source name from full URL address
-    :param name:
-    :return:
-    """
-    new_name = name.split('/')[-1]
-    return new_name
-
-
 def get_rebase_name(name):
     """
     Function returns a name in results directory
@@ -499,7 +489,7 @@ class SpecFile(object):
         sources = []
         remote_files = ['http:', 'https:', 'ftp:']
         for index, src in enumerate(self.source_files):
-            new_name = os.path.join(self.working_dir, get_source_name(src[0]))
+            new_name = os.path.join(self.working_dir, os.path.basename(src[0]).strip())
             if int(src[1]) != 0:
                 remote = [x for x in remote_files if src[0].startswith(x)]
                 if remote:
@@ -512,7 +502,7 @@ class SpecFile(object):
         Function returns a old sources from specfile
         """
         full_source_name = self._get_full_source_name()
-        source_name = get_source_name(full_source_name)
+        source_name = os.path.basename(full_source_name).strip()
         self._download_source(full_source_name, source_name)
         return source_name
 
@@ -664,7 +654,7 @@ class SpecFile(object):
                                                          '|'.join(Archive.get_supported_archives()))
         # match = re.search(regex, tarball_name)
         name = os.path.basename(archive_path)
-        url_base = get_source_name(source_string)
+        url_base = os.path.basename(source_string).strip()
 
         logger.debug("Extracting version from '{0}' using '{1}'".format(name, url_base))
         regex_str = re.sub(r'%{version}', version_regex_str, url_base, flags=re.IGNORECASE)
