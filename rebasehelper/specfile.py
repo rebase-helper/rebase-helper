@@ -205,7 +205,7 @@ class SpecFile(object):
             if sec_name == section_name:
                 return section
 
-    def get_specfile(self):
+    def get_path(self):
         """
         Return only spec file path
         :return:

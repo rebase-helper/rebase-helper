@@ -335,7 +335,7 @@ class Application(object):
             logger.debug(build_dict)
             patches = [p[0] for p in six.itervalues(spec_object.get_patches())]
             results_dir = os.path.join(self.results_dir, version)
-            spec = spec_object.get_specfile()
+            spec = spec_object.get_path()
             sources = spec_object.get_sources()
 
             failed_before = False
