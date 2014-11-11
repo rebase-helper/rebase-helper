@@ -1,0 +1,8 @@
+- language: python
+- python:
+    - "2.7"
+    - "3.3"
+    - "3.4"
+- before_install:
+    - sudo apt-get install python-lzma liblzma-dev python-rpm
+- script: python setup.py test

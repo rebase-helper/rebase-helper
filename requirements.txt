@@ -1,2 +1,0 @@
-pyliblzma
-rpm-python
