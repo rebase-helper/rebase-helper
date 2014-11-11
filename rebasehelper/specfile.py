@@ -76,10 +76,10 @@ class SpecFile(object):
                         '%files',
                         '%changelog']
 
-    def __init__(self, path, working_dir, download=True ):
+    def __init__(self, path, download=True):
         self.path = path
         self.download = download
-        self.working_dir = working_dir
+        self.working_dir = os.path.dirname(path)
         #  Read the content of the whole SPEC file
         self._read_spec_content()
         #  SPEC file content filtered from commented lines
@@ -113,7 +113,7 @@ class SpecFile(object):
         """
         if new_path:
             shutil.copy(self.path, new_path)
-        new_object = SpecFile(new_path, self.working_dir, self.download)
+        new_object = SpecFile(new_path, self.download)
         return new_object
 
     def get_patch_option(self, line):
