@@ -63,7 +63,7 @@ class TestSpecFile(BaseTest):
         assert match.group(1) == self.SPEC_FILE_OBJECT.get_release_number()
 
     def test_get_release_number(self):
-        assert self.SPEC_FILE_OBJECT.get_release_number() == '1'
+        assert self.SPEC_FILE_OBJECT.get_release_number() == '33'
 
     def test_set_release_number(self):
         self.SPEC_FILE_OBJECT.set_release_number(0.1)
@@ -197,7 +197,7 @@ class TestSpecFile(BaseTest):
             0: ['%header', ['Summary: A testing spec file\n',
                             'Name: test\n',
                             'Version: 1.0.2\n',
-                            'Release: 1%{?dist}\n',
+                            'Release: 33%{?dist}\n',
                             'License: GPL2+\n',
                             'Group: System Environment\n',
                             'URL: http://testing.org\n',
@@ -242,7 +242,10 @@ class TestSpecFile(BaseTest):
             9: ['%files devel', ['%{_bindir}/test_example\n',
                                  '%{_libdir}/my_test.so\n',
                                  '\n']],
-            10: ['%changelog', ['* Tue Sep 24 2013 Petr Hracek <phracek@redhat.com> 1.0.0-1\n',
+            10: ['%changelog', ['* Wed Nov 12 2014 Tomas Hozza <thozza@redhat.com> 1.0.0-33\n',
+                                '- Bump the release for testing purposes\n',
+                                '\n',
+                                '* Tue Sep 24 2013 Petr Hracek <phracek@redhat.com> 1.0.0-1\n',
                                 '- Initial version\n',
                                 '\n']]
         }
