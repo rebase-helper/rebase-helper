@@ -623,7 +623,7 @@ class SpecFile(object):
         Method to update the version in the SPEC file
 
         :param version: string with new version
-        :return:
+        :return: None
         """
         for index, line in enumerate(self.spec_content):
             if not line.startswith('Version'):
@@ -637,9 +637,11 @@ class SpecFile(object):
 
     def set_extra_version(self, extra_version):
         """
-        Method to update the extra version in the SPEC file
+        Method to update the extra version in the SPEC file. Redefined Source0 if needed and also changes
+        Release accordingly.
 
-        :return:
+        :param extra_version: the extra version string, if any (e.g. 'b1', 'rc2', ...)
+        :return: None
         """
         extra_version_def = '%define REBASE_EXTRA_VER'
         extra_version_re = re.compile('^{0}.*$'.format(extra_version_def))
