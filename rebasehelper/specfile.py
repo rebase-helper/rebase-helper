@@ -79,7 +79,7 @@ class SpecFile(object):
     def __init__(self, path, download=True):
         self.path = path
         self.download = download
-        self.working_dir = os.path.dirname(path)
+        self.working_dir = os.path.dirname(os.path.abspath(path))
         #  Read the content of the whole SPEC file
         self._read_spec_content()
         #  SPEC file content filtered from commented lines
