@@ -65,6 +65,12 @@ class TestSpecFile(BaseTest):
     def test_get_release_number(self):
         assert self.SPEC_FILE_OBJECT.get_release_number() == '1'
 
+    def test_set_release_number(self):
+        self.SPEC_FILE_OBJECT.set_release_number(0.1)
+        assert self.SPEC_FILE_OBJECT.get_release_number() == '0.1'
+        self.SPEC_FILE_OBJECT.set_release_number(22)
+        assert self.SPEC_FILE_OBJECT.get_release_number() == '22'
+
     def test_get_version(self):
         assert self.SPEC_FILE_OBJECT.get_version() == self.VERSION
 

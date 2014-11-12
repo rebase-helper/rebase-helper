@@ -563,6 +563,21 @@ class SpecFile(object):
                         patch_num.remove(num)
                         break
 
+    def set_release_number(self, release):
+        """
+        Method to set release number
+        :param release:
+        :return:
+        """
+        for index, line in enumerate(self.spec_content):
+            if line.startswith('Release:'):
+                new_release_line = re.sub(r'(Release:\s*)[0-9.]+(.*%{\?dist}\s*)', r'\g<1>{0}\2'.format(release),
+                                          line)
+                logger.debug("SpecFile: Changing release line to '{0}'".format(new_release_line.strip()))
+                self.spec_content[index] = new_release_line
+                self.save()
+                break
+
     def set_version(self, version):
         """
         Method to update the version in the SPEC file
