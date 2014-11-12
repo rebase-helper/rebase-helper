@@ -302,7 +302,7 @@ class TestSpecFile(BaseTest):
         found = self.SPEC_FILE_OBJECT.is_test_suite_enabled()
         assert found is True
 
-    def test_set_extra_version(self):
+    def test_set_extra_version_some_extra_version(self):
         self.SPEC_FILE_OBJECT.set_extra_version('b1')
         with open(self.SPEC_FILE_OBJECT.get_path()) as f:
             # 1st line
@@ -313,20 +313,39 @@ class TestSpecFile(BaseTest):
                 pass
             # there is new Source0 after old commented out entry
             assert f.readline() == 'Source0: ftp://ftp.test.org/test-%{REBASE_VER}.tar.xz\n'
+        # the release number was changed
+        assert self.SPEC_FILE_OBJECT.get_release_number() == '0.1'
+        # the release string now contains the extra version
+        match = re.search(r'([0-9.]*[0-9]+)b1\w*', self.SPEC_FILE_OBJECT.get_release())
+        assert match is not None
+        assert match.group(1) == self.SPEC_FILE_OBJECT.get_release_number()
+
+    def test_set_extra_version_no_extra_version(self):
+        self.SPEC_FILE_OBJECT.set_extra_version('')
+        with open(self.SPEC_FILE_OBJECT.get_path()) as f:
+            # 1st line
+            assert f.readline() != '%define REBASE_EXTRA_VER b1\n'
+            # 2nd line
+            assert f.readline() != '%define REBASE_VER %{version}%{REBASE_EXTRA_VER}\n'
+        # the release number was changed
+        assert self.SPEC_FILE_OBJECT.get_release_number() == '1'
 
     def test_redefine_release_with_macro(self):
         macro = '%{REBASE_VER}'
         self.SPEC_FILE_OBJECT.redefine_release_with_macro(macro)
         with open(self.SPEC_FILE_OBJECT.get_path()) as f:
-            while f.readline() != '#Release: 1%{?dist}\n':
+            while f.readline() != '#Release: 33%{?dist}\n':
                 pass
-            assert f.readline() == 'Release: 1' + macro + '%{?dist}\n'
+            assert f.readline() == 'Release: 33' + macro + '%{?dist}\n'
 
     def test_revert_redefine_release_with_macro(self):
         macro = '%{REBASE_VER}'
         self.SPEC_FILE_OBJECT.redefine_release_with_macro(macro)
         self.SPEC_FILE_OBJECT.revert_redefine_release_with_macro(macro)
         with open(self.SPEC_FILE_OBJECT.get_path()) as f:
-            while f.readline() != 'Release: 1%{?dist}\n':
-                pass
-            assert f.readline() != 'Release: 1' + macro + '%{?dist}\n'
+            for line in f.readlines():
+                if line.startswith('Release:'):
+                    assert line == 'Release: 33%{?dist}\n'
+                    return
+        # the line has to be found, fail if not!
+        assert False

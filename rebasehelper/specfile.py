@@ -644,6 +644,7 @@ class SpecFile(object):
         :return: None
         """
         extra_version_def = '%define REBASE_EXTRA_VER'
+        extra_version_macro = '%{?REBASE_EXTRA_VER}'
         extra_version_re = re.compile('^{0}.*$'.format(extra_version_def))
         extra_version_line_index = None
         rebase_extra_version_def = '%define REBASE_VER %{version}%{REBASE_EXTRA_VER}\n'
@@ -667,9 +668,9 @@ class SpecFile(object):
                 # insert the REBASE_VER and REBASE_EXTRA_VER definitions
                 self.spec_content.insert(0, rebase_extra_version_def)
                 self.spec_content.insert(0, new_extra_version_line)
-
-                # TODO: redefine Release!
-
+                # change Release to 0.1 and append the extra version macro
+                self.set_release_number('0.1')
+                self.redefine_release_with_macro(extra_version_macro)
                 # change the Source0 definition
                 for index, line in enumerate(self.spec_content):
                     if line.startswith('Source0'):
@@ -692,8 +693,10 @@ class SpecFile(object):
                         self.spec_content.insert(index + 1, new_source0_line)
                         break
         else:
+            # set the Release to 1 and revert the redefined Release with macro if needed
+            self.set_release_number('1')
+            self.revert_redefine_release_with_macro(extra_version_macro)
             # TODO: handle empty extra_version as removal of the definitions!
-            pass
 
         #  save changes
         self.save()
