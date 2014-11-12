@@ -63,7 +63,7 @@ class SpecFile(object):
     spec_filtered_content = []
     spc = None
     hdr = None
-    extra_version = ''
+    extra_version = None
     sources = None
     source_files = None
     patches = None
@@ -104,6 +104,9 @@ class SpecFile(object):
         # All source file mentioned in SPEC file Source[0-9]*
         self.source_files = [x for x in self.sources if x[2] == 0 or x[2] == 1]
         self.rpm_sections = self._split_sections()
+        # determine the extra_version
+        self.extra_version = SpecFile.extract_version_from_archive_name(self.get_archive(),
+                                                                        self._get_full_source_name())[1]
 
     def copy(self, new_path=None):
         """
@@ -699,6 +702,7 @@ class SpecFile(object):
             # TODO: handle empty extra_version as removal of the definitions!
 
         #  save changes
+        self.extra_version = extra_version
         self.save()
 
     def set_version_using_archive(self, archive_path):

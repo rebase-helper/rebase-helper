@@ -131,13 +131,16 @@ class Application(object):
             OutputLogger.set_info_text('WARNING', 'Test suite is not enabled at build time.')
         #  create an object representing the rebased SPEC file
         self.rebase_spec_file = self.spec_file.copy(self.rebase_spec_file_path)
+
         #  check if argument passed as new source is a file or just a version
-        if os.path.isfile(os.path.join(self.execution_dir, self.conf.sources)):
+        if [True for ext in Archive.get_supported_archives() if self.conf.sources.endswith(ext)]:
             logger.debug("Application: argument passed as a new source is a file")
             self.rebase_spec_file.set_version_using_archive(self.conf.sources)
         else:
             logger.debug("Application: argument passed as a new source is a version")
-            self.rebase_spec_file.set_version(self.conf.sources)
+            version, extra_version = SpecFile.split_version_string(self.conf.sources)
+            self.rebase_spec_file.set_version(version)
+            self.rebase_spec_file.set_extra_version(extra_version)
 
     def _find_old_data(self):
         """

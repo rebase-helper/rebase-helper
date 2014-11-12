@@ -349,3 +349,10 @@ class TestSpecFile(BaseTest):
                     return
         # the line has to be found, fail if not!
         assert False
+
+    def test_get_extra_version_not_set(self):
+        assert self.SPEC_FILE_OBJECT.get_extra_version() == ''
+
+    def test_get_extra_version_set(self):
+        self.SPEC_FILE_OBJECT.set_extra_version('rc1')
+        assert self.SPEC_FILE_OBJECT.get_extra_version() == 'rc1'
