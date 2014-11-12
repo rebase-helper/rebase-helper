@@ -254,6 +254,23 @@ class SpecFile(object):
         # {num: (flags, index of application)}
         return patch_flags
 
+    def get_release(self):
+        """
+        Method for getting full release string of the package
+        :return:
+        """
+        return self.hdr[rpm.RPMTAG_RELEASE].decode()
+
+    def get_release_number(self):
+        """
+        Method for getting the release of the package
+        :return:
+        """
+        for line in self.spec_content:
+            match = re.search(r'Release:\s*([0-9.]+).*%{\?dist}\s*', line)
+            if match:
+                return match.group(1)
+
     def get_version(self):
         """
         Method returns the version

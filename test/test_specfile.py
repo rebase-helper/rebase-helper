@@ -23,6 +23,7 @@
 import os
 import shutil
 import six
+import re
 
 from .base_test import BaseTest
 from rebasehelper.specfile import SpecFile
@@ -55,6 +56,14 @@ class TestSpecFile(BaseTest):
     def setup(self):
         super(TestSpecFile, self).setup()
         self.SPEC_FILE_OBJECT = SpecFile(self.SPEC_FILE, download=False)
+
+    def test_get_release(self):
+        match = re.search(r'([0-9.]*[0-9]+)\w*', self.SPEC_FILE_OBJECT.get_release())
+        assert match is not None
+        assert match.group(1) == self.SPEC_FILE_OBJECT.get_release_number()
+
+    def test_get_release_number(self):
+        assert self.SPEC_FILE_OBJECT.get_release_number() == '1'
 
     def test_get_version(self):
         assert self.SPEC_FILE_OBJECT.get_version() == self.VERSION
