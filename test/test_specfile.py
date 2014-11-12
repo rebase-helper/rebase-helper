@@ -54,7 +54,7 @@ class TestSpecFile(BaseTest):
 
     def setup(self):
         super(TestSpecFile, self).setup()
-        self.SPEC_FILE_OBJECT = SpecFile(self.SPEC_FILE, self.WORKING_DIR, download=False)
+        self.SPEC_FILE_OBJECT = SpecFile(self.SPEC_FILE, download=False)
 
     def test_get_version(self):
         assert self.SPEC_FILE_OBJECT.get_version() == self.VERSION
