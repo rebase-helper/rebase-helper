@@ -601,7 +601,7 @@ class SpecFile(object):
         :param macro:
         :return:
         """
-        search_re = re.compile('Release:\s*[0-9.]*[0-9]+' + macro + '%{\?dist}\s*')
+        search_re = re.compile('Release:\s*[0-9.]*[0-9]+{0}%{{\?dist}}\s*'.format(macro))
 
         for index, line in enumerate(self.spec_content):
             match = search_re.search(line)
