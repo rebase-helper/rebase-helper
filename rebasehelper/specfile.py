@@ -578,6 +578,46 @@ class SpecFile(object):
                 self.save()
                 break
 
+    def redefine_release_with_macro(self, macro):
+        """
+        Method redefines the Release: line to include passed macro and comments out the old line
+        :param macro:
+        :return:
+        """
+        for index, line in enumerate(self.spec_content):
+            if line.startswith('Release:'):
+                new_release_line = re.sub(r'(Release:\s*[0-9.]*[0-9]+).*(%{\?dist}\s*)', r'\g<1>{0}\2'.format(macro),
+                                          line)
+                logger.debug("SpecFile: Commenting out original Release line '{0}'".format(line.strip()))
+                self.spec_content[index] = '#{0}'.format(line)
+                logger.debug("SpecFile: Inserting new Release line '{0}'".format(new_release_line.strip()))
+                self.spec_content.insert(index + 1, new_release_line)
+                self.save()
+                break
+
+    def revert_redefine_release_with_macro(self, macro):
+        """
+        Method removes the redefined the Release: line with given macro and uncomments the old Release line.
+        :param macro:
+        :return:
+        """
+        search_re = re.compile('Release:\s*[0-9.]*[0-9]+' + macro + '%{\?dist}\s*')
+
+        for index, line in enumerate(self.spec_content):
+            match = search_re.search(line)
+            if match:
+                # We will uncomment old line, so sanity check first
+                if not self.spec_content[index - 1].startswith('#Release:'):
+                    raise RebaseHelperError("Redefined Release line in SPEC is not 'commented out' "
+                                            "old line: '{0}'".format(self.spec_content[index - 1].strip()))
+                logger.debug("SpecFile: Uncommenting original Release line "
+                             "'{0}'".format(self.spec_content[index - 1].strip()))
+                self.spec_content[index - 1] = self.spec_content[index - 1].lstrip('#')
+                logger.debug("SpecFile: Removing redefined Release line '{0}'".format(line.strip()))
+                self.spec_content.pop(index)
+                self.save()
+                break
+
     def set_version(self, version):
         """
         Method to update the version in the SPEC file

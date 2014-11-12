@@ -311,3 +311,19 @@ class TestSpecFile(BaseTest):
             # there is new Source0 after old commented out entry
             assert f.readline() == 'Source0: ftp://ftp.test.org/test-%{REBASE_VER}.tar.xz\n'
 
+    def test_redefine_release_with_macro(self):
+        macro = '%{REBASE_VER}'
+        self.SPEC_FILE_OBJECT.redefine_release_with_macro(macro)
+        with open(self.SPEC_FILE_OBJECT.get_path()) as f:
+            while f.readline() != '#Release: 1%{?dist}\n':
+                pass
+            assert f.readline() == 'Release: 1' + macro + '%{?dist}\n'
+
+    def test_revert_redefine_release_with_macro(self):
+        macro = '%{REBASE_VER}'
+        self.SPEC_FILE_OBJECT.redefine_release_with_macro(macro)
+        self.SPEC_FILE_OBJECT.revert_redefine_release_with_macro(macro)
+        with open(self.SPEC_FILE_OBJECT.get_path()) as f:
+            while f.readline() != 'Release: 1%{?dist}\n':
+                pass
+            assert f.readline() != 'Release: 1' + macro + '%{?dist}\n'
