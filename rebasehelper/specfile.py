@@ -345,11 +345,11 @@ class SpecFile(object):
         :param source_num: number of the source of which to get the raw string
         :return: string of the source or None if there is no such source
         """
-        source_rexex_str = '^Source{0}:[ \t]*(.*?)$'.format(source_num)
-        source_rexex = re.compile(source_rexex_str)
+        source_re_str = '^Source0?:[ \t]*(.*?)$' if source_num == 0 else '^Source{0}:[ \t]*(.*?)$'.format(source_num)
+        source_re = re.compile(source_re_str)
 
         for line in self.spec_content:
-            match = source_rexex.search(line)
+            match = source_re.search(line)
             if match:
                 return match.group(1)
 
@@ -676,8 +676,9 @@ class SpecFile(object):
                 self.set_release_number('0.1')
                 self.redefine_release_with_macro(extra_version_macro)
                 # change the Source0 definition
+                source0_re = re.compile(r'Source0?:.*')
                 for index, line in enumerate(self.spec_content):
-                    if line.startswith('Source0'):
+                    if source0_re.search(line):
                         # comment out the original Source0 line
                         logger.debug("SpecFile: Commenting out original Source0 line '{0}'".format(line.strip()))
                         self.spec_content[index] = '#{0}'.format(line)
