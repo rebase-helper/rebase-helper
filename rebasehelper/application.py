@@ -125,6 +125,7 @@ class Application(object):
         self.rebase_spec_file_path = get_rebase_name(self.spec_file_path)
 
         self.spec_file = SpecFile(self.spec_file_path,
+                                  self.execution_dir,
                                   download=not self.conf.not_download_sources)
         # Check whether test suite is enabled at build time
         if not self.spec_file.is_test_suite_enabled():

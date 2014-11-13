@@ -78,10 +78,10 @@ class SpecFile(object):
                         '%files',
                         '%changelog']
 
-    def __init__(self, path, download=True):
+    def __init__(self, path, sources_location='', download=True):
         self.path = path
         self.download = download
-        self.working_dir = os.path.dirname(os.path.abspath(path))
+        self.sources_location = sources_location
         #  Read the content of the whole SPEC file
         self._read_spec_content()
         self._update_data()
@@ -117,7 +117,7 @@ class SpecFile(object):
         """
         if new_path:
             shutil.copy(self.path, new_path)
-        new_object = SpecFile(new_path, self.download)
+        new_object = SpecFile(new_path, self.sources_location, self.download)
         return new_object
 
     def get_patch_option(self, line):
@@ -325,7 +325,7 @@ class SpecFile(object):
         patch_flags = self._get_patches_flags()
         for filename, num, patch_type in self.patches:
             #filename, num, patch_type = source
-            full_patch_name = os.path.join(self.working_dir, filename)
+            full_patch_name = os.path.join(self.sources_location, filename)
             if not os.path.exists(full_patch_name):
                 logger.error('Patch {0} does not exist'.format(filename))
                 continue
@@ -511,7 +511,7 @@ class SpecFile(object):
         sources = []
         remote_files = ['http:', 'https:', 'ftp:']
         for index, src in enumerate(self.source_files):
-            new_name = os.path.join(self.working_dir, os.path.basename(src[0]).strip())
+            new_name = os.path.join(self.sources_location, os.path.basename(src[0]).strip())
             if int(src[1]) != 0:
                 remote = [x for x in remote_files if src[0].startswith(x)]
                 if remote:
