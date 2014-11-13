@@ -64,7 +64,6 @@ class SpecFile(object):
     hdr = None
     extra_version = None
     sources = None
-    source_files = None
     patches = None
     rpm_sections = {}
 
@@ -519,19 +518,6 @@ class SpecFile(object):
                 f.writelines(self.spec_content)
         except IOError:
             raise RebaseHelperError("Unable to write updated data to SPEC file '{0}'".format(self.path))
-
-    def _get_full_source_name(self):
-        """
-        Function returns a source name provided by Source [0]
-        List has format [(<name>, <type, 1), (other source)]
-        <type> has values:
-        - 0 means Source 0
-        - 1 means Source > 0
-        - 2 means Patches
-        """
-        source = [src[0] for src in self.source_files if src[1] == 0]
-        # We need just a name
-        return source[0]
 
     def _comment_out_patches(self, patch_num):
         """

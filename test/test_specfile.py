@@ -246,9 +246,6 @@ class TestSpecFile(BaseTest):
             assert sections[key][0] == value[0]
             assert sections[key][1] == value[1]
 
-    def test__get_full_source_name(self):
-            assert self.SPEC_FILE_OBJECT._get_full_source_name() == 'ftp://ftp.test.org/test-1.0.2.tar.xz'
-
     def test_get_spec_section(self):
         expected_section = ['%{_bindir}/file.txt\n',
                             '\n']
