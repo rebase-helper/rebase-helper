@@ -29,6 +29,7 @@ from six import StringIO
 
 from .base_test import BaseTest
 from rebasehelper.utils import ConsoleHelper
+from rebasehelper.utils import DownloadHelper
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.utils import PathHelper
 from rebasehelper.utils import TemporaryEnvironment
@@ -125,6 +126,20 @@ class TestConsoleHelper(BaseTest):
 
         assert sys.stdout.readline() == question + ' '
         assert inp is False
+
+
+class TestDownloadHelper(BaseTest):
+    """ DownloadHelper tests """
+
+    KNOWN_URL = 'http://fedoraproject.org/static/hotspot.txt'
+    LOCAL_FILE = os.path.basename(KNOWN_URL)
+    KNOWN_URL_CONTENT = 'OK\n'
+
+    def test_download_source(self):
+        DownloadHelper.download_file(self.KNOWN_URL, self.LOCAL_FILE)
+        assert os.path.isfile(self.LOCAL_FILE)
+        with open(self.LOCAL_FILE) as f:
+            assert f.read() == self.KNOWN_URL_CONTENT
 
 
 class TestProcessHelper(BaseTest):

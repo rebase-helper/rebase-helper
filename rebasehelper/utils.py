@@ -24,12 +24,11 @@ import os
 import fnmatch
 import subprocess
 import tempfile
-#import pycurl
+import pycurl
 import shutil
 import rpm
 import six
 from six.moves import input
-from six import StringIO
 from distutils.util import strtobool
 
 from rebasehelper.logger import logger
@@ -102,29 +101,31 @@ class DownloadHelper(object):
     """
 
     @staticmethod
-    def download_source(url, destination_name):
-        # There is some code for using pycurl
-        # with open(destination_name, 'wb') as f:
-        #    curl = pycurl.Curl()
-        #    curl.setopt(pycurl.URL, url)
-        #    curl.setopt(pycurl.CONNECTTIMEOUT, 30)
-        #    curl.setopt(pycurl.FOLLOWLOCATION, 1)
-        #    curl.setopt(pycurl.MAXREDIRS, 5)
-        #    curl.setopt(pycurl.TIMEOUT, 300)
-        #    curl.setopt(pycurl.WRITEDATA, f)
-        #    try:
-        #        curl.perform()
-        #    except pycurl.error as error:
-        #        logger.error('Downloading {0} failed with error {1}.'.format(url, error))
-        #        curl.close()
-        #    else:
-        #        curl.close()
-        logger.info('Downloading sources from URL {0}'.format(url))
-        command = ['curl', '-H', 'Pragma:', '-o', destination_name, '-R', '-S', '--fail']
-        command.append(url)
-        return_val = ProcessHelper.run_subprocess(command)
-        return return_val
+    def download_file(url, destination_name):
+        """
+        Method for downloading file using pycurl
 
+        :param url: URL from which to download the file
+        :param destination_name: path where to store downloaded file
+        :return None
+        """
+        with open(destination_name, 'wb') as f:
+            curl = pycurl.Curl()
+            curl.setopt(pycurl.URL, url)
+            curl.setopt(pycurl.CONNECTTIMEOUT, 30)
+            curl.setopt(pycurl.FOLLOWLOCATION, 1)
+            curl.setopt(pycurl.MAXREDIRS, 5)
+            curl.setopt(pycurl.TIMEOUT, 300)
+            curl.setopt(pycurl.WRITEDATA, f)
+            try:
+                logger.info('Downloading sources from URL {0}'.format(url))
+                curl.perform()
+            except pycurl.error as error:
+                curl.close()
+                raise ReferenceError("Downloading '{0}' failed with error '{1}'.".format(url, error))
+
+            else:
+                curl.close()
 
 class ProcessHelper(object):
     """

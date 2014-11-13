@@ -116,8 +116,8 @@ class SpecFile(object):
         for index, src in enumerate(sources_list):
             abs_path = os.path.join(self.sources_location, os.path.basename(src[0]).strip())
             # if the source is a remote file, download it
-            if remote_files_re.search(src[0]):
-                self._download_source(src[0], abs_path)
+            if remote_files_re.search(src[0]) and self.download:
+                DownloadHelper.download_file(src[0], abs_path)
             # the Source0 has to be at the beginning!
             if src[1] == 0:
                 sources.insert(0, abs_path)
@@ -498,15 +498,6 @@ class SpecFile(object):
 
         self.spec_content = self._create_spec_from_sections()
         self.save()
-
-    def _download_source(self, source_name, destination):
-        """
-        Function downloads a source name defined in SPEC file
-        """
-        if not self.download:
-            return
-        if not os.path.exists(destination):
-            ret_code = DownloadHelper.download_source(source_name, destination)
 
     def _write_spec_file_to_disc(self):
         """
