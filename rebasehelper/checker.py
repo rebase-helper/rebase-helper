@@ -158,6 +158,7 @@ class PkgDiffTool(BaseChecker):
     """ Pkgdiff compare tool. """
     CMD = "pkgdiff"
     pkgdiff_results_filename = 'pkgdiff_reports.html'
+    files_xml = "files.xml"
     results_dir = ''
 
     @classmethod
@@ -187,26 +188,11 @@ class PkgDiffTool(BaseChecker):
         return file_name
 
     @classmethod
-    def _get_percentage(cls, result_dir, flag, file_list):
-        """
-        Function return percentage from pkgdiff_reuslt.html file
-        :param flag: If 'moved' or 'change' is used
-        :param moved_file: Which file we are tring looking for
-        :return: percentage
-        """
-        update_list = []
-        with open(os.path.join(result_dir, cls.pkgdiff_results_filename), "r") as f:
-            pkg_report = f.read()
-        if not pkg_report:
-            return file_list
-        for file_name in file_list:
-            reg_exp = '<td.*>' + file_name + '</td>\s*<td.*>' + flag + '</td>\s*<td.*>(.*)%</td>'
-            match = re.search(reg_exp, pkg_report, re.MULTILINE)
-            if match:
-                percent = match.group(1)
-                if float(percent) != 0:
-                    update_list.append(file_name)
-        return update_list
+    def _remove_not_changed_files(cls, file_list):
+        file_list = [x for x in file_list if not x.endswith('(0%)')]
+        # We need to return string without percentage
+        return file_list
+
 
     @classmethod
     def fill_dictionary(cls, result_dir):
@@ -229,22 +215,16 @@ class PkgDiffTool(BaseChecker):
                     pkgdiff_tree = ElementTree.fromstringlist(lines)
                     for tag in settings.CHECKER_TAGS:
                         for pkgdiff in pkgdiff_tree.findall('.//' + tag):
-                            results_dict[tag].extend(pkgdiff.text.split())
+                            results_dict[tag].extend([x.strip() for x in pkgdiff.text.strip().split('\n')])
             except IOError:
                 continue
-        for items in ['added', 'removed']:
-            results_dict[items] = cls._update_added_removed(results_dict, items)
+
         return results_dict
 
     @classmethod
     def _update_added_removed(cls, results_dict, key):
         update = []
-        # TODO for now we are skipping the some files/directories
-        removed_things = ['.build-id', '.dwz']
         for items in results_dict[key]:
-            removed = [x for x in removed_things if x in items]
-            if removed:
-                continue
             # We find whether file exists in 'moved' section
             # If yes then do not include in key set
             found = [x for x in results_dict['moved'] if items in x]
@@ -253,10 +233,25 @@ class PkgDiffTool(BaseChecker):
         return update
 
     @classmethod
-    def update_changed_moved(cls, result_dir, results_dict):
-        for flag in ['changed', 'moved']:
-            results_dict[flag] = cls._get_percentage(result_dir, flag, results_dict[flag])
-        return results_dict
+    def _update_changed_moved(cls, results_dict, key):
+        updated_list = []
+        for item in results_dict[key]:
+            fields = item.split(';')
+            found = [x for x in results_dict['changed'] if os.path.basename(fields[0]) in x]
+            if not found:
+                updated_list.append(item)
+        return updated_list
+
+    @classmethod
+    def _remove_not_checked_files(cls, results_dict):
+        update_list = []
+        removed_things = ['.build-id', '.dwz']
+        for item in results_dict:
+            removed = [x for x in removed_things if x in item]
+            if removed:
+                continue
+            update_list.append(item)
+        return update_list
 
     @classmethod
     def process_xml_results(cls, result_dir):
@@ -270,7 +265,16 @@ class PkgDiffTool(BaseChecker):
         """
         results_dict = cls.fill_dictionary(result_dir)
 
-        results_dict = cls.update_changed_moved(result_dir, results_dict)
+        # TODO for now we are skipping the some files/directories
+        for items in ['added', 'removed']:
+            results_dict[items] = cls._update_added_removed(results_dict, items)
+        # remove unchanged files and remove things which are not checked
+        for tag in settings.CHECKER_TAGS:
+            results_dict[tag] = cls._remove_not_changed_files(results_dict[tag])
+            results_dict[tag] = cls._remove_not_checked_files(results_dict[tag])
+        # remove files from 'moved' if they are in 'changed' section
+        results_dict['moved'] = cls._update_changed_moved(results_dict, 'moved')
+
         return results_dict
 
     @classmethod
