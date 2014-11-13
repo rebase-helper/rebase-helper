@@ -60,7 +60,6 @@ class SpecFile(object):
     path = ''
     download = False
     spec_content = []
-    spec_filtered_content = []
     spc = None
     hdr = None
     extra_version = None
