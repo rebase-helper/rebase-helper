@@ -127,7 +127,7 @@ class TestConsoleHelper(BaseTest):
         assert inp is False
 
 
-class TestProcessHelper(object):
+class TestProcessHelper(BaseTest):
     """ ProcessHelper tests """
 
     class TestRunSubprocess(BaseTest):
@@ -402,7 +402,7 @@ class TestPathHelper(object):
             assert PathHelper.find_first_file(os.path.curdir, "*.spec") == os.path.abspath(self.files[-1])
 
 
-class TestTemporaryEnvironment(object):
+class TestTemporaryEnvironment(BaseTest):
     """ TemporaryEnvironment class tests. """
 
     def test_with_statement(self):
@@ -475,7 +475,7 @@ class TestTemporaryEnvironment(object):
         os.unlink(tmp_path)
 
 
-class TestRpmHelper(object):
+class TestRpmHelper(BaseTest):
     """ RpmHelper class tests. """
 
     def test_is_package_installed_existing(self):
