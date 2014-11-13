@@ -84,8 +84,6 @@ class SpecFile(object):
         self.working_dir = os.path.dirname(os.path.abspath(path))
         #  Read the content of the whole SPEC file
         self._read_spec_content()
-        #  SPEC file content filtered from commented lines
-        self._update_filtered_spec_content()
         self._update_data()
 
     def _update_data(self):
@@ -505,12 +503,6 @@ class SpecFile(object):
         except IOError:
             raise RebaseHelperError("Unable to write updated data to SPEC file '{0}'".format(self.path))
 
-    def _update_filtered_spec_content(self):
-        """
-        Update the internal variable for SPEC content without commented lines
-        """
-        self.spec_filtered_content = [l for l in self.spec_content if not l.strip().startswith('#')]
-
     def get_sources(self):
         """
         Function returns all sources mentioned in specfile
@@ -763,8 +755,6 @@ class SpecFile(object):
         """
         Save changes made to the spec_content to the disc and update internal variables
         """
-        #  Update filtered SPEC content
-        self._update_filtered_spec_content()
         #  Write changes to the disc
         self._write_spec_file_to_disc()
         #  Update internal variables
