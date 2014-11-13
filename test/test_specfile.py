@@ -55,7 +55,7 @@ class TestSpecFile(BaseTest):
 
     def setup(self):
         super(TestSpecFile, self).setup()
-        self.SPEC_FILE_OBJECT = SpecFile(self.SPEC_FILE, download=False)
+        self.SPEC_FILE_OBJECT = SpecFile(self.SPEC_FILE, self.WORKING_DIR, download=False)
 
     def test_get_release(self):
         match = re.search(r'([0-9.]*[0-9]+)\w*', self.SPEC_FILE_OBJECT.get_release())
