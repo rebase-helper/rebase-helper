@@ -25,7 +25,7 @@ import os
 from .base_test import BaseTest
 from rebasehelper.output_tool import OutputTool
 from rebasehelper.settings import REBASE_HELPER_RESULTS_LOG
-
+from rebasehelper.base_output import OutputLogger
 
 class TestOutputTool(BaseTest):
     """
@@ -36,14 +36,17 @@ class TestOutputTool(BaseTest):
         data = {'old': {'patches_full': {0: ['mytest.patch', '-p1', 0],
                                          1: ['mytest2.patch', '-p1', 1]},
                         'srpm': './test-1.2.0-1.src.rpm',
-                        'rpm': ['./test-1.2.0-1.rpm', './test-devel-1.2.0-1.rpm']
+                        'rpm': ['./test-1.2.0-1.x86_64.rpm', './test-devel-1.2.0-1.x86_64.rpm'],
+                        'logs': ['logfile1.log', 'logfile2.log']
                         },
                 'new': {'patches_full': {0: ['mytest.patch', 0, '-p1'],
                                          1: ['mytest2.patch', 1, '-p1']},
                         'srpm': './test-1.2.2-1.src.rpm',
-                        'rpm': ['./test-1.2.2-1.rpm', './test-devel-1.2.2-1.rpm']},
+                        'rpm': ['./test-1.2.2-1.x86_64.rpm', './test-devel-1.2.2-1.x86_64.rpm'],
+                        'logs': ['logfile3.log', 'logfile4.log']},
                 'summary_info': {'deleted': ['mytest2.patch']},
-                'results_dir': self.WORKING_DIR
+                'results_dir': self.WORKING_DIR,
+                'moved': ['/usr/sbin/test', '/usr/sbin/test2'],
                 }
         return data
 
@@ -53,10 +56,10 @@ class TestOutputTool(BaseTest):
 Old (S)RPM packages:
 ---------------------
 SRPM package(s): are in directory  :
-- rpm-0.1.0.src.rpm
-RPM package(s): are in directory  :
-- rpm-0.1.0.x86_64.rpm
--  rpm-devel-0.1.0.x86_64.rpm
+- test-1.2.0-1.src.rpm
+RPM package(s): are in directory . :
+- test-1.2.0-1.x86_64.rpm
+- test-devel-1.2.0-1.x86_64.rpm
 Available Old logs:
 - logfile1.log
 - logfile2.log
@@ -64,17 +67,25 @@ Available Old logs:
 New (S)RPM packages:
 ---------------------
 SRPM package(s): are in directory  :
-- rpm-0.2.0.src.rpm
-RPM package(s): are in directory  :
-- rpm-0.2.0.x86_64.rpm
--  rpm-devel-0.2.0.x86_64.rpm
+- test-1.2.2-1.src.rpm
+RPM package(s): are in directory . :
+- test-1.2.2-1.x86_64.rpm
+- test-devel-1.2.2-1.x86_64.rpm
 Available New logs:
 - logfile3.log
-- logfile4.log"""
+- logfile4.log
+Following files were moved:
+/usr/sbin/test
+/usr/sbin/test2"""
         return expected_output
 
     def test_text_output(self):
         output = OutputTool('text')
+        data = self.get_data()
+        OutputLogger.set_build_data('old', data['old'])
+        OutputLogger.set_build_data('new', data['new'])
+        OutputLogger.set_checker_output('Following files were moved', '\n'.join(data['moved']))
+
         logfile = os.path.join(self.TESTS_DIR, REBASE_HELPER_RESULTS_LOG)
         output.print_information(logfile)
 
