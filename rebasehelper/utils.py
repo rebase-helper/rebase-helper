@@ -416,3 +416,28 @@ class RpmHelper(object):
         if assume_yes:
             cmd.append('-y')
         return ProcessHelper.run_subprocess(cmd)
+
+    @staticmethod
+    def get_header_from_rpm(rpm_name):
+        """
+        Function returns a rpm header from given rpm package
+        for later on analysis
+        :param pkg_name:
+        :return:
+        """
+        ts = rpm.TransactionSet()
+        h = None
+        with open(rpm_name, "r") as f:
+            h = ts.hdrFromFdno(f)
+        return h
+
+    @staticmethod
+    def get_info_from_rpm(rpm_name, info):
+        """
+        Method returns a name of the package from RPM file format
+        :param pkg_name:
+        :return:
+        """
+        h = RpmHelper.get_header_from_rpm(rpm_name)
+        name = h[info]
+        return name

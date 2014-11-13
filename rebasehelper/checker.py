@@ -25,12 +25,11 @@ import six
 import re
 from six import StringIO
 
-from rebasehelper.utils import ProcessHelper
+from rebasehelper.utils import ProcessHelper, RpmHelper
 from rebasehelper.logger import logger
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.base_output import OutputLogger
 from rebasehelper import settings
-from rebasehelper.specfile import SpecFile
 from xml.etree import ElementTree
 
 check_tools = {}
@@ -75,7 +74,7 @@ class RpmDiffTool(BaseChecker):
     def _get_rpms(cls, rpm_list):
         rpm_dict = {}
         for rpm_name in rpm_list:
-            rpm_dict[SpecFile.get_info_from_rpm(rpm_name, 'name')] = rpm_name
+            rpm_dict[RpmHelper.get_info_from_rpm(rpm_name, 'name')] = rpm_name
         return rpm_dict
 
     @classmethod

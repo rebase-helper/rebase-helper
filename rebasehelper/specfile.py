@@ -352,31 +352,6 @@ class SpecFile(object):
                 return match.group(1)
 
     @staticmethod
-    def get_header_from_rpm(rpm_name):
-        """
-        Function returns a rpm header from given rpm package
-        for later on analysis
-        :param pkg_name:
-        :return:
-        """
-        ts = rpm.TransactionSet()
-        h = None
-        with open(rpm_name, "r") as f:
-            h = ts.hdrFromFdno(f)
-        return h
-
-    @staticmethod
-    def get_info_from_rpm(rpm_name, info):
-        """
-        Method returns a name of the package from RPM file format
-        :param pkg_name:
-        :return:
-        """
-        h = SpecFile.get_header_from_rpm(rpm_name)
-        name = h[info]
-        return name
-
-    @staticmethod
     def get_paths_with_rpm_macros(files):
         """
         Method modifies paths in passed list to use RPM macros
