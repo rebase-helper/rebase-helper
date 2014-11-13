@@ -15,7 +15,7 @@
 </changed>
 <moved>
     /usr/local/test.sh
-    /usr/sbin/pkg-1.0.1/binary_test;/usr/sbin/pkg-1.0.2/binary_test
+    /usr/sbin/pkg-1.0.1/binary_test;/usr/sbin/pkg-1.0.2/binary_test (1%)
 </moved>
 <renamed>
     /usr/lib/libtest3.so.3
