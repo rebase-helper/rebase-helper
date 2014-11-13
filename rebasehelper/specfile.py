@@ -83,6 +83,9 @@ class SpecFile(object):
         self.sources_location = sources_location
         #  Read the content of the whole SPEC file
         self._read_spec_content()
+        # Load rpm information
+        self.spc = rpm.spec(self.path)
+        self.patches = self._get_initial_patches_list()
         self._update_data()
 
     def _update_data(self):
@@ -94,17 +97,54 @@ class SpecFile(object):
         self.spc = rpm.spec(self.path)
         # HEADER of SPEC file
         self.hdr = self.spc.sourceHeader
-        # ALL sources mentioned in SPEC file
-        self.sources = self.spc.sources
-        # All patches mentioned in SPEC file
-        self.patches = [x for x in self.sources if x[2] == 2]
         # All source file mentioned in SPEC file Source[0-9]*
-        self.source_files = [x for x in self.sources if x[2] == 0 or x[2] == 1]
         self.rpm_sections = self._split_sections()
         # determine the extra_version
         logger.debug("SpecFile: _update_data(): Updating the extra version")
+        self.sources = self._get_initial_sources_list()
         self.extra_version = SpecFile.extract_version_from_archive_name(self.get_archive(),
                                                                         self._get_raw_source_string(0))[1]
+
+    def _get_initial_sources_list(self):
+        """
+        Function returns all sources mentioned in SPEC file
+        """
+        # get all regular sources
+        sources = []
+        sources_list = [x for x in self.spc.sources if x[2] == 1]
+        remote_files_re = re.compile(r'(http:|https:|ftp:)//.*')
+
+        for index, src in enumerate(sources_list):
+            abs_path = os.path.join(self.sources_location, os.path.basename(src[0]).strip())
+            # if the source is a remote file, download it
+            if remote_files_re.search(src[0]):
+                self._download_source(src[0], abs_path)
+            # the Source0 has to be at the beginning!
+            if src[1] == 0:
+                sources.insert(0, abs_path)
+            else:
+                sources.append(abs_path)
+        return sources
+
+    def _get_initial_patches_list(self):
+        """
+        Method returns a list of patches from a spec file
+        """
+        patches = {}
+        patches_list = [p for p in self.spc.sources if p[2] == 2]
+        patch_flags = self._get_patches_flags()
+
+        for filename, num, patch_type in patches_list:
+            patch_path = os.path.join(self.sources_location, filename)
+            if not os.path.exists(patch_path):
+                logger.error('Patch {0} does not exist'.format(filename))
+                continue
+            if num in patch_flags:
+                #  TODO: Why do we need to know here if patch is git generated??
+                patches[num] = [patch_path, patch_flags[num][0],
+                                patch_flags[num][1], self.is_patch_git_generated(patch_path)]
+        # dict with <num>: [name, flags, index, git_generated]
+        return patches
 
     def copy(self, new_path=None):
         """
@@ -295,7 +335,7 @@ class SpecFile(object):
 
     def get_requires(self):
         """
-        Function returns a package reuirements
+        Function returns a package requirements
         :return:
         """
         return [r.decode() for r in self.hdr[rpm.RPMTAG_REQUIRES]]
@@ -318,22 +358,25 @@ class SpecFile(object):
 
     def get_patches(self):
         """
-        Function returns a list of patches from a spec file
+        Method returns dictionary with patches list.
+
+        :return: dict with <num>: [path, flags, index, git_generated]
         """
-        patches = {}
-        patch_flags = self._get_patches_flags()
-        for filename, num, patch_type in self.patches:
-            #filename, num, patch_type = source
-            full_patch_name = os.path.join(self.sources_location, filename)
-            if not os.path.exists(full_patch_name):
-                logger.error('Patch {0} does not exist'.format(filename))
-                continue
-            if num in patch_flags:
-                #  TODO: Why do we need to know here if patch is git generated??
-                patches[num] = [full_patch_name, patch_flags[num][0],
-                                patch_flags[num][1], self.is_patch_git_generated(full_patch_name)]
-        # dist with <num>: [name, flags, index, git_generated]
-        return patches
+        return self.patches
+
+    def get_sources(self):
+        """
+        Method returns dictionary with sources list.
+
+        :return:
+        """
+        return self.sources
+
+    def get_archive(self):
+        """
+        Function returns the archive name from SPEC file
+        """
+        return os.path.basename(self.get_sources()[0]).strip()
 
     def _get_raw_source_string(self, source_num):
         """
@@ -476,31 +519,6 @@ class SpecFile(object):
                 f.writelines(self.spec_content)
         except IOError:
             raise RebaseHelperError("Unable to write updated data to SPEC file '{0}'".format(self.path))
-
-    def get_sources(self):
-        """
-        Function returns all sources mentioned in specfile
-        """
-        #  TODO: this might not be a good idea - should we use EXECUTION DIR?
-        sources = []
-        remote_files = ['http:', 'https:', 'ftp:']
-        for index, src in enumerate(self.source_files):
-            new_name = os.path.join(self.sources_location, os.path.basename(src[0]).strip())
-            if int(src[1]) != 0:
-                remote = [x for x in remote_files if src[0].startswith(x)]
-                if remote:
-                    self._download_source(src[0], new_name)
-            sources.append(new_name)
-        return sources
-
-    def get_archive(self):
-        """
-        Function returns a old sources from specfile
-        """
-        full_source_name = self._get_full_source_name()
-        source_name = os.path.basename(full_source_name).strip()
-        self._download_source(full_source_name, source_name)
-        return source_name
 
     def _get_full_source_name(self):
         """
@@ -652,7 +670,7 @@ class SpecFile(object):
                         # construct new archive name with %{REBASE_VER}
                         # replacing the version that will be used in Source0
                         basename_raw = os.path.basename(line.strip())
-                        basename_expanded = os.path.basename(self._get_full_source_name())
+                        basename_expanded = self.get_archive()
                         match_blocks = list(SequenceMatcher(None, basename_raw, basename_expanded).get_matching_blocks())
                         new_basename_with_macro = '{0}{1}{2}'.format(basename_raw[:match_blocks[0][2]],
                                                                      '%{REBASE_VER}',

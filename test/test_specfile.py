@@ -109,10 +109,12 @@ class TestSpecFile(BaseTest):
     def test_old_tarball(self):
         assert self.SPEC_FILE_OBJECT.get_archive() == self.OLD_ARCHIVE
 
-    def test_all_sources(self):
+    def test_get_sources(self):
         sources = [self.SOURCE_0, self.SOURCE_1, self.OLD_ARCHIVE]
         sources = [os.path.join(self.WORKING_DIR, f) for f in sources]
         assert len(set(sources).intersection(set(self.SPEC_FILE_OBJECT.get_sources()))) == 3
+        # The Source0 has to be always in the beginning
+        assert self.SPEC_FILE_OBJECT.get_sources()[0] == os.path.join(self.WORKING_DIR, 'test-1.0.2.tar.xz')
 
     def test_get_patches(self):
         expected_patches = {1: [os.path.join(self.WORKING_DIR, self.PATCH_1), '', 0, False],
