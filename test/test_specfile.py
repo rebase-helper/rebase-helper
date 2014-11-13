@@ -100,16 +100,6 @@ class TestSpecFile(BaseTest):
         with open(self.SPEC_FILE) as spec:
             assert new_content == spec.readlines()
 
-    def test__update_filtered_spec_content(self):
-        new_content_1 = [
-            'testing line 1\n',
-            '#testing line 2\n'
-        ]
-        expected_content_1 = ['testing line 1\n']
-        self.SPEC_FILE_OBJECT.spec_content = new_content_1
-        self.SPEC_FILE_OBJECT._update_filtered_spec_content()
-        assert self.SPEC_FILE_OBJECT.spec_filtered_content == expected_content_1
-
     def test__get_raw_source_string(self):
         assert self.SPEC_FILE_OBJECT._get_raw_source_string(0) == 'ftp://ftp.test.org/test-%{version}.tar.xz'
         assert self.SPEC_FILE_OBJECT._get_raw_source_string(1) == 'source-tests.sh'
