@@ -109,6 +109,8 @@ class DownloadHelper(object):
         :param destination_name: path where to store downloaded file
         :return None
         """
+        if os.path.exists(destination_name):
+            return
         with open(destination_name, 'wb') as f:
             curl = pycurl.Curl()
             curl.setopt(pycurl.URL, url)
