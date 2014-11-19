@@ -295,9 +295,9 @@ class TestSpecFile(BaseTest):
         self.SPEC_FILE_OBJECT.set_extra_version('b1')
         with open(self.SPEC_FILE_OBJECT.get_path()) as f:
             # 1st line
-            assert f.readline() == '%define REBASE_EXTRA_VER b1\n'
+            assert f.readline() == '%global REBASE_EXTRA_VER b1\n'
             # 2nd line
-            assert f.readline() == '%define REBASE_VER %{version}%{REBASE_EXTRA_VER}\n'
+            assert f.readline() == '%global REBASE_VER %{version}%{REBASE_EXTRA_VER}\n'
             while True:
                 line = f.readline()
                 if line == '#Source: ftp://ftp.test.org/test-%{version}.tar.xz\n':
@@ -316,9 +316,9 @@ class TestSpecFile(BaseTest):
         self.SPEC_FILE_OBJECT.set_extra_version('')
         with open(self.SPEC_FILE_OBJECT.get_path()) as f:
             # 1st line
-            assert f.readline() != '%define REBASE_EXTRA_VER b1\n'
+            assert f.readline() != '%global REBASE_EXTRA_VER b1\n'
             # 2nd line
-            assert f.readline() != '%define REBASE_VER %{version}%{REBASE_EXTRA_VER}\n'
+            assert f.readline() != '%global REBASE_VER %{version}%{REBASE_EXTRA_VER}\n'
         # the release number was changed
         assert self.SPEC_FILE_OBJECT.get_release_number() == '1'
 

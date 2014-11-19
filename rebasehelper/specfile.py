@@ -608,12 +608,12 @@ class SpecFile(object):
         :param extra_version: the extra version string, if any (e.g. 'b1', 'rc2', ...)
         :return: None
         """
-        extra_version_def = '%define REBASE_EXTRA_VER'
+        extra_version_def = '%global REBASE_EXTRA_VER'
         extra_version_macro = '%{?REBASE_EXTRA_VER}'
         extra_version_re = re.compile('^{0}.*$'.format(extra_version_def))
         extra_version_line_index = None
-        rebase_extra_version_def = '%define REBASE_VER %{version}%{REBASE_EXTRA_VER}\n'
-        new_extra_version_line = '%define REBASE_EXTRA_VER {0}\n'.format(extra_version)
+        rebase_extra_version_def = '%global REBASE_VER %{version}%{REBASE_EXTRA_VER}\n'
+        new_extra_version_line = '%global REBASE_EXTRA_VER {0}\n'.format(extra_version)
 
         logger.debug("SpecFile: Updating extra version in SPEC to '{0}'".format(extra_version))
 
