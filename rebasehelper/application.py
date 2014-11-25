@@ -51,8 +51,6 @@ class Application(object):
     rebase_spec_file = None
     rebase_spec_file_path = None
     debug_log_file = None
-    patches = None
-    rebased_patches = None
 
     def __init__(self, cli_conf=None):
         """
@@ -147,15 +145,15 @@ class Application(object):
         """
         Function find data previously done
         """
-        self.rebased_patches = self.rebase_spec_file.get_patches()
+        rebased_patches = self.rebase_spec_file.get_patches()
         for file_name in PathHelper.find_all_files(self.results_dir, '*.patch'):
-            for key, value in self.rebased_patches.items():
+            for key, value in six.iteritems(rebased_patches):
                 if os.path.basename(file_name) in value[0]:
                     value[0] = file_name
-                    self.rebased_patches[key] = value
+                    rebased_patches[key] = value
                     break
 
-        update_patches = self.rebase_spec_file.write_updated_patches(self.rebased_patches)
+        update_patches = self.rebase_spec_file.write_updated_patches(rebased_patches)
         self.kwargs['summary_info'] = update_patches
         OutputLogger.set_patch_output('Patches:', update_patches)
 
@@ -166,8 +164,6 @@ class Application(object):
         # Get all tarballs before self.kwargs initialization
         self.old_sources = self.spec_file.get_archive()
         new_sources = self.rebase_spec_file.get_archive()
-
-        self.patches = self.spec_file.get_patches()
 
         self.old_sources = os.path.abspath(self.old_sources)
         if new_sources:
@@ -308,16 +304,16 @@ class Application(object):
         patch = Patcher(self.conf.patchtool)
 
         try:
-            self.rebased_patches = patch.patch(sources[0],
-                                               sources[1],
-                                               self.patches,
-                                               self.rebased_patches,
-                                               **self.kwargs)
+            rebased_patches = patch.patch(sources[0],
+                                          sources[1],
+                                          self.spec_file.get_patches(),
+                                          self.rebase_spec_file.get_patches(),
+                                          **self.kwargs)
         except RuntimeError as run_e:
             raise RebaseHelperError(run_e.message)
 
-        logger.debug(self.rebased_patches)
-        update_patches = self.rebase_spec_file.write_updated_patches(self.rebased_patches)
+        logger.debug(rebased_patches)
+        update_patches = self.rebase_spec_file.write_updated_patches(rebased_patches)
         OutputLogger.set_patch_output('Patches:', update_patches)
 
     def build_packages(self):
