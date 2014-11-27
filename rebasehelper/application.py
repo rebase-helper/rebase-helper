@@ -154,7 +154,6 @@ class Application(object):
                     break
 
         update_patches = self.rebase_spec_file.write_updated_patches(rebased_patches)
-        self.kwargs['summary_info'] = update_patches
         OutputLogger.set_patch_output('Patches:', update_patches)
 
     def _initialize_data(self):
