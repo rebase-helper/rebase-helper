@@ -273,7 +273,8 @@ class Application(object):
 
         return os.path.join(destination, sources_dir)
 
-    def check_build_requires(self, spec):
+    @staticmethod
+    def check_build_requires(spec):
         """
         Check if all build dependencies are installed. If not, asks user they should be installed.
         If yes, it installs build dependencies using PolicyKit.
@@ -419,7 +420,7 @@ class Application(object):
         if not self.conf.patch_only:
             # check build dependencies for rpmbuild
             if self.conf.buildtool == 'rpmbuild':
-                self.check_build_requires(self.spec_file)
+                Application.check_build_requires(self.spec_file)
             # Build packages
             self.build_packages()
             # Perform checks
