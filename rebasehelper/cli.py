@@ -130,7 +130,7 @@ class CliHelper(object):
         except KeyboardInterrupt:
             logger.info('\nInterrupted by user')
         except RebaseHelperError as e:
-            logger.error('\n{0}'.format(e.message))
+            logger.error('\n{0}'.format(e))
             sys.exit(1)
 
         sys.exit(0)
