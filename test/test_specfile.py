@@ -101,7 +101,7 @@ class TestSpecFile(BaseTest):
             assert new_content == spec.readlines()
 
     def test__get_raw_source_string(self):
-        assert self.SPEC_FILE_OBJECT._get_raw_source_string(0) == 'ftp://ftp.test.org/test-%{version}.tar.xz'
+        assert self.SPEC_FILE_OBJECT._get_raw_source_string(0) == 'ftp://ftp.test.org/%{name}-%{version}.tar.xz'
         assert self.SPEC_FILE_OBJECT._get_raw_source_string(1) == 'source-tests.sh'
         assert self.SPEC_FILE_OBJECT._get_raw_source_string(2) == 'ftp://test.com/test-source.sh'
         assert self.SPEC_FILE_OBJECT._get_raw_source_string(3) is None
@@ -196,7 +196,7 @@ class TestSpecFile(BaseTest):
                             '\n',
                             '# Note: non-current tarballs get moved to the history/ subdirectory,\n',
                             '# so look there if you fail to retrieve the version you want\n',
-                            'Source: ftp://ftp.test.org/test-%{version}.tar.xz\n',
+                            'Source: ftp://ftp.test.org/%{name}-%{version}.tar.xz\n',
                             'Source1: source-tests.sh\n',
                             'Source2: ftp://test.com/test-source.sh\n',
                             '#Source3: source-tests.sh\n',
@@ -300,11 +300,11 @@ class TestSpecFile(BaseTest):
             assert f.readline() == '%global REBASE_VER %{version}%{REBASE_EXTRA_VER}\n'
             while True:
                 line = f.readline()
-                if line == '#Source: ftp://ftp.test.org/test-%{version}.tar.xz\n':
+                if line == '#Source: ftp://ftp.test.org/%{name}-%{version}.tar.xz\n':
                     break
                 assert line is not None
             # there is new Source0 after old commented out entry
-            assert f.readline() == 'Source: ftp://ftp.test.org/test-%{REBASE_VER}.tar.xz\n'
+            assert f.readline() == 'Source: ftp://ftp.test.org/%{name}-%{REBASE_VER}.tar.xz\n'
         # the release number was changed
         assert self.SPEC_FILE_OBJECT.get_release_number() == '0.1'
         # the release string now contains the extra version

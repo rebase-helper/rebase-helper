@@ -649,9 +649,13 @@ class SpecFile(object):
                         basename_raw = os.path.basename(line.strip())
                         basename_expanded = self.get_archive()
                         match_blocks = list(SequenceMatcher(None, basename_raw, basename_expanded).get_matching_blocks())
-                        new_basename_with_macro = '{0}{1}{2}'.format(basename_raw[:match_blocks[0][2]],
+                        # since the version is usually in the end of the archive name, use the last start of different
+                        # section as the start of version macro
+                        mb_version_section_beginning = match_blocks[-3][0] + match_blocks[-3][2]
+                        mb_start_of_last_common_sect = match_blocks[-2][0]
+                        new_basename_with_macro = '{0}{1}{2}'.format(basename_raw[:mb_version_section_beginning],
                                                                      '%{REBASE_VER}',
-                                                                     basename_raw[match_blocks[1][0]:])
+                                                                     basename_raw[mb_start_of_last_common_sect:])
                         logger.debug("SpecFile: New Source0 basename with macro '{0}'".format(new_basename_with_macro))
                         # replace the archive name in old Source0 with new one
                         new_source0_line = str.replace(line, basename_raw, new_basename_with_macro)
