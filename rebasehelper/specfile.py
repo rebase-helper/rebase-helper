@@ -25,11 +25,8 @@ import os
 import re
 import shutil
 import six
+import rpm
 from difflib import SequenceMatcher
-try:
-    import rpm
-except ImportError:
-    pass
 
 from rebasehelper.utils import DownloadHelper
 from rebasehelper.logger import logger
