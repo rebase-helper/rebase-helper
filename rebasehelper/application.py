@@ -313,7 +313,6 @@ class Application(object):
         except RuntimeError as run_e:
             raise RebaseHelperError(run_e.message)
 
-        logger.debug(rebased_patches)
         update_patches = self.rebase_spec_file.write_updated_patches(rebased_patches)
         OutputLogger.set_patch_output('Patches:', update_patches)
 

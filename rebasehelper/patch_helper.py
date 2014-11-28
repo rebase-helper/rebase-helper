@@ -247,11 +247,11 @@ class PatchTool(PatchBase):
         directory against another
         """
         cls.kwargs = kwargs
-        cls.patches = patches
+        cls.patches = dict(patches)
         if rebased_patches:
-            cls.rebased_patches = rebased_patches
+            cls.rebased_patches = dict(rebased_patches)
         else:
-            cls.rebased_patches = patches
+            cls.rebased_patches = dict(patches)
         cls.old_sources = old_dir
         cls.new_sources = new_dir
         cls.output_data = []
