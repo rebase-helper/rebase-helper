@@ -108,7 +108,7 @@ class Application(object):
         try:
             LoggerHelper.add_file_handler(logger,
                                           debug_log_file,
-                                          logging.Formatter("%(asctime)s %(levelname)s %(filename)s"
+                                          logging.Formatter("%(asctime)s %(levelname)s\t%(filename)s"
                                                             ":%(lineno)s %(funcName)s: %(message)s"),
                                           logging.DEBUG)
         except (IOError, OSError):
