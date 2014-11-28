@@ -26,7 +26,7 @@ from __future__ import print_function
 import subprocess
 import os
 from rebasehelper.version import VERSION
-from rebasehelper.cli import CliHelper
+
 try:
     from setuptools import setup, Command
 except:
