@@ -20,4 +20,4 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
-VERSION = '0.3.1'
+VERSION = '0.4.0b1'
