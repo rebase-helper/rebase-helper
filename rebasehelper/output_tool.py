@@ -187,5 +187,5 @@ class OutputTool(object):
 
     def print_information(self, path):
         """ Build sources. """
-        logger.debug("OutputTool: Printing information using '{0}'".format(self._output_tool_name))
+        logger.debug("Printing information using '{0}'".format(self._output_tool_name))
         return self._tool.print_summary(path)

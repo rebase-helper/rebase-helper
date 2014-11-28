@@ -192,7 +192,7 @@ class ProcessHelper(object):
         close_out_file = False
         close_in_file = False
 
-        logger.debug("ProcessHelper.run_subprocess: cmd={cmd}, cwd={cwd}, env={env}, input={input}, output={output}, shell={shell}".format(
+        logger.debug("cmd={cmd}, cwd={cwd}, env={env}, input={input}, output={output}, shell={shell}".format(
             cmd=str(cmd),
             cwd=str(cwd),
             env=str(env),
@@ -282,7 +282,7 @@ class ProcessHelper(object):
 
         sp.wait()
 
-        logger.debug("ProcessHelper.run_subprocess: subprocess exited with return code {ret}".format(ret=str(sp.returncode)))
+        logger.debug("subprocess exited with return code {ret}".format(ret=str(sp.returncode)))
 
         return sp.returncode
 
@@ -345,7 +345,7 @@ class TemporaryEnvironment(object):
 
     def __enter__(self):
         self._env[self.TEMPDIR] = PathHelper.get_temp_dir()
-        logger.debug("TemporaryEnvironment: Created environment in '{0}'".format(self.path()))
+        logger.debug("Created environment in '{0}'".format(self.path()))
         return self
 
     def __exit__(self, type, value, traceback):
@@ -355,10 +355,10 @@ class TemporaryEnvironment(object):
         except TypeError:
             pass
         else:
-            logger.debug("TemporaryEnvironment: Exit callback executed successfully")
+            logger.debug("Exit callback executed successfully")
 
         shutil.rmtree(self.path())
-        logger.debug("TemporaryEnvironment: Destroyed environment in '{0}'".format(self.path()))
+        logger.debug("Destroyed environment in '{0}'".format(self.path()))
 
     def __str__(self):
         return "<TemporaryEnvironment path='{0}'>".format(self.path())

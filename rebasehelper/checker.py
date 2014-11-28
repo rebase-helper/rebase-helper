@@ -330,7 +330,7 @@ class Checker(object):
 
     def run_check(self, results_dir):
         """ Run the check """
-        logger.debug("Checker: Running tests on packages using '{0}'".format(self._tool_name))
+        logger.debug("Running tests on packages using '{0}'".format(self._tool_name))
         return self._tool.run_check(results_dir)
 
     @classmethod

@@ -108,7 +108,8 @@ class Application(object):
         try:
             LoggerHelper.add_file_handler(logger,
                                           debug_log_file,
-                                          logging.Formatter("%(asctime)s %(levelname)s %(message)s"),
+                                          logging.Formatter("%(asctime)s %(levelname)s %(filename)s"
+                                                            ":%(lineno)s %(funcName)s: %(message)s"),
                                           logging.DEBUG)
         except (IOError, OSError):
             logger.warning("Can not create debug log '{0}'".format(debug_log_file))
@@ -133,10 +134,10 @@ class Application(object):
 
         #  check if argument passed as new source is a file or just a version
         if [True for ext in Archive.get_supported_archives() if self.conf.sources.endswith(ext)]:
-            logger.debug("Application: argument passed as a new source is a file")
+            logger.debug("argument passed as a new source is a file")
             self.rebase_spec_file.set_version_using_archive(self.conf.sources)
         else:
-            logger.debug("Application: argument passed as a new source is a version")
+            logger.debug("argument passed as a new source is a version")
             version, extra_version = SpecFile.split_version_string(self.conf.sources)
             self.rebase_spec_file.set_version(version)
             self.rebase_spec_file.set_extra_version(extra_version)

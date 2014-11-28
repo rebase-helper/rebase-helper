@@ -52,7 +52,7 @@ class GenericDiff(object):
         :return: return code of the gendiff command
         """
         # gendiff new_source + self.suffix > patch[0]
-        logger.debug("PatchTool: Generating patch using gendiff")
+        logger.debug("Generating patch using gendiff")
         cmd = ['gendiff']
         # strip '-p' from the path argument to determine the path
         if int(patch_path_argument.strip('-p')) == 0:
@@ -147,12 +147,7 @@ class MeldDiffTool(DiffBase):
 
     @classmethod
     def run_diff(cls, old, new):
-        if not old:
-            raise TypeError("MeldDiffTool:run_diff: missing old")
-        if not new:
-            raise TypeError("MeldDiffTool:run_diff: missing new")
-
-        logger.debug("MeldDiffTool: running diff")
+        logger.debug("running diff")
 
         cmd = [cls.CMD, '--diff', old, new]
         return ProcessHelper.run_subprocess(cmd, output=ProcessHelper.DEV_NULL)
@@ -161,7 +156,7 @@ class MeldDiffTool(DiffBase):
     def run_mergetool(cls, old_dir, new_dir, suffix, failed_files):
         suffix = "." + suffix
 
-        logger.debug("MeldDiffTool: running merge")
+        logger.debug("running merge")
 
         for index, fname in enumerate(failed_files):
             base = os.path.join(old_dir, fname + suffix)
@@ -204,7 +199,7 @@ class Differ(object):
         """
         Diff between two files
         """
-        logger.debug("Diff: Diff between files {0} and {1}".format(old, new))
+        logger.debug("Diff between files {0} and {1}".format(old, new))
         return self._tool.run_diff(old, new)
 
     def merge(self, old_dir, new_dir, suffix, failed_files):

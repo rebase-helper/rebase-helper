@@ -91,7 +91,7 @@ class PatchTool(PatchBase):
         """
         Patch command whom patches as the
         """
-        logger.debug('PatchTool: Applying patch')
+        logger.debug('Applying patch')
 
         cmd = [cls.CMD]
         cmd.append(patch_flags)
@@ -153,7 +153,7 @@ class PatchTool(PatchBase):
         if not patched_files:
             raise RuntimeError('We are not able to get a list of failed files.')
 
-        logger.debug('Input to MergeTool: {0}'.format(cls.kwargs))
+        logger.debug('Input: {0}'.format(cls.kwargs))
         diff_cls = Differ(cls.kwargs.get('diff_tool', None))
         # Running Merge Tool
         diff_cls.merge(cls.old_sources, cls.new_sources, cls.suffix, patched_files)
@@ -303,7 +303,7 @@ class Patcher(object):
         :param kwargs: --
         :return:
         """
-        logger.debug("Patcher: Patching source by patch tool {0}".format(self._path_tool_name))
+        logger.debug("Patching source by patch tool {0}".format(self._path_tool_name))
         return self._tool.run_patch(old_dir, new_dir, patches, rebased_patches, **kwargs)
 
 
