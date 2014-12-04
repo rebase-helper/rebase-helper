@@ -357,7 +357,7 @@ class TemporaryEnvironment(object):
         else:
             logger.debug("Exit callback executed successfully")
 
-        shutil.rmtree(self.path())
+        shutil.rmtree(self.path(), onerror=lambda func, path, excinfo: shutil.rmtree(path))
         logger.debug("Destroyed environment in '{0}'".format(self.path()))
 
     def __str__(self):
