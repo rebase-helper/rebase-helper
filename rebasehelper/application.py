@@ -284,7 +284,7 @@ class Application(object):
         req_pkgs = spec.get_requires()
         if not RpmHelper.all_packages_installed(req_pkgs):
             if ConsoleHelper.get_message('\nSome build dependencies are missing. Do you want to install them now'):
-                if RpmHelper.install_build_dependencies(spec.spec_file) != 0:
+                if RpmHelper.install_build_dependencies(spec.get_path()) != 0:
                     raise RebaseHelperError('Failed to install build dependencies')
 
     def prepare_sources(self):
