@@ -296,6 +296,7 @@ class PathHelper(object):
         to the directory with first occurrence of the file, otherwise
         returns None. """
         for root, dirs, files in os.walk(top_path):
+            dirs.sort()
             for f in files:
                 if fnmatch.fnmatch(f, pattern):
                     return os.path.abspath(root)
@@ -307,6 +308,7 @@ class PathHelper(object):
         starting in the 'top_path' directory. If found, returns full path
         to the first occurrence of the file, otherwise returns None. """
         for loop, (root, dirs, files) in enumerate(os.walk(top_path)):
+            dirs.sort()
             for f in files:
                 if fnmatch.fnmatch(f, pattern):
                     return os.path.join(os.path.abspath(root), f)
@@ -322,6 +324,7 @@ class PathHelper(object):
         to the first occurrence of the file, otherwise returns None. """
         files_list = []
         for root, dirs, files in os.walk(top_path):
+            dirs.sort()
             for f in files:
                 if fnmatch.fnmatch(f, pattern):
                     files_list.append(os.path.join(os.path.abspath(root), f))

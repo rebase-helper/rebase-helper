@@ -368,7 +368,7 @@ class TestPathHelper(object):
         def test_find_ffile(self):
             assert PathHelper.find_first_dir_with_file(
                 "dir1", "*le") == os.path.abspath(
-                os.path.dirname(self.files[8]))
+                os.path.dirname(self.files[9]))
             assert PathHelper.find_first_dir_with_file(
                 "dir1", "ff*") == os.path.abspath(
                 os.path.dirname(self.files[8]))
@@ -395,7 +395,7 @@ class TestPathHelper(object):
 
         def test_find_ffile(self):
             assert PathHelper.find_first_file(
-                "dir1", "*le") == os.path.abspath(self.files[8])
+                "dir1", "*le") == os.path.abspath(self.files[9])
             assert PathHelper.find_first_file(
                 "dir1", "ff*") == os.path.abspath(self.files[8])
             assert PathHelper.find_first_file("dir1/foo", "ff*") is None
@@ -411,7 +411,8 @@ class TestPathHelper(object):
             assert PathHelper.find_first_file(os.path.curdir, "*.spec", 0) is None
             assert PathHelper.find_first_file(os.path.curdir, "*.spec", 1) is None
             assert PathHelper.find_first_file(os.path.curdir, "*.spec", 2) is None
-            assert PathHelper.find_first_file(os.path.curdir, "*.spec", 3) == os.path.abspath(self.files[-1])
+            assert PathHelper.find_first_file(os.path.curdir, "*.spec", 3) is None
+            assert PathHelper.find_first_file(os.path.curdir, "*.spec", 4) == os.path.abspath(self.files[-1])
 
         def test_find_without_recursion(self):
             assert PathHelper.find_first_file(os.path.curdir, "*.spec") == os.path.abspath(self.files[-1])
@@ -494,15 +495,15 @@ class TestRpmHelper(BaseTest):
     """ RpmHelper class tests. """
 
     def test_is_package_installed_existing(self):
-        assert RpmHelper.is_package_installed('kernel') is True
-        assert RpmHelper.is_package_installed('filesystem') is True
+        assert RpmHelper.is_package_installed('glibc') is True
+        assert RpmHelper.is_package_installed('coreutils') is True
 
     def test_is_package_installed_non_existing(self):
         assert RpmHelper.is_package_installed('non-existing-package') is False
         assert RpmHelper.is_package_installed('another-non-existing-package') is False
 
     def test_all_packages_installed_existing(self):
-        assert RpmHelper.all_packages_installed(['kernel', 'filesystem']) is True
+        assert RpmHelper.all_packages_installed(['glibc', 'coreutils']) is True
 
     def test_all_packages_installed_one_non_existing(self):
-        assert RpmHelper.all_packages_installed(['kernel', 'filesystem', 'non-existing-package']) is False
+        assert RpmHelper.all_packages_installed(['glibc', 'coreutils', 'non-existing-package']) is False
