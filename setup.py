@@ -79,8 +79,6 @@ class PyTest(Command):
 
         raise SystemExit(retcode)
 
-install_requires = ['pkgdiff >= 1.6.3']
-
 setup(
     name='rebasehelper',
     version=VERSION,
@@ -93,7 +91,6 @@ setup(
     packages=['rebasehelper'],
     include_package_data=True,
     entry_points={'console_scripts': ['rebase-helper=rebasehelper.cli:CliHelper.run']},
-    install_requires=install_requires,
     setup_requires=[],
     classifiers=['Development Status :: 4 - Beta',
                    'Environment :: Console',
