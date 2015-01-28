@@ -30,9 +30,11 @@ from rebasehelper import settings
 from rebasehelper.logger import logger
 from rebasehelper.utils import ConsoleHelper
 from rebasehelper.utils import ProcessHelper
-from rebasehelper.specfile import get_rebase_name
+from rebasehelper.specfile import get_rebase_name, PatchObject
 from rebasehelper.diff_helper import Differ, GenericDiff
 
+from git import Repo
+import git
 
 patch_tools = {}
 
@@ -62,6 +64,279 @@ class PatchBase(object):
             Method will check all patches in relevant package
         """
         return NotImplementedError()
+
+@register_patch_tool
+class GitPatchTool(PatchBase):
+    """
+    Class for git command used for patching old and new
+    sources
+    """
+    CMD = 'git'
+    source_dir = ""
+    old_sources = ""
+    new_sources = ""
+    diff_cls = None
+    output_data = []
+    git_directory = ""
+    old_repo = None
+    new_repo = None
+
+    @classmethod
+    def match(cls, cmd):
+        if cls.CMD == cmd:
+            return True
+        else:
+            return False
+
+    @classmethod
+    def patch_command(cls, patch_name, patch_flags):
+        """
+        Patch command whom patches as the
+        """
+        logger.debug('Applying patch')
+
+        cmd = [cls.CMD]
+        cmd.append('apply')
+        cmd.append(patch_flags)
+        output = StringIO()
+        ret_code = ProcessHelper.run_subprocess_cwd(cmd=cmd,
+                                                    cwd=cls.source_dir,
+                                                    input=patch_name,
+                                                    output=output)
+        cls.output_data = output.readlines()
+        return ret_code
+
+    @classmethod
+    def check_patch(cls, patch_name):
+        logger.debug('Checking patch')
+
+        cmd = ['apply', '--check']
+        ret_code = cls.call_git_command(cmd, directory=cls.source_dir, input_file=patch_name)
+        if int(ret_code) != 0:
+            logger.debug('Checking patch failed.')
+        return ret_code
+
+    @classmethod
+    def commit_patch(cls, patch_name):
+        logger.debug('Commit patch')
+        ret_code = cls.call_git_command(['add', '*'], directory=cls.source_dir)
+        if int(ret_code) != 0:
+            logger.error('We are not able to add changed files to local git repository.')
+        ret_code = cls.call_git_command(['commit', '-m', os.path.basename(patch_name)],
+                                        directory=cls.source_dir)
+        if int(ret_code) != 0:
+            logger.error('We are not able to commit changes.')
+        return ret_code
+
+    @classmethod
+    def get_failed_patched_files(cls, patch_name):
+        """
+        Function gets a lists of patched files from patch command.
+        """
+        print cls.output_data
+        failed_files = []
+        for data in cls.output_data:
+            # First we try to find what file is patched
+            if "patch failed:" not in data.strip():
+                print 'All is oK'
+                continue
+            fields = data.split()
+            failed_file = fields[len(fields)-1]
+            failed_files.append(failed_file.split(':')[0])
+        return failed_files
+
+    @classmethod
+    def execute_diff_helper(cls, patch):
+        """
+        Function rebases a patch with help of diff program
+        on new upstream version
+        :param patch: Patch name
+        :return:
+        """
+        rebased_patch = get_rebase_name(patch[0])
+        patched_files = cls.get_failed_patched_files(patch[0])
+        if not patched_files:
+            raise RuntimeError('We are not able to get a list of failed files.')
+
+        print rebased_patch, patched_files
+
+        logger.debug('Input: {0}'.format(cls.kwargs))
+        diff_cls = Differ(cls.kwargs.get('diff_tool', None))
+        # Running Merge Tool
+        diff_cls.merge(cls.old_sources, cls.new_sources, cls.suffix, patched_files)
+
+        # Generating diff
+        GenericDiff.generate_diff(cls.new_sources, cls.suffix, rebased_patch, patch[1])
+
+        # Showing difference between original and new patch
+        diff_cls.diff(patch[0], rebased_patch)
+        return rebased_patch
+
+    @classmethod
+    def get_rebased_patch(cls, patch):
+        """
+        Function finds patch in already rebases patches
+        :param patch:
+        :return:
+        """
+        # Check if patch is in rebased patches
+        found = False
+        for value in six.itervalues(cls.rebased_patches):
+            if os.path.basename(patch) in value[0]:
+                return value[0]
+        if not found:
+            return None
+
+    @classmethod
+    def check_already_applied_patch(cls, patch):
+        """
+        Function checks if patch was already rebased
+        :param patch:
+        :return: - None if patch is empty
+                 - Patch
+        """
+        rebased_patch_name = cls.get_rebased_patch(patch)
+        # If patch is not rebased yet
+        if not rebased_patch_name:
+            return patch
+        # Check if patch is empty
+        if GenericDiff.check_empty_patch(rebased_patch_name):
+            # If patch is empty then it isn't applied
+            # and is removed
+            return None
+        # Return non empty rebased patch
+        return rebased_patch_name
+
+    @classmethod
+    def apply_patch(cls, patch):
+        """
+        Function applies a patch to a old/new sources
+        """
+        if cls.source_dir == cls.old_sources:
+            # for new_sources we want the same suffix as for old_sources
+            cls.suffix = ''.join(random.choice(string.ascii_letters) for _ in range(6))
+        else:
+            # This check is applied only in case of new_sources
+            # If rebase-helper is called with --continue option
+            if cls.kwargs.get('continue', False):
+                applied = cls.check_already_applied_patch(patch.get_name())
+                if not applied:
+                    patch.set_path(cls.get_rebased_patch(patch.get_name()))
+                    return patch
+                patch.set_path(applied)
+
+        patch_path = patch.get_path()
+        logger.info("Applying patch '{0}' to '{1}'".format(os.path.basename(patch_path),
+                                                           os.path.basename(cls.source_dir)))
+        ret_code = cls.check_patch(patch_path)
+        if int(ret_code) != 0:
+            # unexpected
+            if cls.source_dir == cls.old_sources:
+                raise RuntimeError('Failed to patch old sources')
+            ConsoleHelper.get_message("Applying patch {0} to new source failed. Press Enter to start merge-tool.".
+                                      format(os.path.basename(patch_path)),
+                                      any_input=True)
+            # Running diff_helper in order to merge patch to the upstream version
+            patch_path = cls.execute_diff_helper(patch)
+            # User should clarify whether another patch will be applied
+            if not ConsoleHelper.get_message('Do you want to continue with another patch'):
+                raise KeyboardInterrupt
+        else:
+            ret_code = cls.patch_command(patch_path, patch.get_flags())
+            if ret_code != 0:
+                # unexpected
+                if cls.source_dir == cls.old_sources:
+                    raise RuntimeError('Failed to patch old sources')
+
+                ConsoleHelper.get_message("Applying patch {0} to new source failed. Press Enter to start merge-tool.".
+                                          format(os.path.basename(patch_path)),
+                                          any_input=True)
+                logger.warning('Applying patch failed. '
+                               'Starting merge-tool to fix conflicts manually.')
+                # Running diff_helper in order to merge patch to the upstream version
+                patch[0] = cls.execute_diff_helper(patch)
+
+                # User should clarify whether another patch will be applied
+                if not ConsoleHelper.get_message('Do you want to continue with another patch'):
+                    raise KeyboardInterrupt
+            else:
+                cls.commit_patch(patch_path)
+
+        return patch
+
+    @classmethod
+    def call_git_command(cls, command, directory=None, input_file=None):
+        if directory is None:
+            directory = cls.git_directory
+        cmd = [cls.CMD]
+        cmd.extend(command)
+        output = StringIO()
+        ret_code = ProcessHelper.run_subprocess_cwd(cmd,
+                                                    cwd=directory,
+                                                    input=input_file,
+                                                    output=output)
+        cls.output_data = output.readlines()
+        return ret_code
+
+    @classmethod
+    def _get_untracked_files(cls, output):
+        untracked_files = []
+        for line in output:
+            if not line.startswith("Untracked files:"):
+                continue
+            # skip two lines
+            output.next()
+            output.next()
+
+            for untracked_info in output:
+                if not untracked_info.startswith("\t"):
+                    break
+                untracked_files.append(untracked_info.replace("\t", "").rstrip())
+            # END for each utracked info line
+        # END for each line
+        return untracked_files
+
+    @classmethod
+    def init_git(cls, directory):
+        cls.git_directory = directory
+        repo = Repo.init(directory, bare=False)
+        proc = repo.git.status(untracked_files=True, as_process=True)
+        untracked_files = cls._get_untracked_files(iter(proc.stdout))
+        index = repo.index
+        for f in untracked_files:
+            index.add([f])
+        index.write()
+        index.commit('Initial Commit')
+
+
+    @classmethod
+    def run_patch(cls, old_dir, new_dir, patches, rebased_patches, **kwargs):
+        """
+        The function can be used for patching one
+        directory against another
+        """
+        cls.kwargs = kwargs
+        cls.patches = patches
+        if rebased_patches:
+            cls.rebased_patches = rebased_patches
+        else:
+            cls.rebased_patches = patches
+        cls.old_sources = old_dir
+        cls.new_sources = new_dir
+        cls.output_data = []
+        cls.patched_files = []
+        for directory in [old_dir, new_dir]:
+            cls.init_git(directory)
+
+        for index, patch in enumerate(cls.patches):
+            cls.source_dir = cls.old_sources
+            cls.apply_patch(patch)
+            cls.source_dir = cls.new_sources
+            cls.rebased_patches = cls.rebased_patches
+            patch = cls.apply_patch(cls.rebased_patches[index])
+            cls.patches[index] = patch
+
+        return cls.patches
 
 
 @register_patch_tool

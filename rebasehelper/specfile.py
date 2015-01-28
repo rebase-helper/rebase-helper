@@ -50,6 +50,44 @@ def get_rebase_name(name):
     return os.path.join(dir_name, settings.REBASE_HELPER_RESULTS_DIR, file_name)
 
 
+class PatchList(list):
+    def _get_index_list(self, item):
+        for x in self:
+            if x.get_index() == item.get_index():
+                print x, x.get_path
+                return x
+
+    def __getitem__(self, item):
+        return super(PatchList, self).__getitem__(self._get_index_list(item))
+
+
+class PatchObject(object):
+    """
+    Class represents set of information about patches
+    """
+    path = ''
+    flags = ''
+    index = ''
+    git_generated = ''
+
+    def __init__(self, path, flags, index):
+        self.path = path
+        self.flags = flags
+        self.index = index
+
+    def get_path(self):
+        return self.path
+
+    def get_index(self):
+        return self.index
+
+    def set_path(self, new_path):
+        self.path = new_path
+
+    def get_flags(self):
+        return self.flags
+
+
 class SpecFile(object):
     """
     Class representing a SPEC file
@@ -126,7 +164,7 @@ class SpecFile(object):
         """
         Method returns a list of patches from a spec file
         """
-        patches = {}
+        patch_list = []#PatchList()
         patches_list = [p for p in self.spc.sources if p[2] == 2]
         patch_flags = self._get_patches_flags()
 
@@ -136,11 +174,11 @@ class SpecFile(object):
                 logger.error('Patch {0} does not exist'.format(filename))
                 continue
             if num in patch_flags:
-                #  TODO: Why do we need to know here if patch is git generated??
-                patches[num] = [patch_path, patch_flags[num][0],
-                                patch_flags[num][1], self.is_patch_git_generated(patch_path)]
+                patch = PatchObject(patch_path, patch_flags[num][0], patch_flags[num][1])
+                patch_list.append(patch)
         # dict with <num>: [name, flags, index, git_generated]
-        return patches
+        patch_list = sorted(patch_list, key=lambda x: x.get_index())
+        return patch_list
 
     def copy(self, new_path=None):
         """
@@ -356,8 +394,9 @@ class SpecFile(object):
         """
         Method returns dictionary with patches list.
 
-        :return: dict with <num>: [path, flags, index, git_generated]
+        :return: list of PatchObject
         """
+
         return self.patches
 
     def get_sources(self):
