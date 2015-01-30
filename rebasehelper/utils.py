@@ -28,8 +28,10 @@ import pycurl
 import shutil
 import rpm
 import six
+from six import StringIO
 from six.moves import input
 from distutils.util import strtobool
+from rebasehelper.exceptions import RebaseHelperError
 
 from rebasehelper.logger import logger
 from rebasehelper import settings
@@ -128,6 +130,7 @@ class DownloadHelper(object):
 
             else:
                 curl.close()
+
 
 class ProcessHelper(object):
     """
@@ -447,3 +450,92 @@ class RpmHelper(object):
         h = RpmHelper.get_header_from_rpm(rpm_name)
         name = h[info]
         return name
+
+
+class GitHelper(object):
+    """
+    Class which operates with git repositories
+    """
+    @staticmethod
+    def call_git_command(command, directory, input_file=None, output_file=None):
+        """
+        Class calls git command
+        :param command: git command which is executed
+        :param directory: git directory
+        :param input_file: input file for git operations
+        :return: ret_code and output of git command
+        """
+        cmd = ['git']
+        cmd.extend(command)
+        output_data = None
+        if not output_file:
+            output = StringIO()
+        else:
+            output = output_file
+        ret_code = ProcessHelper.run_subprocess_cwd(cmd,
+                                                    cwd=directory,
+                                                    input=input_file,
+                                                    output=output)
+        if not output_file:
+            output_data = output.readlines()
+            for out in output_data:
+                print out.strip()
+        return ret_code, output_data
+
+    @staticmethod
+    def check_git_config():
+        """
+        Function checks whether you have setup a merge tool in ~/.gitconfig
+        :return: True or False
+        """
+        git_config = []
+        git_config_name = os.path.expanduser('~/{0}'.format(settings.GIT_CONFIG))
+        try:
+            with open(git_config_name) as f:
+                git_config = f.readlines()
+        except IOError:
+            raise RebaseHelperError("Unable to open and read SPEC file '{0}'".format(git_config_name))
+
+        if not git_config:
+            raise RebaseHelperError("File {0} is empty".format(git_config_name))
+
+        merge = [x.strip() for x in git_config if x.startswith('[merge]')]
+        if not merge:
+            raise RebaseHelperError("[merge] section is not defined in {0}.".format(git_config_name))
+        return merge
+
+    @staticmethod
+    def get_commit_hash_log(commit_log, number):
+        commit = commit_log[number]
+        fields = commit.split()
+        # return the hash
+        return fields[0]
+
+    @staticmethod
+    def get_untracked_files(output):
+        untracked_files = []
+        for line in output:
+            if not line.startswith("Untracked files:"):
+                continue
+            # skip two lines
+            output.next()
+            output.next()
+
+            for untracked_info in output:
+                if not untracked_info.startswith("\t"):
+                    break
+                untracked_files.append(untracked_info.replace("\t", "").rstrip())
+            # END for each utracked info line
+        # END for each line
+        return untracked_files
+
+    @staticmethod
+    def get_modified_files(output):
+        modified_files = []
+        for line in output:
+            if 'modified:' not in line:
+                continue
+            modified_files.append(line.strip().split()[1])
+        return modified_files
+
+

@@ -30,7 +30,7 @@ from rebasehelper.specfile import SpecFile, get_rebase_name
 from rebasehelper.logger import logger, LoggerHelper
 from rebasehelper import settings
 from rebasehelper import output_tool
-from rebasehelper.utils import PathHelper, RpmHelper, ConsoleHelper
+from rebasehelper.utils import PathHelper, RpmHelper, ConsoleHelper, GitHelper
 from rebasehelper.checker import Checker
 from rebasehelper.build_helper import Builder, SourcePackageBuildError, BinaryPackageBuildError
 from rebasehelper.patch_helper import Patcher
@@ -308,7 +308,6 @@ class Application(object):
             rebased_patches = patch.patch(sources[0],
                                           sources[1],
                                           self.spec_file.get_patches(),
-                                          self.rebase_spec_file.get_patches(),
                                           **self.kwargs)
         except RuntimeError as run_e:
             raise RebaseHelperError(run_e.message)
@@ -413,6 +412,7 @@ class Application(object):
     def run(self):
         sources = self.prepare_sources()
 
+        GitHelper.check_git_config()
         if not self.conf.build_only:
             self.patch_sources(sources)
 

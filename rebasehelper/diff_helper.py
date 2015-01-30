@@ -28,6 +28,7 @@ from rebasehelper.logger import logger
 from rebasehelper.utils import ConsoleHelper
 from rebasehelper.utils import ProcessHelper
 from rebasehelper import settings
+from rebasehelper.utils import GitHelper
 
 diff_tools = {}
 
@@ -153,15 +154,14 @@ class MeldDiffTool(DiffBase):
         return ProcessHelper.run_subprocess(cmd, output=ProcessHelper.DEV_NULL)
 
     @classmethod
-    def run_mergetool(cls, old_dir, new_dir, suffix, failed_files):
-        suffix = "." + suffix
+    def run_mergetool(cls, old_dir, new_dir, failed_files):
 
         logger.debug("running merge")
 
         for index, fname in enumerate(failed_files):
-            base = os.path.join(old_dir, fname + suffix)
-            remote = os.path.join(old_dir, fname)
-            local = os.path.join(new_dir, fname + suffix)
+            base = os.path.join(old_dir, fname + suffix) # old w/o patch
+            remote = os.path.join(old_dir, fname) # new with patch
+            local = os.path.join(new_dir, fname + suffix) # new w/o patch
             merged = os.path.join(new_dir, fname)
 
             # http://stackoverflow.com/questions/11133290/git-merging-using-meld
@@ -202,11 +202,11 @@ class Differ(object):
         logger.debug("Diff between files {0} and {1}".format(old, new))
         return self._tool.run_diff(old, new)
 
-    def merge(self, old_dir, new_dir, suffix, failed_files):
+    def merge(self, old_dir, new_dir, failed_files):
         """
         Tool for resolving merge conflicts
         """
-        self._tool.run_mergetool(old_dir, new_dir, suffix, failed_files)
+        self._tool.run_mergetool(old_dir, new_dir, failed_files)
 
     @staticmethod
     def get_supported_tools():
