@@ -303,7 +303,6 @@ class Application(object):
         # Patch sources
         self.kwargs['diff_tool'] = self.conf.difftool
         patch = Patcher(self.conf.patchtool)
-
         try:
             rebased_patches = patch.patch(sources[0],
                                           sources[1],

@@ -66,13 +66,11 @@ class PatchObject(object):
     Class represents set of information about patches
     """
     path = ''
-    flags = ''
     index = ''
     git_generated = ''
 
-    def __init__(self, path, flags, index):
+    def __init__(self, path, index):
         self.path = path
-        self.flags = flags
         self.index = index
 
     def get_path(self):
@@ -83,9 +81,6 @@ class PatchObject(object):
 
     def set_path(self, new_path):
         self.path = new_path
-
-    def get_flags(self):
-        return self.flags
 
     def get_patch_name(self):
         return os.path.basename(self.path)
@@ -168,7 +163,7 @@ class SpecFile(object):
         """
         Method returns a list of patches from a spec file
         """
-        patch_list = []#PatchList()
+        patch_list = []
         patches_list = [p for p in self.spc.sources if p[2] == 2]
         patch_flags = self._get_patches_flags()
 
@@ -177,10 +172,11 @@ class SpecFile(object):
             if not os.path.exists(patch_path):
                 logger.error('Patch {0} does not exist'.format(filename))
                 continue
-            if num in patch_flags:
-                patch = PatchObject(patch_path, patch_flags[num][0], patch_flags[num][1])
-                patch_list.append(patch)
-        # dict with <num>: [name, flags, index, git_generated]
+            patch_num = num
+            if patch_flags:
+                if num in patch_flags:
+                    patch_num = patch_flags[num]
+            patch_list.append(PatchObject(patch_path, patch_num))
         patch_list = sorted(patch_list, key=lambda x: x.get_index())
         return patch_list
 
@@ -326,11 +322,13 @@ class SpecFile(object):
         """
         patch_flags = {}
         patches = [x for x in self.spec_content if x.startswith(PATCH_PREFIX)]
+        if not patches:
+            return None
         for index, line in enumerate(patches):
             num, option = self.get_patch_option(line)
             num = num.replace(PATCH_PREFIX, '')
-            patch_flags[int(num)] = (option, index)
-        # {num: (flags, index of application)}
+            patch_flags[int(num)] = index
+        # {num: index of application}
         return patch_flags
 
     def get_release(self):

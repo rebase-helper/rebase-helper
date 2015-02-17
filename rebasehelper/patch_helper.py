@@ -22,17 +22,10 @@
 
 import os
 import six
-import random
-import string
-
-from six import StringIO
-
-from rebasehelper import settings
 from rebasehelper.logger import logger
 from rebasehelper.utils import ConsoleHelper
-from rebasehelper.utils import ProcessHelper, GitHelper, GitRebaseError
-from rebasehelper.specfile import get_rebase_name, PatchObject
-from rebasehelper.diff_helper import Differ, GenericDiff
+from rebasehelper.utils import GitHelper, GitRebaseError
+from rebasehelper.diff_helper import GenericDiff
 from rebasehelper.exceptions import RebaseHelperError
 
 from git import Repo
@@ -127,7 +120,6 @@ class GitPatchTool(PatchBase):
         patch_name = ""
         modified_patches = []
         deleted_patches = []
-        print cls.kwargs
         while True:
             if int(ret_code) != 0:
                 patch_name = cls.git_helper.get_unapplied_patch(cls.output_data)
@@ -218,35 +210,33 @@ class GitPatchTool(PatchBase):
         return rebased_patch_name
 
     @classmethod
-    def operate_with_patch(cls, patch):
+    def apply_old_patches(cls):
         """
         Function applies a patch to a old/new sources
         """
-        if cls.source_dir != cls.old_sources:
-            # This check is applied only in case of new_sources
-            # If rebase-helper is called with --continue option
-            if cls.kwargs.get('continue', False):
-                applied = cls.check_already_applied_patch(patch.get_name())
-                if not applied:
-                    patch.set_path(cls.get_rebased_patch(patch.get_name()))
-                    return patch
-                patch.set_path(applied)
+        for patch in cls.patches:
+            patch_path = patch.get_path()
+            logger.info("Applying patch '{0}' to '{1}'".format(os.path.basename(patch_path),
+                                                               os.path.basename(cls.source_dir)))
+            #ret_code = cls.apply_patch(patch_path)
+            logger.debug('Applying patch with am')
 
-        patch_path = patch.get_path()
-        logger.info("Applying patch '{0}' to '{1}'".format(os.path.basename(patch_path),
-                                                           os.path.basename(cls.source_dir)))
-        ret_code = cls.apply_patch(patch_path)
-        if int(ret_code) != 0:
-            # unexpected
-            if cls.source_dir == cls.old_sources:
-                raise RuntimeError('Failed to patch old sources')
-
-        return patch
+            ret_code = cls.git_helper.command_am(input_file=patch_path)
+            if int(ret_code) != 0:
+                ret_code = cls.git_helper.command_am(parameters='--abort', input_file=patch_path)
+                logger.debug('Applying patch with git am failed.')
+                ret_code = cls.git_helper.command_apply(input_file=patch_path)
+                cls.commit_patch(patch_path)
+                # unexpected
+                if cls.source_dir == cls.old_sources:
+                    raise RuntimeError('Failed to patch old sources')
 
     @classmethod
     def init_git(cls, directory):
         cls.git_directory = directory
         repo = Repo.init(directory, bare=False)
+        cls.git_helper.command_config('user.email', '"rebase-helper@redhat.com"')
+        cls.git_helper.command_config('user.name', '"Fedora rebase-helper team"')
         proc = repo.git.status(untracked_files=True, as_process=True)
         untracked_files = GitHelper.get_untracked_files(iter(proc.stdout))
         index = repo.index
@@ -268,13 +258,12 @@ class GitPatchTool(PatchBase):
         cls.new_sources = new_dir
         cls.output_data = []
         cls.patched_files = []
+        cls.git_helper = GitHelper(cls.old_sources)
         cls.old_repo = cls.init_git(old_dir)
         cls.new_repo = cls.init_git(new_dir)
-        cls.git_helper = GitHelper(cls.old_sources)
 
-        for patch in cls.patches:
-            cls.source_dir = cls.old_sources
-            cls.operate_with_patch(patch)
+        cls.source_dir = cls.old_sources
+        cls.apply_old_patches()
 
         return cls._git_rebase()
 

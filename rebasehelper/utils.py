@@ -650,3 +650,9 @@ class GitHelper(object):
         ret_code, output = self._call_git_command(cmd, input_file=input_file)
         return ret_code
 
+    def command_config(self, parameters, variable):
+        cmd = ['config']
+        cmd.append(parameters)
+        cmd.append(variable)
+        ret_code, output = self._call_git_command(cmd)
+        return ret_code
