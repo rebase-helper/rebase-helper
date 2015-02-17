@@ -311,7 +311,6 @@ class Application(object):
                                           **self.kwargs)
         except RuntimeError as run_e:
             raise RebaseHelperError(run_e.message)
-
         update_patches = self.rebase_spec_file.write_updated_patches(rebased_patches)
         OutputLogger.set_patch_output('Patches:', update_patches)
 
@@ -331,7 +330,7 @@ class Application(object):
             build_dict['name'] = spec_object.get_package_name()
             build_dict['version'] = spec_object.get_version()
             logger.debug(build_dict)
-            patches = [p[0] for p in six.itervalues(spec_object.get_patches())]
+            patches = [x.get_path() for x in spec_object.get_patches()]
             results_dir = os.path.join(self.results_dir, version)
             spec = spec_object.get_path()
             sources = spec_object.get_sources()

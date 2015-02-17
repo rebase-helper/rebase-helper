@@ -24,14 +24,16 @@ import os
 import six
 import random
 import string
+
 from six import StringIO
 
 from rebasehelper import settings
 from rebasehelper.logger import logger
 from rebasehelper.utils import ConsoleHelper
-from rebasehelper.utils import ProcessHelper, GitHelper
+from rebasehelper.utils import ProcessHelper, GitHelper, GitRebaseError
 from rebasehelper.specfile import get_rebase_name, PatchObject
 from rebasehelper.diff_helper import Differ, GenericDiff
+from rebasehelper.exceptions import RebaseHelperError
 
 from git import Repo
 import git
@@ -80,6 +82,7 @@ class GitPatchTool(PatchBase):
     git_directory = ""
     old_repo = None
     new_repo = None
+    git_helper = None
 
     @classmethod
     def match(cls, cmd):
@@ -92,16 +95,23 @@ class GitPatchTool(PatchBase):
     def apply_patch(cls, patch_name):
         logger.debug('Applying patch with am')
 
-        cmd = ['am']
-        ret_code, cls.output_data = GitHelper.call_git_command(cmd, cls.source_dir, input_file=patch_name)
+        print patch_name
+        ret_code = cls.git_helper.command_am(input_file=patch_name)
         if int(ret_code) != 0:
-            cmd = ['am', '--abort']
-            ret_code, cls.output_data = GitHelper.call_git_command(cmd, cls.source_dir, input_file=patch_name)
+            ret_code = cls.git_helper.command_am(parameters='--abort', input_file=patch_name)
             logger.debug('Applying patch with git am failed.')
-            cmd = ['apply']
-            ret_code, cls.output_data = GitHelper.call_git_command(cmd, cls.source_dir, input_file=patch_name)
+            ret_code = cls.git_helper.command_apply(input_file=patch_name)
             cls.commit_patch(patch_name)
         return ret_code
+
+    @classmethod
+    def _prepare_git(cls, upstream_name):
+        ret_code = cls.git_helper.command_remote_add(upstream_name, cls.new_sources)
+        ret_code = cls.git_helper.command_fetch(upstream_name)
+        cls.output_data = cls.git_helper.command_log(parameters='--pretty=oneline')
+        last_hash = GitHelper.get_commit_hash_log(cls.output_data, 0)
+        init_hash = GitHelper.get_commit_hash_log(cls.output_data, len(cls.output_data)-1)
+        return init_hash, last_hash
 
     @classmethod
     def _git_rebase(cls):
@@ -111,52 +121,48 @@ class GitPatchTool(PatchBase):
         # 3 git rebase -i --onto new_sources/master <oldest_commit_old_source> <the_latest_commit_old_sourcese>
         logger.info('git rebase to new_upstream')
         upstream = 'new_upstream'
-        ret_code, cls.output_data = GitHelper.call_git_command(['remote', 'add', upstream, cls.new_sources],
-                                                               cls.old_sources)
-        ret_code, cls.output_data = GitHelper.call_git_command(['fetch', upstream],
-                                                               cls.old_sources,
-                                                               )
-        ret_code, cls.output_data = GitHelper.call_git_command(['log', '--pretty=oneline'],
-                                                               cls.old_sources)
-        first_hash = GitHelper.get_commit_hash_log(cls.output_data, 0)
-        init_hash = GitHelper.get_commit_hash_log(cls.output_data, len(cls.output_data)-1)
-        ret_code, cls.output_data = GitHelper.call_git_command(['rebase', '--onto', upstream+'/master',
-                                                                init_hash, first_hash],
-                                                               cls.old_sources)
+        init_hash, last_hash = cls._prepare_git(upstream)
+        ret_code, cls.output_data = cls.git_helper.command_rebase(parameters='--onto', upstream_name=upstream,
+                                                 first_hash=init_hash, last_hash=last_hash)
+        patch_name = ""
+        modified_patches = []
+        deleted_patches = []
+        print cls.kwargs
         while True:
             if int(ret_code) != 0:
-                ret_code, cls.output_data = GitHelper.call_git_command(['mergetool'],
-                                                                       cls.old_sources)
-                proc = cls.old_repo.git.status(untracked_files=True, as_process=True)
-                modified = GitHelper.get_modified_files(iter(proc.stdout))
-                if modified:
+                patch_name = cls.git_helper.get_unapplied_patch(cls.output_data)
+                ret_code = cls.git_helper.command_mergetool()
+                #proc = cls.old_repo.git.status(untracked_files=True, as_process=True)
+                ret_code = cls.git_helper.command_add_files(parameters='--all')
+                base_name = os.path.join(cls.kwargs['results_dir'], patch_name)
+                ret_code = cls.git_helper.command_diff('HEAD', output_file=base_name)
+                with open(base_name, "r") as f:
+                    cls.output_data = f.readlines()
+                if not cls.output_data:
+                    ret_code, cls.output_data = cls.git_helper.command_rebase('--skip')
+                    deleted_patches.append(base_name)
+                else:
                     logger.info('Some files were not modified')
-                    base_name = os.path.join(settings.REBASE_HELPER_RESULTS_DIR, os.path.basename(modified[0]))
-                    ret_code, cls.output_data = GitHelper.call_git_command(['commit', '-m', 'Patch name'],
-                                                                           cls.old_sources)
-                    ret_code, cls.output_data = GitHelper.call_git_command(['diff', 'HEAD~1'],
-                                                                           cls.old_sources,
-                                                                           output_file=base_name
-                                                                           )
-
+                    ret_code = cls.git_helper.command_commit(message=patch_name)
+                    ret_code, cls.output_data = cls.git_helper.command_diff('HEAD~1', output_file=base_name)
+                    modified_patches.append(base_name)
+                    ret_code, cls.output_data = cls.git_helper.command_rebase('--skip')
                 if not ConsoleHelper.get_message('Do you want to continue with another patch'):
                     raise KeyboardInterrupt
-                ret_code, cls.output_data = GitHelper.call_git_command(['rebase', '--skip'],
-                                                                       cls.old_sources)
             else:
                 break
 
         #TODO correct settings for merge tool in ~/.gitconfig
         # currently now meld is not started
+        return {'modified': modified_patches, 'deleted': deleted_patches}
 
     @classmethod
     def commit_patch(cls, patch_name):
         logger.debug('Commit patch')
-        ret_code, cls.output_data = GitHelper.call_git_command(['add', '--all'], cls.source_dir)
+        ret_code = cls.git_helper.command_add_files('--all')
         if int(ret_code) != 0:
             logger.error('We are not able to add changed files to local git repository.')
-        ret_code, cls.output_data = GitHelper.call_git_command(['commit', '-m', '"Patch: {0}'.format(os.path.basename(patch_name))],
-                                                               cls.source_dir)
+        ret_code = cls.git_helper.command_commit(message='Patch: {0}'.format(os.path.basename(patch_name)))
         if int(ret_code) != 0:
             logger.error('We are not able to commit changes.')
         return ret_code
@@ -264,13 +270,13 @@ class GitPatchTool(PatchBase):
         cls.patched_files = []
         cls.old_repo = cls.init_git(old_dir)
         cls.new_repo = cls.init_git(new_dir)
+        cls.git_helper = GitHelper(cls.old_sources)
 
         for patch in cls.patches:
             cls.source_dir = cls.old_sources
             cls.operate_with_patch(patch)
 
-        cls._git_rebase()
-        return cls.patches
+        return cls._git_rebase()
 
 
 class Patcher(object):

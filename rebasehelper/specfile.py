@@ -87,6 +87,9 @@ class PatchObject(object):
     def get_flags(self):
         return self.flags
 
+    def get_patch_name(self):
+        return os.path.basename(self.path)
+
 
 class SpecFile(object):
     """
@@ -138,6 +141,7 @@ class SpecFile(object):
         self.sources = self._get_initial_sources_list()
         self.extra_version = SpecFile.extract_version_from_archive_name(self.get_archive(),
                                                                         self._get_raw_source_string(0))[1]
+        self.patches = self._get_initial_patches_list()
 
     def _get_initial_sources_list(self):
         """
@@ -728,37 +732,25 @@ class SpecFile(object):
         if not patches:
             return None
 
-        updated_patches = {}
-        updated_patches['deleted'] = []
-        updated_patches['modified'] = []
-
         removed_patches = []
         for index, line in enumerate(self.spec_content):
             if line.startswith('Patch'):
                 fields = line.strip().split()
+                patch_name = fields[1]
                 patch_num = self._get_patch_number(fields)
-                #  TODO: Add explanation comment
-                if int(patch_num) not in patches:
-                    continue
-                patch_name = patches[int(patch_num)][0]
-                comment = ""
-                #  TODO: this method should not check this, but rather get final list of removed/empty patches (probably from Patch tool)
-                #  TODO: This while logic should go to Patch tool, not into SPEC file!
-                if settings.REBASE_HELPER_RESULTS_DIR in patch_name:
-                    if GenericDiff.check_empty_patch(patch_name):
-                        comment = '#'
-                        removed_patches.append(patch_num)
-                        #del patches[int(patch_num)]
-                        updated_patches['deleted'].append(patch_name)
-                    else:
-                        updated_patches['modified'].append(patch_name)
-                #  TODO: this commenting should be done in _comment_out_patches() method
-                self.spec_content[index] = comment + ' '.join(fields[:-1]) + ' ' + os.path.basename(patch_name) + '\n'
+                patch = [x for x in patches['deleted'] if patch_name in x]
+                if patch:
+                    comment = '#'
+                    removed_patches.append(patch_num)
+                    self.spec_content[index] = comment + ' '.join(fields[:-1]) + ' ' + os.path.basename(patch_name) + '\n'
+                patch = [x for x in patches['modified'] if patch_name in x]
+                if patch:
+                    fields[1] = os.path.join(settings.REBASE_HELPER_RESULTS_DIR, patch_name)
+                    self.spec_content[index] = ' '.join(fields) + '\n'
 
         self._comment_out_patches(removed_patches)
         #  save changes
         self.save()
-        return updated_patches
 
     def save(self):
         """
