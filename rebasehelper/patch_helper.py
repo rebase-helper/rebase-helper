@@ -217,16 +217,9 @@ class GitPatchTool(PatchBase):
             patch_path = patch.get_path()
             logger.info("Applying patch '{0}' to '{1}'".format(os.path.basename(patch_path),
                                                                os.path.basename(cls.source_dir)))
-            #ret_code = cls.apply_patch(patch_path)
-            logger.debug('Applying patch with am')
-
-            ret_code = cls.git_helper.command_am(input_file=patch_path)
+            ret_code = cls.apply_patch(patch_path)
+            # unexpected
             if int(ret_code) != 0:
-                ret_code = cls.git_helper.command_am(parameters='--abort', input_file=patch_path)
-                logger.debug('Applying patch with git am failed.')
-                ret_code = cls.git_helper.command_apply(input_file=patch_path)
-                cls.commit_patch(patch_path)
-                # unexpected
                 if cls.source_dir == cls.old_sources:
                     raise RuntimeError('Failed to patch old sources')
 
