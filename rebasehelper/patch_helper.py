@@ -72,7 +72,6 @@ class GitPatchTool(PatchBase):
     new_sources = ""
     diff_cls = None
     output_data = []
-    git_directory = ""
     old_repo = None
     new_repo = None
     git_helper = None
@@ -84,17 +83,15 @@ class GitPatchTool(PatchBase):
         else:
             return False
 
-    @classmethod
-    def apply_patch(cls, patch_name):
+    @staticmethod
+    def apply_patch(git_helper, patch_name):
         logger.debug('Applying patch with am')
 
-        print patch_name
-        ret_code = cls.git_helper.command_am(input_file=patch_name)
+        ret_code = git_helper.command_am(input_file=patch_name)
         if int(ret_code) != 0:
-            ret_code = cls.git_helper.command_am(parameters='--abort', input_file=patch_name)
+            ret_code = git_helper.command_am(parameters='--abort', input_file=patch_name)
             logger.debug('Applying patch with git am failed.')
-            ret_code = cls.git_helper.command_apply(input_file=patch_name)
-            cls.commit_patch(patch_name)
+            ret_code = git_helper.command_apply(input_file=patch_name)
         return ret_code
 
     @classmethod
@@ -115,8 +112,10 @@ class GitPatchTool(PatchBase):
         logger.info('git rebase to new_upstream')
         upstream = 'new_upstream'
         init_hash, last_hash = cls._prepare_git(upstream)
-        ret_code, cls.output_data = cls.git_helper.command_rebase(parameters='--onto', upstream_name=upstream,
-                                                 first_hash=init_hash, last_hash=last_hash)
+        ret_code, cls.output_data = cls.git_helper.command_rebase(parameters='--onto',
+                                                                  upstream_name=upstream,
+                                                                  first_hash=init_hash,
+                                                                  last_hash=last_hash)
         patch_name = ""
         modified_patches = []
         deleted_patches = []
@@ -147,15 +146,15 @@ class GitPatchTool(PatchBase):
         # currently now meld is not started
         return {'modified': modified_patches, 'deleted': deleted_patches}
 
-    @classmethod
-    def commit_patch(cls, patch_name):
+    @staticmethod
+    def commit_patch(git_helper, patch_name):
         logger.debug('Commit patch')
-        ret_code = cls.git_helper.command_add_files('--all')
+        ret_code = git_helper.command_add_files('--all')
         if int(ret_code) != 0:
-            logger.error('We are not able to add changed files to local git repository.')
-        ret_code = cls.git_helper.command_commit(message='Patch: {0}'.format(os.path.basename(patch_name)))
+            raise GitRebaseError('We are not able to add changed files to local git repository.')
+        ret_code = git_helper.command_commit(message='Patch: {0}'.format(os.path.basename(patch_name)))
         if int(ret_code) != 0:
-            logger.error('We are not able to commit changes.')
+            raise GitRebaseError('We are not able to commit changes.')
         return ret_code
 
     @classmethod
@@ -209,23 +208,23 @@ class GitPatchTool(PatchBase):
         return rebased_patch_name
 
     @classmethod
-    def apply_old_patches(cls):
+    def apply_old_patches(cls, patches):
         """
         Function applies a patch to a old/new sources
         """
-        for patch in cls.patches:
+        for patch in patches:
             patch_path = patch.get_path()
             logger.info("Applying patch '{0}' to '{1}'".format(os.path.basename(patch_path),
                                                                os.path.basename(cls.source_dir)))
-            ret_code = cls.apply_patch(patch_path)
+            ret_code = GitPatchTool.apply_patch(cls.git_helper, patch_path)
             # unexpected
             if int(ret_code) != 0:
+                GitPatchTool.commit_patch(cls.git_helper, patch_path)
                 if cls.source_dir == cls.old_sources:
                     raise RuntimeError('Failed to patch old sources')
 
     @classmethod
     def init_git(cls, directory):
-        cls.git_directory = directory
         repo = Repo.init(directory, bare=False)
         proc = repo.git.status(untracked_files=True, as_process=True)
         untracked_files = GitHelper.get_untracked_files(iter(proc.stdout))
@@ -243,7 +242,6 @@ class GitPatchTool(PatchBase):
         directory against another
         """
         cls.kwargs = kwargs
-        cls.patches = patches
         cls.old_sources = old_dir
         cls.new_sources = new_dir
         cls.output_data = []
@@ -253,7 +251,7 @@ class GitPatchTool(PatchBase):
         cls.new_repo = cls.init_git(new_dir)
 
         cls.source_dir = cls.old_sources
-        cls.apply_old_patches()
+        cls.apply_old_patches(patches)
 
         return cls._git_rebase()
 
