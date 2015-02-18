@@ -227,8 +227,6 @@ class GitPatchTool(PatchBase):
     def init_git(cls, directory):
         cls.git_directory = directory
         repo = Repo.init(directory, bare=False)
-        cls.git_helper.command_config('user.email', '"rebase-helper@redhat.com"')
-        cls.git_helper.command_config('user.name', '"Fedora rebase-helper team"')
         proc = repo.git.status(untracked_files=True, as_process=True)
         untracked_files = GitHelper.get_untracked_files(iter(proc.stdout))
         index = repo.index
