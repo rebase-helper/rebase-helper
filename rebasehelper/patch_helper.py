@@ -28,8 +28,8 @@ from rebasehelper.utils import GitHelper, GitRebaseError
 from rebasehelper.diff_helper import GenericDiff
 from rebasehelper.exceptions import RebaseHelperError
 
-from git import Repo
-import git
+#from git import Repo
+#import git
 
 patch_tools = {}
 
@@ -110,7 +110,7 @@ class GitPatchTool(PatchBase):
         # 1) git remote add new_sources <path_to_new_sources>
         # 2) git fetch new_sources
         # 3 git rebase -i --onto new_sources/master <oldest_commit_old_source> <the_latest_commit_old_sourcese>
-        logger.info('git rebase to new_upstream')
+        logger.info('Rebase operation is ongoing...')
         upstream = 'new_upstream'
         init_hash, last_hash = cls._prepare_git(upstream)
         ret_code, cls.output_data = cls.git_helper.command_rebase(parameters='--onto',
@@ -154,8 +154,6 @@ class GitPatchTool(PatchBase):
         if int(ret_code) != 0:
             raise GitRebaseError('We are not able to add changed files to local git repository.')
         ret_code = git_helper.command_commit(message='Patch: {0}'.format(os.path.basename(patch_name)))
-        if int(ret_code) != 0:
-            raise GitRebaseError('We are not able to commit changes.')
         return ret_code
 
     @classmethod
@@ -225,15 +223,10 @@ class GitPatchTool(PatchBase):
 
     @classmethod
     def init_git(cls, directory):
-        repo = Repo.init(directory, bare=False)
-        proc = repo.git.status(untracked_files=True, as_process=True)
-        untracked_files = GitHelper.get_untracked_files(iter(proc.stdout))
-        index = repo.index
-        for f in untracked_files:
-            index.add([f])
-        index.write()
-        index.commit('Initial Commit')
-        return repo
+        gh = GitHelper(directory)
+        ret_code = gh.command_init(directory)
+        gh.command_add_files('.')
+        gh.command_commit(message='Initial Commit')
 
     @classmethod
     def run_patch(cls, old_dir, new_dir, patches, **kwargs):
@@ -245,10 +238,9 @@ class GitPatchTool(PatchBase):
         cls.old_sources = old_dir
         cls.new_sources = new_dir
         cls.output_data = []
-        cls.patched_files = []
+        cls.init_git(old_dir)
+        cls.init_git(new_dir)
         cls.git_helper = GitHelper(cls.old_sources)
-        cls.old_repo = cls.init_git(old_dir)
-        cls.new_repo = cls.init_git(new_dir)
 
         cls.source_dir = cls.old_sources
         cls.apply_old_patches(patches)

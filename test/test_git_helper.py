@@ -56,14 +56,13 @@ class TestGitHelper(BaseTest):
         archive.extract(dir_name)
 
     def _init_git_repo(self, dirname):
-        repo = GitPatchTool.init_git(dirname)
-        return repo
+        GitPatchTool.init_git(dirname)
 
     def _parse_commit_log(self):
         commit_log = self.git_helper.command_log(parameters='--pretty=oneline')
         commit_names = []
         for commit in commit_log:
-            commit = commit.split()[1:]
+            commit = commit.decode('utf-8').split()[1:]
             commit_names.append(' '.join(commit))
         return commit_names
 
@@ -75,7 +74,7 @@ class TestGitHelper(BaseTest):
         self._extract_sources(self.OLD_SOURCES, self.GIT_OLD_DIR)
         self._extract_sources(self.NEW_SOURCES, self.GIT_NEW_DIR)
         self.git_helper = GitHelper(self.old_git_path)
-        self.old_git_repo = self._init_git_repo(self.old_git_path)
+        self._init_git_repo(self.old_git_path)
 
     def test_git_log(self):
         commit_message = self._parse_commit_log()

@@ -498,7 +498,7 @@ class GitHelper(object):
         if not output_file:
             out = output.readlines()
             for o in out:
-                output_data.append(o.strip())
+                output_data.append(o.strip().encode('ascii', 'ignore'))
         return ret_code, output_data
 
     @staticmethod
@@ -574,6 +574,12 @@ One of the possible configuration can be:\n
         # We need to return only patch name
         return fields[len(fields)-1]
 
+    def command_init(self, directory):
+        cmd = ['init']
+        cmd.append(directory)
+        ret_code, output = self._call_git_command(cmd)
+        return ret_code
+
     def command_commit(self, message=None):
         """
         Method commits message to Git
@@ -596,6 +602,12 @@ One of the possible configuration can be:\n
         cmd.append('add')
         cmd.append(upstream_name)
         cmd.append(directory)
+        ret_code, output = self._call_git_command(cmd)
+        return ret_code
+
+    def command_status(self):
+        cmd = []
+        cmd.append('status')
         ret_code, output = self._call_git_command(cmd)
         return ret_code
 
