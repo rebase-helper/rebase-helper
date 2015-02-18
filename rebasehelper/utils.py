@@ -495,11 +495,8 @@ class GitHelper(object):
                                                     cwd=self.git_directory,
                                                     input=input_file,
                                                     output=output)
-        if not output_file:
-            output_data = output.readlines()
-            for out in output_data:
-                print out.strip()
-        return ret_code, output_data
+        logger.debug(output.readlines())
+        return ret_code, output.readlines()
 
     @staticmethod
     def check_git_config():

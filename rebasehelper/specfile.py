@@ -54,7 +54,6 @@ class PatchList(list):
     def _get_index_list(self, item):
         for x in self:
             if x.get_index() == item.get_index():
-                print x, x.get_path
                 return x
 
     def __getitem__(self, item):
