@@ -92,6 +92,7 @@ class GitPatchTool(PatchBase):
             ret_code = git_helper.command_am(parameters='--abort', input_file=patch_name)
             logger.debug('Applying patch with git am failed.')
             ret_code = git_helper.command_apply(input_file=patch_name)
+            GitPatchTool.commit_patch(git_helper, patch_name)
         return ret_code
 
     @classmethod
@@ -99,7 +100,7 @@ class GitPatchTool(PatchBase):
         ret_code = cls.git_helper.command_remote_add(upstream_name, cls.new_sources)
         ret_code = cls.git_helper.command_fetch(upstream_name)
         cls.output_data = cls.git_helper.command_log(parameters='--pretty=oneline')
-        last_hash = GitHelper.get_commit_hash_log(cls.output_data, 0)
+        last_hash = GitHelper.get_commit_hash_log(cls.output_data, number=0)
         init_hash = GitHelper.get_commit_hash_log(cls.output_data, len(cls.output_data)-1)
         return init_hash, last_hash
 
@@ -219,7 +220,6 @@ class GitPatchTool(PatchBase):
             ret_code = GitPatchTool.apply_patch(cls.git_helper, patch_path)
             # unexpected
             if int(ret_code) != 0:
-                GitPatchTool.commit_patch(cls.git_helper, patch_path)
                 if cls.source_dir == cls.old_sources:
                     raise RuntimeError('Failed to patch old sources')
 

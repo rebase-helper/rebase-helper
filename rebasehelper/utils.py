@@ -486,7 +486,7 @@ class GitHelper(object):
         cmd = []
         cmd.append(self.GIT)
         cmd.extend(command)
-        output_data = None
+        output_data = []
         if not output_file:
             output = StringIO()
         else:
@@ -495,8 +495,11 @@ class GitHelper(object):
                                                     cwd=self.git_directory,
                                                     input=input_file,
                                                     output=output)
-        logger.debug(output.readlines())
-        return ret_code, output.readlines()
+        if not output_file:
+            out = output.readlines()
+            for o in out:
+                output_data.append(o.strip())
+        return ret_code, output_data
 
     @staticmethod
     def check_git_config():
@@ -529,10 +532,9 @@ One of the possible configuration can be:\n
         return merge
 
     @staticmethod
-    def get_commit_hash_log(commit_log, number):
+    def get_commit_hash_log(commit_log, number=None):
         commit = commit_log[number]
         fields = commit.split()
-        # return the hash
         return fields[0]
 
     @staticmethod
