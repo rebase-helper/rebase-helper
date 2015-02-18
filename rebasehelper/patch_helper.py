@@ -131,16 +131,15 @@ class GitPatchTool(PatchBase):
                 with open(base_name, "r") as f:
                     cls.output_data = f.readlines()
                 if not cls.output_data:
-                    ret_code, cls.output_data = cls.git_helper.command_rebase('--skip')
                     deleted_patches.append(base_name)
                 else:
                     logger.info('Some files were not modified')
                     ret_code = cls.git_helper.command_commit(message=patch_name)
                     ret_code, cls.output_data = cls.git_helper.command_diff('HEAD~1', output_file=base_name)
                     modified_patches.append(base_name)
-                    ret_code, cls.output_data = cls.git_helper.command_rebase('--skip')
                 if not ConsoleHelper.get_message('Do you want to continue with another patch'):
                     raise KeyboardInterrupt
+                ret_code, cls.output_data = cls.git_helper.command_rebase('--skip')
             else:
                 break
 
