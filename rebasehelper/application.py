@@ -92,11 +92,9 @@ class Application(object):
         self._initialize_data()
 
         # check the workspace dir
-        self._check_workspace_dir()
-        if self.conf.build_only:
-            self._delete_old_builds()
+        if not self.conf.cont:
+            self._check_workspace_dir()
         if self.conf.cont or self.conf.build_only:
-            self._find_old_data()
             self._delete_old_builds()
 
     def _add_debug_log_file(self):

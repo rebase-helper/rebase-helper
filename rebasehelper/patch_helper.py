@@ -110,13 +110,18 @@ class GitPatchTool(PatchBase):
         # 1) git remote add new_sources <path_to_new_sources>
         # 2) git fetch new_sources
         # 3 git rebase -i --onto new_sources/master <oldest_commit_old_source> <the_latest_commit_old_sourcese>
-        logger.info('Rebase operation is ongoing...')
-        upstream = 'new_upstream'
-        init_hash, last_hash = cls._prepare_git(upstream)
-        ret_code, cls.output_data = cls.git_helper.command_rebase(parameters='--onto',
-                                                                  upstream_name=upstream,
-                                                                  first_hash=init_hash,
-                                                                  last_hash=last_hash)
+        if not cls.cont:
+            logger.info('Rebase operation is ongoing...')
+            upstream = 'new_upstream'
+            init_hash, last_hash = cls._prepare_git(upstream)
+            ret_code, cls.output_data = cls.git_helper.command_rebase(parameters='--onto',
+                                                                      upstream_name=upstream,
+                                                                      first_hash=init_hash,
+                                                                      last_hash=last_hash)
+        else:
+            logger.info('Rebase operation continues...')
+            ret_code, cls.output_data = cls.git_helper.command_rebase(parameters='--skip')
+            print cls.output_data
         patch_name = ""
         modified_patches = []
         deleted_patches = []
@@ -157,56 +162,6 @@ class GitPatchTool(PatchBase):
         return ret_code
 
     @classmethod
-    def get_failed_patched_files(cls, patch_name):
-        """
-        Function gets a lists of patched files from patch command.
-        """
-        failed_files = []
-        for data in cls.output_data:
-            # First we try to find what file is patched
-            if "patch failed:" not in data.strip():
-                continue
-            fields = data.split()
-            failed_file = fields[len(fields)-1]
-            failed_files.append(failed_file.split(':')[0])
-        return failed_files
-
-    @classmethod
-    def get_rebased_patch(cls, patch):
-        """
-        Function finds patch in already rebases patches
-        :param patch:
-        :return:
-        """
-        # Check if patch is in rebased patches
-        found = False
-        for value in six.itervalues(cls.rebased_patches):
-            if os.path.basename(patch) in value[0]:
-                return value[0]
-        if not found:
-            return None
-
-    @classmethod
-    def check_already_applied_patch(cls, patch):
-        """
-        Function checks if patch was already rebased
-        :param patch:
-        :return: - None if patch is empty
-                 - Patch
-        """
-        rebased_patch_name = cls.get_rebased_patch(patch)
-        # If patch is not rebased yet
-        if not rebased_patch_name:
-            return patch
-        # Check if patch is empty
-        if GenericDiff.check_empty_patch(rebased_patch_name):
-            # If patch is empty then it isn't applied
-            # and is removed
-            return None
-        # Return non empty rebased patch
-        return rebased_patch_name
-
-    @classmethod
     def apply_old_patches(cls, patches):
         """
         Function applies a patch to a old/new sources
@@ -238,12 +193,14 @@ class GitPatchTool(PatchBase):
         cls.old_sources = old_dir
         cls.new_sources = new_dir
         cls.output_data = []
-        cls.init_git(old_dir)
-        cls.init_git(new_dir)
+        cls.cont = cls.kwargs['continue']
         cls.git_helper = GitHelper(cls.old_sources)
-
-        cls.source_dir = cls.old_sources
-        cls.apply_old_patches(patches)
+        if not os.path.isdir(os.path.join(cls.old_sources, '.git')):
+            cls.init_git(old_dir)
+            cls.init_git(new_dir)
+            cls.source_dir = cls.old_sources
+            cls.apply_old_patches(patches)
+            cls.cont = False
 
         return cls._git_rebase()
 
