@@ -117,10 +117,13 @@ class TestSpecFile(BaseTest):
         assert self.SPEC_FILE_OBJECT.get_sources()[0] == os.path.join(self.WORKING_DIR, 'test-1.0.2.tar.xz')
 
     def test_get_patches(self):
-        expected_patches = {1: [os.path.join(self.WORKING_DIR, self.PATCH_1), '', 0, False],
-                            2: [os.path.join(self.WORKING_DIR, self.PATCH_2), '-p1', 1, False],
-                            3: [os.path.join(self.WORKING_DIR, self.PATCH_3), '-p1', 2, False]}
-        assert self.SPEC_FILE_OBJECT.get_patches() == expected_patches
+        expected_patches = {0: [os.path.join(self.WORKING_DIR, self.PATCH_1), 0],
+                            1: [os.path.join(self.WORKING_DIR, self.PATCH_2), 1],
+                            2: [os.path.join(self.WORKING_DIR, self.PATCH_3), 2]}
+        patches = {}
+        for index, p in enumerate(self.SPEC_FILE_OBJECT.get_patches()):
+            patches[index] = [p.get_path(), p.get_index()]
+        assert patches == expected_patches
 
     def test_get_requires(self):
         expected = set(['openssl-devel', 'pkgconfig', 'texinfo', 'gettext', 'autoconf'])

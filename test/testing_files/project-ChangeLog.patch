@@ -1,0 +1,12 @@
+diff --git a/ChangeLog b/ChangeLog
+index 5728180..f2864d3 100644
+--- a/ChangeLog
++++ b/ChangeLog
+@@ -1,4 +1,4 @@
+-CHangeLOg:
++ChangeLog:
+ - 1.0.0
+-	This includes a several bugfixes.
+-	CVE's reported by upstream
++	This includes several bugfixes.
++	CVE's reported by upstream.

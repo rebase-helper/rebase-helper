@@ -30,7 +30,7 @@ from rebasehelper.specfile import SpecFile, get_rebase_name
 from rebasehelper.logger import logger, LoggerHelper
 from rebasehelper import settings
 from rebasehelper import output_tool
-from rebasehelper.utils import PathHelper, RpmHelper, ConsoleHelper
+from rebasehelper.utils import PathHelper, RpmHelper, ConsoleHelper, GitHelper
 from rebasehelper.checker import Checker
 from rebasehelper.build_helper import Builder, SourcePackageBuildError, BinaryPackageBuildError
 from rebasehelper.patch_helper import Patcher
@@ -92,11 +92,9 @@ class Application(object):
         self._initialize_data()
 
         # check the workspace dir
-        self._check_workspace_dir()
-        if self.conf.build_only:
-            self._delete_old_builds()
+        if not self.conf.cont:
+            self._check_workspace_dir()
         if self.conf.cont or self.conf.build_only:
-            self._find_old_data()
             self._delete_old_builds()
 
     def _add_debug_log_file(self):
@@ -303,16 +301,13 @@ class Application(object):
         # Patch sources
         self.kwargs['diff_tool'] = self.conf.difftool
         patch = Patcher(self.conf.patchtool)
-
         try:
             rebased_patches = patch.patch(sources[0],
                                           sources[1],
                                           self.spec_file.get_patches(),
-                                          self.rebase_spec_file.get_patches(),
                                           **self.kwargs)
         except RuntimeError as run_e:
             raise RebaseHelperError(run_e.message)
-
         update_patches = self.rebase_spec_file.write_updated_patches(rebased_patches)
         OutputLogger.set_patch_output('Patches:', update_patches)
 
@@ -332,7 +327,7 @@ class Application(object):
             build_dict['name'] = spec_object.get_package_name()
             build_dict['version'] = spec_object.get_version()
             logger.debug(build_dict)
-            patches = [p[0] for p in six.itervalues(spec_object.get_patches())]
+            patches = [x.get_path() for x in spec_object.get_patches()]
             results_dir = os.path.join(self.results_dir, version)
             spec = spec_object.get_path()
             sources = spec_object.get_sources()
@@ -413,6 +408,7 @@ class Application(object):
     def run(self):
         sources = self.prepare_sources()
 
+        GitHelper.check_git_config()
         if not self.conf.build_only:
             self.patch_sources(sources)
 

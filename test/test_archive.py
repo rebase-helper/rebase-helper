@@ -49,14 +49,14 @@ class TestArchive(BaseTest):
         """
         Generic test for extraction of all types of archives
         """
-        EXTARCT_DIR = os.path.join(os.getcwd(), 'dir')
-        EXTRACTED_FILE = os.path.join(EXTARCT_DIR, self.ARCHIVED_FILE)
+        EXTRACT_DIR = os.path.join(os.getcwd(), 'dir')
+        EXTRACTED_FILE = os.path.join(EXTRACT_DIR, self.ARCHIVED_FILE)
 
         archive = Archive(archive)
-        archive.extract(EXTARCT_DIR)
+        archive.extract(EXTRACT_DIR)
 
         #  check if the dir was created
-        assert os.path.isdir(EXTARCT_DIR)
+        assert os.path.isdir(EXTRACT_DIR)
         #  check if the file was extracted
         assert os.path.isfile(EXTRACTED_FILE)
         #  check the content

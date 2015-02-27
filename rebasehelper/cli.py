@@ -62,7 +62,7 @@ class CLI(object):
         )
         self.parser.add_argument(
             "--patchtool",
-            default='patch',
+            default='git',
             help="Select the patch tool [patch|git]"
         )
         self.parser.add_argument(

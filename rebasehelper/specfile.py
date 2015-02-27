@@ -50,6 +50,41 @@ def get_rebase_name(name):
     return os.path.join(dir_name, settings.REBASE_HELPER_RESULTS_DIR, file_name)
 
 
+class PatchList(list):
+    def _get_index_list(self, item):
+        for x in self:
+            if x.get_index() == item.get_index():
+                return x
+
+    def __getitem__(self, item):
+        return super(PatchList, self).__getitem__(self._get_index_list(item))
+
+
+class PatchObject(object):
+    """
+    Class represents set of information about patches
+    """
+    path = ''
+    index = ''
+    git_generated = ''
+
+    def __init__(self, path, index):
+        self.path = path
+        self.index = index
+
+    def get_path(self):
+        return self.path
+
+    def get_index(self):
+        return self.index
+
+    def set_path(self, new_path):
+        self.path = new_path
+
+    def get_patch_name(self):
+        return os.path.basename(self.path)
+
+
 class SpecFile(object):
     """
     Class representing a SPEC file
@@ -100,6 +135,7 @@ class SpecFile(object):
         self.sources = self._get_initial_sources_list()
         self.extra_version = SpecFile.extract_version_from_archive_name(self.get_archive(),
                                                                         self._get_raw_source_string(0))[1]
+        self.patches = self._get_initial_patches_list()
 
     def _get_initial_sources_list(self):
         """
@@ -126,7 +162,7 @@ class SpecFile(object):
         """
         Method returns a list of patches from a spec file
         """
-        patches = {}
+        patch_list = []
         patches_list = [p for p in self.spc.sources if p[2] == 2]
         patch_flags = self._get_patches_flags()
 
@@ -135,12 +171,13 @@ class SpecFile(object):
             if not os.path.exists(patch_path):
                 logger.error('Patch {0} does not exist'.format(filename))
                 continue
-            if num in patch_flags:
-                #  TODO: Why do we need to know here if patch is git generated??
-                patches[num] = [patch_path, patch_flags[num][0],
-                                patch_flags[num][1], self.is_patch_git_generated(patch_path)]
-        # dict with <num>: [name, flags, index, git_generated]
-        return patches
+            patch_num = num
+            if patch_flags:
+                if num in patch_flags:
+                    patch_num = patch_flags[num]
+            patch_list.append(PatchObject(patch_path, patch_num))
+        patch_list = sorted(patch_list, key=lambda x: x.get_index())
+        return patch_list
 
     def copy(self, new_path=None):
         """
@@ -284,11 +321,13 @@ class SpecFile(object):
         """
         patch_flags = {}
         patches = [x for x in self.spec_content if x.startswith(PATCH_PREFIX)]
+        if not patches:
+            return None
         for index, line in enumerate(patches):
             num, option = self.get_patch_option(line)
             num = num.replace(PATCH_PREFIX, '')
-            patch_flags[int(num)] = (option, index)
-        # {num: (flags, index of application)}
+            patch_flags[int(num)] = index
+        # {num: index of application}
         return patch_flags
 
     def get_release(self):
@@ -356,8 +395,9 @@ class SpecFile(object):
         """
         Method returns dictionary with patches list.
 
-        :return: dict with <num>: [path, flags, index, git_generated]
+        :return: list of PatchObject
         """
+
         return self.patches
 
     def get_sources(self):
@@ -689,37 +729,25 @@ class SpecFile(object):
         if not patches:
             return None
 
-        updated_patches = {}
-        updated_patches['deleted'] = []
-        updated_patches['modified'] = []
-
         removed_patches = []
         for index, line in enumerate(self.spec_content):
             if line.startswith('Patch'):
                 fields = line.strip().split()
+                patch_name = fields[1]
                 patch_num = self._get_patch_number(fields)
-                #  TODO: Add explanation comment
-                if int(patch_num) not in patches:
-                    continue
-                patch_name = patches[int(patch_num)][0]
-                comment = ""
-                #  TODO: this method should not check this, but rather get final list of removed/empty patches (probably from Patch tool)
-                #  TODO: This while logic should go to Patch tool, not into SPEC file!
-                if settings.REBASE_HELPER_RESULTS_DIR in patch_name:
-                    if GenericDiff.check_empty_patch(patch_name):
-                        comment = '#'
-                        removed_patches.append(patch_num)
-                        #del patches[int(patch_num)]
-                        updated_patches['deleted'].append(patch_name)
-                    else:
-                        updated_patches['modified'].append(patch_name)
-                #  TODO: this commenting should be done in _comment_out_patches() method
-                self.spec_content[index] = comment + ' '.join(fields[:-1]) + ' ' + os.path.basename(patch_name) + '\n'
+                patch = [x for x in patches['deleted'] if patch_name in x]
+                if patch:
+                    comment = '#'
+                    removed_patches.append(patch_num)
+                    self.spec_content[index] = comment + ' '.join(fields[:-1]) + ' ' + os.path.basename(patch_name) + '\n'
+                patch = [x for x in patches['modified'] if patch_name in x]
+                if patch:
+                    fields[1] = os.path.join(settings.REBASE_HELPER_RESULTS_DIR, patch_name)
+                    self.spec_content[index] = ' '.join(fields) + '\n'
 
         self._comment_out_patches(removed_patches)
         #  save changes
         self.save()
-        return updated_patches
 
     def save(self):
         """

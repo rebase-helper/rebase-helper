@@ -28,11 +28,27 @@ import pycurl
 import shutil
 import rpm
 import six
+from six import StringIO
 from six.moves import input
 from distutils.util import strtobool
+from rebasehelper.exceptions import RebaseHelperError
 
 from rebasehelper.logger import logger
 from rebasehelper import settings
+
+
+class GitRuntimeError(RuntimeError):
+    """
+    Error indicating problems with Git
+    """
+    pass
+
+
+class GitRebaseError(RuntimeError):
+    """
+    Error indicating problems with Git
+    """
+    pass
 
 
 def get_value_from_kwargs(kwargs, field, source='old'):
@@ -128,6 +144,7 @@ class DownloadHelper(object):
 
             else:
                 curl.close()
+
 
 class ProcessHelper(object):
     """
@@ -447,3 +464,214 @@ class RpmHelper(object):
         h = RpmHelper.get_header_from_rpm(rpm_name)
         name = h[info]
         return name
+
+
+class GitHelper(object):
+    """
+    Class which operates with git repositories
+    """
+    GIT = 'git'
+
+    def __init__(self, git_directory):
+        self.git_directory = git_directory
+
+    def _call_git_command(self, command, input_file=None, output_file=None):
+        """
+        Class calls git command
+        :param command: git command which is executed
+        :param directory: git directory
+        :param input_file: input file for git operations
+        :return: ret_code and output of git command
+        """
+        cmd = []
+        cmd.append(self.GIT)
+        cmd.extend(command)
+        output_data = []
+        if not output_file:
+            output = StringIO()
+        else:
+            output = output_file
+        ret_code = ProcessHelper.run_subprocess_cwd(cmd,
+                                                    cwd=self.git_directory,
+                                                    input=input_file,
+                                                    output=output)
+        if not output_file:
+            out = output.readlines()
+            for o in out:
+                output_data.append(o.strip().encode('ascii', 'ignore'))
+        return ret_code, output_data
+
+    @staticmethod
+    def check_git_config():
+        """
+        Function checks whether you have setup a merge tool in ~/.gitconfig
+        :return: True or False
+        """
+        git_config = []
+        git_config_name = os.path.expanduser('~/{0}'.format(settings.GIT_CONFIG))
+        try:
+            with open(git_config_name) as f:
+                git_config = f.readlines()
+        except IOError:
+            raise RebaseHelperError("Unable to open and read SPEC file '{0}'".format(git_config_name))
+
+        if not git_config:
+            raise RebaseHelperError("File {0} is empty".format(git_config_name))
+
+        merge = [x.strip() for x in git_config if x.startswith('[merge]')]
+        if not merge:
+            message = """Merge tool is not defined in ~/.gitconfig command.\n
+One of the possible configuration can be:\n
+[mergetool "mymeld"]
+    cmd = meld --auto-merge --output $MERGED $LOCAL $BASE $REMOTE --diff $BASE $LOCAL --diff $BASE $REMOTE
+[merge]
+    tool = mymeld
+    conflictstyle = diff3"""
+            raise RebaseHelperError("[merge] section is not defined in {0}.\n{1}".format(git_config_name,
+                                                                                         message))
+        return merge
+
+    @staticmethod
+    def get_commit_hash_log(commit_log, number=None):
+        commit = commit_log[number]
+        fields = commit.split()
+        return fields[0]
+
+    @staticmethod
+    def get_untracked_files(output):
+        untracked_files = []
+        for line in output:
+            if not line.startswith("Untracked files:"):
+                continue
+            # skip two lines
+            output.next()
+            output.next()
+
+            for untracked_info in output:
+                if not untracked_info.startswith("\t"):
+                    break
+                untracked_files.append(untracked_info.replace("\t", "").rstrip())
+                # END for each utracked info line
+        # END for each line
+        return untracked_files
+
+    @staticmethod
+    def get_modified_files(output):
+        modified_files = []
+        for line in output:
+            if 'modified:' not in line:
+                continue
+            modified_files.append(line.strip().split()[1])
+        return modified_files
+
+    @staticmethod
+    def get_unapplied_patch(output):
+        patch_name = None
+        lines = [x for x in output if x.startswith("Patch failed at")]
+        if not lines:
+            return patch_name
+        fields = lines[0].split()
+        # We need to return only patch name
+        return fields[len(fields)-1]
+
+    def command_init(self, directory):
+        cmd = ['init']
+        cmd.append(directory)
+        ret_code, output = self._call_git_command(cmd)
+        return ret_code
+
+    def command_commit(self, message=None):
+        """
+        Method commits message to Git
+        :param directory: Git directtory
+        :param message: commit message
+        :return: return code from ProcessHelper
+        """
+        cmd = ['commit']
+        if message:
+            cmd.extend(['-m', message])
+        else:
+            cmd.extend(['-m', 'Empty message'])
+
+        ret_code, output = self._call_git_command(cmd)
+        return ret_code
+
+    def command_remote_add(self, upstream_name, directory):
+        cmd = []
+        cmd.append('remote')
+        cmd.append('add')
+        cmd.append(upstream_name)
+        cmd.append(directory)
+        ret_code, output = self._call_git_command(cmd)
+        return ret_code
+
+    def command_status(self):
+        cmd = []
+        cmd.append('status')
+        ret_code, output = self._call_git_command(cmd)
+        return ret_code
+
+    def command_fetch(self, upstream_name):
+        cmd = ['fetch']
+        cmd.append(upstream_name)
+        ret_code, output = self._call_git_command(cmd)
+        return ret_code
+
+    def command_log(self, parameters=None):
+        cmd = ['log']
+        if parameters:
+            cmd.append(parameters)
+        ret_code, output = self._call_git_command(cmd)
+        if int(ret_code) != 0:
+            return None
+        else:
+            return output
+
+    def command_mergetool(self):
+        cmd = ['mergetool']
+        ret_code, output = self._call_git_command(cmd)
+        return ret_code
+
+    def command_rebase(self, parameters, upstream_name=None, first_hash=None, last_hash=None):
+        cmd = ['rebase']
+        if parameters == '--onto':
+            cmd.append(parameters)
+            cmd.append(upstream_name + '/master')
+            cmd.append(first_hash)
+            cmd.append(last_hash)
+        else:
+            cmd.append(parameters)
+        ret_code, output = self._call_git_command(cmd)
+        return ret_code, output
+
+    def command_add_files(self, parameters=None):
+        cmd = ['add']
+        if parameters:
+            cmd.append(parameters)
+        ret_code, output = self._call_git_command(cmd)
+        return ret_code
+
+    def command_diff(self, head, output_file=None):
+        cmd = ['diff']
+        cmd.append(head)
+        ret_code = self._call_git_command(cmd, output_file=output_file)
+        return ret_code
+
+    def command_am(self, parameters=None, input_file=None):
+        cmd = ['am']
+        if parameters:
+            cmd.append(parameters)
+        ret_code, output = self._call_git_command(cmd, input_file=input_file)
+        return ret_code
+
+    def command_apply(self, input_file=None):
+        cmd = ['apply']
+        ret_code, output = self._call_git_command(cmd, input_file=input_file)
+        return ret_code
+
+    def command_config(self, parameters, variable):
+        cmd = ['config']
+        cmd.append(parameters)
+        cmd.append(variable)
+        ret_code, output = self._call_git_command(cmd)
+        return ret_code
