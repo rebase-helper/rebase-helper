@@ -121,7 +121,7 @@ class GitPatchTool(PatchBase):
         else:
             logger.info('Rebase operation continues...')
             ret_code, cls.output_data = cls.git_helper.command_rebase(parameters='--skip')
-            print cls.output_data
+            logger.debug(cls.output_data)
         patch_name = ""
         modified_patches = []
         deleted_patches = []
