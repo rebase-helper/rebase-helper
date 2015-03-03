@@ -256,6 +256,8 @@ class Application(object):
             archive.extract(destination)
         except IOError:
             raise RebaseHelperError("Archive '{0}' can not be extracted".format(archive_path))
+        except (EOFError, SystemError):
+            raise RebaseHelperError("Archive '{0}' is damaged".format(archive_path))
 
     @staticmethod
     def extract_sources(archive_path, destination):
