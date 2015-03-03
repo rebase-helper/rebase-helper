@@ -159,9 +159,9 @@ class MeldDiffTool(DiffBase):
         logger.debug("running merge")
 
         for index, fname in enumerate(failed_files):
-            base = os.path.join(old_dir, fname + suffix) # old w/o patch
-            remote = os.path.join(old_dir, fname) # new with patch
-            local = os.path.join(new_dir, fname + suffix) # new w/o patch
+            base = os.path.join(old_dir, fname)  # old w/o patch
+            remote = os.path.join(old_dir, fname)  # new with patch
+            local = os.path.join(new_dir, fname)  # new w/o patch
             merged = os.path.join(new_dir, fname)
 
             # http://stackoverflow.com/questions/11133290/git-merging-using-meld
