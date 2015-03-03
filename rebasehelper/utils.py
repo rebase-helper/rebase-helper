@@ -520,15 +520,14 @@ class GitHelper(object):
 
         merge = [x.strip() for x in git_config if x.startswith('[merge]')]
         if not merge:
-            message = """Merge tool is not defined in ~/.gitconfig command.\n
+            message = """[merge] section is not defined in {0}.\n
 One of the possible configuration can be:\n
 [mergetool "mymeld"]
     cmd = meld --auto-merge --output $MERGED $LOCAL $BASE $REMOTE --diff $BASE $LOCAL --diff $BASE $REMOTE
 [merge]
     tool = mymeld
     conflictstyle = diff3"""
-            raise RebaseHelperError("[merge] section is not defined in {0}.\n{1}".format(git_config_name,
-                                                                                         message))
+            raise RebaseHelperError(message.format(git_config_name))
         return merge
 
     @staticmethod
