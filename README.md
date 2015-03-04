@@ -20,5 +20,11 @@ How the rebase-helper works:
 - Run rpmdiff tool for finding libraries and header changes.
 - Inform user what libraries and header files were changed.
 
-
 [**Landscape.io scans of rebase-helper**](https://landscape.io/github/phracek/rebase-helper/)
+
+Packages which needs to be installed before you execute rebase-helper:
+- meld
+- mock
+- rpm-build
+- pkgdiff at least 1.6.3
+- python-six
