@@ -512,25 +512,13 @@ class GitHelper(object):
                 output_data.append(o.strip())
         return ret_code, output_data
 
-    @staticmethod
-    def check_git_config():
+    def check_git_config(self):
         """
         Function checks whether you have setup a merge tool in ~/.gitconfig
         :return: True or False
         """
-        git_config = []
+        merge = self.command_config('--get', 'merge.tool')
         git_config_name = os.path.expanduser('~/{0}'.format(settings.GIT_CONFIG))
-        try:
-            with open(git_config_name) as f:
-                git_config = f.readlines()
-        except IOError as ioer:
-            raise RebaseHelperError("Unable to open and read SPEC file '{0}'. {1}".format(git_config_name,
-                                                                                          exc_as_decode_string(ioer)))
-
-        if not git_config:
-            raise RebaseHelperError("File {0} is empty".format(git_config_name))
-
-        merge = [x.strip() for x in git_config if x.startswith('[merge]')]
         if not merge:
             message = """[merge] section is not defined in {0}.\n
 One of the possible configuration can be:\n
@@ -687,4 +675,6 @@ One of the possible configuration can be:\n
         cmd.append(parameters)
         cmd.append(variable)
         ret_code, output = self._call_git_command(cmd)
+        if not output:
+            return None
         return output[0]

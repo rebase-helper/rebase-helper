@@ -288,6 +288,7 @@ class Application(object):
         # Patch sources
         self.kwargs['diff_tool'] = self.conf.difftool
         git_helper = GitHelper(sources[0])
+        git_helper.check_git_config()
         patch = Patcher(self.conf.patchtool)
 
         self.rebase_spec_file.update_changelog(self.rebase_spec_file.get_new_log(git_helper))
@@ -399,7 +400,6 @@ class Application(object):
     def run(self):
         sources = self.prepare_sources()
 
-        GitHelper.check_git_config()
         if not self.conf.build_only:
             self.patch_sources(sources)
 
