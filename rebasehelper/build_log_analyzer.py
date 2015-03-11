@@ -25,34 +25,34 @@ from rebasehelper.logger import logger
 
 
 class BuildLogAnalyzerMissingError(RuntimeError):
-    """
-    Error indicating build.log is missing
-    """
+
+    """Error indicating build.log is missing"""
+
     pass
 
 
 class BuildLogAnalyzerMakeError(RuntimeError):
-    """
-    Error indicating failure problem with building
-    """
+
+    """Error indicating failure problem with building"""
+
     pass
 
 
 class BuildLogAnalyzerPatchError(RuntimeError):
-    """
-    Error indicating failure problem with building
-    """
+
+    """Error indicating failure problem with building"""
     pass
 
 
 class BuildLogAnalyzer(object):
-    """
-    Class analyze the log provided by build programs
-    """
+
+    """Class analyze the log provided by build programs"""
+
     log_dirname = ""
 
     @classmethod
     def parse_log(cls, dir_name, log_name):
+
         """
         Function analyze the logs for specific section
         :param log_name: Logfile name which is analyzed
@@ -65,6 +65,7 @@ class BuildLogAnalyzer(object):
 
     @classmethod
     def _parse_build_log(cls, log_name):
+
         """
         Function analyzes log files in our case build.log
         :param log_name:
@@ -129,6 +130,7 @@ class BuildLogAnalyzer(object):
 
     @classmethod
     def _get_files_from_string(cls, section):
+
         """
         Function returns files from string
         If row begins with / then it appends the rest of row to field
@@ -150,6 +152,7 @@ class BuildLogAnalyzer(object):
 
     @classmethod
     def _find_section(cls, lines, s_reg, e_reg=None):
+
         """
         get string from substring
         :param log_name: file_name to analyze

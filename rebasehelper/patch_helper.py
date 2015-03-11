@@ -21,12 +21,9 @@
 #          Tomas Hozza <thozza@redhat.com>
 
 import os
-import six
 from rebasehelper.logger import logger
 from rebasehelper.utils import ConsoleHelper
 from rebasehelper.utils import GitHelper, GitRebaseError
-from rebasehelper.diff_helper import GenericDiff
-from rebasehelper.exceptions import RebaseHelperError
 
 #from git import Repo
 #import git
@@ -40,32 +37,29 @@ def register_patch_tool(patch_tool):
 
 
 class PatchBase(object):
-    """ Class used for using several patching command tools, ...
-        Each method should overwrite method like run_check
+
+    """
+    Class used for using several patching command tools, ...
+    Each method should overwrite method like run_check
     """
 
     helpers = {}
 
     @classmethod
     def match(cls, cmd):
-        """
-            Method checks whether it is usefull patch method
-        """
+        """Method checks whether it is usefull patch method"""
         return NotImplementedError()
 
     @classmethod
     def run_patch(cls, *args, **kwargs):
-        """
-            Method will check all patches in relevant package
-        """
+        """Method will check all patches in relevant package"""
         return NotImplementedError()
 
 @register_patch_tool
 class GitPatchTool(PatchBase):
-    """
-    Class for git command used for patching old and new
-    sources
-    """
+
+    """Class for git command used for patching old and new sources"""
+
     CMD = 'git'
     source_dir = ""
     old_sources = ""
@@ -85,6 +79,12 @@ class GitPatchTool(PatchBase):
 
     @staticmethod
     def apply_patch(git_helper, patch_name):
+        """
+        Function applies patches to old sources
+        It tries apply patch with am command and if it fails
+        then with command --apply
+
+        """
         logger.debug('Applying patch with am')
 
         ret_code = git_helper.command_am(input_file=patch_name)
@@ -155,6 +155,9 @@ class GitPatchTool(PatchBase):
 
     @staticmethod
     def commit_patch(git_helper, patch_name):
+
+        """Function commits patched files to git"""
+
         logger.debug('Commit patch')
         ret_code = git_helper.command_add_files(parameters=['--all'])
         if int(ret_code) != 0:
@@ -164,9 +167,8 @@ class GitPatchTool(PatchBase):
 
     @classmethod
     def apply_old_patches(cls, patches):
-        """
-        Function applies a patch to a old/new sources
-        """
+
+        """Function applies a patch to a old/new sources"""
         for patch in patches:
             patch_path = patch.get_path()
             logger.info("Applying patch '{0}' to '{1}'".format(os.path.basename(patch_path),
@@ -179,6 +181,9 @@ class GitPatchTool(PatchBase):
 
     @classmethod
     def init_git(cls, directory):
+
+        """ Function initialize old and new Git repository"""
+
         gh = GitHelper(directory)
         ret_code = gh.command_init(directory)
         gh.command_add_files('.')
@@ -186,6 +191,7 @@ class GitPatchTool(PatchBase):
 
     @classmethod
     def run_patch(cls, old_dir, new_dir, git_helper, patches, **kwargs):
+
         """
         The function can be used for patching one
         directory against another
@@ -207,6 +213,7 @@ class GitPatchTool(PatchBase):
 
 
 class Patcher(object):
+
     """
     Class representing a process of applying and generating rebased patch using specific tool.
     """

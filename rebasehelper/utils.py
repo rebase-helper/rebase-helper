@@ -49,20 +49,21 @@ def exc_as_decode_string(e):
 
 
 class GitRuntimeError(RuntimeError):
-    """
-    Error indicating problems with Git
-    """
+
+    """Error indicating problems with Git"""
+
     pass
 
 
 class GitRebaseError(RuntimeError):
-    """
-    Error indicating problems with Git
-    """
+
+    """Error indicating problems with Git"""
+
     pass
 
 
 def get_value_from_kwargs(kwargs, field, source='old'):
+
     """
     Function returns a part of self.kwargs dictionary
     :param kwargs:
@@ -80,9 +81,8 @@ def get_value_from_kwargs(kwargs, field, source='old'):
 
 
 class ConsoleHelper(object):
-    """
-    Class for command line interaction with the user.
-    """
+
+    """Class for command line interaction with the user."""
 
     @staticmethod
     def get_message(message, default_yes=True, any_input=False):
@@ -123,9 +123,8 @@ class ConsoleHelper(object):
 
 
 class DownloadHelper(object):
-    """
-    Class for downloading sources defined in SPEC file
-    """
+
+    """Class for downloading sources defined in SPEC file"""
 
     @staticmethod
     def download_file(url, destination_name):
@@ -158,9 +157,8 @@ class DownloadHelper(object):
 
 
 class ProcessHelper(object):
-    """
-    Class for execution subprocess
-    """
+
+    """Class for execution subprocess"""
 
     DEV_NULL = os.devnull
 
@@ -207,7 +205,8 @@ class ProcessHelper(object):
     @staticmethod
     def run_subprocess_cwd_env(cmd, cwd=None, env=None, input=None, output=None, shell=False):
         """
-        Runs the passed command as a subprocess in different working directory with possibly changed ENVIRONMENT VARIABLES.
+        Runs the passed command as a subprocess in different
+        working directory with possibly changed ENVIRONMENT VARIABLES.
 
         :param cmd: command with arguments to be run
         :param cwd: the directory to change the working dir to
@@ -317,8 +316,11 @@ class ProcessHelper(object):
 
 class PathHelper(object):
 
+    """Class which finds a file or files in specific directory"""
+
     @staticmethod
     def find_first_dir_with_file(top_path, pattern):
+
         """ Finds a file that matches the given 'pattern' recursively
         starting in the 'top_path' directory. If found, returns full path
         to the directory with first occurrence of the file, otherwise
@@ -332,6 +334,7 @@ class PathHelper(object):
 
     @staticmethod
     def find_first_file(top_path, pattern, recursion_level=None):
+
         """ Finds a file that matches the given 'pattern' recursively
         starting in the 'top_path' directory. If found, returns full path
         to the first occurrence of the file, otherwise returns None. """
@@ -347,6 +350,7 @@ class PathHelper(object):
 
     @staticmethod
     def find_all_files(top_path, pattern):
+
         """ Finds a file that matches the given 'pattern' recursively
         starting in the 'top_path' directory. If found, returns full path
         to the first occurrence of the file, otherwise returns None. """
@@ -360,13 +364,17 @@ class PathHelper(object):
 
     @staticmethod
     def get_temp_dir():
+
         """ Returns a path to new temporary directory. """
         return tempfile.mkdtemp(prefix=settings.REBASE_HELPER_PREFIX)
 
 
 class TemporaryEnvironment(object):
-    """ Class representing a temporary environment (directory) that can be used
-     as a workspace. It can be used with with statement. """
+
+    """
+    Class representing a temporary environment (directory) that can be used
+    as a workspace. It can be used with with statement.
+    """
 
     TEMPDIR = 'TEMPDIR'
 
@@ -395,6 +403,7 @@ class TemporaryEnvironment(object):
         return "<TemporaryEnvironment path='{0}'>".format(self.path())
 
     def path(self):
+
         """
         Returns path to the temporary environment.
         :return: abs path to the environment
@@ -402,6 +411,7 @@ class TemporaryEnvironment(object):
         return self._env.get(self.TEMPDIR, '')
 
     def env(self):
+
         """
         Returns copy of _env dictionary.
         :return: copy of _env dictionary
@@ -410,9 +420,8 @@ class TemporaryEnvironment(object):
 
 
 class RpmHelper(object):
-    """
-    Helper class for doing various tasks with RPM database, packages, ...
-    """
+
+    """Helper class for doing various tasks with RPM database, packages, ..."""
 
     @staticmethod
     def is_package_installed(pkg_name=None):
@@ -441,6 +450,7 @@ class RpmHelper(object):
 
     @staticmethod
     def install_build_dependencies(spec_path=None, assume_yes=False):
+
         """
         Install all build requires for a package using PolicyKits
         :param spec_path: absolute path to SPEC file
@@ -453,6 +463,7 @@ class RpmHelper(object):
 
     @staticmethod
     def get_header_from_rpm(rpm_name):
+
         """
         Function returns a rpm header from given rpm package
         for later on analysis
@@ -467,6 +478,7 @@ class RpmHelper(object):
 
     @staticmethod
     def get_info_from_rpm(rpm_name, info):
+
         """
         Method returns a name of the package from RPM file format
         :param pkg_name:
@@ -478,15 +490,16 @@ class RpmHelper(object):
 
 
 class GitHelper(object):
-    """
-    Class which operates with git repositories
-    """
+
+    """Class which operates with git repositories"""
+
     GIT = 'git'
 
     def __init__(self, git_directory):
         self.git_directory = git_directory
 
     def _call_git_command(self, command, input_file=None, output_file=None):
+
         """
         Class calls git command
         :param command: git command which is executed
@@ -513,6 +526,7 @@ class GitHelper(object):
         return ret_code, output_data
 
     def check_git_config(self):
+
         """
         Function checks whether you have setup a merge tool in ~/.gitconfig
         :return: True or False
@@ -556,6 +570,9 @@ One of the possible configuration can be:\n
 
     @staticmethod
     def get_modified_files(output):
+
+        """Function returns list of modified files from output text"""
+
         modified_files = []
         for line in output:
             if 'modified:' not in line:
@@ -580,6 +597,7 @@ One of the possible configuration can be:\n
         return ret_code
 
     def command_commit(self, message=None):
+
         """
         Method commits message to Git
         :param directory: Git directtory
@@ -596,6 +614,9 @@ One of the possible configuration can be:\n
         return ret_code
 
     def command_remote_add(self, upstream_name, directory):
+
+        """Function add remote git repository to old_sources before a rebase"""
+
         cmd = []
         cmd.append('remote')
         cmd.append('add')
@@ -605,6 +626,9 @@ One of the possible configuration can be:\n
         return ret_code
 
     def command_diff_status(self):
+
+        """Function shows which files are modified"""
+
         cmd = []
         cmd.append('diff')
         cmd.append('--name-only')
@@ -619,6 +643,12 @@ One of the possible configuration can be:\n
         return ret_code
 
     def command_log(self, parameters=None):
+
+        """
+        Function returns git log
+        :param parameters: a parameter to git log command
+        :return:
+        """
         cmd = ['log']
         if parameters:
             cmd.append(parameters)
@@ -629,11 +659,17 @@ One of the possible configuration can be:\n
             return output
 
     def command_mergetool(self):
+
+        """Function calls git mergetool program"""
+
         cmd = ['mergetool']
         ret_code, output = self._call_git_command(cmd)
         return ret_code
 
     def command_rebase(self, parameters, upstream_name=None, first_hash=None, last_hash=None):
+
+        """Function calls git rebase"""
+
         cmd = ['rebase']
         if parameters == '--onto':
             cmd.append(parameters)

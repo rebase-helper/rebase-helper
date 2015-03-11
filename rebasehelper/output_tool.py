@@ -46,8 +46,10 @@ def check_output_argument(output_tool):
 
 
 class BaseOutputTool(object):
-    """ Class used for testing and other future stuff, ...
-        Each method should overwrite method like run_check
+
+    """
+    Class used for testing and other future stuff, ...
+    Each method should overwrite method like run_check
     """
 
     def print_summary(self, **kwargs):
@@ -59,7 +61,9 @@ class BaseOutputTool(object):
 
 @register_output_tool
 class TextOutputTool(BaseOutputTool):
+
     """ Text output tool. """
+
     PRINT = "text"
 
     @classmethod
@@ -107,21 +111,23 @@ class TextOutputTool(BaseOutputTool):
             message = "{0} package(s): are in directory {1} :"
             if isinstance(srpm, str):
                 logger_output.info(message.format(type_rpm.upper(),
-                                           os.path.dirname(rpms.get(srpm, ""))))
+                                                  os.path.dirname(rpms.get(srpm, ""))))
                 logger_output.info("- {0}".format(os.path.basename(srpm)))
             else:
                 logger_output.info(message.format(type_rpm.upper(),
-                                           os.path.dirname(srpm[0])))
+                                                  os.path.dirname(srpm[0])))
                 for pkg in srpm:
                     logger_output.info("- {0}".format(os.path.basename(pkg)))
 
     @classmethod
     def print_build_logs(cls, rpms, version):
+
         """
         Function is used for printing rpm build logs
         :param kwargs:
         :return:
         """
+
         if rpms.get('logs', None) is None:
             return
         logger_output.info('Available {0} logs:'.format(version))
@@ -131,10 +137,12 @@ class TextOutputTool(BaseOutputTool):
 
     @classmethod
     def print_summary(cls, path):
+
         """
         Function is used for printing summary informations
         :return:
         """
+
         # First of all we would like to print all
         # summary information
         OutputLogger.set_info_text("Summary output is also available in log:", path)
@@ -159,18 +167,19 @@ class TextOutputTool(BaseOutputTool):
 
     @classmethod
     def print_pkgdiff_tool(cls):
+
         """
         Function prints a summary information about pkgcomparetool
         """
+
         for check, data in six.iteritems(OutputLogger.get_checkers()):
             if data:
                 logger_output.info("{0}:\n{1}".format(check, data))
 
 
 class OutputTool(object):
-    """
-    Class representing printing the final results.
-    """
+
+    """Class representing printing the final results."""
 
     def __init__(self, output_tool=None):
         if output_tool is None:
