@@ -27,6 +27,7 @@ from rebasehelper.utils import GitHelper
 from rebasehelper.archive import Archive
 from rebasehelper import settings
 from rebasehelper.patch_helper import GitPatchTool
+from rebasehelper import utils
 from rebasehelper.specfile import PatchObject
 
 
@@ -62,7 +63,7 @@ class TestGitHelper(BaseTest):
         commit_log = self.git_helper.command_log(parameters='--pretty=oneline')
         commit_names = []
         for commit in commit_log:
-            commit = commit.decode('utf-8').split()[1:]
+            commit = commit.split()[1:]
             commit_names.append(' '.join(commit))
         return commit_names
 
