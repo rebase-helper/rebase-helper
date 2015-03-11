@@ -351,3 +351,12 @@ class TestSpecFile(BaseTest):
     def test_get_extra_version_set(self):
         self.SPEC_FILE_OBJECT.set_extra_version('rc1')
         assert self.SPEC_FILE_OBJECT.get_extra_version() == 'rc1'
+
+    def test_update_changelog(self):
+        changelog = []
+        changelog.append('* Mon Jan 01 1970 Rebase-helper <rebase-helper@rebase-helper.com> - 1.2.3')
+        changelog.append('- New upstream version 1.2.3')
+        self.SPEC_FILE_OBJECT.insert_changelog(changelog)
+        result = self.SPEC_FILE_OBJECT.get_spec_section('%changelog')
+        assert changelog[0] == result[0]
+        assert changelog[1] == result[1]

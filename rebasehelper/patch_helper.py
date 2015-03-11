@@ -128,6 +128,7 @@ class GitPatchTool(PatchBase):
         while True:
             if int(ret_code) != 0:
                 patch_name = cls.git_helper.get_unapplied_patch(cls.output_data)
+                logger.info("Git has problems with rebasing patch {0}".format(patch_name))
                 ret_code = cls.git_helper.command_mergetool()
                 modified_files = cls.git_helper.command_diff_status()
                 ret_code = cls.git_helper.command_add_files(parameters=modified_files)
@@ -138,7 +139,7 @@ class GitPatchTool(PatchBase):
                 if not cls.output_data:
                     deleted_patches.append(base_name)
                 else:
-                    logger.info('Some files were not modified')
+                    logger.info('Following files were modified: {0}'.format(modified_files))
                     ret_code = cls.git_helper.command_commit(message=patch_name)
                     ret_code, cls.output_data = cls.git_helper.command_diff('HEAD~1', output_file=base_name)
                     modified_patches.append(base_name)
@@ -184,7 +185,7 @@ class GitPatchTool(PatchBase):
         gh.command_commit(message='Initial Commit')
 
     @classmethod
-    def run_patch(cls, old_dir, new_dir, patches, **kwargs):
+    def run_patch(cls, old_dir, new_dir, git_helper, patches, **kwargs):
         """
         The function can be used for patching one
         directory against another
@@ -194,7 +195,7 @@ class GitPatchTool(PatchBase):
         cls.new_sources = new_dir
         cls.output_data = []
         cls.cont = cls.kwargs['continue']
-        cls.git_helper = GitHelper(cls.old_sources)
+        cls.git_helper = git_helper
         if not os.path.isdir(os.path.join(cls.old_sources, '.git')):
             cls.init_git(old_dir)
             cls.init_git(new_dir)
@@ -229,7 +230,7 @@ class Patcher(object):
         if self._tool is None:
             raise NotImplementedError("Unsupported patch tool")
 
-    def patch(self, old_dir, new_dir, patches, **kwargs):
+    def patch(self, old_dir, new_dir, git_helper, patches, **kwargs):
         """
         Apply patches and generate rebased patches if needed
 
@@ -241,7 +242,7 @@ class Patcher(object):
         :return:
         """
         logger.debug("Patching source by patch tool {0}".format(self._path_tool_name))
-        return self._tool.run_patch(old_dir, new_dir, patches, **kwargs)
+        return self._tool.run_patch(old_dir, new_dir, git_helper, patches, **kwargs)
 
 
 

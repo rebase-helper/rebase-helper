@@ -525,7 +525,7 @@ class GitHelper(object):
                 git_config = f.readlines()
         except IOError as ioer:
             raise RebaseHelperError("Unable to open and read SPEC file '{0}'. {1}".format(git_config_name,
-                                                                                          utils.exc_as_decode_string(ioer)))
+                                                                                          exc_as_decode_string(ioer)))
 
         if not git_config:
             raise RebaseHelperError("File {0} is empty".format(git_config_name))
@@ -622,7 +622,7 @@ One of the possible configuration can be:\n
         cmd.append('--name-only')
         cmd.append('--staged')
         ret_code, output = self._call_git_command(cmd)
-        return ret_code
+        return output
 
     def command_fetch(self, upstream_name):
         cmd = ['fetch']
@@ -682,9 +682,9 @@ One of the possible configuration can be:\n
         ret_code, output = self._call_git_command(cmd, input_file=input_file)
         return ret_code
 
-    def command_config(self, parameters, variable):
+    def command_config(self, parameters, variable=None):
         cmd = ['config']
         cmd.append(parameters)
         cmd.append(variable)
         ret_code, output = self._call_git_command(cmd)
-        return ret_code
+        return output[0]

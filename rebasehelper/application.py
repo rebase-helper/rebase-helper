@@ -287,10 +287,14 @@ class Application(object):
     def patch_sources(self, sources):
         # Patch sources
         self.kwargs['diff_tool'] = self.conf.difftool
+        git_helper = GitHelper(sources[0])
         patch = Patcher(self.conf.patchtool)
+
+        self.rebase_spec_file.update_changelog(self.rebase_spec_file.get_new_log(git_helper))
         try:
             rebased_patches = patch.patch(sources[0],
                                           sources[1],
+                                          git_helper,
                                           self.spec_file.get_applied_patches(),
                                           **self.kwargs)
         except RuntimeError as run_e:

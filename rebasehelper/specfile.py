@@ -20,12 +20,14 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
-
+from __future__ import print_function
 import os
 import re
 import shutil
 import six
 import rpm
+from datetime import date
+import time
 from six import StringIO
 from difflib import SequenceMatcher
 
@@ -275,6 +277,20 @@ class SpecFile(object):
         for sec_name, section in six.itervalues(self.rpm_sections):
             if sec_name == section_name:
                 return section
+
+    def set_spec_section(self, section_name, new_section):
+        """
+        Returns the section of selected name
+
+        :param section_name: section name to get
+        :return: list of lines contained in the selected section
+        """
+        for key, val in six.iteritems(self.rpm_sections):
+            if section_name in val[0]:
+                if isinstance(new_section, str):
+                    self.rpm_sections[key] = (section_name, new_section.split('\n'))
+                else:
+                    self.rpm_sections[key] = (section_name, new_section)
 
     def get_path(self):
         """
@@ -854,3 +870,29 @@ class SpecFile(object):
                 else:
                     logger.debug('Failed to extract version from archive name using fallback regex!')
             return SpecFile.split_version_string('')
+
+    def get_new_log(self, git_helper):
+        new_record = []
+        today = date.today()
+        git_name = git_helper.command_config('--get', 'user.name')
+        git_mail = git_helper.command_config('--get', 'user.mail')
+        new_record.append('* {day} {name} <{email}> - {ver}\n'.format(day=today.strftime('%a %b %d %Y'),
+                                                                      name=git_name,
+                                                                      email=git_mail,
+                                                                      ver=self.get_version()))
+        new_record.append('- New upstream release {rel}\n'.format(rel=self.get_version()))
+        new_record.append('\n')
+        return new_record
+
+    def insert_changelog(self, new_log):
+        changelog = '%changelog'
+        new_log.extend(self.get_spec_section(changelog))
+        self.set_spec_section(changelog, new_log)
+
+    def update_changelog(self, new_log):
+        """
+        Function updates changelog with new version
+        """
+        self.insert_changelog(new_log)
+        self.spec_content = self._create_spec_from_sections()
+        self.save()
