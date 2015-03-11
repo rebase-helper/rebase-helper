@@ -26,6 +26,7 @@ import re
 import shutil
 import six
 import rpm
+from six import StringIO
 from difflib import SequenceMatcher
 
 from rebasehelper.utils import DownloadHelper
@@ -33,8 +34,7 @@ from rebasehelper.logger import logger
 from rebasehelper import settings
 from rebasehelper.archive import Archive
 from rebasehelper.exceptions import RebaseHelperError
-from rebasehelper.diff_helper import GenericDiff
-
+from rebasehelper.utils import ProcessHelper
 
 PATCH_PREFIX = '%patch'
 
@@ -162,7 +162,8 @@ class SpecFile(object):
         """
         Method returns a list of patches from a spec file
         """
-        patch_list = []
+        patches_applied = []
+        patches_not_used = []
         patches_list = [p for p in self.spc.sources if p[2] == 2]
         patch_flags = self._get_patches_flags()
 
@@ -175,9 +176,13 @@ class SpecFile(object):
             if patch_flags:
                 if num in patch_flags:
                     patch_num = patch_flags[num]
-            patch_list.append(PatchObject(patch_path, patch_num))
-        patch_list = sorted(patch_list, key=lambda x: x.get_index())
-        return patch_list
+                    patches_applied.append(PatchObject(patch_path, patch_num))
+                else:
+                    patches_not_used.append(PatchObject(patch_path, patch_num))
+            else:
+                patches_applied.append(PatchObject(patch_path, patch_num))
+        patches_applied = sorted(patches_applied, key=lambda x: x.get_index())
+        return {"applied": patches_applied, "not_applied": patches_not_used}
 
     def copy(self, new_path=None):
         """
@@ -393,12 +398,28 @@ class SpecFile(object):
 
     def get_patches(self):
         """
-        Method returns dictionary with patches list.
+        Method returns list of all applied and not applied patches
+        :return: list of PatchObject
+        """
+        return self.get_applied_patches() + self.get_not_used_patches()
+
+    def get_applied_patches(self):
+        """
+        Method returns list of all applied patches.
 
         :return: list of PatchObject
         """
 
-        return self.patches
+        return self.patches['applied']
+
+    def get_not_used_patches(self):
+        """
+        Method returns list of all unpplied patches.
+
+        :return: list of PatchObject
+        """
+
+        return self.patches['not_applied']
 
     def get_sources(self):
         """
@@ -631,7 +652,7 @@ class SpecFile(object):
             if not line.startswith('Version'):
                 continue
             logger.debug("Updating version in SPEC from '{0}' with '{1}'".format(self.get_version(),
-                                                                                           version))
+                                                                                 version))
             self.spec_content[index] = line.replace(self.get_version(), version)
             break
         #  save changes to the disc
@@ -728,13 +749,20 @@ class SpecFile(object):
         #  TODO: this method should not take whole kwargs as argument, take only what it needs.
         if not patches:
             return None
-
+        # If some patches are not applied then commented out
         removed_patches = []
+
         for index, line in enumerate(self.spec_content):
             if line.startswith('Patch'):
                 fields = line.strip().split()
                 patch_name = fields[1]
                 patch_num = self._get_patch_number(fields)
+                # We check if patch is mentioned in SPEC file but not used.
+                # We are comment out the patch
+                check_not_applied = [x for x in self.get_not_used_patches() if int(x.get_index()) == int(patch_num)]
+                if check_not_applied:
+                    comment = '#'
+                    self.spec_content[index] = comment + ' '.join(fields[:-1]) + ' ' + os.path.basename(patch_name) + '\n'
                 patch = [x for x in patches['deleted'] if patch_name in x]
                 if patch:
                     comment = '#'

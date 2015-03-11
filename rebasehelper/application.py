@@ -140,21 +140,6 @@ class Application(object):
             self.rebase_spec_file.set_version(version)
             self.rebase_spec_file.set_extra_version(extra_version)
 
-    def _find_old_data(self):
-        """
-        Function find data previously done
-        """
-        rebased_patches = self.rebase_spec_file.get_patches()
-        for file_name in PathHelper.find_all_files(self.results_dir, '*.patch'):
-            for key, value in six.iteritems(rebased_patches):
-                if os.path.basename(file_name) in value[0]:
-                    value[0] = file_name
-                    rebased_patches[key] = value
-                    break
-
-        update_patches = self.rebase_spec_file.write_updated_patches(rebased_patches)
-        OutputLogger.set_patch_output('Patches:', update_patches)
-
     def _initialize_data(self):
         """
         Function fill dictionary with default data
@@ -306,7 +291,7 @@ class Application(object):
         try:
             rebased_patches = patch.patch(sources[0],
                                           sources[1],
-                                          self.spec_file.get_patches(),
+                                          self.spec_file.get_applied_patches(),
                                           **self.kwargs)
         except RuntimeError as run_e:
             raise RebaseHelperError(run_e.message)

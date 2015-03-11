@@ -111,7 +111,7 @@ class GitPatchTool(PatchBase):
         # 2) git fetch new_sources
         # 3 git rebase -i --onto new_sources/master <oldest_commit_old_source> <the_latest_commit_old_sourcese>
         if not cls.cont:
-            logger.info('Rebase operation is ongoing...')
+            logger.info('Git-rebase operation to {0} is ongoing...'.format(os.path.basename(cls.new_sources)))
             upstream = 'new_upstream'
             init_hash, last_hash = cls._prepare_git(upstream)
             ret_code, cls.output_data = cls.git_helper.command_rebase(parameters='--onto',
@@ -119,7 +119,7 @@ class GitPatchTool(PatchBase):
                                                                       first_hash=init_hash,
                                                                       last_hash=last_hash)
         else:
-            logger.info('Rebase operation continues...')
+            logger.info('Git-rebase operation continues...')
             ret_code, cls.output_data = cls.git_helper.command_rebase(parameters='--skip')
             logger.debug(cls.output_data)
         patch_name = ""
@@ -129,8 +129,8 @@ class GitPatchTool(PatchBase):
             if int(ret_code) != 0:
                 patch_name = cls.git_helper.get_unapplied_patch(cls.output_data)
                 ret_code = cls.git_helper.command_mergetool()
-                #proc = cls.old_repo.git.status(untracked_files=True, as_process=True)
-                ret_code = cls.git_helper.command_add_files(parameters='--all')
+                modified_files = cls.git_helper.command_diff_status()
+                ret_code = cls.git_helper.command_add_files(parameters=modified_files)
                 base_name = os.path.join(cls.kwargs['results_dir'], patch_name)
                 ret_code = cls.git_helper.command_diff('HEAD', output_file=base_name)
                 with open(base_name, "r") as f:
@@ -155,7 +155,7 @@ class GitPatchTool(PatchBase):
     @staticmethod
     def commit_patch(git_helper, patch_name):
         logger.debug('Commit patch')
-        ret_code = git_helper.command_add_files('--all')
+        ret_code = git_helper.command_add_files(parameters=['--all'])
         if int(ret_code) != 0:
             raise GitRebaseError('We are not able to add changed files to local git repository.')
         ret_code = git_helper.command_commit(message='Patch: {0}'.format(os.path.basename(patch_name)))

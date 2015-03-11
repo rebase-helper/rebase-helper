@@ -28,13 +28,24 @@ import pycurl
 import shutil
 import rpm
 import six
+import locale
 from six import StringIO
 from six.moves import input
 from distutils.util import strtobool
 from rebasehelper.exceptions import RebaseHelperError
-
 from rebasehelper.logger import logger
 from rebasehelper import settings
+
+defenc = locale.getpreferredencoding()
+defenc = 'utf-8' if defenc == 'ascii' else defenc
+
+
+def exc_as_decode_string(e):
+    if six.PY2:
+        s = unicode(e)
+    else:
+        s = str(e)
+    return s
 
 
 class GitRuntimeError(RuntimeError):
@@ -279,7 +290,7 @@ class ProcessHelper(object):
         if out_file is not None:
             # read the output
             for line in sp.stdout:
-                out_file.write(line.decode())
+                out_file.write(line.decode(defenc))
             # TODO: Need to figure out how to send output to stdout (without logger) and to logger
             #else:
             #   logger.debug(line.rstrip("\n"))
@@ -299,7 +310,7 @@ class ProcessHelper(object):
 
         sp.wait()
 
-        logger.debug("subprocess exited with return code {ret}".format(ret=str(sp.returncode)))
+        logger.debug("subprocess exited with return code {ret}".format(ret=exc_as_decode_string(sp.returncode)))
 
         return sp.returncode
 
@@ -498,7 +509,7 @@ class GitHelper(object):
         if not output_file:
             out = output.readlines()
             for o in out:
-                output_data.append(o.strip().encode('ascii', 'ignore'))
+                output_data.append(o.strip())
         return ret_code, output_data
 
     @staticmethod
@@ -512,8 +523,9 @@ class GitHelper(object):
         try:
             with open(git_config_name) as f:
                 git_config = f.readlines()
-        except IOError:
-            raise RebaseHelperError("Unable to open and read SPEC file '{0}'".format(git_config_name))
+        except IOError as ioer:
+            raise RebaseHelperError("Unable to open and read SPEC file '{0}'. {1}".format(git_config_name,
+                                                                                          utils.exc_as_decode_string(ioer)))
 
         if not git_config:
             raise RebaseHelperError("File {0} is empty".format(git_config_name))
@@ -604,9 +616,11 @@ One of the possible configuration can be:\n
         ret_code, output = self._call_git_command(cmd)
         return ret_code
 
-    def command_status(self):
+    def command_diff_status(self):
         cmd = []
-        cmd.append('status')
+        cmd.append('diff')
+        cmd.append('--name-only')
+        cmd.append('--staged')
         ret_code, output = self._call_git_command(cmd)
         return ret_code
 
@@ -646,7 +660,7 @@ One of the possible configuration can be:\n
     def command_add_files(self, parameters=None):
         cmd = ['add']
         if parameters:
-            cmd.append(parameters)
+            cmd.extend(parameters)
         ret_code, output = self._call_git_command(cmd)
         return ret_code
 
