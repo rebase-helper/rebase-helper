@@ -361,7 +361,10 @@ class SpecFile(object):
         for index, line in enumerate(patches):
             num, option = self.get_patch_option(line)
             num = num.replace(PATCH_PREFIX, '')
-            patch_flags[int(num)] = index
+            try:
+                patch_flags[int(num)] = index
+            except ValueError:
+                patch_flags[0] = index
         # {num: index of application}
         return patch_flags
 
@@ -932,7 +935,7 @@ class SpecFile(object):
         self.set_spec_section(changelog, new_log)
 
     def update_changelog(self, new_log):
-        
+
         """
         Function updates changelog with new version
         """
