@@ -41,6 +41,7 @@ class BuildLogAnalyzerMakeError(RuntimeError):
 class BuildLogAnalyzerPatchError(RuntimeError):
 
     """Error indicating failure problem with building"""
+
     pass
 
 
@@ -52,9 +53,9 @@ class BuildLogAnalyzer(object):
 
     @classmethod
     def parse_log(cls, dir_name, log_name):
-
         """
         Function analyze the logs for specific section
+
         :param log_name: Logfile name which is analyzed
         :param start_string: Start string
         :return: list of files
@@ -65,9 +66,9 @@ class BuildLogAnalyzer(object):
 
     @classmethod
     def _parse_build_log(cls, log_name):
-
         """
         Function analyzes log files in our case build.log
+
         :param log_name:
         :return: list of files which are either missing or not exists
         """
@@ -78,7 +79,7 @@ class BuildLogAnalyzer(object):
         with open(log_name, 'r') as f:
             lines = f.read()
         if not lines:
-            logger.debug('Problem with openning log {0}'.format(log_name))
+            logger.debug('Problem with openning log {name}'.format(name=log_name))
             raise BuildLogAnalyzerMissingError
 
         # Test for finding files which exists in sources
@@ -89,26 +90,27 @@ class BuildLogAnalyzer(object):
         section = cls._find_section(lines, missing_reg, e_reg)
         if section:
             section = section.replace('File not found by glob:', '').replace('File not found:', '')
-            logger.debug('Found missing files which are not in SPEC file: {0}'.format(section))
+            logger.debug('Found missing files which are not in SPEC file: {files}'.format(files=section))
             files['missing'] = cls._get_files_from_string(section)
         else:
             section = cls._find_section(lines, missing_source_reg, e_reg)
             if section:
                 if cls._find_make_error(lines):
-                    raise BuildLogAnalyzerMakeError('Look at the build log {0}'.format(log_name))
+                    raise BuildLogAnalyzerMakeError('Look at the build log {name}'.format(name=log_name))
                 else:
                     if cls._find_patch_error(lines):
-                        raise BuildLogAnalyzerPatchError('Patching failed during building. Look at the build log {0}'.format(log_name))
+                        raise BuildLogAnalyzerPatchError('Patching failed during building. Look at the build log {log}'.format(log=log_name))
                     else:
                         files_from_section = cls._get_files_from_string(section)
                         if files_from_section:
-                            logger.debug('Found files which does not exist in source: {0}'.format(section))
+                            logger.debug('Found files which does not exist in source: {files}'.format(files=section))
                             files['deleted'] = files_from_section
                         else:
                             logger.info('Not known issue')
                             raise RuntimeError
             else:
-                logger.info('We did not find a reason why build failed.\nLook at the build log {0}'.format(log_name))
+                logger.info('We did not find a reason why build failed.')
+                logger.info('Look at the build log {log}'.format(log=log_name))
 
         return files
 
@@ -130,7 +132,6 @@ class BuildLogAnalyzer(object):
 
     @classmethod
     def _get_files_from_string(cls, section):
-
         """
         Function returns files from string
         If row begins with / then it appends the rest of row to field
@@ -152,9 +153,9 @@ class BuildLogAnalyzer(object):
 
     @classmethod
     def _find_section(cls, lines, s_reg, e_reg=None):
-
         """
         get string from substring
+
         :param log_name: file_name to analyze
         :param s_reg: Start regular expression
         :param e_reg: End regular expression
