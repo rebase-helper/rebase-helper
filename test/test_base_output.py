@@ -47,7 +47,6 @@ class TestBaseOutput(object):
         OutputLogger.set_build_data('new', self.new_rpm_data)
 
     def test_base_output_global(self):
-        results = OutputLogger.get_all()
         expect_dict = self.info_data
         expect_dict.update(self.info_data2)
         build_dict = {'old': self.old_rpm_data,
@@ -69,10 +68,10 @@ class TestBaseOutput(object):
         expected_patches = self.patches_data
         assert patch_results == expected_patches
 
-    def test_base_output_builds(self):
+    def test_base_output_builds_old(self):
         build_results = OutputLogger.get_build('old')
         assert build_results == self.old_rpm_data
 
-    def test_base_output_builds(self):
+    def test_base_output_builds_new(self):
         build_results = OutputLogger.get_build('new')
         assert build_results == self.new_rpm_data
