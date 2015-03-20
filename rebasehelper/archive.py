@@ -40,7 +40,9 @@ def register_archive_type(archive):
 
 
 class ArchiveTypeBase(object):
+
     """ Base class for various archive types """
+
     @classmethod
     def match(cls, *args, **kwargs):
         """
@@ -60,7 +62,9 @@ class ArchiveTypeBase(object):
 
 @register_archive_type
 class TarXzArchiveType(ArchiveTypeBase):
+
     """ .tar.xz archive type """
+
     EXTENSION = ".tar.xz"
 
     @classmethod
@@ -81,7 +85,9 @@ class TarXzArchiveType(ArchiveTypeBase):
 
 @register_archive_type
 class TarBz2ArchiveType(ArchiveTypeBase):
+
     """ .tar.bz2 archive type """
+
     EXTENSION = ".tar.bz2"
 
     @classmethod
@@ -101,7 +107,9 @@ class TarBz2ArchiveType(ArchiveTypeBase):
 
 @register_archive_type
 class TarGzArchiveType(TarBz2ArchiveType):
+
     """ .tar.gz archive type """
+
     EXTENSION = ".tar.gz"
 
     @classmethod
@@ -153,6 +161,7 @@ class ZipArchiveType(ArchiveTypeBase):
 
 
 class Archive(object):
+
     """ Class representing an archive with sources """
 
     def __init__(self, filename=None):
