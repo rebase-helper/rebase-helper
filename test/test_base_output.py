@@ -58,20 +58,36 @@ class TestBaseOutput(object):
             assert value == expected_result[key]
 
     def test_base_output_info(self):
+        """
+        Test Output logger info
+        :return:
+        """
         info_results = OutputLogger.get_summary_info()
         expect_dict = self.info_data
         expect_dict.update(self.info_data2)
         assert info_results == expect_dict
 
     def test_base_output_patches(self):
+        """
+        Test Output logger patches
+        :return:
+        """
         patch_results = OutputLogger.get_patches('Patches')
         expected_patches = self.patches_data
         assert patch_results == expected_patches
 
     def test_base_output_builds_old(self):
+        """
+        Test Output logger old builds
+        :return:
+        """
         build_results = OutputLogger.get_build('old')
         assert build_results == self.old_rpm_data
 
     def test_base_output_builds_new(self):
+        """
+        Test Output logger new builds
+        :return:
+        """
         build_results = OutputLogger.get_build('new')
         assert build_results == self.new_rpm_data
