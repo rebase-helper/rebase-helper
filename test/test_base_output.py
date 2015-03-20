@@ -60,6 +60,7 @@ class TestBaseOutput(object):
     def test_base_output_info(self):
         """
         Test Output logger info
+
         :return:
         """
         info_results = OutputLogger.get_summary_info()
@@ -70,6 +71,7 @@ class TestBaseOutput(object):
     def test_base_output_patches(self):
         """
         Test Output logger patches
+
         :return:
         """
         patch_results = OutputLogger.get_patches('Patches')
@@ -79,6 +81,7 @@ class TestBaseOutput(object):
     def test_base_output_builds_old(self):
         """
         Test Output logger old builds
+
         :return:
         """
         build_results = OutputLogger.get_build('old')
@@ -87,6 +90,7 @@ class TestBaseOutput(object):
     def test_base_output_builds_new(self):
         """
         Test Output logger new builds
+
         :return:
         """
         build_results = OutputLogger.get_build('new')
