@@ -22,7 +22,8 @@
 
 import shutil
 from .base_test import BaseTest
-from rebasehelper.build_log_analyzer import *
+from rebasehelper.build_log_analyzer import BuildLogAnalyzer, BuildLogAnalyzerMakeError
+from rebasehelper.build_log_analyzer import BuildLogAnalyzerPatchError
 
 
 class TestBuildLogAnalyzer(BaseTest):
