@@ -15,6 +15,7 @@ Source2: ftp://test.com/test-source.sh
 Patch1: test-testing.patch
 Patch2: test-testing2.patch
 Patch3: test-testing3.patch
+Patch4: test-testing4.patch
 
 BuildRequires: openssl-devel, pkgconfig, texinfo, gettext, autoconf
 
@@ -32,6 +33,7 @@ Testing devel spec file
 %patch1
 %patch2 -p1
 %patch3 -p1 -b .testing3
+%patch4 -p0 -b .testing4
 
 %build
 autoreconf -vi

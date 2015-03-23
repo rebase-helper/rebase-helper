@@ -637,6 +637,31 @@ class SpecFile(object):
                         patch_num.remove(num)
                         break
 
+    def _correct_rebased_patches(self, patch_num):
+
+        """Comment out patches from SPEC file
+
+        :var patch_num: list with patch numbers to update
+        """
+        for index, line in enumerate(self.spec_content):
+            #  if patch is applied on the line, try to check if it should be commented out
+            if line.startswith('%patch'):
+                #  check patch numbers
+                for num in patch_num:
+                    #  if the line should be commented out
+                    if line.startswith('%patch{0}'.format(num)):
+                        patch_fields = line.strip().split()
+                        patch_fields = [x for x in patch_fields if not x.startswith('-p')]
+                        self.spec_content[index] = '{begin}\n#{line}{new_line}\n{end}\n'.format(
+                            begin=settings.BEGIN_COMMENT,
+                            line=line,
+                            new_line=' '.join(patch_fields) + ' -p1',
+                            end=settings.END_COMMENT,
+                        )
+                        #  remove the patch number from list
+                        patch_num.remove(num)
+                        break
+
     def set_release_number(self, release):
 
         """
@@ -809,6 +834,7 @@ class SpecFile(object):
             return None
         # If some patches are not applied then commented out
         removed_patches = []
+        modified_patches = []
 
         for index, line in enumerate(self.spec_content):
             if line.startswith('Patch'):
@@ -818,20 +844,20 @@ class SpecFile(object):
                 # We check if patch is mentioned in SPEC file but not used.
                 # We are comment out the patch
                 check_not_applied = [x for x in self.get_not_used_patches() if int(x.get_index()) == int(patch_num)]
-                if check_not_applied:
+                patch_removed = [x for x in patches['deleted'] if patch_name in x]
+                if check_not_applied or patch_removed:
                     comment = '#'
                     self.spec_content[index] = comment + ' '.join(fields[:-1]) + ' ' + os.path.basename(patch_name) + '\n'
-                patch = [x for x in patches['deleted'] if patch_name in x]
-                if patch:
-                    comment = '#'
-                    removed_patches.append(patch_num)
-                    self.spec_content[index] = comment + ' '.join(fields[:-1]) + ' ' + os.path.basename(patch_name) + '\n'
+                    if patch_removed:
+                        removed_patches.append(patch_num)
                 patch = [x for x in patches['modified'] if patch_name in x]
                 if patch:
                     fields[1] = os.path.join(settings.REBASE_HELPER_RESULTS_DIR, patch_name)
                     self.spec_content[index] = ' '.join(fields) + '\n'
+                    modified_patches.append(patch_num)
 
         self._comment_out_patches(removed_patches)
+        self._correct_rebased_patches(modified_patches)
         #  save changes
         self.save()
 

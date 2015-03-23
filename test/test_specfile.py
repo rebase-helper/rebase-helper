@@ -41,6 +41,7 @@ class TestSpecFile(BaseTest):
     PATCH_1 = 'test-testing.patch'
     PATCH_2 = 'test-testing2.patch'
     PATCH_3 = 'test-testing3.patch'
+    PATCH_4 = 'test-testing4.patch'
     BUILD_MISSING_LOG = 'build_missing.log'
     BUILD_OBSOLETES_LOG = 'build_obsoletes.log'
 
@@ -49,6 +50,7 @@ class TestSpecFile(BaseTest):
         PATCH_1,
         PATCH_2,
         PATCH_3,
+        PATCH_4,
         BUILD_MISSING_LOG,
         BUILD_OBSOLETES_LOG
     ]
@@ -119,7 +121,8 @@ class TestSpecFile(BaseTest):
     def test_get_patches(self):
         expected_patches = {0: [os.path.join(self.WORKING_DIR, self.PATCH_1), 0],
                             1: [os.path.join(self.WORKING_DIR, self.PATCH_2), 1],
-                            2: [os.path.join(self.WORKING_DIR, self.PATCH_3), 2]}
+                            2: [os.path.join(self.WORKING_DIR, self.PATCH_3), 2],
+                            3: [os.path.join(self.WORKING_DIR, self.PATCH_4), 3]}
         patches = {}
         for index, p in enumerate(self.SPEC_FILE_OBJECT.get_patches()):
             patches[index] = [p.get_path(), p.get_index()]
@@ -206,6 +209,7 @@ class TestSpecFile(BaseTest):
                             'Patch1: test-testing.patch\n',
                             'Patch2: test-testing2.patch\n',
                             'Patch3: test-testing3.patch\n',
+                            'Patch4: test-testing4.patch\n',
                             '\n',
                             'BuildRequires: openssl-devel, pkgconfig, texinfo, gettext, autoconf\n',
                             '\n']],
@@ -219,6 +223,7 @@ class TestSpecFile(BaseTest):
                           '%patch1\n',
                           '%patch2 -p1\n',
                           '%patch3 -p1 -b .testing3\n',
+                          '%patch4 -p0 -b .testing4\n',
                           '\n']],
             5: ['%build', ['autoreconf -vi\n',
                            '\n',
@@ -360,3 +365,12 @@ class TestSpecFile(BaseTest):
         result = self.SPEC_FILE_OBJECT.get_spec_section('%changelog')
         assert changelog[0] == result[0]
         assert changelog[1] == result[1]
+
+    def test_patch_macro(self):
+        self.SPEC_FILE_OBJECT._correct_rebased_patches(['4'])
+        self.SPEC_FILE_OBJECT._write_spec_file_to_disc()
+        expected_patch = ['%patch4 -b .testing4 -p1\n']
+        with open(self.SPEC_FILE) as spec:
+            lines = spec.readlines()
+        lines = [x for x in lines if x.startswith('%patch4')]
+        assert expected_patch == lines
