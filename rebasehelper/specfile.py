@@ -29,7 +29,7 @@ import rpm
 from datetime import date
 from difflib import SequenceMatcher
 
-from rebasehelper.utils import DownloadHelper
+from rebasehelper.utils import DownloadHelper, defenc
 from rebasehelper.logger import logger
 from rebasehelper import settings
 from rebasehelper.archive import Archive
@@ -374,7 +374,7 @@ class SpecFile(object):
         Method for getting full release string of the package
         :return:
         """
-        return self.hdr[rpm.RPMTAG_RELEASE].decode()
+        return self.hdr[rpm.RPMTAG_RELEASE].decode(defenc)
 
     def get_release_number(self):
 
@@ -393,7 +393,7 @@ class SpecFile(object):
         Method returns the version
         :return:
         """
-        return self.hdr[rpm.RPMTAG_VERSION].decode()
+        return self.hdr[rpm.RPMTAG_VERSION].decode(defenc)
 
     def get_extra_version(self):
 
@@ -409,7 +409,7 @@ class SpecFile(object):
         Function returns a package name
         :return:
         """
-        return self.hdr[rpm.RPMTAG_NAME].decode()
+        return self.hdr[rpm.RPMTAG_NAME].decode(defenc)
 
     def get_requires(self):
 
@@ -417,7 +417,7 @@ class SpecFile(object):
         Function returns a package requirements
         :return:
         """
-        return [r.decode() for r in self.hdr[rpm.RPMTAG_REQUIRES]]
+        return [r.decode(defenc) for r in self.hdr[rpm.RPMTAG_REQUIRES]]
 
     def is_patch_git_generated(self, full_patch_name):
 

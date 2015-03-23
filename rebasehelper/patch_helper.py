@@ -22,7 +22,7 @@
 
 import os
 from rebasehelper.logger import logger
-from rebasehelper.utils import ConsoleHelper
+from rebasehelper.utils import ConsoleHelper, defenc
 from rebasehelper.utils import GitHelper, GitRebaseError
 
 #from git import Repo
@@ -139,7 +139,7 @@ class GitPatchTool(PatchBase):
                 if not cls.output_data:
                     deleted_patches.append(base_name)
                 else:
-                    logger.info('Following files were modified: {0}'.format(modified_files))
+                    logger.info('Following files were modified: {0}'.format(','.join(modified_files).decode(defenc)))
                     ret_code = cls.git_helper.command_commit(message=patch_name)
                     ret_code, cls.output_data = cls.git_helper.command_diff('HEAD~1', output_file=base_name)
                     modified_patches.append(base_name)
