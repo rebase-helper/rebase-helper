@@ -3,7 +3,14 @@ python:
   - "2.7"
   - "3.3"
   - "3.4"
+before_install:
+  - wget https://kojipkgs.fedoraproject.org//packages/rpm/4.12.0.1/8.fc22/x86_64/rpm-python-4.12.0.1-8.fc22.x86_64.rpm
+  - wget https://kojipkgs.fedoraproject.org//packages/rpm/4.12.0.1/8.fc22/x86_64/rpm-python3-4.12.0.1-8.fc22.x86_64.rpm
 install:
-  - sudo apt-get -y install python-lzma liblzma-dev python-rpm
+  - sudo apt-get -y install python-lzma liblzma-dev python-rpm alien dpkg-dev debhelper build-essential
+  - sudo alien rpm-python-4.12.0.1-8.fc22.x86_64.rpm
+  - sudo alien rpm-python3-4.12.0.1-8.fc22.x86_64.rpm
+  - sudo dpkg -i rpm-python-4.12.0.1-8.fc22.x86_64.deb
+  - sudo dpkg -i rpm-python3-4.12.0.1-8.fc22.x86_64.deb
   - pip install -r requirements.txt
 script: python setup.py test
