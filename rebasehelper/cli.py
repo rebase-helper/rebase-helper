@@ -111,6 +111,13 @@ class CLI(object):
             metavar='SOURCES',
             help="Specify new upstream sources"
         )
+        self.parser.add_argument(
+            "--non-interactive",
+            default=False,
+            action="store_true",
+            dest='non_interactive',
+            help="Use if you do not want a user interaction"
+        )
 
     def __getattr__(self, name):
         try:

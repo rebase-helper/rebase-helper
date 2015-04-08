@@ -69,6 +69,7 @@ class GitPatchTool(PatchBase):
     old_repo = None
     new_repo = None
     git_helper = None
+    non_interactive = False
 
     @classmethod
     def match(cls, cmd):
@@ -125,11 +126,15 @@ class GitPatchTool(PatchBase):
         patch_name = ""
         modified_patches = []
         deleted_patches = []
+        unapplied_patches = []
         while True:
             if int(ret_code) != 0:
                 patch_name = cls.git_helper.get_unapplied_patch(cls.output_data)
                 logger.info("Git has problems with rebasing patch {0}".format(patch_name))
-                ret_code = cls.git_helper.command_mergetool()
+                if not cls.non_interactive:
+                    ret_code = cls.git_helper.command_mergetool()
+                else:
+                    unapplied_patches.append(patch_name)
                 modified_files = cls.git_helper.command_diff_status()
                 ret_code = cls.git_helper.command_add_files(parameters=modified_files)
                 base_name = os.path.join(cls.kwargs['results_dir'], patch_name)
@@ -143,15 +148,16 @@ class GitPatchTool(PatchBase):
                     ret_code = cls.git_helper.command_commit(message=patch_name)
                     ret_code, cls.output_data = cls.git_helper.command_diff('HEAD~1', output_file=base_name)
                     modified_patches.append(base_name)
-                if not ConsoleHelper.get_message('Do you want to continue with another patch'):
-                    raise KeyboardInterrupt
+                if not cls.non_interactive:
+                    if not ConsoleHelper.get_message('Do you want to continue with another patch'):
+                        raise KeyboardInterrupt
                 ret_code, cls.output_data = cls.git_helper.command_rebase('--skip')
             else:
                 break
 
         #TODO correct settings for merge tool in ~/.gitconfig
         # currently now meld is not started
-        return {'modified': modified_patches, 'deleted': deleted_patches}
+        return {'modified': modified_patches, 'deleted': deleted_patches, 'unapplied': unapplied_patches}
 
     @staticmethod
     def commit_patch(git_helper, patch_name):
@@ -202,6 +208,7 @@ class GitPatchTool(PatchBase):
         cls.output_data = []
         cls.cont = cls.kwargs['continue']
         cls.git_helper = git_helper
+        cls.non_interactive = kwargs.get('non_interactive')
         if not os.path.isdir(os.path.join(cls.old_sources, '.git')):
             cls.init_git(old_dir)
             cls.init_git(new_dir)

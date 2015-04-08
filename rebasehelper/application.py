@@ -51,6 +51,7 @@ class Application(object):
     rebase_spec_file = None
     rebase_spec_file_path = None
     debug_log_file = None
+    rebased_patches = {}
 
     def __init__(self, cli_conf=None):
         """
@@ -75,6 +76,7 @@ class Application(object):
         self.kwargs['results_dir'] = self.results_dir = os.path.join(self.execution_dir,
                                                                      settings.REBASE_HELPER_RESULTS_DIR)
 
+        self.kwargs['non_interactive'] = self.conf.non_interactive
         # if not continuing, check the results dir
         if not self.conf.cont and not self.conf.build_only:
             self._check_results_dir()
@@ -293,14 +295,16 @@ class Application(object):
 
         self.rebase_spec_file.update_changelog(self.rebase_spec_file.get_new_log(git_helper))
         try:
-            rebased_patches = patch.patch(sources[0],
-                                          sources[1],
-                                          git_helper,
-                                          self.spec_file.get_applied_patches(),
-                                          **self.kwargs)
+            self.rebased_patches = patch.patch(sources[0],
+                                               sources[1],
+                                               git_helper,
+                                               self.spec_file.get_applied_patches(),
+                                               **self.kwargs)
         except RuntimeError as run_e:
             raise RebaseHelperError(run_e.message)
-        update_patches = self.rebase_spec_file.write_updated_patches(rebased_patches)
+        update_patches = self.rebase_spec_file.write_updated_patches(self.rebased_patches)
+        if self.conf.non_interactive:
+            OutputLogger.set_patch_output('Unapplied patches:', self.rebased_patches['unapplied'])
         OutputLogger.set_patch_output('Patches:', update_patches)
 
     def build_packages(self):
@@ -366,14 +370,21 @@ class Application(object):
                             build_log))
                     self.rebase_spec_file.modify_spec_files_section(files)
 
-                if failed_before:
-                    if not ConsoleHelper.get_message('Do you want rebase-helper to try build the packages one more time'):
-                        raise KeyboardInterrupt
+                if not self.conf.non_interactive:
+                    if failed_before:
+                        if not ConsoleHelper.get_message('Do you want rebase-helper to try build the packages one more time'):
+                            raise KeyboardInterrupt
+                else:
+                    logger.warning('Some patches were not successfully applied')
+                    shutil.rmtree(os.path.join(results_dir, 'RPM'))
+                    shutil.rmtree(os.path.join(results_dir, 'SRPM'))
+                    return False
                 #  build just failed, otherwise we would break out of the while loop
                 failed_before = True
 
                 shutil.rmtree(os.path.join(results_dir, 'RPM'))
                 shutil.rmtree(os.path.join(results_dir, 'SRPM'))
+        return True
 
     def pkgdiff_packages(self):
         """
@@ -408,9 +419,10 @@ class Application(object):
             if self.conf.buildtool == 'rpmbuild':
                 Application.check_build_requires(self.spec_file)
             # Build packages
-            self.build_packages()
+            build = self.build_packages()
             # Perform checks
-            self.pkgdiff_packages()
+            if build:
+                self.pkgdiff_packages()
 
         # print summary information
         self.print_summary()

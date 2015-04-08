@@ -43,10 +43,12 @@ class TestCLI(object):
                 'outputtool': 'xml',
                 'keep_workspace': True,
                 'not_download_sources': True,
-                'cont': True}
+                'cont': True,
+                'non_interactive': True}
         arguments = ['--build-only', '--patch-only', 'test-1.0.3.tar.gz', '--verbose', '--patchtool',
                      'patch_test', '--buildtool', 'rpmbuild', '--difftool', 'vimdiff', '--pkgcomparetool',
-                     'rpmdiff', '--outputtool', 'xml', '--keep-workspace', '--not-download-sources', '--continue']
+                     'rpmdiff', '--outputtool', 'xml', '--keep-workspace', '--not-download-sources', '--continue',
+                     '--non-interactive']
         cli = CLI(arguments)
         for key, value in cli.args.__dict__.items():
             assert cli.args.__dict__[key] == conf[key]
