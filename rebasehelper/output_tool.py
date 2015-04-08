@@ -171,10 +171,10 @@ class TextOutputTool(BaseOutputTool):
         """
         Function prints a summary information about pkgcomparetool
         """
-
-        for check, data in six.iteritems(OutputLogger.get_checkers()):
-            if data:
-                logger_output.info("{0}:\n{1}".format(check, data))
+        if OutputLogger.get_checkers():
+            for check, data in six.iteritems(OutputLogger.get_checkers()):
+                if data:
+                    logger_output.info("{0}:\n{1}".format(check, data))
 
 
 class OutputTool(object):
