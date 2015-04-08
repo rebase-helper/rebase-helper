@@ -183,7 +183,7 @@ class PkgDiffTool(BaseChecker):
             with open(file_name, 'w') as f:
                 f.writelines(lines)
         except IOError:
-            raise RebaseHelperError("Unable to create XML file for pkgdiff tool '{0}'".format(file_name))
+            raise RebaseHelperError("Unable to create XML file for pkgdiff tool '%s'", file_name)
 
         return file_name
 
@@ -206,7 +206,7 @@ class PkgDiffTool(BaseChecker):
         for tag in settings.CHECKER_TAGS:
             results_dict[tag] = []
         for file_name in [os.path.join(result_dir, x) for x in XML_FILES]:
-            logger.info('Processing {0} file.'.format(file_name))
+            logger.info('Processing %s file.', file_name)
             try:
                 with open(file_name, "r") as f:
                     lines = f.readlines()
@@ -302,7 +302,7 @@ class PkgDiffTool(BaseChecker):
          other return codes means error
         """
         if int(ret_code) != 0 and int(ret_code) != 1:
-            raise RebaseHelperError('Execution of {0} failed.\nCommand line is: {1}'.format(cls.CMD, cmd))
+            raise RebaseHelperError('Execution of %s failed.\nCommand line is: %s', cls.CMD, cmd)
         OutputLogger.set_info_text('Result HTML page from pkgdiff is store in: ', cls.pkgdiff_results_full_path)
         return cls.process_xml_results(cls.results_dir)
 
@@ -330,7 +330,7 @@ class Checker(object):
 
     def run_check(self, results_dir):
         """ Run the check """
-        logger.debug("Running tests on packages using '{0}'".format(self._tool_name))
+        logger.debug("Running tests on packages using '%s'", self._tool_name)
         return self._tool.run_check(results_dir)
 
     @classmethod

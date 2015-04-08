@@ -112,7 +112,7 @@ class GitPatchTool(PatchBase):
         # 2) git fetch new_sources
         # 3 git rebase -i --onto new_sources/master <oldest_commit_old_source> <the_latest_commit_old_sourcese>
         if not cls.cont:
-            logger.info('Git-rebase operation to {0} is ongoing...'.format(os.path.basename(cls.new_sources)))
+            logger.info('Git-rebase operation to %s is ongoing...', os.path.basename(cls.new_sources))
             upstream = 'new_upstream'
             init_hash, last_hash = cls._prepare_git(upstream)
             ret_code, cls.output_data = cls.git_helper.command_rebase(parameters='--onto',
@@ -130,7 +130,7 @@ class GitPatchTool(PatchBase):
         while True:
             if int(ret_code) != 0:
                 patch_name = cls.git_helper.get_unapplied_patch(cls.output_data)
-                logger.info("Git has problems with rebasing patch {0}".format(patch_name))
+                logger.info("Git has problems with rebasing patch %s", patch_name)
                 if not cls.non_interactive:
                     ret_code = cls.git_helper.command_mergetool()
                 else:
@@ -144,7 +144,7 @@ class GitPatchTool(PatchBase):
                 if not cls.output_data:
                     deleted_patches.append(base_name)
                 else:
-                    logger.info('Following files were modified: {0}'.format(','.join(modified_files).decode(defenc)))
+                    logger.info('Following files were modified: %s', ','.join(modified_files).decode(defenc))
                     ret_code = cls.git_helper.command_commit(message=patch_name)
                     ret_code, cls.output_data = cls.git_helper.command_diff('HEAD~1', output_file=base_name)
                     modified_patches.append(base_name)
@@ -177,8 +177,7 @@ class GitPatchTool(PatchBase):
         """Function applies a patch to a old/new sources"""
         for patch in patches:
             patch_path = patch.get_path()
-            logger.info("Applying patch '{0}' to '{1}'".format(os.path.basename(patch_path),
-                                                               os.path.basename(cls.source_dir)))
+            logger.info("Applying patch '%s' to '%s'", os.path.basename(patch_path), os.path.basename(cls.source_dir))
             ret_code = GitPatchTool.apply_patch(cls.git_helper, patch_path)
             # unexpected
             if int(ret_code) != 0:
@@ -255,7 +254,7 @@ class Patcher(object):
         :param kwargs: --
         :return:
         """
-        logger.debug("Patching source by patch tool {0}".format(self._path_tool_name))
+        logger.debug("Patching source by patch tool %s", self._path_tool_name)
         return self._tool.run_patch(old_dir, new_dir, git_helper, patches, **kwargs)
 
 

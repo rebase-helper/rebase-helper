@@ -146,11 +146,11 @@ class DownloadHelper(object):
             curl.setopt(pycurl.TIMEOUT, 300)
             curl.setopt(pycurl.WRITEDATA, f)
             try:
-                logger.info('Downloading sources from URL {0}'.format(url))
+                logger.info('Downloading sources from URL %s', url)
                 curl.perform()
             except pycurl.error as error:
                 curl.close()
-                raise ReferenceError("Downloading '{0}' failed with error '{1}'.".format(url, error))
+                raise ReferenceError("Downloading '%s' failed with error '%s'.", url, error)
 
             else:
                 curl.close()
@@ -309,7 +309,7 @@ class ProcessHelper(object):
 
         sp.wait()
 
-        logger.debug("subprocess exited with return code {ret}".format(ret=exc_as_decode_string(sp.returncode)))
+        logger.debug("subprocess exited with return code %s", exc_as_decode_string(sp.returncode))
 
         return sp.returncode
 
@@ -384,7 +384,7 @@ class TemporaryEnvironment(object):
 
     def __enter__(self):
         self._env[self.TEMPDIR] = PathHelper.get_temp_dir()
-        logger.debug("Created environment in '{0}'".format(self.path()))
+        logger.debug("Created environment in '%s'", self.path())
         return self
 
     def __exit__(self, type, value, traceback):
@@ -397,10 +397,10 @@ class TemporaryEnvironment(object):
             logger.debug("Exit callback executed successfully")
 
         shutil.rmtree(self.path(), onerror=lambda func, path, excinfo: shutil.rmtree(path))
-        logger.debug("Destroyed environment in '{0}'".format(self.path()))
+        logger.debug("Destroyed environment in '%s'", self.path())
 
     def __str__(self):
-        return "<TemporaryEnvironment path='{0}'>".format(self.path())
+        return "<TemporaryEnvironment path='%s'>", self.path()
 
     def path(self):
 
@@ -534,14 +534,14 @@ class GitHelper(object):
         merge = self.command_config('--get', 'merge.tool')
         git_config_name = os.path.expanduser('~/{0}'.format(settings.GIT_CONFIG))
         if not merge:
-            message = """[merge] section is not defined in {0}.\n
+            message = """[merge] section is not defined in %s.\n
 One of the possible configuration can be:\n
 [mergetool "mymeld"]
     cmd = meld --auto-merge --output $MERGED $LOCAL $BASE $REMOTE --diff $BASE $LOCAL --diff $BASE $REMOTE
 [merge]
     tool = mymeld
     conflictstyle = diff3"""
-            raise RebaseHelperError(message.format(git_config_name))
+            raise RebaseHelperError(message, git_config_name)
         return merge
 
     @staticmethod

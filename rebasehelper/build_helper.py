@@ -69,22 +69,22 @@ class BuildTemporaryEnvironment(TemporaryEnvironment):
 
     def __enter__(self):
         obj = super(BuildTemporaryEnvironment, self).__enter__()
-        log_message = "Copying '{0}' to '{1}'"
+        log_message = "Copying '%s' to '%s'"
         # create the directory structure
         self._create_directory_sctructure()
         # copy sources
         for source in self.sources:
-            logger.debug(log_message.format(source, self._env[self.TEMPDIR_SOURCES]))
+            logger.debug(log_message, source, self._env[self.TEMPDIR_SOURCES])
             shutil.copy(source, self._env[self.TEMPDIR_SOURCES])
         # copy patches
         for patch in self.patches:
-            logger.debug(log_message.format(patch, self._env[self.TEMPDIR_SOURCES]))
+            logger.debug(log_message, patch, self._env[self.TEMPDIR_SOURCES])
             shutil.copy(patch, self._env[self.TEMPDIR_SOURCES])
         # copy SPEC file
         spec_name = os.path.basename(self.spec)
         self._env[self.TEMPDIR_SPEC] = os.path.join(self._env[self.TEMPDIR_SPECS], spec_name)
         shutil.copy(self.spec, self._env[self.TEMPDIR_SPEC])
-        logger.debug(log_message.format(self.spec, self._env[self.TEMPDIR_SPEC]))
+        logger.debug(log_message, self.spec, self._env[self.TEMPDIR_SPEC])
 
         return obj
 
@@ -103,14 +103,14 @@ class BuildTemporaryEnvironment(TemporaryEnvironment):
         :return:
         """
         os.makedirs(results_dir)
-        log_message = "Copying '{0}' '{1}' to '{2}'"
+        log_message = "Copying '%s' '%s' to '%s'"
         # copy logs
         for log in PathHelper.find_all_files(kwargs[self.TEMPDIR_RESULTS], '*.log'):
-            logger.debug(log_message.format('log', log, results_dir))
+            logger.debug(log_message, 'log', log, results_dir)
             shutil.copy(log, results_dir)
         # copy packages
         for package in PathHelper.find_all_files(kwargs[self.TEMPDIR], '*.rpm'):
-            logger.debug(log_message.format('package', package, results_dir))
+            logger.debug(log_message, 'package', package, results_dir)
             shutil.copy(package, results_dir)
 
 
@@ -163,7 +163,7 @@ class MockBuildTool(BuildToolBase):
             # create directory structure
             for dir_name in ['SOURCES', 'SPECS', 'RESULTS']:
                 self._env[self.TEMPDIR + '_' + dir_name] = os.path.join(self._env[self.TEMPDIR], dir_name)
-                logger.debug("Creating '{0}'".format(self._env[self.TEMPDIR + '_' + dir_name]))
+                logger.debug("Creating '%s'", self._env[self.TEMPDIR + '_' + dir_name])
                 os.makedirs(self._env[self.TEMPDIR + '_' + dir_name])
 
 
@@ -248,10 +248,10 @@ class MockBuildTool(BuildToolBase):
 
         # use the SRPM frpm results_dir
         srpm = os.path.join(srpm_results_dir, os.path.basename(srpm))
-        logger.debug("Successfully built SRPM: '{0}'".format(str(srpm)))
+        logger.debug("Successfully built SRPM: '%s'", str(srpm))
         # gather logs
         logs = [l for l in PathHelper.find_all_files(srpm_results_dir, '*.log')]
-        logger.debug("logs: '{0}'".format(str(logs)))
+        logger.debug("logs: '%s'", str(logs))
 
         # build RPM
         rpm_results_dir = os.path.join(results_dir, "RPM")
@@ -271,11 +271,11 @@ class MockBuildTool(BuildToolBase):
             logger.info("Building RPM finished successfully")
 
         rpms = [os.path.join(rpm_results_dir, os.path.basename(f)) for f in rpms]
-        logger.debug("Successfully built RPMs: '{0}'".format(str(rpms)))
+        logger.debug("Successfully built RPMs: '%s'", str(rpms))
 
         # gather logs
         logs.extend([l for l in PathHelper.find_all_files(rpm_results_dir, '*.log')])
-        logger.debug("logs: '{0}'".format(str(logs)))
+        logger.debug("logs: '%s'", str(logs))
 
         return {'srpm': srpm,
                 'rpm': rpms,
@@ -305,12 +305,12 @@ class RpmbuildBuildTool(BuildToolBase):
             # create rpmbuild directory structure
             for dir_name in ['RESULTS', 'rpmbuild']:
                 self._env[self.TEMPDIR + '_' + dir_name.upper()] = os.path.join(self._env[self.TEMPDIR], dir_name)
-                logger.debug("Creating '{0}'".format(self._env[self.TEMPDIR + '_' + dir_name.upper()]))
+                logger.debug("Creating '%s'", self._env[self.TEMPDIR + '_' + dir_name.upper()])
                 os.makedirs(self._env[self.TEMPDIR + '_' + dir_name.upper()])
             for dir_name in ['BUILD', 'BUILDROOT', 'RPMS', 'SOURCES', 'SPECS', 'SRPMS']:
                 self._env[self.TEMPDIR + '_' + dir_name] = os.path.join(self._env[self.TEMPDIR_RPMBUILD],
                                                                         dir_name)
-                logger.debug("Creating '{0}'".format(self._env[self.TEMPDIR + '_' + dir_name]))
+                logger.debug("Creating '%s'", self._env[self.TEMPDIR + '_' + dir_name])
                 os.makedirs(self._env[self.TEMPDIR + '_' + dir_name])
 
 
@@ -407,10 +407,10 @@ class RpmbuildBuildTool(BuildToolBase):
 
         # srpm path in results_dir
         srpm = os.path.join(srpm_results_dir, os.path.basename(srpm))
-        logger.debug("Successfully built SRPM: '{0}'".format(str(srpm)))
+        logger.debug("Successfully built SRPM: '%s'", str(srpm))
         # gather logs
         logs = [l for l in PathHelper.find_all_files(srpm_results_dir, '*.log')]
-        logger.debug("logs: '{0}'".format(str(logs)))
+        logger.debug("logs: '%s'", str(logs))
 
         # build RPMs
         rpm_results_dir = os.path.join(results_dir, "RPM")
@@ -427,11 +427,11 @@ class RpmbuildBuildTool(BuildToolBase):
 
         # RPMs paths in results_dir
         rpms = [os.path.join(rpm_results_dir, os.path.basename(f)) for f in rpms]
-        logger.debug("Successfully built RPMs: '{0}'".format(str(rpms)))
+        logger.debug("Successfully built RPMs: '%s'", str(rpms))
 
         # gather logs
         logs.extend([l for l in PathHelper.find_all_files(rpm_results_dir, '*.log')])
-        logger.debug("logs: '{0}'".format(str(logs)))
+        logger.debug("logs: '%s'", str(logs))
 
         return {'srpm': srpm,
                 'rpm': rpms,
@@ -461,7 +461,7 @@ class Builder(object):
 
     def build(self, *args, **kwargs):
         """ Build sources. """
-        logger.debug("Building sources using '{0}'".format(self._tool_name))
+        logger.debug("Building sources using '%s'", self._tool_name)
         return self._tool.build(*args, **kwargs)
 
     @classmethod

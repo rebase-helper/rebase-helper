@@ -187,8 +187,7 @@ class Archive(object):
         if path is None:
             TypeError("Expected argument 'path' (pos 1) is missing")
 
-        logger.debug("Extracting '{0}' into '{1}'".format(
-                     self._filename, path))
+        logger.debug("Extracting '%s' into '%s'", self._filename, path)
 
         archive = self._archive_type.open(self._filename)
         archive.extractall(path)

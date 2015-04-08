@@ -41,7 +41,7 @@ def check_output_argument(output_tool):
     Function checks whether output_tool argument is allowed
     """
     if output_tool not in output_tools.keys():
-        logger.error('You have to specify one of these printing output tools {0}'.format(output_tools.keys()))
+        logger.error('You have to specify one of these printing output tools %s', output_tools.keys())
         sys.exit(0)
 
 
@@ -92,9 +92,7 @@ class TextOutputTool(BaseOutputTool):
                 found = [x for x in patches if patch_name in x]
                 if not found:
                     continue
-                logger_output.info("Patch{0} {1} [{2}]".format(str(key).ljust(max_number),
-                                                               patch_name.ljust(max_name),
-                                                               status))
+                logger_output.info("Patch%s %s [%s]", str(key).ljust(max_number), patch_name.ljust(max_name), status)
                 break
 
     @classmethod
@@ -108,16 +106,14 @@ class TextOutputTool(BaseOutputTool):
             srpm = rpms.get(type_rpm, None)
             if not srpm:
                 continue
-            message = "{0} package(s): are in directory {1} :"
+            message = "%s package(s): are in directory %s :"
             if isinstance(srpm, str):
-                logger_output.info(message.format(type_rpm.upper(),
-                                                  os.path.dirname(rpms.get(srpm, ""))))
-                logger_output.info("- {0}".format(os.path.basename(srpm)))
+                logger_output.info(message, type_rpm.upper(), os.path.dirname(rpms.get(srpm, "")))
+                logger_output.info("- %s", os.path.basename(srpm))
             else:
-                logger_output.info(message.format(type_rpm.upper(),
-                                                  os.path.dirname(srpm[0])))
+                logger_output.info(message, type_rpm.upper(), os.path.dirname(srpm[0]))
                 for pkg in srpm:
-                    logger_output.info("- {0}".format(os.path.basename(pkg)))
+                    logger_output.info("- %s", os.path.basename(pkg))
 
     @classmethod
     def print_build_logs(cls, rpms, version):
@@ -130,9 +126,9 @@ class TextOutputTool(BaseOutputTool):
 
         if rpms.get('logs', None) is None:
             return
-        logger_output.info('Available {0} logs:'.format(version))
+        logger_output.info('Available %s logs:', version)
         for logs in rpms.get('logs', None):
-            logger_output.info('- {0}'.format(logs))
+            logger_output.info('- %s', logs)
 
 
     @classmethod
@@ -148,12 +144,12 @@ class TextOutputTool(BaseOutputTool):
         OutputLogger.set_info_text("Summary output is also available in log:", path)
         logger.info('\n')
         for key, value in six.iteritems(OutputLogger.get_summary_info()):
-            logger.info("{0} {1}\n".format(key, value))
+            logger.info("%s %s\n", key, value)
 
         try:
             LoggerHelper.add_file_handler(logger_output, path)
         except (OSError, IOError):
-            raise RebaseHelperError("Can not create results file '{0}'".format(path))
+            raise RebaseHelperError("Can not create results file '%s'", path)
 
         type_pkgs = ['old', 'new']
         cls.print_patches(OutputLogger.get_patches('old'), '\nSummary information about patches:')
@@ -174,7 +170,7 @@ class TextOutputTool(BaseOutputTool):
         if OutputLogger.get_checkers():
             for check, data in six.iteritems(OutputLogger.get_checkers()):
                 if data:
-                    logger_output.info("{0}:\n{1}".format(check, data))
+                    logger_output.info("%s:\n%s", check, data)
 
 
 class OutputTool(object):
@@ -196,5 +192,5 @@ class OutputTool(object):
 
     def print_information(self, path):
         """ Build sources. """
-        logger.debug("Printing information using '{0}'".format(self._output_tool_name))
+        logger.debug("Printing information using '%s'", self._output_tool_name)
         return self._tool.print_summary(path)

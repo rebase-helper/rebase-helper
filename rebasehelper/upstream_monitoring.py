@@ -26,10 +26,9 @@ import tempfile
 import git
 import os
 from rebasehelper.cli import CLI
-from rebasehelper.logger import logger
+from rebasehelper.logger import logger, LoggerHelper
 from rebasehelper.application import Application
 from rebasehelper.exceptions import RebaseHelperError
-from rebasehelper.utils import defenc
 
 
 class UpstreamMonitoringError(RuntimeError):
@@ -82,22 +81,23 @@ class UpstreamMonitoring(object):
             logger.debug('wrong request from upstream monitoring service')
             return
         self.package = rebase_helper_msg.get('package')
+        logger.info('Package {0}', format(self.package))
         self.version = rebase_helper_msg.get('version')
         self.arguments.append(self.version)
 
     def _print_patches(self):
         if self.patches['deleted']:
-            logger.info('Following patches were deleted %s' % self.patches['deleted'])
+            logger.info('Following patches were deleted %s', self.patches['deleted'])
         for patch in self.patches['unapplied']:
             # Remove duplicates
             self.patches['modified'] = [x for x in self.patches['modified'] if patch not in x]
         if self.patches['modified']:
-            logger.info('Following patches were modified %s' % [os.path.basename(x) for x in self.patches['modified']])
+            logger.info('Following patches were modified %s', [os.path.basename(x) for x in self.patches['modified']])
         if self.patches['unapplied']:
-            logger.info('Following patches were unapplied %s' % self.patches['unapplied'])
+            logger.info('Following patches were unapplied %s', self.patches['unapplied'])
 
     def _call_rebase_helper(self, tempdir):
-        logger.info('Clonning repository {0}'.format(self.url))
+        logger.info('Clonning repository {0}', format(self.url))
         git.Git().clone(self.url)
         os.chdir(self.package)
         cli = CLI(self.arguments)

@@ -173,7 +173,7 @@ class SpecFile(object):
         for filename, num, patch_type in patches_list:
             patch_path = os.path.join(self.sources_location, filename)
             if not os.path.exists(patch_path):
-                logger.error('Patch {0} does not exist'.format(filename))
+                logger.error('Patch %s does not exist', filename)
                 continue
             patch_num = num
             if patch_flags:
@@ -345,7 +345,7 @@ class SpecFile(object):
             with open(self.path) as f:
                 lines = f.readlines()
         except IOError:
-            raise RebaseHelperError("Unable to open and read SPEC file '{0}'".format(self.path))
+            raise RebaseHelperError("Unable to open and read SPEC file '%s'", self.path)
         #  Complete SPEC file content
         self.spec_content = lines
 
@@ -611,12 +611,12 @@ class SpecFile(object):
         """
         Write the current SPEC file to the disc
         """
-        logger.debug("Writing SPEC file '{0}' to the disc".format(self.path))
+        logger.debug("Writing SPEC file '%s' to the disc", self.path)
         try:
             with open(self.path, "w") as f:
                 f.writelines(self.spec_content)
         except IOError:
-            raise RebaseHelperError("Unable to write updated data to SPEC file '{0}'".format(self.path))
+            raise RebaseHelperError("Unable to write updated data to SPEC file '%s'", self.path)
 
     def _comment_out_patches(self, patch_num):
 
@@ -673,7 +673,7 @@ class SpecFile(object):
             if line.startswith('Release:'):
                 new_release_line = re.sub(r'(Release:\s*)[0-9.]+(.*%{\?dist}\s*)', r'\g<1>{0}\2'.format(release),
                                           line)
-                logger.debug("Changing release line to '{0}'".format(new_release_line.strip()))
+                logger.debug("Changing release line to '%s'", new_release_line.strip())
                 self.spec_content[index] = new_release_line
                 self.save()
                 break
@@ -689,9 +689,9 @@ class SpecFile(object):
             if line.startswith('Release:'):
                 new_release_line = re.sub(r'(Release:\s*[0-9.]*[0-9]+).*(%{\?dist}\s*)', r'\g<1>{0}\2'.format(macro),
                                           line)
-                logger.debug("Commenting out original Release line '{0}'".format(line.strip()))
+                logger.debug("Commenting out original Release line '%s'", line.strip())
                 self.spec_content[index] = '#{0}'.format(line)
-                logger.debug("Inserting new Release line '{0}'".format(new_release_line.strip()))
+                logger.debug("Inserting new Release line '%s'", new_release_line.strip())
                 self.spec_content.insert(index + 1, new_release_line)
                 self.save()
                 break
@@ -713,9 +713,9 @@ class SpecFile(object):
                     raise RebaseHelperError("Redefined Release line in SPEC is not 'commented out' "
                                             "old line: '{0}'".format(self.spec_content[index - 1].strip()))
                 logger.debug("Uncommenting original Release line "
-                             "'{0}'".format(self.spec_content[index - 1].strip()))
+                             "'%s'", self.spec_content[index - 1].strip())
                 self.spec_content[index - 1] = self.spec_content[index - 1].lstrip('#')
-                logger.debug("Removing redefined Release line '{0}'".format(line.strip()))
+                logger.debug("Removing redefined Release line '%s'", line.strip())
                 self.spec_content.pop(index)
                 self.save()
                 break
@@ -731,8 +731,7 @@ class SpecFile(object):
         for index, line in enumerate(self.spec_content):
             if not line.startswith('Version'):
                 continue
-            logger.debug("Updating version in SPEC from '{0}' with '{1}'".format(self.get_version(),
-                                                                                 version))
+            logger.debug("Updating version in SPEC from '%s' with '%s'", self.get_version(), version)
             self.spec_content[index] = line.replace(self.get_version(), version)
             break
         #  save changes to the disc
@@ -754,7 +753,7 @@ class SpecFile(object):
         rebase_extra_version_def = '%global REBASE_VER %{version}%{REBASE_EXTRA_VER}\n'
         new_extra_version_line = '%global REBASE_EXTRA_VER {0}\n'.format(extra_version)
 
-        logger.debug("Updating extra version in SPEC to '{0}'".format(extra_version))
+        logger.debug("Updating extra version in SPEC to '%s'", extra_version)
 
         #  try to find existing extra version definition
         for index, line in enumerate(self.spec_content):
@@ -780,7 +779,7 @@ class SpecFile(object):
                 for index, line in enumerate(self.spec_content):
                     if source0_re.search(line):
                         # comment out the original Source0 line
-                        logger.debug("Commenting out original Source0 line '{0}'".format(line.strip()))
+                        logger.debug("Commenting out original Source0 line '%s'", line.strip())
                         self.spec_content[index] = '#{0}'.format(line)
 
                         # construct new archive name with %{REBASE_VER}
@@ -795,10 +794,10 @@ class SpecFile(object):
                         new_basename_with_macro = '{0}{1}{2}'.format(basename_raw[:mb_version_section_beginning],
                                                                      '%{REBASE_VER}',
                                                                      basename_raw[mb_start_of_last_common_sect:])
-                        logger.debug("New Source0 basename with macro '{0}'".format(new_basename_with_macro))
+                        logger.debug("New Source0 basename with macro '%s'", new_basename_with_macro)
                         # replace the archive name in old Source0 with new one
                         new_source0_line = str.replace(line, basename_raw, new_basename_with_macro)
-                        logger.debug("Inserting new Source0 line '{0}'".format(new_source0_line.strip()))
+                        logger.debug("Inserting new Source0 line '%s'", new_source0_line.strip())
                         self.spec_content.insert(index + 1, new_source0_line)
                         break
         else:
@@ -882,13 +881,12 @@ class SpecFile(object):
         """
         version_split_regex_str = '([.0-9]+)(\w*)'
         version_split_regex = re.compile(version_split_regex_str)
-        logger.debug("Splitting string '{0}'".format(version_string))
+        logger.debug("Splitting string '%s'", version_string)
         match = version_split_regex.search(version_string)
         if match:
             version = match.group(1)
             extra_version = match.group(2)
-            logger.debug("Divided version '{0}' and extra string '{1}'".format(version,
-                                                                                                     extra_version))
+            logger.debug("Divided version '%s' and extra string '%s'", version, extra_version)
             return version, extra_version
         else:
             return None, None
@@ -911,7 +909,7 @@ class SpecFile(object):
         name = os.path.basename(archive_path)
         url_base = os.path.basename(source_string).strip()
 
-        logger.debug("Extracting version from '{0}' using '{1}'".format(name, url_base))
+        logger.debug("Extracting version from '%s' using '%s'", name, url_base)
         regex_str = re.sub(r'%{version}', version_regex_str, url_base, flags=re.IGNORECASE)
 
         # if no substitution was made, use the fallback regex
@@ -919,24 +917,24 @@ class SpecFile(object):
             logger.debug('Using fallback regex to extract version from archive name.')
             regex_str = fallback_regex_str
 
-        logger.debug("Extracting version using regex '{0}'".format(regex_str))
+        logger.debug("Extracting version using regex '%s'", regex_str)
         regex = re.compile(regex_str)
         match = regex.search(name)
         if match:
             version = match.group(1)
-            logger.debug("Extracted version '{0}'".format(version))
+            logger.debug("Extracted version '%s'", version)
             return SpecFile.split_version_string(version)
         else:
             logger.debug('Failed to extract version from archive name!')
             #  TODO: look at this if it could be rewritten in a better way!
             #  try fallback regex if not used this time
             if regex_str != fallback_regex_str:
-                logger.debug("Trying to extracting version using fallback regex '{0}'".format(fallback_regex_str))
+                logger.debug("Trying to extracting version using fallback regex '%s'", fallback_regex_str)
                 regex = re.compile(fallback_regex_str)
                 match = regex.search(name)
                 if match:
                     version = match.group(1)
-                    logger.debug("Extracted version '{0}'".format(version))
+                    logger.debug("Extracted version '%s'", version)
                     return SpecFile.split_version_string(version)
                 else:
                     logger.debug('Failed to extract version from archive name using fallback regex!')

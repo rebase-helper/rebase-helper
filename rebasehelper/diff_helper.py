@@ -199,7 +199,7 @@ class Differ(object):
         """
         Diff between two files
         """
-        logger.debug("Diff between files {0} and {1}".format(old, new))
+        logger.debug("Diff between files %s and %s", old, new)
         return self._tool.run_diff(old, new)
 
     def merge(self, old_dir, new_dir, failed_files):

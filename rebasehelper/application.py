@@ -168,8 +168,7 @@ class Application(object):
         """
         self.spec_file_path = PathHelper.find_first_file(self.execution_dir, '*.spec', 0)
         if not self.spec_file_path:
-            raise RebaseHelperError("Could not find any SPEC file in the current directory '{0}'".format(
-                self.execution_dir))
+            raise RebaseHelperError("Could not find any SPEC file in the current directory '%s'", self.execution_dir)
 
     def _delete_old_builds(self):
         """
@@ -200,7 +199,7 @@ class Application(object):
         Deletes workspace directory and loggs message
         :return:
         """
-        logger.debug("Removing the workspace directory '{0}'".format(self.workspace_dir))
+        logger.debug("Removing the workspace directory '%s'", self.workspace_dir)
         shutil.rmtree(self.workspace_dir)
 
     def _check_workspace_dir(self):
@@ -209,7 +208,7 @@ class Application(object):
         :return:
         """
         if os.path.exists(self.workspace_dir):
-            logger.warning("Workspace directory '{0}' exists, removing it".format(os.path.basename(self.workspace_dir)))
+            logger.warning("Workspace directory '%s' exists, removing it", os.path.basename(self.workspace_dir))
             self._delete_workspace_dir()
         os.makedirs(self.workspace_dir)
 
@@ -220,7 +219,7 @@ class Application(object):
         """
         # TODO: We may not want to delete the directory in the future
         if os.path.exists(self.results_dir):
-            logger.warning("Results directory '{0}' exists, removing it".format(os.path.basename(self.results_dir)))
+            logger.warning("Results directory '%s' exists, removing it", os.path.basename(self.results_dir))
             shutil.rmtree(self.results_dir)
         os.makedirs(self.results_dir)
 
@@ -236,15 +235,14 @@ class Application(object):
         try:
             archive = Archive(archive_path)
         except NotImplementedError as ni_e:
-            raise RebaseHelperError('{0}. Supported archives are {1}'.format(
-                ni_e.message, Archive.get_supported_archives()))
+            raise RebaseHelperError('%s. Supported archives are %s', ni_e.message, Archive.get_supported_archives())
 
         try:
             archive.extract(destination)
         except IOError:
-            raise RebaseHelperError("Archive '{0}' can not be extracted".format(archive_path))
+            raise RebaseHelperError("Archive '%s' can not be extracted", archive_path)
         except (EOFError, SystemError):
-            raise RebaseHelperError("Archive '{0}' is damaged".format(archive_path))
+            raise RebaseHelperError("Archive '%s' is damaged", archive_path)
 
     @staticmethod
     def extract_sources(archive_path, destination):
@@ -314,8 +312,7 @@ class Application(object):
         try:
             builder = Builder(self.conf.buildtool)
         except NotImplementedError as ni_e:
-            raise RebaseHelperError('{0}. Supported build tools are {1}'.format(
-                ni_e.message, Builder.get_supported_tools()))
+            raise RebaseHelperError('%s. Supported build tools are %s', ni_e.message, Builder.get_supported_tools())
 
         for version in ['old', 'new']:
             spec_object = self.spec_file if version == 'old' else self.rebase_spec_file
@@ -349,16 +346,16 @@ class Application(object):
                     build_log = 'build.log'
                     build_log_path = os.path.join(rpm_dir, build_log)
                     if version == 'old':
-                        raise RebaseHelperError('Building old RPM package failed. Check log {0}'.format(build_log_path))
+                        raise RebaseHelperError('Building old RPM package failed. Check log %s', build_log_path)
                     logger.error('Building binary packages failed.')
                     try:
                         files = BuildLogAnalyzer.parse_log(rpm_dir, build_log)
                     except BuildLogAnalyzerMissingError:
-                        raise RebaseHelperError('Build log {0} does not exist'.format(build_log_path))
+                        raise RebaseHelperError('Build log %s does not exist', build_log_path)
                     except BuildLogAnalyzerMakeError:
-                        raise RebaseHelperError('Building package failed during build. Check log {0}'.format(build_log_path))
+                        raise RebaseHelperError('Building package failed during build. Check log %s', build_log_path)
                     except BuildLogAnalyzerPatchError:
-                        raise RebaseHelperError('Building package failed during patching. Check log {0}'.format(build_log_path))
+                        raise RebaseHelperError('Building package failed during patching. Check log %s', build_log_path)
 
                     if files['missing']:
                         logger.info('Files not packaged in the SPEC file:\n{f}'.format(f='\n'.join(files['added'])))
@@ -366,8 +363,7 @@ class Application(object):
                         logger.warning('Removed files packaged in SPEC file:\n{f}'.format(
                             f='\n'.join(files['deleted'])))
                     else:
-                        raise RebaseHelperError("Build failed, but no issues were found in the build log {0}".format(
-                            build_log))
+                        raise RebaseHelperError("Build failed, but no issues were found in the build log %s", build_log)
                     self.rebase_spec_file.modify_spec_files_section(files)
 
                 if not self.conf.non_interactive:
@@ -394,10 +390,9 @@ class Application(object):
         try:
             pkgchecker = Checker(self.conf.pkgcomparetool)
         except NotImplementedError:
-            raise RebaseHelperError('You have to specify one of these check tools {0}'.format(
-                Checker.get_supported_tools()))
+            raise RebaseHelperError('You have to specify one of these check tools %s', Checker.get_supported_tools())
         else:
-            logger.info('Comparing packages using {0}...'.format(self.conf.pkgcomparetool))
+            logger.info('Comparing packages using %s...', self.conf.pkgcomparetool)
             results_dict = pkgchecker.run_check(self.results_dir)
             for key, val in six.iteritems(results_dict):
                 if val:
@@ -431,7 +426,7 @@ class Application(object):
             self._delete_workspace_dir()
 
         if self.debug_log_file:
-            logger.info("Detailed debug log is located in '{0}'".format(self.debug_log_file))
+            logger.info("Detailed debug log is located in '%s'", self.debug_log_file)
 
 if __name__ == '__main__':
     a = Application(None)
