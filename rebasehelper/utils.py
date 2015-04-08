@@ -219,14 +219,8 @@ class ProcessHelper(object):
         close_out_file = False
         close_in_file = False
 
-        logger.debug("cmd={cmd}, cwd={cwd}, env={env}, input={input}, output={output}, shell={shell}".format(
-            cmd=str(cmd),
-            cwd=str(cwd),
-            env=str(env),
-            input=str(input),
-            output=str(output),
-            shell=str(shell),
-        ))
+        logger.debug("cmd=%s, cwd=%s, env=%s, input=%s, output=%s, shell=%s",
+                     str(cmd), str(cwd), str(env), str(input), str(output), str(shell))
 
         # write the output to a file/file-like object?
         try:

@@ -21,14 +21,12 @@
 #          Tomas Hozza <thozza@redhat.com>
 
 import os
-import sys
 from six import StringIO
 
 from rebasehelper.logger import logger
 from rebasehelper.utils import ConsoleHelper
 from rebasehelper.utils import ProcessHelper
 from rebasehelper import settings
-from rebasehelper.utils import GitHelper
 
 diff_tools = {}
 

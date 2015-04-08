@@ -26,7 +26,7 @@ import tempfile
 import git
 import os
 from rebasehelper.cli import CLI
-from rebasehelper.logger import logger, LoggerHelper
+from rebasehelper.logger import logger
 from rebasehelper.application import Application
 from rebasehelper.exceptions import RebaseHelperError
 
@@ -64,14 +64,15 @@ class UpstreamMonitoring(object):
         config = ConfigParser.RawConfigParser()
         config.readfp(open(self.fedpkg_file))
         section = 'fedpkg'
-        module_name = 'module'
         fields = {}
         if config.has_section(section):
             for option in config.options(section):
                 fields[option] = config.get(section, option)
         self.url = fields.get(self.anonymous_url).replace('%(module)s', self.package)
 
-    def _get_package_version(self, msg):
+    def _get_package_version(self):
+
+        """ Get package and version from fedmsg  """
         try:
             rebase_helper_msg = ast.literal_eval(self.msg['msg']['log'].encode('utf-8'))
         except ValueError:
@@ -81,7 +82,7 @@ class UpstreamMonitoring(object):
             logger.debug('wrong request from upstream monitoring service')
             return
         self.package = rebase_helper_msg.get('package')
-        logger.info('Package {0}', format(self.package))
+        logger.info('Package %s', self.package)
         self.version = rebase_helper_msg.get('version')
         self.arguments.append(self.version)
 
@@ -96,8 +97,11 @@ class UpstreamMonitoring(object):
         if self.patches['unapplied']:
             logger.info('Following patches were unapplied %s', self.patches['unapplied'])
 
-    def _call_rebase_helper(self, tempdir):
-        logger.info('Clonning repository {0}', format(self.url))
+    def _call_rebase_helper(self):
+
+        """ Clonning repository and call rebase-helper """
+
+        logger.info('Clonning repository %s', self.url)
         git.Git().clone(self.url)
         os.chdir(self.package)
         cli = CLI(self.arguments)
@@ -111,14 +115,17 @@ class UpstreamMonitoring(object):
             logger.error(rbe.message)
 
     def process_messsage(self):
-        print ('NEW REQUEST')
-        print('TOPIC:', self.topic)
-        print('MSG:', self.msg)
+
+        """ Process message from fedmsg """
+
+        #print ('NEW REQUEST')
+        #print('TOPIC:', self.topic)
+        #print('MSG:', self.msg)
         if self.topic == 'org.fedoraproject.dev.logger.log':
             self._get_package_version(self.msg)
             self.parse_fedpkg_conf()
             tempdir = tempfile.mkdtemp(suffix='-rebase-helper')
             cwd = os.getcwd()
             os.chdir(tempdir)
-            self._call_rebase_helper(tempdir)
+            self._call_rebase_helper()
             os.chdir(cwd)
