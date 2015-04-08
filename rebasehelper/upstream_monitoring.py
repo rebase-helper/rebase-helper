@@ -101,10 +101,6 @@ class UpstreamMonitoring(object):
         git.Git().clone(self.url)
         os.chdir(self.package)
         cli = CLI(self.arguments)
-        import shutil
-        shutil.copy('/home/phracek/work/programming/rebase-helper/wget-1.16-dont-run-failing-test.patch', os.path.join(tempdir, self.package, 'wget-1.16-dont-run-failing-test.patch'))
-        shutil.copy('/home/phracek/work/programming/rebase-helper/wget.spec', os.path.join(tempdir, self.package, 'wget.spec'))
-        shutil.copy('/home/phracek/work/programming/rebase-helper/wget-rh-modified.patch', os.path.join(tempdir, self.package, 'wget-rh-modified.patch'))
         try:
             app = Application(cli)
             app.run()
