@@ -56,6 +56,7 @@ class UpstreamMonitoring(object):
         self.msg = msg
 
     def parse_fedpkg_conf(self):
+
         """
         Function parse /etc/rpkg/fedpkg.conf file
         and return anonymous URL address for clonning package
@@ -100,7 +101,6 @@ class UpstreamMonitoring(object):
     def _call_rebase_helper(self):
 
         """ Clonning repository and call rebase-helper """
-
         logger.info('Clonning repository %s', self.url)
         git.Git().clone(self.url)
         os.chdir(self.package)
@@ -117,12 +117,11 @@ class UpstreamMonitoring(object):
     def process_messsage(self):
 
         """ Process message from fedmsg """
-
         #print ('NEW REQUEST')
         #print('TOPIC:', self.topic)
         #print('MSG:', self.msg)
         if self.topic == 'org.fedoraproject.dev.logger.log':
-            self._get_package_version(self.msg)
+            self._get_package_version()
             self.parse_fedpkg_conf()
             tempdir = tempfile.mkdtemp(suffix='-rebase-helper')
             cwd = os.getcwd()
