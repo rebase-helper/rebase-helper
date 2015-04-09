@@ -358,10 +358,11 @@ class Application(object):
                         raise RebaseHelperError('Building package failed during patching. Check log %s', build_log_path)
 
                     if files['missing']:
-                        logger.info('Files not packaged in the SPEC file:\n{f}'.format(f='\n'.join(files['added'])))
+                        missing_files = '\n'.join(files['added'])
+                        logger.info('Files not packaged in the SPEC file:\n%s', missing_files)
                     elif files['deleted']:
-                        logger.warning('Removed files packaged in SPEC file:\n{f}'.format(
-                            f='\n'.join(files['deleted'])))
+                        deleted_files = '\n'.join(files['deleted'])
+                        logger.warning('Removed files packaged in SPEC file:\n%s', deleted_files)
                     else:
                         raise RebaseHelperError("Build failed, but no issues were found in the build log %s", build_log)
                     self.rebase_spec_file.modify_spec_files_section(files)

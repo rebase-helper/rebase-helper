@@ -58,7 +58,6 @@ class BaseOutputTool(object):
         raise NotImplementedError()
 
     def print_summary(self, path, **kwargs):
-
         """
         Return list of files which has been changed against old version
         This will be used by checkers
