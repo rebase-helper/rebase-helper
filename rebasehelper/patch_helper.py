@@ -43,8 +43,6 @@ class PatchBase(object):
     Each method should overwrite method like run_check
     """
 
-    helpers = {}
-
     @classmethod
     def match(cls, cmd=None, *args, **kwargs):
         """Method checks whether it is usefull patch method"""
