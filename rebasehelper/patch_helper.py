@@ -46,7 +46,7 @@ class PatchBase(object):
     helpers = {}
 
     @classmethod
-    def match(cls, cmd):
+    def match(cls, cmd=None):
         """Method checks whether it is usefull patch method"""
         return NotImplementedError()
 
@@ -72,8 +72,8 @@ class GitPatchTool(PatchBase):
     non_interactive = False
 
     @classmethod
-    def match(cls, cmd):
-        if cls.CMD == cmd:
+    def match(cls, cmd=None):
+        if cmd is not None and cmd == cls.CMD:
             return True
         else:
             return False
@@ -90,7 +90,7 @@ class GitPatchTool(PatchBase):
 
         ret_code = git_helper.command_am(input_file=patch_name)
         if int(ret_code) != 0:
-            ret_code = git_helper.command_am(parameters='--abort', input_file=patch_name)
+            git_helper.command_am(parameters='--abort', input_file=patch_name)
             logger.debug('Applying patch with git am failed.')
             ret_code = git_helper.command_apply(input_file=patch_name)
             GitPatchTool.commit_patch(git_helper, patch_name)
@@ -190,7 +190,7 @@ class GitPatchTool(PatchBase):
         """ Function initialize old and new Git repository"""
 
         gh = GitHelper(directory)
-        ret_code = gh.command_init(directory)
+        gh.command_init(directory)
         gh.command_add_files('.')
         gh.command_commit(message='Initial Commit')
 

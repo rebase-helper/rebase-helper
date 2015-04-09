@@ -44,7 +44,7 @@ class ArchiveTypeBase(object):
     """ Base class for various archive types """
 
     @classmethod
-    def match(cls, *args, **kwargs):
+    def match(cls, filename=None, *args, **kwargs):
         """
         Checks if the filename matches the archive type. If yes, returns
         True, otherwise returns False.
@@ -52,7 +52,7 @@ class ArchiveTypeBase(object):
         raise NotImplementedError()
 
     @classmethod
-    def open(cls, *args, **kwargs):
+    def open(cls, filename=None, *args, **kwargs):
         """
         Opens archive with the given filename and returns the proper
         archive type object.

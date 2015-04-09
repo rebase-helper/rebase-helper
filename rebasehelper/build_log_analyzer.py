@@ -150,6 +150,21 @@ class BuildLogAnalyzer(object):
 
     @classmethod
     def _parse_mock_log(cls, log_name):
+
+        """
+        :param log_name: mock logfile
+        :return: files which failed
+        """
+        files = {}
+        files['missing'] = []
+        files['deleted'] = []
+
+        with open(log_name, 'r') as f:
+            lines = f.read()
+        if not lines:
+            logger.debug('Problem with openning log %s', log_name)
+            raise BuildLogAnalyzerMissingError
+
         return None
 
     @classmethod

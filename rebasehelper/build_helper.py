@@ -120,7 +120,7 @@ class BuildToolBase(object):
     """
 
     @classmethod
-    def match(cls, *args, **kwargs):
+    def match(cls, cmd=None, *args, **kwargs):
         """
         Checks if tool name matches the desired one.
         """

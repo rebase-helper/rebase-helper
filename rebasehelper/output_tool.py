@@ -52,8 +52,16 @@ class BaseOutputTool(object):
     Each method should overwrite method like run_check
     """
 
+    @classmethod
+    def match(cls, cmd=None, *args, **kwargs):
+
+        """Checks if tool name matches the desired one."""
+        raise NotImplementedError()
+
     def print_summary(self, **kwargs):
-        """ Return list of files which has been changed against old version
+
+        """
+        Return list of files which has been changed against old version
         This will be used by checkers
         """
         raise NotImplementedError()
@@ -129,7 +137,6 @@ class TextOutputTool(BaseOutputTool):
         logger_output.info('Available %s logs:', version)
         for logs in rpms.get('logs', None):
             logger_output.info('- %s', logs)
-
 
     @classmethod
     def print_summary(cls, path):
