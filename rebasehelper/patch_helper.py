@@ -98,12 +98,16 @@ class GitPatchTool(PatchBase):
 
     @classmethod
     def _prepare_git(cls, upstream_name):
-        ret_code = cls.git_helper.command_remote_add(upstream_name, cls.new_sources)
-        ret_code = cls.git_helper.command_fetch(upstream_name)
+        cls.git_helper.command_remote_add(upstream_name, cls.new_sources)
+        cls.git_helper.command_fetch(upstream_name)
         cls.output_data = cls.git_helper.command_log(parameters='--pretty=oneline')
         last_hash = GitHelper.get_commit_hash_log(cls.output_data, number=0)
         init_hash = GitHelper.get_commit_hash_log(cls.output_data, len(cls.output_data)-1)
         return init_hash, last_hash
+
+    @classmethod
+    def _get_git_helper_data(cls):
+        cls.output_data = cls.git_helper.get_output_data()
 
     @classmethod
     def _git_rebase(cls):
@@ -115,15 +119,13 @@ class GitPatchTool(PatchBase):
             logger.info('Git-rebase operation to %s is ongoing...', os.path.basename(cls.new_sources))
             upstream = 'new_upstream'
             init_hash, last_hash = cls._prepare_git(upstream)
-            ret_code, cls.output_data = cls.git_helper.command_rebase(parameters='--onto',
-                                                                      upstream_name=upstream,
-                                                                      first_hash=init_hash,
-                                                                      last_hash=last_hash)
+            ret_code = cls.git_helper.command_rebase(parameters='--onto', upstream_name=upstream,
+                                                     first_hash=init_hash, last_hash=last_hash)
         else:
             logger.info('Git-rebase operation continues...')
-            ret_code, cls.output_data = cls.git_helper.command_rebase(parameters='--skip')
-            logger.debug(cls.output_data)
-        patch_name = ""
+            ret_code = cls.git_helper.command_rebase(parameters='--skip')
+        cls._get_git_helper_data()
+        logger.debug(cls.output_data)
         modified_patches = []
         deleted_patches = []
         unapplied_patches = []
@@ -132,26 +134,27 @@ class GitPatchTool(PatchBase):
                 patch_name = cls.git_helper.get_unapplied_patch(cls.output_data)
                 logger.info("Git has problems with rebasing patch %s", patch_name)
                 if not cls.non_interactive:
-                    ret_code = cls.git_helper.command_mergetool()
+                    cls.git_helper.command_mergetool()
                 else:
                     unapplied_patches.append(patch_name)
                 modified_files = cls.git_helper.command_diff_status()
-                ret_code = cls.git_helper.command_add_files(parameters=modified_files)
+                cls.git_helper.command_add_files(parameters=modified_files)
                 base_name = os.path.join(cls.kwargs['results_dir'], patch_name)
-                ret_code = cls.git_helper.command_diff('HEAD', output_file=base_name)
+                cls.git_helper.command_diff('HEAD', output_file=base_name)
                 with open(base_name, "r") as f:
-                    cls.output_data = f.readlines()
-                if not cls.output_data:
+                    del_patches = f.readlines()
+                if not del_patches:
                     deleted_patches.append(base_name)
                 else:
                     logger.info('Following files were modified: %s', ','.join(modified_files).decode(defenc))
-                    ret_code = cls.git_helper.command_commit(message=patch_name)
-                    ret_code, cls.output_data = cls.git_helper.command_diff('HEAD~1', output_file=base_name)
+                    cls.git_helper.command_commit(message=patch_name)
+                    cls.git_helper.command_diff('HEAD~1', output_file=base_name)
                     modified_patches.append(base_name)
                 if not cls.non_interactive:
                     if not ConsoleHelper.get_message('Do you want to continue with another patch'):
                         raise KeyboardInterrupt
-                ret_code, cls.output_data = cls.git_helper.command_rebase('--skip')
+                ret_code = cls.git_helper.command_rebase('--skip')
+                cls._get_git_helper_data()
             else:
                 break
 

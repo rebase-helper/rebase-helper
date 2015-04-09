@@ -488,6 +488,7 @@ class GitHelper(object):
     """Class which operates with git repositories"""
 
     GIT = 'git'
+    output_data = []
 
     def __init__(self, git_directory):
         self.git_directory = git_directory
@@ -504,7 +505,7 @@ class GitHelper(object):
         cmd = []
         cmd.append(self.GIT)
         cmd.extend(command)
-        output_data = []
+        self.output_data = []
         if not output_file:
             output = StringIO()
         else:
@@ -516,8 +517,8 @@ class GitHelper(object):
         if not output_file:
             out = output.readlines()
             for o in out:
-                output_data.append(o.strip())
-        return ret_code, output_data
+                self.output_data.append(o.strip())
+        return ret_code
 
     def check_git_config(self):
 
@@ -587,8 +588,7 @@ One of the possible configuration can be:\n
     def command_init(self, directory):
         cmd = ['init']
         cmd.append(directory)
-        ret_code, output = self._call_git_command(cmd)
-        return ret_code
+        return self._call_git_command(cmd)
 
     def command_commit(self, message=None):
 
@@ -604,8 +604,7 @@ One of the possible configuration can be:\n
         else:
             cmd.extend(['-m', 'Empty message'])
 
-        ret_code, output = self._call_git_command(cmd)
-        return ret_code
+        return self._call_git_command(cmd)
 
     def command_remote_add(self, upstream_name, directory):
 
@@ -616,8 +615,7 @@ One of the possible configuration can be:\n
         cmd.append('add')
         cmd.append(upstream_name)
         cmd.append(directory)
-        ret_code, output = self._call_git_command(cmd)
-        return ret_code
+        return self._call_git_command(cmd)
 
     def command_diff_status(self):
 
@@ -627,14 +625,13 @@ One of the possible configuration can be:\n
         cmd.append('diff')
         cmd.append('--name-only')
         cmd.append('--staged')
-        ret_code, output = self._call_git_command(cmd)
-        return output
+        self._call_git_command(cmd)
+        return self.output_data
 
     def command_fetch(self, upstream_name):
         cmd = ['fetch']
         cmd.append(upstream_name)
-        ret_code, output = self._call_git_command(cmd)
-        return ret_code
+        return self._call_git_command(cmd)
 
     def command_log(self, parameters=None):
 
@@ -646,18 +643,18 @@ One of the possible configuration can be:\n
         cmd = ['log']
         if parameters:
             cmd.append(parameters)
-        ret_code, output = self._call_git_command(cmd)
+        ret_code = self._call_git_command(cmd)
         if int(ret_code) != 0:
             return None
         else:
-            return output
+            return self.output_data
 
     def command_mergetool(self):
 
         """Function calls git mergetool program"""
 
         cmd = ['mergetool']
-        ret_code, output = self._call_git_command(cmd)
+        ret_code = self._call_git_command(cmd)
         return ret_code
 
     def command_rebase(self, parameters, upstream_name=None, first_hash=None, last_hash=None):
@@ -672,39 +669,37 @@ One of the possible configuration can be:\n
             cmd.append(last_hash)
         else:
             cmd.append(parameters)
-        ret_code, output = self._call_git_command(cmd)
-        return ret_code, output
+        return self._call_git_command(cmd)
 
     def command_add_files(self, parameters=None):
         cmd = ['add']
         if parameters:
             cmd.extend(parameters)
-        ret_code, output = self._call_git_command(cmd)
-        return ret_code
+        return self._call_git_command(cmd)
 
     def command_diff(self, head, output_file=None):
         cmd = ['diff']
         cmd.append(head)
-        ret_code = self._call_git_command(cmd, output_file=output_file)
-        return ret_code
+        return self._call_git_command(cmd, output_file=output_file)
 
     def command_am(self, parameters=None, input_file=None):
         cmd = ['am']
         if parameters:
             cmd.append(parameters)
-        ret_code, output = self._call_git_command(cmd, input_file=input_file)
-        return ret_code
+        return self._call_git_command(cmd, input_file=input_file)
 
     def command_apply(self, input_file=None):
         cmd = ['apply']
-        ret_code, output = self._call_git_command(cmd, input_file=input_file)
-        return ret_code
+        return self._call_git_command(cmd, input_file=input_file)
 
     def command_config(self, parameters, variable=None):
         cmd = ['config']
         cmd.append(parameters)
         cmd.append(variable)
-        ret_code, output = self._call_git_command(cmd)
-        if not output:
+        self._call_git_command(cmd)
+        if not self.output_data:
             return None
-        return output[0]
+        return self.output_data[0]
+
+    def get_output_data(self):
+        return self.output_data
