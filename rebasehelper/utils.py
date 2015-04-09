@@ -702,4 +702,5 @@ One of the possible configuration can be:\n
         return self.output_data[0]
 
     def get_output_data(self):
+        """ Function returns output_data after calling call_git_command """
         return self.output_data

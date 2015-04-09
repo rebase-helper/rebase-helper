@@ -46,12 +46,12 @@ class PatchBase(object):
     helpers = {}
 
     @classmethod
-    def match(cls, cmd=None):
+    def match(cls, cmd=None, *args, **kwargs):
         """Method checks whether it is usefull patch method"""
         return NotImplementedError()
 
     @classmethod
-    def run_patch(cls, *args, **kwargs):
+    def run_patch(cls, old_dir, new_dir, git_helper, patches, *args, **kwargs):
         """Method will check all patches in relevant package"""
         return NotImplementedError()
 
@@ -111,6 +111,7 @@ class GitPatchTool(PatchBase):
 
     @classmethod
     def _git_rebase(cls):
+        """Function performs git rebase between old and new sources"""
         # in old_sources do.
         # 1) git remote add new_sources <path_to_new_sources>
         # 2) git fetch new_sources

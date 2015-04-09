@@ -54,12 +54,10 @@ class BaseOutputTool(object):
 
     @classmethod
     def match(cls, cmd=None, *args, **kwargs):
-
         """Checks if tool name matches the desired one."""
         raise NotImplementedError()
 
-    def print_summary(self, **kwargs):
-
+    def print_summary(self, path, **kwargs):
         """
         Return list of files which has been changed against old version
         This will be used by checkers

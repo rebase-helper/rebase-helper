@@ -150,7 +150,6 @@ class BuildLogAnalyzer(object):
 
     @classmethod
     def _parse_mock_log(cls, log_name):
-
         """
         :param log_name: mock logfile
         :return: files which failed

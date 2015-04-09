@@ -27,8 +27,6 @@ from rebasehelper.utils import GitHelper
 from rebasehelper.archive import Archive
 from rebasehelper import settings
 from rebasehelper.patch_helper import GitPatchTool
-from rebasehelper import utils
-from rebasehelper.specfile import PatchObject
 
 
 class TestGitHelper(BaseTest):
