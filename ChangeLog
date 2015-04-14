@@ -1,3 +1,12 @@
+News in version 0.5.0:
+- git rebase method is used instead of patch command
+- several decoding issues were fixed
+- DiffHelper class is not needed
+- Several PEP8 and W1202 fixes
+- continue option implemented for git rebase
+- added several tests
+- Class for operation with Git repositories
+
 News in version 0.4.0:
 - we now handle extra versions like 'b1', 'rc1', ...
 - improved version extraction from archive name
