@@ -1,6 +1,7 @@
 rebase-helper
 ------------------------------
 
+== Rebase-helper workflow ==
 This tool helps you to rebase package to the latest version
 
 How the rebase-helper works:
@@ -10,11 +11,10 @@ How the rebase-helper works:
     - Provide a list of patches mentioned in SPEC file
     - New spec file is stored in results/
 - for all patches
-    - apply patch to existing directory to old-sources/<package_name>
-    - Try to apply patch to new-sources/<package_name> with fuzz=0
-    - If the patch failed run a DiffHelper.mergetool to correct a patch
-    - Save the corrected patch to results/<orig_name>.patch
-    - Show diff between old patch and new patch and ask user if everything's ok
+    - apply all patches with git command to old_sources/<package_name> directory
+    - add new_sources<package_name> to old_sources/<package_name> 
+        with command git rebase --onto new_sources <inital_commit> <last_commit>
+    - solve all conflicts which arrise during the git rebase
 - create srpm from old and new spec files & new sources & patches (Builder)
 - rebuild srpm -> RPMs (Builder)
 - Run rpmdiff tool for finding libraries and header changes.
@@ -22,9 +22,14 @@ How the rebase-helper works:
 
 [**Landscape.io scans of rebase-helper**](https://landscape.io/github/phracek/rebase-helper/)
 
-Packages which needs to be installed before you execute rebase-helper:
+== Installation instructions ==
+Packages which needs to be installed before you execute rebase-helper for first time:
 - meld
 - mock
 - rpm-build
 - pkgdiff at least 1.6.3
 - python-six
+
+== How to execute rebase-helper ==
+
+Go to a git directory of your package and execute command ./rebase-helper <new_upstream_version>
