@@ -1,6 +1,8 @@
 # rebase-helper
 
-https://landscape.io/github/phracek/rebase-helper/landscape.svg?style=flat
+<a href="https://landscape.io/github/phracek/rebase-helper/master">
+  <img alt="Code Health" src="https://landscape.io/github/phracek/rebase-helper/landscape.svg?style=flat"/>
+</a>
 
 ## Rebase-helper workflow
 
