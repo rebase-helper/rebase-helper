@@ -517,7 +517,7 @@ class GitHelper(object):
         if not output_file:
             out = output.readlines()
             for o in out:
-                self.output_data.append(o.strip())
+                self.output_data.append(o.strip().encode(defenc))
         return ret_code
 
     def check_git_config(self):
