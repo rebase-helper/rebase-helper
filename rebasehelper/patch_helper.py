@@ -113,7 +113,6 @@ class GitPatchTool(PatchBase):
     @classmethod
     def _update_deleted_patches(cls, deleted_patches):
         """Function checks patches against rebase-patches"""
-
         cls.output_data = cls.git_helper.command_log(parameters='--pretty=oneline')
         for patch in cls.patches:
             patch_name = patch.get_patch_name()
@@ -190,7 +189,6 @@ class GitPatchTool(PatchBase):
 
     @classmethod
     def apply_old_patches(cls):
-
         """Function applies a patch to a old/new sources"""
         for patch in cls.patches:
             patch_path = patch.get_path()
