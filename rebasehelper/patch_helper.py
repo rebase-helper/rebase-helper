@@ -20,6 +20,7 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
+from __future__ import print_function
 import os
 from rebasehelper.logger import logger
 from rebasehelper.utils import ConsoleHelper, defenc
@@ -68,6 +69,7 @@ class GitPatchTool(PatchBase):
     new_repo = None
     git_helper = None
     non_interactive = False
+    patches = None
 
     @classmethod
     def match(cls, cmd=None):
@@ -99,6 +101,7 @@ class GitPatchTool(PatchBase):
         cls.git_helper.command_remote_add(upstream_name, cls.new_sources)
         cls.git_helper.command_fetch(upstream_name)
         cls.output_data = cls.git_helper.command_log(parameters='--pretty=oneline')
+        logger.debug('Outputdata from git log %s', cls.output_data)
         last_hash = GitHelper.get_commit_hash_log(cls.output_data, number=0)
         init_hash = GitHelper.get_commit_hash_log(cls.output_data, len(cls.output_data)-1)
         return init_hash, last_hash
@@ -106,6 +109,17 @@ class GitPatchTool(PatchBase):
     @classmethod
     def _get_git_helper_data(cls):
         cls.output_data = cls.git_helper.get_output_data()
+
+    @classmethod
+    def _update_deleted_patches(cls, deleted_patches):
+        """Function checks patches against rebase-patches"""
+
+        cls.output_data = cls.git_helper.command_log(parameters='--pretty=oneline')
+        for patch in cls.patches:
+            patch_name = patch.get_patch_name()
+            if not [x for x in cls.output_data if patch_name in x] and patch_name not in deleted_patches:
+                deleted_patches.append(patch_name)
+        return deleted_patches
 
     @classmethod
     def _git_rebase(cls):
@@ -157,6 +171,7 @@ class GitPatchTool(PatchBase):
             else:
                 break
 
+        deleted_patches = cls._update_deleted_patches(deleted_patches)
         #TODO correct settings for merge tool in ~/.gitconfig
         # currently now meld is not started
         return {'modified': modified_patches, 'deleted': deleted_patches, 'unapplied': unapplied_patches}
@@ -174,10 +189,10 @@ class GitPatchTool(PatchBase):
         return ret_code
 
     @classmethod
-    def apply_old_patches(cls, patches):
+    def apply_old_patches(cls):
 
         """Function applies a patch to a old/new sources"""
-        for patch in patches:
+        for patch in cls.patches:
             patch_path = patch.get_path()
             logger.info("Applying patch '%s' to '%s'", os.path.basename(patch_path), os.path.basename(cls.source_dir))
             ret_code = GitPatchTool.apply_patch(cls.git_helper, patch_path)
@@ -209,12 +224,13 @@ class GitPatchTool(PatchBase):
         cls.output_data = []
         cls.cont = cls.kwargs['continue']
         cls.git_helper = git_helper
+        cls.patches = patches
         cls.non_interactive = kwargs.get('non_interactive')
         if not os.path.isdir(os.path.join(cls.old_sources, '.git')):
             cls.init_git(old_dir)
             cls.init_git(new_dir)
             cls.source_dir = cls.old_sources
-            cls.apply_old_patches(patches)
+            cls.apply_old_patches()
             cls.cont = False
 
         return cls._git_rebase()
