@@ -1,7 +1,9 @@
-rebase-helper
-------------------------------
+# rebase-helper
 
-== Rebase-helper workflow ==
+https://landscape.io/github/phracek/rebase-helper/landscape.svg?style=flat
+
+## Rebase-helper workflow
+
 This tool helps you to rebase package to the latest version
 
 How the rebase-helper works:
@@ -20,9 +22,12 @@ How the rebase-helper works:
 - Run rpmdiff tool for finding libraries and header changes.
 - Inform user what libraries and header files were changed.
 
+## Landscape scans
+
 [**Landscape.io scans of rebase-helper**](https://landscape.io/github/phracek/rebase-helper/)
 
-== Installation instructions ==
+## Requirements
+
 Packages which needs to be installed before you execute rebase-helper for first time:
 - meld
 - mock
@@ -30,6 +35,6 @@ Packages which needs to be installed before you execute rebase-helper for first 
 - pkgdiff at least 1.6.3
 - python-six
 
-== How to execute rebase-helper ==
+## How to execute rebase-helper from CLI
 
 Go to a git directory of your package and execute command ./rebase-helper <new_upstream_version>
