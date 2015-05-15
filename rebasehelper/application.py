@@ -355,7 +355,7 @@ class Application(object):
                     except BuildLogAnalyzerMakeError:
                         raise RebaseHelperError('Building package failed during build. Check log %s', build_log_path)
                     except BuildLogAnalyzerPatchError:
-                        raise RebaseHelperError('Building package failed during patching. Check log %s', build_log_path)
+                        raise RebaseHelperError('Building package failed during patching. Check log %s' % build_log_path)
 
                     if files['missing']:
                         missing_files = '\n'.join(files['added'])

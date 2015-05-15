@@ -69,7 +69,7 @@ class CLI(object):
         self.parser.add_argument(
             "--buildtool",
             default="mock",
-            help="Select the build tool [mock|rpmbuild]"
+            help="Select the build tool [mock|rpmbuild|fedpkg]"
         )
         self.parser.add_argument(
             "--difftool",

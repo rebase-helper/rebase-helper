@@ -22,11 +22,18 @@
 
 import shutil
 import os
+import koji
+import random
+import string
+import time
+import six
 
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.utils import PathHelper
 from rebasehelper.utils import TemporaryEnvironment
+from rebasehelper.utils import DownloadHelper
 from rebasehelper.logger import logger
+from pyrpkg.cli import TaskWatcher
 
 build_tools = {}
 
@@ -165,7 +172,6 @@ class MockBuildTool(BuildToolBase):
                 self._env[self.TEMPDIR + '_' + dir_name] = os.path.join(self._env[self.TEMPDIR], dir_name)
                 logger.debug("Creating '%s'", self._env[self.TEMPDIR + '_' + dir_name])
                 os.makedirs(self._env[self.TEMPDIR + '_' + dir_name])
-
 
     @classmethod
     def _build_srpm(cls, spec, sources, results_dir, root=None, arch=None):
@@ -313,7 +319,6 @@ class RpmbuildBuildTool(BuildToolBase):
                 logger.debug("Creating '%s'", self._env[self.TEMPDIR + '_' + dir_name])
                 os.makedirs(self._env[self.TEMPDIR + '_' + dir_name])
 
-
     @classmethod
     def _build_srpm(cls, spec, workdir, results_dir):
         """
@@ -433,6 +438,269 @@ class RpmbuildBuildTool(BuildToolBase):
         logs.extend([l for l in PathHelper.find_all_files(rpm_results_dir, '*.log')])
         logger.debug("logs: '%s'", str(logs))
 
+        return {'srpm': srpm,
+                'rpm': rpms,
+                'logs': logs}
+
+@register_build_tool
+class FedpkgBuildTool(BuildToolBase):
+    """
+    Class representing rpmbuild build tool.
+    """
+
+    CMD = "fedpkg"
+
+    # Taken from https://github.com/fedora-infra/the-new-hotness/blob/develop/fedmsg.d/hotness-example.py
+    koji_web = "koji.fedoraproject.org"
+    server = "https://%s/kojihub" % koji_web
+    weburl = "http://%s/koji" % koji_web
+    scratch_url = "http://%s/work/" % koji_web
+    cert = os.path.expanduser('~/.fedora.cert')
+    ca_cert = os.path.expanduser('~/.fedora-server-ca.cert')
+    git_url = 'http://pkgs.fedoraproject.org/cgit/{package}.git'
+    opts = {'scratch': True}
+    target_tag = 'rawhide'
+    priority = 30
+
+    # Taken from  https://github.com/fedora-infra/the-new-hotness/blob/develop/hotness/buildsys.py#L78-L123
+
+    @classmethod
+    def match(cls, cmd=None):
+        if cmd == cls.CMD:
+            return True
+        else:
+            return False
+
+    class FedPkgTemporaryEnvironment(BuildTemporaryEnvironment):
+        """
+        Class representing temporary environment for RpmbuildBuildTool.
+        """
+
+        TEMPDIR_RPMBUILD = TemporaryEnvironment.TEMPDIR + '_RPMBUILD'
+        TEMPDIR_BUILD = TemporaryEnvironment.TEMPDIR + '_BUILD'
+        TEMPDIR_BUILDROOT = TemporaryEnvironment.TEMPDIR + '_BUILDROOT'
+        TEMPDIR_RPMS = TemporaryEnvironment.TEMPDIR + '_RPMS'
+        TEMPDIR_SRPMS = TemporaryEnvironment.TEMPDIR + '_SRPMS'
+
+        def _create_directory_sctructure(self):
+            # create rpmbuild directory structure
+            for dir_name in ['RESULTS', 'rpmbuild']:
+                self._env[self.TEMPDIR + '_' + dir_name.upper()] = os.path.join(self._env[self.TEMPDIR], dir_name)
+                logger.debug("Creating '%s'", self._env[self.TEMPDIR + '_' + dir_name.upper()])
+                os.makedirs(self._env[self.TEMPDIR + '_' + dir_name.upper()])
+            for dir_name in ['BUILD', 'BUILDROOT', 'RPMS', 'SOURCES', 'SPECS', 'SRPMS']:
+                self._env[self.TEMPDIR + '_' + dir_name] = os.path.join(self._env[self.TEMPDIR_RPMBUILD],
+                                                                        dir_name)
+                logger.debug("Creating '%s'", self._env[self.TEMPDIR + '_' + dir_name])
+                os.makedirs(self._env[self.TEMPDIR + '_' + dir_name])
+
+    @classmethod
+    def _build_srpm(cls, spec, workdir, results_dir):
+        """
+        Build SRPM using rpmbuild.
+
+        :param spec: abs path to SPEC file inside the rpmbuild/SPECS in workdir.
+        :param workdir: abs path to working directory with rpmbuild directory
+                        structure, which will be used as HOME dir.
+        :param results_dir: abs path to dir where the log should be placed.
+        :return: If build process ends successfully returns list of abs paths
+                 to built RPMs, otherwise 'None'.
+        """
+        logger.info("Building SRPM")
+        spec_loc, spec_name = os.path.split(spec)
+        output = os.path.join(results_dir, "rpmbuild_output.log")
+
+        cmd = ['rpmbuild', '-bs', spec_name]
+        ret = ProcessHelper.run_subprocess_cwd_env(cmd,
+                                                   cwd=spec_loc,
+                                                   env={'HOME': workdir},
+                                                   output=output)
+
+        if ret != 0:
+            return None
+        else:
+            return PathHelper.find_first_file(workdir, '*.src.rpm')
+
+    @classmethod
+    def _session_maker(cls):
+        koji_session = koji.ClientSession(cls.server, {'timeout': 3600})
+        koji_session.ssl_login(cls.cert, cls.ca_cert, cls.ca_cert)
+        return koji_session
+
+    @classmethod
+    def _upload_srpm(cls, session, source):
+        server_dir = cls._unique_path('cli-build')
+        session.uploadWrapper(source, server_dir)
+        return '%s/%s' % (server_dir, os.path.basename(source))
+
+    @classmethod
+    def _display_task_results(cls, tasks):
+        """
+        Function is copy/paste from pyrpkg/cli.py
+        """
+        for task in [task for task in tasks.values() if task.level == 0]:
+            state = task.info['state']
+            task_label = task.str()
+
+            logger.info('State %s (%s)' % (state, task_label))
+            if state == koji.TASK_STATES['CLOSED']:
+                logger.info('%s completed successfully' % task_label)
+            elif state == koji.TASK_STATES['FAILED']:
+                logger.info('%s failed' % task_label)
+            elif state == koji.TASK_STATES['CANCELED']:
+                logger.info('%s was canceled' % task_label)
+            else:
+                # shouldn't happen
+                logger.info('%s has not completed' % task_label)
+
+
+    @classmethod
+    def _watch_koji_tasks(cls, session, tasklist):
+        """
+        Function is copy/paste from pyrpkg/cli.py
+        """
+        if not tasklist:
+            return
+        # Place holder for return value
+        tasks_x86_64 = {}
+        try:
+            tasks = {}
+
+            for task_id in tasklist:
+                tasks[task_id] = TaskWatcher(task_id, session, logger,
+                                             quiet=False)
+            while True:
+                all_done = True
+                for task_id, task in tasks.items():
+                    changed = task.update()
+                    info = session.getTaskInfo(task_id)
+                    state = task.info['state']
+                    if state == koji.TASK_STATES['FAILED']:
+                        return {info['id']: state}
+                    else:
+                        if info['arch'] == 'x86_64':
+                            tasks_x86_64[info['id']] = state
+                    if not task.is_done():
+                        all_done = False
+                    else:
+                        if changed:
+                            cls._display_task_results(tasks)
+                        if not task.is_success():
+                            tasks_x86_64 = None
+                    for child in session.getTaskChildren(task_id):
+                        child_id = child['id']
+                        logger.debug('Child_id %s' % child_id)
+                        if child_id not in tasks.keys():
+                            tasks[child_id] = TaskWatcher(child_id,
+                                                          session,
+                                                          logger,
+                                                          task.level + 1,
+                                                          quiet=False)
+                            tasks[child_id].update()
+                            # If we found new children, go through the list
+                            # again, in case they have children also
+                            info = session.getTaskInfo(child_id)
+                            state = task.info['state']
+                            if state == koji.TASK_STATES['FAILED']:
+                                return {info['id']: state}
+                            else:
+                                if info['arch'] == 'x86_64':
+                                    tasks_x86_64[info['id']] = state
+                            all_done = False
+                if all_done:
+                    cls._display_task_results(tasks)
+                    break
+
+                time.sleep(1)
+        except (KeyboardInterrupt):
+            # A ^c should return non-zero so that it doesn't continue
+            # on to any && commands.
+            tasks_x86_64 = None
+        return tasks_x86_64
+
+    @classmethod
+    def _download_scratch_build(cls, task_list, dir_name):
+        session = cls._session_maker()
+        rpms = []
+        logs = []
+        for task_id in task_list:
+            logger.info('Downloading packaged for %i taskID' % task_id)
+            task = session.getTaskInfo(task_id)
+            tasks = [task]
+            for task in tasks:
+                base_path = koji.pathinfo.taskrelpath(task_id)
+                output = session.listTaskOutput(task['id'])
+                for filename in output:
+                    logger.info('Downloading file %s' % filename)
+                    downloaded_file = os.path.join(dir_name, filename)
+                    DownloadHelper.download_file(cls.scratch_url + base_path + '/' + filename,
+                                                 downloaded_file)
+                    if filename.endswith('.rpm'):
+                        rpms.append(downloaded_file)
+                    if filename.endswith('build.log'):
+                        logs.append(downloaded_file)
+        session.logout()
+        return rpms, logs
+
+
+    @classmethod
+    def _scratch_build(cls, session, source):
+        remote = cls._upload_srpm(session, source)
+        task_id = session.build(remote, cls.target_tag, cls.opts, priority=cls.priority)
+        logger.info('Koji task_id is here:\n' + cls.weburl + '/taskinfo?taskID=%i' % task_id)
+        session.logout()
+        task_dict = cls._watch_koji_tasks(session, [task_id])
+        task_list = []
+        package_failed = False
+        for key in six.iterkeys(task_dict):
+            if task_dict[key] == koji.TASK_STATES['FAILED']:
+                package_failed = True
+            task_list.append(key)
+        rpms, logs = cls._download_scratch_build(task_list, os.path.dirname(source).replace('SRPM', 'RPM'))
+        if package_failed:
+            logger.info('RPM built failed %s/taskinfo?taskID=%i' % (cls.weburl, task_list[0]))
+            raise BinaryPackageBuildError
+        return rpms, logs
+
+    @classmethod
+    def _unique_path(cls, prefix):
+        suffix = ''.join([random.choice(string.ascii_letters) for i in range(8)])
+        return '%s/%r.%s' % (prefix, time.time(), suffix)
+
+    @classmethod
+    def build(cls, spec, sources, patches, results_dir, **kwargs):
+        """
+        Builds the SRPM using rpmbuild
+        Builds the RPMs using fedpkg
+
+        :param spec: absolute path to the SPEC file.
+        :param sources: list with absolute paths to SOURCES
+        :param patches: list with absolute paths to PATCHES
+        :param results_dir: absolute path to DIR where results should be stored
+        :return: dict with:
+                 'srpm' -> absolute path to SRPM
+                 'rpm' -> list with absolute paths to RPMs
+                 'logs' -> list with absolute paths to build_logs
+        """
+        # build SRPM
+        srpm_results_dir = os.path.join(results_dir, "SRPM")
+        with cls.FedPkgTemporaryEnvironment(sources, patches, spec, srpm_results_dir) as tmp_env:
+            env = tmp_env.env()
+            tmp_dir = tmp_env.path()
+            tmp_spec = env.get(cls.FedPkgTemporaryEnvironment.TEMPDIR_SPEC)
+            tmp_results_dir = env.get(cls.FedPkgTemporaryEnvironment.TEMPDIR_RESULTS)
+            srpm = cls._build_srpm(tmp_spec, tmp_dir, tmp_results_dir)
+
+        if srpm is None:
+            raise SourcePackageBuildError("Building SRPM failed!")
+        else:
+            logger.info("Building SRPM finished successfully")
+
+        srpm = os.path.join(srpm_results_dir, os.path.basename(srpm))
+        rpm_results_dir = os.path.join(results_dir, "RPM")
+        os.makedirs(rpm_results_dir)
+        session = cls._session_maker()
+        rpms, logs = cls._scratch_build(session, srpm)
         return {'srpm': srpm,
                 'rpm': rpms,
                 'logs': logs}

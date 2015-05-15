@@ -87,6 +87,9 @@ class BuildLogAnalyzer(object):
         missing_reg = 'error:\s+Installed\s+'
         missing_source_reg = 'RPM build errors:'
         e_reg = 'EXCEPTION:'
+        if cls._find_patch_error(lines):
+            raise BuildLogAnalyzerPatchError('Patching failed during building. '
+                                             'Look at the build log %s', log_name)
         section = cls._find_section(lines, missing_reg, e_reg)
         if section:
             section = section.replace('File not found by glob:', '').replace('File not found:', '')
@@ -98,17 +101,13 @@ class BuildLogAnalyzer(object):
                 if cls._find_make_error(lines):
                     raise BuildLogAnalyzerMakeError('Look at the build log %s', log_name)
                 else:
-                    if cls._find_patch_error(lines):
-                        raise BuildLogAnalyzerPatchError('Patching failed during building. '
-                                                         'Look at the build log %s', log_name)
+                    files_from_section = cls._get_files_from_string(section)
+                    if files_from_section:
+                        logger.debug('Found files which does not exist in source: %s', section)
+                        files['deleted'] = files_from_section
                     else:
-                        files_from_section = cls._get_files_from_string(section)
-                        if files_from_section:
-                            logger.debug('Found files which does not exist in source: %s', section)
-                            files['deleted'] = files_from_section
-                        else:
-                            logger.info('Not known issue')
-                            raise RuntimeError
+                        logger.info('Not known issue')
+                        raise RuntimeError
             else:
                 logger.info('We did not find a reason why build failed.')
                 logger.info('Look at the build log %s', log_name)
@@ -126,8 +125,11 @@ class BuildLogAnalyzer(object):
     @classmethod
     def _find_patch_error(cls, section):
         section_lst = section.split('\n')
+        found_hunk = False
         for index, x in enumerate(map(str.strip, section_lst)):
-            if 'FAILED' in x and 'RPM build errors' in section_lst[index+1]:
+            if x.startswith('Hunk') and 'FAILED' in x:
+                found_hunk = True
+            if x.startswith('RPM build errors') and found_hunk:
                 return True
         return False
 
