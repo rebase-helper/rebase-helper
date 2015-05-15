@@ -11,11 +11,13 @@ help:
 	@echo " log                     prepare changelog for spec file"
 	@echo " source                  create source tarball"
 	@echo " test                    run tests/run_tests.py"
+	@echo " html                    create HTML documentation"
 
 
 clean:
 	@python setup.py clean
 	rm -f MANIFEST
+	rm -rf build/html
 	find . -\( -name "*.pyc" -o -name '*.pyo' -o -name "*~" -\) -delete
 
 
@@ -29,6 +31,9 @@ log:
 
 source: clean
 	@python setup.py sdist
+
+html: 
+	make -f Makefile.docs html
 
 
 #test:
