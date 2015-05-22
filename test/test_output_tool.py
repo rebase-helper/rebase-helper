@@ -44,14 +44,16 @@ class TestOutputTool(BaseTest):
                         'srpm': './test-1.2.2-1.src.rpm',
                         'rpm': ['./test-1.2.2-1.x86_64.rpm', './test-devel-1.2.2-1.x86_64.rpm'],
                         'logs': ['logfile3.log', 'logfile4.log']},
-                'summary_info': {'deleted': ['mytest2.patch']},
+                'patches': {'deleted': ['mytest2.patch']},
                 'results_dir': self.WORKING_DIR,
                 'moved': ['/usr/sbin/test', '/usr/sbin/test2'],
                 }
         return data
 
     def get_expected_output(self):
-        expected_output = """Patches were neither modified nor deleted.
+        expected_output = """
+Summary information about patches:
+Patch mytest2.patch [deleted]
 
 Old (S)RPM packages:
 ---------------------
@@ -84,12 +86,15 @@ Following files were moved:
         data = self.get_data()
         OutputLogger.set_build_data('old', data['old'])
         OutputLogger.set_build_data('new', data['new'])
+        OutputLogger.set_patch_output('Patches:', data['patches'])
         OutputLogger.set_checker_output('Following files were moved', '\n'.join(data['moved']))
 
         logfile = os.path.join(self.TESTS_DIR, REBASE_HELPER_RESULTS_LOG)
         output.print_information(logfile)
+        print self.get_expected_output().split('\n')
 
         with open(logfile) as f:
-            assert f.read().strip() == self.get_expected_output()
+            lines = [y.strip() for y in f.readlines()]
+            assert lines == self.get_expected_output().split('\n')
 
         os.unlink(logfile)

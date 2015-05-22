@@ -118,8 +118,8 @@ class OutputLogger(object):
         return cls.out_logger.get_specific_value('build', version)
 
     @classmethod
-    def get_patches(cls, version):
-        return cls.out_logger.get_specific_value('patch', version)
+    def get_patches(cls):
+        return cls.out_logger.get_specific_value('patch', 'Patches:')
 
     @classmethod
     def get_checkers(cls):

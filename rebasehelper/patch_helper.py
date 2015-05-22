@@ -114,11 +114,12 @@ class GitPatchTool(PatchBase):
     def _update_deleted_patches(cls, deleted_patches):
         """Function checks patches against rebase-patches"""
         cls.output_data = cls.git_helper.command_log(parameters='--pretty=oneline')
+        updated_patches = []
         for patch in cls.patches:
             patch_name = patch.get_patch_name()
             if not [x for x in cls.output_data if patch_name in x] and patch_name not in deleted_patches:
-                deleted_patches.append(patch_name)
-        return deleted_patches
+                updated_patches.append(patch_name)
+        return updated_patches
 
     @classmethod
     def _git_rebase(cls):
@@ -169,7 +170,6 @@ class GitPatchTool(PatchBase):
                 cls._get_git_helper_data()
             else:
                 break
-
         deleted_patches = cls._update_deleted_patches(deleted_patches)
         #TODO correct settings for merge tool in ~/.gitconfig
         # currently now meld is not started

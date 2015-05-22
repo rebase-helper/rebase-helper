@@ -89,17 +89,12 @@ class TextOutputTool(BaseOutputTool):
         if not patches:
             logger_output.info("Patches were neither modified nor deleted.")
             return
-        logger_output.info("\nPatches:")
-        max_number = max(x for x in [len(str(y)) for y in patches.keys()]) + 2
-        max_name = max(x for x in [len(os.path.basename(y[0])) for y in patches.values()]) + 2
-        for key, value in patches.items():
-            patch_name = os.path.basename(value[0])
-            for status, patches in summary.items():
-                found = [x for x in patches if patch_name in x]
-                if not found:
-                    continue
-                logger_output.info("Patch%s %s [%s]", str(key).ljust(max_number), patch_name.ljust(max_name), status)
-                break
+        logger_output.info(summary)
+        max_name = max([len(os.path.basename(x)) for y in six.itervalues(patches) for x in y])
+        max_key = max([len(x) for x in six.iterkeys(patches)])
+        for key, value in six.iteritems(patches):
+            for patch in value:
+                logger_output.info('Patch %s [%s]', os.path.basename(patch).ljust(max_name), key.ljust(max_key))
 
     @classmethod
     def print_rpms(cls, rpms, version):
@@ -157,7 +152,8 @@ class TextOutputTool(BaseOutputTool):
             raise RebaseHelperError("Can not create results file '%s'", path)
 
         type_pkgs = ['old', 'new']
-        cls.print_patches(OutputLogger.get_patches('old'), '\nSummary information about patches:')
+        patches = OutputLogger.get_patches()
+        cls.print_patches(OutputLogger.get_patches(), '\nSummary information about patches:')
         for pkg in type_pkgs:
             type_pkg = OutputLogger.get_build(pkg)
             if type_pkg:

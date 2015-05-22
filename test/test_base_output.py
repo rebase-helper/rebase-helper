@@ -42,7 +42,7 @@ class TestBaseOutput(object):
     def setup(self):
         OutputLogger.set_info_text('Information text', 'some information text')
         OutputLogger.set_info_text('Next Information', 'some another information text')
-        OutputLogger.set_patch_output('Patches', self.patches_data)
+        OutputLogger.set_patch_output('Patches:', self.patches_data)
         OutputLogger.set_build_data('old', self.old_rpm_data)
         OutputLogger.set_build_data('new', self.new_rpm_data)
 
@@ -74,7 +74,7 @@ class TestBaseOutput(object):
 
         :return:
         """
-        patch_results = OutputLogger.get_patches('Patches')
+        patch_results = OutputLogger.get_patches()
         expected_patches = self.patches_data
         assert patch_results == expected_patches
 
