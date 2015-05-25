@@ -72,11 +72,6 @@ class CLI(object):
             help="Select the build tool [mock|rpmbuild|fedpkg]"
         )
         self.parser.add_argument(
-            "--difftool",
-            default="meld",
-            help="Select the tool for comparing two sources [meld]"
-        )
-        self.parser.add_argument(
             "--pkgcomparetool",
             default="pkgdiff",
             help="Select the tool for comparing two packages [pkgdiff]"

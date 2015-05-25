@@ -286,7 +286,6 @@ class Application(object):
 
     def patch_sources(self, sources):
         # Patch sources
-        self.kwargs['diff_tool'] = self.conf.difftool
         git_helper = GitHelper(sources[0])
         git_helper.check_git_config()
         patch = Patcher(self.conf.patchtool)
