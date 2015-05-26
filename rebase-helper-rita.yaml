@@ -1,0 +1,38 @@
+textid: 'rebase-helper'
+internalcopr: 'None'
+contact: 'Use the #rebase-helper channel or try phracek@redhat.com, thozza@redhat.com'
+owner: 'phracek'
+requires: []
+description: 'Rebase-helper - this tool helps you to rebase package to the latest version
+    ======================================================
+
+    How the rebase-helper works:
+
+    Each action should be logged and visible by user.
+     -extract tarball with the existing sources to directory old_sources/
+         -extract tarball with the new sources to directory new_sources/
+         -Provide a list of patches mentioned in SPEC file
+         -New spec file is stored in results/
+     -for all patches
+         -apply all patches with git command to old_sources/ directory
+         -add new_sources to old_sources/ with command git rebase --onto new_sources
+         -solve all conflicts which arrise during the git rebase
+     -create srpm from old and new spec files & new sources & patches (Builder)
+     -rebuild srpm -> RPMs (Builder)
+     -Run rpmdiff tool for finding libraries and header changes.
+     -Inform user what libraries and header files were changed.
+
+
+    1. Install rebase-helper from Fedora 
+
+    `$ sudo yum install rebase-helper`
+
+2. Try rebase your package in dist-git repository to the latest upstream version:
+        `$ rebase-helper <new_upstream_version>`
+    '
+
+internalurl: ''
+name: 'Rebase-helper - this tool helps you with rebases'
+internalirc: '#rebase-helper'
+tags: []
+            
