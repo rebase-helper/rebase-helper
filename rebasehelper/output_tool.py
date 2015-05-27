@@ -152,7 +152,6 @@ class TextOutputTool(BaseOutputTool):
             raise RebaseHelperError("Can not create results file '%s'", path)
 
         type_pkgs = ['old', 'new']
-        patches = OutputLogger.get_patches()
         cls.print_patches(OutputLogger.get_patches(), '\nSummary information about patches:')
         for pkg in type_pkgs:
             type_pkg = OutputLogger.get_build(pkg)

@@ -142,7 +142,7 @@ class RpmDiffTool(BaseChecker):
             # We would like to build correct old package against correct new packages
             cmd.append(new_pkgs[key])
             output = StringIO()
-            ret_code = ProcessHelper.run_subprocess(cmd, output=output)
+            ProcessHelper.run_subprocess(cmd, output=output)
             results_dict = cls._analyze_logs(output, results_dict)
 
         results_dict = cls.update_added_removed(results_dict)
