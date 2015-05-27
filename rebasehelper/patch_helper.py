@@ -93,7 +93,9 @@ class GitPatchTool(PatchBase):
             git_helper.command_am(parameters='--abort', input_file=patch_name)
             logger.debug('Applying patch with git am failed.')
             ret_code = git_helper.command_apply(input_file=patch_name)
-            GitPatchTool.commit_patch(git_helper, patch_name)
+            if int(ret_code) != 0:
+                ret_code = git_helper.command_apply(input_file=patch_name, ignore_space=True)
+            ret_code = GitPatchTool.commit_patch(git_helper, patch_name)
         return ret_code
 
     @classmethod

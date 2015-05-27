@@ -688,8 +688,11 @@ One of the possible configuration can be:\n
             cmd.append(parameters)
         return self._call_git_command(cmd, input_file=input_file)
 
-    def command_apply(self, input_file=None):
+    def command_apply(self, input_file=None, ignore_space=False):
         cmd = ['apply']
+        if ignore_space:
+            cmd.append('--reject')
+            cmd.append('--whitespace=fix')
         return self._call_git_command(cmd, input_file=input_file)
 
     def command_config(self, parameters, variable=None):
