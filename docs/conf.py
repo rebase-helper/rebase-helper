@@ -19,6 +19,11 @@ import os
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #sys.path.insert(0, os.path.abspath('.'))
+rebase_helper_dir = os.path.abspath('..')
+sys.path.insert(0, rebase_helper_dir)
+
+from rebasehelper import version as rh_version
+
 
 # -- General configuration ------------------------------------------------
 
@@ -60,7 +65,7 @@ copyright = u'2015, Petr Hracek, Tomas Hozza'
 # built documents.
 #
 # The short X.Y version.
-version = '.'.join(rh_version.VERSION.split('.')[0:2]
+version = '.'.join(rh_version.VERSION.split('.')[0:2])
 # The full version, including alpha/beta/rc tags.
 release = rh_version.VERSION
 

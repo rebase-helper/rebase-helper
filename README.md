@@ -34,6 +34,8 @@ Packages which needs to be installed before you execute rebase-helper for first 
 - rpm-build
 - pkgdiff at least 1.6.3
 - python-six
+- fedpkg
+- pyrpkg
 
 ## How to execute rebase-helper from CLI
 
