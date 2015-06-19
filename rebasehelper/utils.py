@@ -450,7 +450,7 @@ class RpmHelper(object):
         :param spec_path: absolute path to SPEC file
         :return:
         """
-        cmd = ['pkexec', 'yum-builddep', spec_path]
+        cmd = ['pkexec', 'dnf builddep', spec_path]
         if assume_yes:
             cmd.append('-y')
         return ProcessHelper.run_subprocess(cmd)
