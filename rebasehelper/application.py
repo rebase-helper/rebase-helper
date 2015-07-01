@@ -238,7 +238,7 @@ class Application(object):
             raise RebaseHelperError('%s. Supported archives are %s', ni_e.message, Archive.get_supported_archives())
 
         try:
-            archive.extract(destination)
+            archive.extract_archive(destination)
         except IOError:
             raise RebaseHelperError("Archive '%s' can not be extracted", archive_path)
         except (EOFError, SystemError):

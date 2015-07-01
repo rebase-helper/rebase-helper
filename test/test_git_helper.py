@@ -52,7 +52,7 @@ class TestGitHelper(BaseTest):
 
     def _extract_sources(self, archive, dir_name):
         archive = Archive(archive)
-        archive.extract(dir_name)
+        archive.extract_archive(dir_name)
 
     def _init_git_repo(self, dirname):
         GitPatchTool.init_git(dirname)
