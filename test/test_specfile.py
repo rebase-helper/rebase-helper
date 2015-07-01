@@ -38,6 +38,9 @@ class TestSpecFile(BaseTest):
     SPEC_FILE = 'test.spec'
     SOURCE_0 = 'test-source.sh'
     SOURCE_1 = 'source-tests.sh'
+    SOURCE_2 = ''
+    SOURCE_4 = 'file.txt.bz2'
+    SOURCE_5 = 'documentation.tar.bz2'
     PATCH_1 = 'test-testing.patch'
     PATCH_2 = 'test-testing2.patch'
     PATCH_3 = 'test-testing3.patch'
@@ -112,11 +115,13 @@ class TestSpecFile(BaseTest):
         assert self.SPEC_FILE_OBJECT.get_archive() == self.OLD_ARCHIVE
 
     def test_get_sources(self):
-        sources = [self.SOURCE_0, self.SOURCE_1, self.OLD_ARCHIVE]
+        sources = [self.SOURCE_0, self.SOURCE_1, self.SOURCE_4, self.SOURCE_5, self.OLD_ARCHIVE]
         sources = [os.path.join(self.WORKING_DIR, f) for f in sources]
-        assert len(set(sources).intersection(set(self.SPEC_FILE_OBJECT.get_sources()))) == 3
+        archives = [self.OLD_ARCHIVE, self.SOURCE_4, self.SOURCE_5]
+        assert len(set(sources).intersection(set(self.SPEC_FILE_OBJECT.get_sources()))) == 5
         # The Source0 has to be always in the beginning
-        assert self.SPEC_FILE_OBJECT.get_sources()[0] == os.path.join(self.WORKING_DIR, 'test-1.0.2.tar.xz')
+        assert self.SPEC_FILE_OBJECT.get_archive() == 'test-1.0.2.tar.xz'
+        assert self.SPEC_FILE_OBJECT.get_archives() == archives
 
     def test_get_patches(self):
         expected_patches = {0: [os.path.join(self.WORKING_DIR, self.PATCH_1), 0],
@@ -206,6 +211,8 @@ class TestSpecFile(BaseTest):
                             'Source1: source-tests.sh\n',
                             'Source2: ftp://test.com/test-source.sh\n',
                             '#Source3: source-tests.sh\n',
+                            'Source4: file.txt.bz2\n',
+                            'Source5: documentation.tar.bz2\n',
                             'Patch1: test-testing.patch\n',
                             'Patch2: test-testing2.patch\n',
                             'Patch3: test-testing3.patch\n',
