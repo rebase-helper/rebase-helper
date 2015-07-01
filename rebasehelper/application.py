@@ -45,6 +45,7 @@ class Application(object):
     temp_dir = ""
     kwargs = {}
     old_sources = ""
+    rest_sources = []
     new_sources = ""
     spec_file = None
     spec_file_path = None
@@ -140,7 +141,8 @@ class Application(object):
             logger.debug("argument passed as a new source is a version")
             version, extra_version = SpecFile.split_version_string(self.conf.sources)
             self.rebase_spec_file.set_version(version)
-            self.rebase_spec_file.set_extra_version(extra_version)
+            if extra_version:
+                self.rebase_spec_file.set_extra_version(extra_version)
 
     def _initialize_data(self):
         """
@@ -158,6 +160,9 @@ class Application(object):
             raise RebaseHelperError('You have to define new sources.')
         else:
             self.new_sources = os.path.abspath(self.conf.sources)
+        # Contains all source except the Source0
+        self.rest_sources = self.spec_file.get_archives()[1:]
+        self.rest_sources = [os.path.abspath(x) for x in self.rest_sources]
 
     def _get_rebase_helper_log(self):
         return os.path.join(self.results_dir, settings.REBASE_HELPER_RESULTS_LOG)
@@ -282,6 +287,11 @@ class Application(object):
         new_dir = Application.extract_sources(self.new_sources,
                                               os.path.join(self.execution_dir, settings.NEW_SOURCES_DIR))
 
+        # This copies other sources to extracted sources marked as 0
+        for rest in self.rest_sources:
+            for source_dir in [old_dir, new_dir]:
+                Application.extract_sources(rest, os.path.join(self.execution_dir, source_dir))
+
         return [old_dir, new_dir]
 
     def patch_sources(self, sources):
@@ -289,16 +299,18 @@ class Application(object):
         git_helper = GitHelper(sources[0])
         git_helper.check_git_config()
         patch = Patcher(self.conf.patchtool)
-
+        prep = self.spec_file.get_spec_section('%prep')
         self.rebase_spec_file.update_changelog(self.rebase_spec_file.get_new_log(git_helper))
         try:
             self.rebased_patches = patch.patch(sources[0],
                                                sources[1],
+                                               self.rest_sources,
                                                git_helper,
                                                self.spec_file.get_applied_patches(),
+                                               prep,
                                                **self.kwargs)
         except RuntimeError as run_e:
-            raise RebaseHelperError(run_e.message)
+            raise RebaseHelperError('Patching failed')
         self.rebase_spec_file.write_updated_patches(self.rebased_patches)
         if self.conf.non_interactive:
             OutputLogger.set_patch_output('Unapplied patches:', self.rebased_patches['unapplied'])

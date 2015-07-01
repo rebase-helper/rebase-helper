@@ -96,6 +96,7 @@ class SpecFile(object):
     hdr = None
     extra_version = None
     sources = None
+    tar_sources = None
     patches = None
     rpm_sections = {}
 
@@ -133,7 +134,7 @@ class SpecFile(object):
         self.rpm_sections = self._split_sections()
         # determine the extra_version
         logger.debug("Updating the extra version")
-        self.sources = self._get_initial_sources_list()
+        self.sources, self.tar_sources = self._get_initial_sources_list()
         self.extra_version = SpecFile.extract_version_from_archive_name(self.get_archive(),
                                                                         self._get_raw_source_string(0))[1]
         self.patches = self._get_initial_patches_list()
@@ -145,20 +146,22 @@ class SpecFile(object):
         """
         # get all regular sources
         sources = []
+        tar_sources = []
         sources_list = [x for x in self.spc.sources if x[2] == 1]
         remote_files_re = re.compile(r'(http:|https:|ftp:)//.*')
 
-        for index, src in enumerate(sources_list):
+        for index, src in enumerate(sorted(sources_list, key=lambda source: source[1])):
+            # src is type of (SOURCE, Index of source, Type of source (PAtch, Source)
+            # We need to download all archives and only the one
+            archive = [x for x in Archive.get_supported_archives() if src[0].endswith(x)]
             abs_path = os.path.join(self.sources_location, os.path.basename(src[0]).strip())
             # if the source is a remote file, download it
-            if remote_files_re.search(src[0]) and self.download:
-                DownloadHelper.download_file(src[0], abs_path)
-            # the Source0 has to be at the beginning!
-            if src[1] == 0:
-                sources.insert(0, abs_path)
-            else:
-                sources.append(abs_path)
-        return sources
+            if archive:
+                if remote_files_re.search(src[0]) and self.download:
+                    DownloadHelper.download_file(src[0], abs_path)
+                tar_sources.append(abs_path)
+            sources.append(abs_path)
+        return sources, tar_sources
 
     def _get_initial_patches_list(self):
 
@@ -476,9 +479,16 @@ class SpecFile(object):
     def get_archive(self):
 
         """
-        Function returns the archive name from SPEC file
+        Function returns the first archive name [0] from SPEC file
         """
-        return os.path.basename(self.get_sources()[0]).strip()
+        return self.get_archives()[0]
+
+    def get_archives(self):
+
+        """
+        Function returns the archives name from SPEC file
+        """
+        return [os.path.basename(x).strip() for x in self.tar_sources]
 
     def _get_raw_source_string(self, source_num):
 

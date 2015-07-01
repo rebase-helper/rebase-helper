@@ -50,7 +50,7 @@ class PatchBase(object):
         return NotImplementedError()
 
     @classmethod
-    def run_patch(cls, old_dir, new_dir, git_helper, patches, *args, **kwargs):
+    def run_patch(cls, old_dir, new_dir, rest_sources, git_helper, patches, *args, **kwargs):
         """Method will check all patches in relevant package"""
         return NotImplementedError()
 
@@ -212,7 +212,7 @@ class GitPatchTool(PatchBase):
         gh.command_commit(message='Initial Commit')
 
     @classmethod
-    def run_patch(cls, old_dir, new_dir, git_helper, patches, **kwargs):
+    def run_patch(cls, old_dir, new_dir, rest_sources, git_helper, patches, prep, **kwargs):
 
         """
         The function can be used for patching one
@@ -223,6 +223,7 @@ class GitPatchTool(PatchBase):
         cls.new_sources = new_dir
         cls.output_data = []
         cls.cont = cls.kwargs['continue']
+        cls.rest_sources = rest_sources
         cls.git_helper = git_helper
         cls.patches = patches
         cls.non_interactive = kwargs.get('non_interactive')
@@ -261,7 +262,7 @@ class Patcher(object):
         if self._tool is None:
             raise NotImplementedError("Unsupported patch tool")
 
-    def patch(self, old_dir, new_dir, git_helper, patches, **kwargs):
+    def patch(self, old_dir, new_dir, rest_sources, git_helper, patches, prep, **kwargs):
         """
         Apply patches and generate rebased patches if needed
 
@@ -273,7 +274,7 @@ class Patcher(object):
         :return:
         """
         logger.debug("Patching source by patch tool %s", self._path_tool_name)
-        return self._tool.run_patch(old_dir, new_dir, git_helper, patches, **kwargs)
+        return self._tool.run_patch(old_dir, new_dir, rest_sources, git_helper, patches, prep, **kwargs)
 
 
 
