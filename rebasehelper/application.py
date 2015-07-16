@@ -161,7 +161,7 @@ class Application(object):
         else:
             self.new_sources = os.path.abspath(self.conf.sources)
         # Contains all source except the Source0
-        self.rest_sources = self.spec_file.get_archives()[1:]
+        self.rest_sources = self.spec_file.get_sources()[1:]
         self.rest_sources = [os.path.abspath(x) for x in self.rest_sources]
 
     def _get_rebase_helper_log(self):
@@ -290,7 +290,10 @@ class Application(object):
         # This copies other sources to extracted sources marked as 0
         for rest in self.rest_sources:
             for source_dir in [old_dir, new_dir]:
-                Application.extract_sources(rest, os.path.join(self.execution_dir, source_dir))
+                archive = [x for x in Archive.get_supported_archives() if rest.endswith(x)]
+                # if the source is a remote file, download it
+                if archive:
+                    Application.extract_sources(rest, os.path.join(self.execution_dir, source_dir))
 
         return [old_dir, new_dir]
 
