@@ -104,6 +104,7 @@ class SpecFile(object):
     tar_sources = None
     patches = None
     rpm_sections = {}
+    prep_section = []
 
     defined_sections = ['%package',
                         '%description',
@@ -133,8 +134,10 @@ class SpecFile(object):
         """
         # Load rpm information
         self.spc = rpm.spec(self.path)
+        self.prep_section = rpm.spec(self.path).prep
         # HEADER of SPEC file
         self.hdr = self.spc.sourceHeader
+
         # All source file mentioned in SPEC file Source[0-9]*
         self.rpm_sections = self._split_sections()
         # determine the extra_version
@@ -158,14 +161,14 @@ class SpecFile(object):
         for index, src in enumerate(sorted(sources_list, key=lambda source: source[1])):
             # src is type of (SOURCE, Index of source, Type of source (PAtch, Source)
             # We need to download all archives and only the one
-            archive = [x for x in Archive.get_supported_archives() if src[0].endswith(x)]
             abs_path = os.path.join(self.sources_location, os.path.basename(src[0]).strip())
+            sources.append(abs_path)
+            archive = [x for x in Archive.get_supported_archives() if src[0].endswith(x)]
             # if the source is a remote file, download it
             if archive:
                 if remote_files_re.search(src[0]) and self.download:
                     DownloadHelper.download_file(src[0], abs_path)
                 tar_sources.append(abs_path)
-            sources.append(abs_path)
         return sources, tar_sources
 
     def _get_initial_patches_list(self):
@@ -494,6 +497,22 @@ class SpecFile(object):
         Function returns the archives name from SPEC file
         """
         return [os.path.basename(x).strip() for x in self.tar_sources]
+
+    def get_prep_section(self):
+        """
+        Function returns whole prep section
+        """
+        prep_section = []
+        start_prep_section = False
+        for line in self.prep_section.split('\n'):
+            if start_prep_section:
+                prep_section.append(line)
+                continue
+            if line.startswith('/usr/bin/chmod -Rf a+rX'):
+                start_prep_section = True
+                continue
+
+        return prep_section
 
     def _get_raw_source_string(self, source_num):
 

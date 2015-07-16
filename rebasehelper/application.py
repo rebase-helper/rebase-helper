@@ -299,7 +299,6 @@ class Application(object):
         git_helper = GitHelper(sources[0])
         git_helper.check_git_config()
         patch = Patcher(self.conf.patchtool)
-        prep = self.spec_file.get_spec_section('%prep')
         self.rebase_spec_file.update_changelog(self.rebase_spec_file.get_new_log(git_helper))
         try:
             self.rebased_patches = patch.patch(sources[0],
@@ -307,7 +306,7 @@ class Application(object):
                                                self.rest_sources,
                                                git_helper,
                                                self.spec_file.get_applied_patches(),
-                                               prep,
+                                               self.spec_file.get_prep_section(),
                                                **self.kwargs)
         except RuntimeError as run_e:
             raise RebaseHelperError('Patching failed')
