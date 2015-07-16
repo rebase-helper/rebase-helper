@@ -192,7 +192,7 @@ class SpecFile(object):
                     patch_num, patch_option = patch_flags[num]
                     patches_applied.append(PatchObject(patch_path, patch_num, patch_option))
                 else:
-                    patches_not_used.append(PatchObject(patch_path, patch_num, patch_option))
+                    patches_not_used.append(PatchObject(patch_path, patch_num, None))
             else:
                 patches_applied.append(PatchObject(patch_path, patch_num, None))
         patches_applied = sorted(patches_applied, key=lambda x: x.get_index())
