@@ -66,11 +66,13 @@ class PatchObject(object):
 
     path = ''
     index = ''
+    option = ''
     git_generated = ''
 
-    def __init__(self, path, index):
+    def __init__(self, path, index, option):
         self.path = path
         self.index = index
+        self.option = option
 
     def get_path(self):
         return self.path
@@ -83,6 +85,9 @@ class PatchObject(object):
 
     def get_patch_name(self):
         return os.path.basename(self.path)
+
+    def get_option(self):
+        return self.option
 
 
 class SpecFile(object):
@@ -181,12 +186,12 @@ class SpecFile(object):
             patch_num = num
             if patch_flags:
                 if num in patch_flags:
-                    patch_num = patch_flags[num]
-                    patches_applied.append(PatchObject(patch_path, patch_num))
+                    patch_num, patch_option = patch_flags[num]
+                    patches_applied.append(PatchObject(patch_path, patch_num, patch_option))
                 else:
-                    patches_not_used.append(PatchObject(patch_path, patch_num))
+                    patches_not_used.append(PatchObject(patch_path, patch_num, patch_option))
             else:
-                patches_applied.append(PatchObject(patch_path, patch_num))
+                patches_applied.append(PatchObject(patch_path, patch_num, None))
         patches_applied = sorted(patches_applied, key=lambda x: x.get_index())
         return {"applied": patches_applied, "not_applied": patches_not_used}
 
@@ -365,9 +370,9 @@ class SpecFile(object):
             num, option = self.get_patch_option(line)
             num = num.replace(PATCH_PREFIX, '')
             try:
-                patch_flags[int(num)] = index
+                patch_flags[int(num)] = (index, option)
             except ValueError:
-                patch_flags[0] = index
+                patch_flags[0] = (index, option)
         # {num: index of application}
         return patch_flags
 

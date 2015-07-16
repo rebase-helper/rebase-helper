@@ -224,7 +224,7 @@ class ProcessHelper(object):
 
         # write the output to a file/file-like object?
         try:
-            out_file = open(output, 'w')
+            out_file = open(output, 'wb')
         except TypeError:
             out_file = output
         else:
@@ -283,7 +283,7 @@ class ProcessHelper(object):
         if out_file is not None:
             # read the output
             for line in sp.stdout:
-                out_file.write(line.decode(defenc))
+                out_file.write(line)
             # TODO: Need to figure out how to send output to stdout (without logger) and to logger
             #else:
             #   logger.debug(line.rstrip("\n"))
@@ -688,8 +688,10 @@ One of the possible configuration can be:\n
             cmd.append(parameters)
         return self._call_git_command(cmd, input_file=input_file)
 
-    def command_apply(self, input_file=None, ignore_space=False):
+    def command_apply(self, input_file=None, option=None, ignore_space=False):
         cmd = ['apply']
+        if option is not None:
+            cmd.append(option)
         if ignore_space:
             cmd.append('--reject')
             cmd.append('--whitespace=fix')

@@ -79,7 +79,7 @@ class GitPatchTool(PatchBase):
             return False
 
     @staticmethod
-    def apply_patch(git_helper, patch_name):
+    def apply_patch(git_helper, patch_object):
         """
         Function applies patches to old sources
         It tries apply patch with am command and if it fails
@@ -88,13 +88,15 @@ class GitPatchTool(PatchBase):
         """
         logger.debug('Applying patch with am')
 
+        patch_name = patch_object.get_path()
+        patch_option = patch_object.get_option()
         ret_code = git_helper.command_am(input_file=patch_name)
         if int(ret_code) != 0:
             git_helper.command_am(parameters='--abort', input_file=patch_name)
             logger.debug('Applying patch with git am failed.')
-            ret_code = git_helper.command_apply(input_file=patch_name)
+            ret_code = git_helper.command_apply(input_file=patch_name, option=patch_option)
             if int(ret_code) != 0:
-                ret_code = git_helper.command_apply(input_file=patch_name, ignore_space=True)
+                ret_code = git_helper.command_apply(input_file=patch_name, option=patch_option, ignore_space=True)
             ret_code = GitPatchTool.commit_patch(git_helper, patch_name)
         return ret_code
 
