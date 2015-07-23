@@ -90,13 +90,14 @@ class Application(object):
         self._get_spec_file()
         self._prepare_spec_objects()
 
+        # check the workspace dir
+        if not self.conf.cont:
+            self._check_workspace_dir()
+
         # TODO: Remove the value from kwargs and use only CLI attribute!
         self.kwargs['continue'] = self.conf.cont
         self._initialize_data()
 
-        # check the workspace dir
-        if not self.conf.cont:
-            self._check_workspace_dir()
         if self.conf.cont or self.conf.build_only:
             self._delete_old_builds()
 
