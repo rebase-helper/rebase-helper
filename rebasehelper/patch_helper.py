@@ -22,8 +22,10 @@
 
 from __future__ import print_function
 import os
+import re
 from rebasehelper.logger import logger
 from rebasehelper.utils import ConsoleHelper, defenc
+from rebasehelper.utils import ProcessHelper
 from rebasehelper.utils import GitHelper, GitRebaseError
 
 #from git import Repo
@@ -50,7 +52,7 @@ class PatchBase(object):
         return NotImplementedError()
 
     @classmethod
-    def run_patch(cls, old_dir, new_dir, git_helper, patches, *args, **kwargs):
+    def run_patch(cls, old_dir, new_dir, rest_sources, git_helper, patches, *args, **kwargs):
         """Method will check all patches in relevant package"""
         return NotImplementedError()
 
@@ -70,6 +72,9 @@ class GitPatchTool(PatchBase):
     git_helper = None
     non_interactive = False
     patches = None
+    prep_section = False
+    exec_prep_script = False
+    patch_sources_by_prep_script = False
 
     @classmethod
     def match(cls, cmd=None):
@@ -79,7 +84,7 @@ class GitPatchTool(PatchBase):
             return False
 
     @staticmethod
-    def apply_patch(git_helper, patch_name):
+    def apply_patch(git_helper, patch_object):
         """
         Function applies patches to old sources
         It tries apply patch with am command and if it fails
@@ -88,13 +93,15 @@ class GitPatchTool(PatchBase):
         """
         logger.debug('Applying patch with am')
 
+        patch_name = patch_object.get_path()
+        patch_option = patch_object.get_option()
         ret_code = git_helper.command_am(input_file=patch_name)
         if int(ret_code) != 0:
             git_helper.command_am(parameters='--abort', input_file=patch_name)
             logger.debug('Applying patch with git am failed.')
-            ret_code = git_helper.command_apply(input_file=patch_name)
+            ret_code = git_helper.command_apply(input_file=patch_name, option=patch_option)
             if int(ret_code) != 0:
-                ret_code = git_helper.command_apply(input_file=patch_name, ignore_space=True)
+                ret_code = git_helper.command_apply(input_file=patch_name, option=patch_option, ignore_space=True)
             ret_code = GitPatchTool.commit_patch(git_helper, patch_name)
         return ret_code
 
@@ -104,7 +111,10 @@ class GitPatchTool(PatchBase):
         cls.git_helper.command_fetch(upstream_name)
         cls.output_data = cls.git_helper.command_log(parameters='--pretty=oneline')
         logger.debug('Outputdata from git log %s', cls.output_data)
-        last_hash = GitHelper.get_commit_hash_log(cls.output_data, number=0)
+        number = 0
+        if cls.prep_section:
+            number = 1
+        last_hash = GitHelper.get_commit_hash_log(cls.output_data, number=number)
         init_hash = GitHelper.get_commit_hash_log(cls.output_data, len(cls.output_data)-1)
         return init_hash, last_hash
 
@@ -193,13 +203,66 @@ class GitPatchTool(PatchBase):
     def apply_old_patches(cls):
         """Function applies a patch to a old/new sources"""
         for patch in cls.patches:
-            patch_path = patch.get_path()
-            logger.info("Applying patch '%s' to '%s'", os.path.basename(patch_path), os.path.basename(cls.source_dir))
-            ret_code = GitPatchTool.apply_patch(cls.git_helper, patch_path)
+            logger.info("Applying patch '%s' to '%s'", os.path.basename(patch.get_path()), os.path.basename(cls.source_dir))
+            ret_code = GitPatchTool.apply_patch(cls.git_helper, patch)
             # unexpected
             if int(ret_code) != 0:
                 if cls.source_dir == cls.old_sources:
                     raise RuntimeError('Failed to patch old sources')
+
+    @classmethod
+    def _prepare_prep_script(cls, sources, prep):
+        for src in sources:
+            file_name = os.path.join('SOURCES', os.path.basename(src))
+            for index, row in enumerate(prep):
+                if file_name in row:
+                    src_path = [x for x in row.split() if x.endswith(file_name)]
+                    prep[index] = row.replace(src_path[0], src)
+
+        return prep
+
+    @classmethod
+    def create_prep_script(cls, prep):
+
+        """Function abstract special things from prep section and apply them to old sources"""
+
+        logger.debug('Extract prep script')
+        # Check whether patch or git am is used inside %prep section
+        # If yes then execute whole %prep section
+        logger.debug("prep section '%s'", prep)
+        found_patching = [x for x in prep if ' patch ' in x]
+        if found_patching:
+            cls.exec_prep_script = True
+        found_git_am = [x for x in prep if 'git am' in x]
+        if found_git_am:
+            cls.patch_sources_by_prep_script = True
+
+        logger.debug('Fix %SOURCES tags in prep script')
+        prep = cls._prepare_prep_script(cls.rest_sources, prep)
+        logger.debug('Fix %PATCH tags in prep script')
+        prep = cls._prepare_prep_script([x.get_path() for x in cls.patches], prep)
+        prep_script_path = os.path.join(cls.kwargs['results_dir'], 'prep_script')
+        logger.debug("Writing Prep script '%s' to the disc", prep_script_path)
+        try:
+            with open(prep_script_path, "w") as f:
+                f.write("#!/bin/bash\n\n")
+                f.writelines('\n'.join(prep))
+            os.chmod(prep_script_path, 0755)
+        except IOError:
+            logger.debug("Unable to write prep script file to '%s'", prep_script_path)
+            return None
+
+        return prep_script_path
+
+    @classmethod
+    def call_prep_script(cls, prep_script_path):
+        cwd = os.getcwd()
+        os.chdir(cls.old_sources)
+        ProcessHelper.run_subprocess(prep_script_path, output=os.path.join(cls.kwargs['results_dir'], 'prep_script.log'))
+        if not cls.patch_sources_by_prep_script:
+            cls.git_helper.command_add_files(parameters=["--all"])
+            cls.git_helper.command_commit(message="prep_script prep_corrections")
+        os.chdir(cwd)
 
     @classmethod
     def init_git(cls, directory):
@@ -212,7 +275,7 @@ class GitPatchTool(PatchBase):
         gh.command_commit(message='Initial Commit')
 
     @classmethod
-    def run_patch(cls, old_dir, new_dir, git_helper, patches, **kwargs):
+    def run_patch(cls, old_dir, new_dir, rest_sources, git_helper, patches, prep, **kwargs):
 
         """
         The function can be used for patching one
@@ -223,6 +286,7 @@ class GitPatchTool(PatchBase):
         cls.new_sources = new_dir
         cls.output_data = []
         cls.cont = cls.kwargs['continue']
+        cls.rest_sources = rest_sources
         cls.git_helper = git_helper
         cls.patches = patches
         cls.non_interactive = kwargs.get('non_interactive')
@@ -230,7 +294,12 @@ class GitPatchTool(PatchBase):
             cls.init_git(old_dir)
             cls.init_git(new_dir)
             cls.source_dir = cls.old_sources
-            cls.apply_old_patches()
+            prep_path = cls.create_prep_script(prep)
+            if not cls.patch_sources_by_prep_script:
+                cls.apply_old_patches()
+            if cls.exec_prep_script or cls.patch_sources_by_prep_script:
+                logger.info('Executing prep script')
+                cls.call_prep_script(prep_path)
             cls.cont = False
 
         return cls._git_rebase()
@@ -261,7 +330,7 @@ class Patcher(object):
         if self._tool is None:
             raise NotImplementedError("Unsupported patch tool")
 
-    def patch(self, old_dir, new_dir, git_helper, patches, **kwargs):
+    def patch(self, old_dir, new_dir, rest_sources, git_helper, patches, prep, **kwargs):
         """
         Apply patches and generate rebased patches if needed
 
@@ -273,7 +342,7 @@ class Patcher(object):
         :return:
         """
         logger.debug("Patching source by patch tool %s", self._path_tool_name)
-        return self._tool.run_patch(old_dir, new_dir, git_helper, patches, **kwargs)
+        return self._tool.run_patch(old_dir, new_dir, rest_sources, git_helper, patches, prep, **kwargs)
 
 
 

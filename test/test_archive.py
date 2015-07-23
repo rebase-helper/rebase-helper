@@ -32,6 +32,7 @@ class TestArchive(BaseTest):
     TAR_XZ = 'archive.tar.xz'
     TAR_BZ2 = 'archive.tar.bz2'
     ZIP = 'archive.zip'
+    BZ2 = 'file.txt.bz2'
 
     ARCHIVED_FILE = 'file.txt'
     ARCHIVED_FILE_CONTENT = 'simple testing file'
@@ -42,6 +43,7 @@ class TestArchive(BaseTest):
         TGZ,
         TAR_XZ,
         TAR_BZ2,
+        BZ2,
         ZIP
     ]
 
@@ -53,7 +55,7 @@ class TestArchive(BaseTest):
         EXTRACTED_FILE = os.path.join(EXTRACT_DIR, self.ARCHIVED_FILE)
 
         archive = Archive(archive)
-        archive.extract(EXTRACT_DIR)
+        archive.extract_archive(EXTRACT_DIR)
 
         #  check if the dir was created
         assert os.path.isdir(EXTRACT_DIR)
@@ -86,6 +88,12 @@ class TestArchive(BaseTest):
         Test .tar.xz archive extraction.
         """
         self.extraction_test(self.TAR_XZ)
+
+    def test_bz2_archive(self):
+        """
+        Test .bz2 archive extraction.
+        """
+        self.extraction_test(self.BZ2)
 
     def test_zip_archive(self):
         """

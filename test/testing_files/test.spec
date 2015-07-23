@@ -12,6 +12,8 @@ Source: ftp://ftp.test.org/%{name}-%{version}.tar.xz
 Source1: source-tests.sh
 Source2: ftp://test.com/test-source.sh
 #Source3: source-tests.sh
+Source4: file.txt.bz2
+Source5: documentation.tar.bz2
 Patch1: test-testing.patch
 Patch2: test-testing2.patch
 Patch3: test-testing3.patch

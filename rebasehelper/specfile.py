@@ -66,11 +66,13 @@ class PatchObject(object):
 
     path = ''
     index = ''
+    option = ''
     git_generated = ''
 
-    def __init__(self, path, index):
+    def __init__(self, path, index, option):
         self.path = path
         self.index = index
+        self.option = option
 
     def get_path(self):
         return self.path
@@ -84,6 +86,9 @@ class PatchObject(object):
     def get_patch_name(self):
         return os.path.basename(self.path)
 
+    def get_option(self):
+        return self.option
+
 
 class SpecFile(object):
 
@@ -96,8 +101,10 @@ class SpecFile(object):
     hdr = None
     extra_version = None
     sources = None
+    tar_sources = None
     patches = None
     rpm_sections = {}
+    prep_section = []
 
     defined_sections = ['%package',
                         '%description',
@@ -127,13 +134,15 @@ class SpecFile(object):
         """
         # Load rpm information
         self.spc = rpm.spec(self.path)
+        self.prep_section = rpm.spec(self.path).prep
         # HEADER of SPEC file
         self.hdr = self.spc.sourceHeader
+
         # All source file mentioned in SPEC file Source[0-9]*
         self.rpm_sections = self._split_sections()
         # determine the extra_version
         logger.debug("Updating the extra version")
-        self.sources = self._get_initial_sources_list()
+        self.sources, self.tar_sources = self._get_initial_sources_list()
         self.extra_version = SpecFile.extract_version_from_archive_name(self.get_archive(),
                                                                         self._get_raw_source_string(0))[1]
         self.patches = self._get_initial_patches_list()
@@ -145,20 +154,22 @@ class SpecFile(object):
         """
         # get all regular sources
         sources = []
+        tar_sources = []
         sources_list = [x for x in self.spc.sources if x[2] == 1]
         remote_files_re = re.compile(r'(http:|https:|ftp:)//.*')
 
-        for index, src in enumerate(sources_list):
+        for index, src in enumerate(sorted(sources_list, key=lambda source: source[1])):
+            # src is type of (SOURCE, Index of source, Type of source (PAtch, Source)
+            # We need to download all archives and only the one
             abs_path = os.path.join(self.sources_location, os.path.basename(src[0]).strip())
+            sources.append(abs_path)
+            archive = [x for x in Archive.get_supported_archives() if src[0].endswith(x)]
             # if the source is a remote file, download it
-            if remote_files_re.search(src[0]) and self.download:
-                DownloadHelper.download_file(src[0], abs_path)
-            # the Source0 has to be at the beginning!
-            if src[1] == 0:
-                sources.insert(0, abs_path)
-            else:
-                sources.append(abs_path)
-        return sources
+            if archive:
+                if remote_files_re.search(src[0]) and self.download:
+                    DownloadHelper.download_file(src[0], abs_path)
+                tar_sources.append(abs_path)
+        return sources, tar_sources
 
     def _get_initial_patches_list(self):
 
@@ -178,12 +189,12 @@ class SpecFile(object):
             patch_num = num
             if patch_flags:
                 if num in patch_flags:
-                    patch_num = patch_flags[num]
-                    patches_applied.append(PatchObject(patch_path, patch_num))
+                    patch_num, patch_option = patch_flags[num]
+                    patches_applied.append(PatchObject(patch_path, patch_num, patch_option))
                 else:
-                    patches_not_used.append(PatchObject(patch_path, patch_num))
+                    patches_not_used.append(PatchObject(patch_path, patch_num, None))
             else:
-                patches_applied.append(PatchObject(patch_path, patch_num))
+                patches_applied.append(PatchObject(patch_path, patch_num, None))
         patches_applied = sorted(patches_applied, key=lambda x: x.get_index())
         return {"applied": patches_applied, "not_applied": patches_not_used}
 
@@ -362,9 +373,9 @@ class SpecFile(object):
             num, option = self.get_patch_option(line)
             num = num.replace(PATCH_PREFIX, '')
             try:
-                patch_flags[int(num)] = index
+                patch_flags[int(num)] = (index, option)
             except ValueError:
-                patch_flags[0] = index
+                patch_flags[0] = (index, option)
         # {num: index of application}
         return patch_flags
 
@@ -476,9 +487,32 @@ class SpecFile(object):
     def get_archive(self):
 
         """
-        Function returns the archive name from SPEC file
+        Function returns the first archive name [0] from SPEC file
         """
-        return os.path.basename(self.get_sources()[0]).strip()
+        return self.get_archives()[0]
+
+    def get_archives(self):
+
+        """
+        Function returns the archives name from SPEC file
+        """
+        return [os.path.basename(x).strip() for x in self.tar_sources]
+
+    def get_prep_section(self):
+        """
+        Function returns whole prep section
+        """
+        prep_section = []
+        start_prep_section = False
+        for line in self.prep_section.split('\n'):
+            if start_prep_section:
+                prep_section.append(line)
+                continue
+            if line.startswith('/usr/bin/chmod -Rf a+rX'):
+                start_prep_section = True
+                continue
+
+        return prep_section
 
     def _get_raw_source_string(self, source_num):
 

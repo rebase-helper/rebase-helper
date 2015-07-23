@@ -37,6 +37,7 @@ class TestApplication(BaseTest):
     PATCH_1 = 'test-testing.patch'
     PATCH_2 = 'test-testing2.patch'
     PATCH_3 = 'test-testing3.patch'
+    SOURCE_1 = 'file.txt.bz2'
 
     TEST_FILES = [
         OLD_SOURCES,
@@ -44,7 +45,8 @@ class TestApplication(BaseTest):
         SPEC_FILE,
         PATCH_1,
         PATCH_2,
-        PATCH_3
+        PATCH_3,
+        SOURCE_1
     ]
 
     cmd_line_args = ['--not-download-sources', '1.0.3']

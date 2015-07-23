@@ -27,6 +27,7 @@ from rebasehelper.utils import GitHelper
 from rebasehelper.archive import Archive
 from rebasehelper import settings
 from rebasehelper.patch_helper import GitPatchTool
+from rebasehelper.specfile import PatchObject
 
 
 class TestGitHelper(BaseTest):
@@ -52,7 +53,7 @@ class TestGitHelper(BaseTest):
 
     def _extract_sources(self, archive, dir_name):
         archive = Archive(archive)
-        archive.extract(dir_name)
+        archive.extract_archive(dir_name)
 
     def _init_git_repo(self, dirname):
         GitPatchTool.init_git(dirname)
@@ -80,7 +81,8 @@ class TestGitHelper(BaseTest):
         assert commit_message == ['Initial Commit']
 
     def test_git_apply(self):
-        GitPatchTool.apply_patch(self.git_helper, os.path.join(self.WORKING_DIR, self.PATCH_1))
+        patch_object = PatchObject(os.path.join(self.WORKING_DIR, self.PATCH_1), 1, None)
+        GitPatchTool.apply_patch(self.git_helper, patch_object)
         GitPatchTool.commit_patch(self.git_helper, os.path.join(self.WORKING_DIR, self.PATCH_1))
         commit_message = self._parse_commit_log()
         assert commit_message == ['Patch: project-ChangeLog.patch', 'Initial Commit']

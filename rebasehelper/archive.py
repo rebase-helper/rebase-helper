@@ -19,9 +19,11 @@
 #
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
-
+from __future__ import print_function
 import tarfile
 import zipfile
+import bz2
+import os
 try:
     import lzma
 except ImportError:
@@ -59,6 +61,15 @@ class ArchiveTypeBase(object):
         """
         raise NotImplementedError()
 
+    @classmethod
+    def extract(cls, filename=None, *args, **kwargs):
+        """
+        Extracts the archive into the given path
+
+        :param path: Path where to extract the archive to.
+        :return:
+        """
+        raise NotImplementedError()
 
 @register_archive_type
 class TarXzArchiveType(ArchiveTypeBase):
@@ -82,13 +93,18 @@ class TarXzArchiveType(ArchiveTypeBase):
 
         return tarfile.open(mode='r', fileobj=xz_file)
 
+    @classmethod
+    def extract(cls, archive=None, filename=None, path=None, *args, **kwargs):
+        if archive is None:
+            raise TypeError("Expected argument 'archive' (pos 1) is missing")
+        archive.extractall(path)
 
 @register_archive_type
 class TarBz2ArchiveType(ArchiveTypeBase):
 
-    """ .tar.bz2 archive type """
+    """ .bz2 archive type """
 
-    EXTENSION = ".tar.bz2"
+    EXTENSION = ".bz2"
 
     @classmethod
     def match(cls, filename=None):
@@ -102,7 +118,23 @@ class TarBz2ArchiveType(ArchiveTypeBase):
         if filename is None:
             raise TypeError("Expected argument 'filename' (pos 1) is missing")
 
-        return tarfile.TarFile.open(filename)
+        if filename.endswith('.tar.bz2'):
+            return tarfile.TarFile.open(filename)
+        else:
+            return bz2.BZ2File(filename)
+
+    @classmethod
+    def extract(cls, archive=None, filename=None, path=None, *args, **kwargs):
+        if archive is None:
+            raise TypeError("Expected argument 'archive' (pos 1) is missing")
+        if filename.endswith('tar.bz2'):
+            archive.extractall(path)
+        else:
+            data = archive.read()
+            if not os.path.exists(path):
+                os.mkdir(path)
+            with open(os.path.join(path, filename[:-4]), 'w') as f:
+                f.write(data)
 
 
 @register_archive_type
@@ -126,6 +158,11 @@ class TarGzArchiveType(TarBz2ArchiveType):
 
         return tarfile.TarFile.open(filename)
 
+    @classmethod
+    def extract(cls, archive=None, filename=None, path=None, *args, **kwargs):
+        if archive is None:
+            raise TypeError("Expected argument 'archive' (pos 1) is missing")
+        archive.extractall(path)
 
 @register_archive_type
 class TgzArchiveType(TarGzArchiveType):
@@ -159,6 +196,12 @@ class ZipArchiveType(ArchiveTypeBase):
 
         return zipfile.ZipFile(filename, "r")
 
+    @classmethod
+    def extract(cls, archive=None, filename=None, path=None, *args, **kwargs):
+        if archive is None:
+            raise TypeError("Expected argument 'archive' (pos 1) is missing")
+        archive.extractall(path)
+
 
 class Archive(object):
 
@@ -177,7 +220,7 @@ class Archive(object):
         if self._archive_type is None:
             raise NotImplementedError("Unsupported archive type")
 
-    def extract(self, path=None):
+    def extract_archive(self, path=None):
         """
         Extracts the archive into the given path
 
@@ -190,7 +233,7 @@ class Archive(object):
         logger.debug("Extracting '%s' into '%s'", self._filename, path)
 
         archive = self._archive_type.open(self._filename)
-        archive.extractall(path)
+        self._archive_type.extract(archive, self._filename, path)
         archive.close()
 
     @classmethod
