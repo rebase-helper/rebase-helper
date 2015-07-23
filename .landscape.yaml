@@ -1,5 +1,5 @@
-# Include warnings about missing documentation?
-doc-warnings: True
+# Include warnings about missing documentation?dd
+doc-warnings: False
 
 # Include warnings about tests?
 test-warnings: True
