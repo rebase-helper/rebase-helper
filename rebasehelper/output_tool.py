@@ -90,11 +90,17 @@ class TextOutputTool(BaseOutputTool):
             logger_output.info("Patches were neither modified nor deleted.")
             return
         logger_output.info(summary)
-        max_name = max([len(os.path.basename(x)) for y in six.itervalues(patches) for x in y])
+        max_name = 0
+        for value in six.itervalues(patches):
+            if value:
+                new_max = max([len(os.path.basename(x)) for x in value])
+                if new_max > max_name:
+                    max_name = new_max
         max_key = max([len(x) for x in six.iterkeys(patches)])
         for key, value in six.iteritems(patches):
-            for patch in value:
-                logger_output.info('Patch %s [%s]', os.path.basename(patch).ljust(max_name), key.ljust(max_key))
+            if value:
+                for patch in value:
+                    logger_output.info('Patch %s [%s]', os.path.basename(patch).ljust(max_name), key.ljust(max_key))
 
     @classmethod
     def print_rpms(cls, rpms, version):

@@ -153,6 +153,7 @@ class RpmDiffTool(BaseChecker):
         #cls._find_file_diffs(old_pkgs, new_pkgs)
         return results_dict
 
+
 @register_check_tool
 class PkgDiffTool(BaseChecker):
     """ Pkgdiff compare tool. """

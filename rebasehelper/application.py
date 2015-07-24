@@ -408,10 +408,8 @@ class Application(object):
             raise RebaseHelperError('You have to specify one of these check tools %s', Checker.get_supported_tools())
         else:
             logger.info('Comparing packages using %s...', self.conf.pkgcomparetool)
-            results_dict = pkgchecker.run_check(self.results_dir)
-            for key, val in six.iteritems(results_dict):
-                if val:
-                    OutputLogger.set_checker_output('Following files were ' + key, '\n'.join(val))
+            text = pkgchecker.run_check(self.results_dir)
+            OutputLogger.set_checker_output('Results from %s are: were ' % self.conf.pkgcomparetool, ''.join(text))
 
     def print_summary(self):
         output_tool.check_output_argument(self.conf.outputtool)
