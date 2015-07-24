@@ -305,7 +305,78 @@ class PkgDiffTool(BaseChecker):
         if int(ret_code) != 0 and int(ret_code) != 1:
             raise RebaseHelperError('Execution of %s failed.\nCommand line is: %s', cls.CMD, cmd)
         OutputLogger.set_info_text('Result HTML page from pkgdiff is store in: ', cls.pkgdiff_results_full_path)
-        return cls.process_xml_results(cls.results_dir)
+        results_dict = cls.process_xml_results(cls.results_dir)
+        text = []
+        for key, val in six.iteritems(results_dict):
+            if val:
+                text.append('Following files were %s:\n%s' % (key, '\n'.join(val)))
+
+        return text
+
+
+@register_check_tool
+class AbiCheckerTool(BaseChecker):
+    """ Pkgdiff compare tool. """
+    CMD = "abipkgdiff"
+    results_dir = ''
+
+    # Example
+    # abipkgdiff --d1 dbus-glib-debuginfo-0.80-3.fc12.x86_64.rpm \
+    # --d2 dbus-glib-debuginfo-0.104-3.fc23.x86_64.rpm \
+    # dbus-glib-0.80-3.fc12.x86_64.rpm dbus-glib-0.104-3.fc23.x86_64.rpm
+    @classmethod
+    def match(cls, cmd=None):
+        if cmd == cls.CMD:
+            return True
+        else:
+            return False
+
+    @classmethod
+    def _get_packages_for_abipkgdiff(cls, input_structure=None):
+        debug_package = None
+        rest_packages = None
+        packages = input_structure.get('rpm', [])
+        if packages:
+            debug_package = [x for x in packages if 'debuginfo' in os.path.basename(x)]
+            rest_packages = [x for x in packages if not 'debuginfo' in os.path.basename(x)]
+
+        return debug_package, rest_packages
+
+    @classmethod
+    def run_check(cls, results_dir):
+        """ Compares old and new RPMs using pkgdiff """
+        cls.results_dir = results_dir
+
+        debug_old, rest_pkgs_old = cls._get_packages_for_abipkgdiff(OutputLogger.get_build('old'))
+        debug_new, rest_pkgs_new = cls._get_packages_for_abipkgdiff(OutputLogger.get_build('new'))
+        cmd = [cls.CMD]
+        cmd.append('--d1')
+        cmd.append(debug_old[0])
+        cmd.append('--d2')
+        cmd.append(debug_new[0])
+        text = []
+        for pkg in rest_pkgs_old:
+            command = cmd
+            # Package can be <letters><numbers>-<letters>-<and_whatever>
+            regexp = r'^(\w*)(-\D+)?.*$'
+            reg = re.compile(regexp)
+            matched = reg.search(os.path.basename(pkg))
+            if matched:
+                file_name = matched.group(1)
+                command.append(pkg)
+                find = [x for x in rest_pkgs_new if os.path.basename(x).startswith(file_name)]
+                command.append(find[0])
+                output = os.path.join(results_dir, file_name + '-abipkgdiff.log')
+                ret_code = ProcessHelper.run_subprocess(command, output=output)
+                if int(ret_code) != 0 and int(ret_code) != 1:
+                    raise RebaseHelperError('Execution of %s failed.\nCommand line is: %s', cls.CMD, cmd)
+                if int(ret_code) == 0:
+                    text.append('ABI of the compared binaries in package %s are equal.' % file_name)
+                else:
+                    text.append('ABI of the compared binaries in package %s are not equal. See file %s' % (file_name, output))
+            else:
+                logger.debug("Rebase-helper did not find a package name in '%s'", pkg)
+        return text
 
 
 class Checker(object):
