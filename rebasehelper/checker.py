@@ -368,7 +368,7 @@ class AbiCheckerTool(BaseChecker):
                 command.append(find[0])
                 output = os.path.join(results_dir, file_name + '-abipkgdiff.log')
                 ret_code = ProcessHelper.run_subprocess(command, output=output)
-                if int(ret_code) != 0 and int(ret_code) != 1:
+                if int(ret_code) & settings.ABIDIFF_ERROR and int(ret_code) & settings.ABIDIFF_USAGE_ERROR:
                     raise RebaseHelperError('Execution of %s failed.\nCommand line is: %s', cls.CMD, cmd)
                 if int(ret_code) == 0:
                     text.append('ABI of the compared binaries in package %s are equal.' % file_name)
