@@ -176,7 +176,9 @@ class TextOutputTool(BaseOutputTool):
         if OutputLogger.get_checkers():
             for check, data in six.iteritems(OutputLogger.get_checkers()):
                 if data:
-                    logger_output.info("%s:\n%s", check, data)
+                    logger_output.info("%s", check)
+                    for checker, output in six.iteritems(data):
+                        logger_output.info("===Checker %s===\n%s\n", checker, '\n'.join(output))
 
 
 class OutputTool(object):

@@ -58,6 +58,7 @@ class BaseChecker(object):
         """
         raise NotImplementedError()
 
+
 @register_check_tool
 class RpmDiffTool(BaseChecker):
     """ RpmDiff compare tool."""
@@ -146,12 +147,11 @@ class RpmDiffTool(BaseChecker):
             results_dict = cls._analyze_logs(output, results_dict)
 
         results_dict = cls.update_added_removed(results_dict)
-        # TODO Check for changed files and
-        # remove them from 'removed' and 'added'
-        #cls._unpack_rpm(old_pkgs)
-        #cls._unpack_rpm(new_pkgs)
-        #cls._find_file_diffs(old_pkgs, new_pkgs)
-        return results_dict
+        results_dict = dict((k, v) for k, v in six.iteritems(results_dict) if v)
+        text = []
+        for key, val in six.iteritems(results_dict):
+            text.append('Following files were %s:\n%s' % (key, '\n'.join(val)))
+        return text
 
 
 @register_check_tool
@@ -276,7 +276,8 @@ class PkgDiffTool(BaseChecker):
         # remove files from 'moved' if they are in 'changed' section
         results_dict['moved'] = cls._update_changed_moved(results_dict, 'moved')
 
-        return results_dict
+        # Remove empty items
+        return dict((k, v) for k, v in six.iteritems(results_dict) if v)
 
     @classmethod
     def run_check(cls, results_dir):
@@ -308,8 +309,7 @@ class PkgDiffTool(BaseChecker):
         results_dict = cls.process_xml_results(cls.results_dir)
         text = []
         for key, val in six.iteritems(results_dict):
-            if val:
-                text.append('Following files were %s:\n%s' % (key, '\n'.join(val)))
+            text.append('Following files were %s:\n%s' % (key, '\n'.join(val)))
 
         return text
 

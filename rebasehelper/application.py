@@ -165,6 +165,10 @@ class Application(object):
         self.rest_sources = self.spec_file.get_sources()[1:]
         self.rest_sources = [os.path.abspath(x) for x in self.rest_sources]
 
+        # We want to inform user immediatelly if compare tool doesn't exists
+        if self.conf.pkgcomparetool and self.conf.pkgcomparetool not in Checker.get_supported_tools():
+            raise RebaseHelperError('You have to specify one of these check tools %s', Checker.get_supported_tools())
+
     def _get_rebase_helper_log(self):
         return os.path.join(self.results_dir, settings.REBASE_HELPER_RESULTS_LOG)
 
@@ -397,19 +401,32 @@ class Application(object):
                 shutil.rmtree(os.path.join(results_dir, 'SRPM'))
         return True
 
+    def _execute_checkers(self, checker):
+        """
+        Function executes a checker based on command line arguments
+        :param checker: checker name based from command line
+        :return: Nothing
+        """
+        pkgchecker = Checker(checker)
+        logger.info('Comparing packages using %s...', checker)
+        text = pkgchecker.run_check(self.results_dir)
+        return text
+
     def pkgdiff_packages(self):
         """
         Function calls pkgdiff class for comparing packages
         :return:
         """
-        try:
-            pkgchecker = Checker(self.conf.pkgcomparetool)
-        except NotImplementedError:
-            raise RebaseHelperError('You have to specify one of these check tools %s', Checker.get_supported_tools())
+        pkgdiff_results = {}
+        if not self.conf.pkgcomparetool:
+            for checker in Checker.get_supported_tools():
+                text = self._execute_checkers(checker)
+                pkgdiff_results[checker] = text
+
         else:
-            logger.info('Comparing packages using %s...', self.conf.pkgcomparetool)
-            text = pkgchecker.run_check(self.results_dir)
-            OutputLogger.set_checker_output('Results from %s are: were ' % self.conf.pkgcomparetool, ''.join(text))
+            text = self._execute_checkers(self.conf.pkgcomparetool)
+            pkgdiff_results[self.conf.pkgcomparetool] = text
+        OutputLogger.set_checker_output('\nResults from checker(s):', pkgdiff_results)
 
     def print_summary(self):
         output_tool.check_output_argument(self.conf.outputtool)

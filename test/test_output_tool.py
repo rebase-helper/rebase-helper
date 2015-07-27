@@ -76,9 +76,12 @@ RPM package(s): are in directory . :
 Available New logs:
 - logfile3.log
 - logfile4.log
-Following files were moved:
+Results from checker(s)
+===Checker pkgdiff===
+Following files were moved
 /usr/sbin/test
-/usr/sbin/test2"""
+/usr/sbin/test2
+"""
         return expected_output
 
     def test_text_output(self):
@@ -87,11 +90,11 @@ Following files were moved:
         OutputLogger.set_build_data('old', data['old'])
         OutputLogger.set_build_data('new', data['new'])
         OutputLogger.set_patch_output('Patches:', data['patches'])
-        OutputLogger.set_checker_output('Following files were moved', '\n'.join(data['moved']))
+        test_output = {'pkgdiff': ['Following files were moved\n%s' % '\n'.join(data['moved'])]}
+        OutputLogger.set_checker_output('Results from checker(s)', test_output)
 
         logfile = os.path.join(self.TESTS_DIR, REBASE_HELPER_RESULTS_LOG)
         output.print_information(logfile)
-        print self.get_expected_output().split('\n')
 
         with open(logfile) as f:
             lines = [y.strip() for y in f.readlines()]
