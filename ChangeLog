@@ -1,3 +1,9 @@
+News in version 0.6.0:
+- calls patches and git operation if exists in %prep section
+- support libabipkgdiff
+- Several fixes
+- replace calling yum with dnf
+
 News in version 0.5.0:
 - git rebase method is used instead of patch command
 - several decoding issues were fixed

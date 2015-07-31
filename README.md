@@ -36,6 +36,7 @@ Packages which needs to be installed before you execute rebase-helper for first 
 - python-six
 - fedpkg
 - pyrpkg
+- libabigail
 
 ## How to execute rebase-helper from CLI
 
