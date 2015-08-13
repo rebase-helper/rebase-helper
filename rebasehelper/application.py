@@ -79,7 +79,7 @@ class Application(object):
 
         self.kwargs['non_interactive'] = self.conf.non_interactive
         # if not continuing, check the results dir
-        if not self.conf.cont and not self.conf.build_only:
+        if not self.conf.cont and not self.conf.build_only and not self.conf.comparepkgs:
             self._check_results_dir()
         # This is used if user executes rebase-helper with --continue
         # parameter even when directory does not exist
@@ -171,6 +171,31 @@ class Application(object):
 
     def _get_rebase_helper_log(self):
         return os.path.join(self.results_dir, settings.REBASE_HELPER_RESULTS_LOG)
+
+    def get_rpm_packages(self, dirname):
+        """
+        Function returns RPM packages stored in dirname/old and dirname/new directories
+        :param dirname: directory where are stored old and new RPMS
+        :return:
+        """
+        found = True
+        for version in ['old', 'new']:
+            data = {}
+            rpm_packages = PathHelper.find_all_files(os.path.join(os.path.realpath(dirname), version, 'RPM'), '*.rpm')
+            if not rpm_packages:
+                logger.error('Your path %s%s/RPM does not contain any RPM packages' % (dirname, version))
+                found = False
+            if version == 'old':
+                spec_version = self.spec_file.get_version()
+            else:
+                spec_version = self.rebase_spec_file.get_version()
+            data['version'] = spec_version
+            data['rpm'] = rpm_packages
+            data['name'] = self.spec_file.get_package_name()
+            OutputLogger.set_build_data(version, data)
+        if not found:
+            return False
+        return True
 
     def _get_spec_file(self):
         """
@@ -436,16 +461,23 @@ class Application(object):
     def run(self):
         sources = self.prepare_sources()
 
-        if not self.conf.build_only:
+        if not self.conf.build_only and not self.conf.comparepkgs:
             self.patch_sources(sources)
 
         if not self.conf.patch_only:
-            # check build dependencies for rpmbuild
-            if self.conf.buildtool == 'rpmbuild':
-                Application.check_build_requires(self.spec_file)
-            # Build packages
-            build = self.build_packages()
-            # Perform checks
+            if not self.conf.comparepkgs:
+                # check build dependencies for rpmbuild
+                if self.conf.buildtool == 'rpmbuild':
+                    Application.check_build_requires(self.spec_file)
+                # Build packages
+                build = self.build_packages()
+                # Perform checks
+            else:
+                build = self.get_rpm_packages(self.conf.comparepkgs)
+                # We don't care dirname doesn't contain any RPM packages
+                # Therefore return 1
+                if not build:
+                    return 1
             if build:
                 self.pkgdiff_packages()
 

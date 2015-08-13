@@ -114,6 +114,12 @@ class CLI(object):
             dest='non_interactive',
             help="Use if you do not want a user interaction"
         )
+        self.parser.add_argument(
+            "--comparepkgs-only",
+            default=False,
+            dest="comparepkgs",
+            help="Specify dir with old and new RPM packages. Dir structure has to be like testdir/{old,new}/RPM"
+        )
 
     def __getattr__(self, name):
         try:
