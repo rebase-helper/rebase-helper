@@ -25,6 +25,8 @@ import ast
 import tempfile
 import git
 import os
+import shutil
+from pprint import pprint
 from rebasehelper.cli import CLI
 from rebasehelper.logger import logger
 from rebasehelper.application import Application
@@ -45,7 +47,7 @@ class UpstreamMonitoring(object):
     fedpkg_file = '/etc/rpkg/fedpkg.conf'
     anonymous_url = 'anongiturl'
     package = ''
-    arguments = ['--non-interactive']
+    arguments = []
     patches = {}
     url = ''
 
@@ -54,6 +56,7 @@ class UpstreamMonitoring(object):
         self.endpoint = endpoint
         self.topic = topic
         self.msg = msg
+        self.arguments = ['--non-interactive']
 
     def parse_fedpkg_conf(self):
 
@@ -74,18 +77,19 @@ class UpstreamMonitoring(object):
     def _get_package_version(self):
 
         """ Get package and version from fedmsg  """
-        try:
-            rebase_helper_msg = ast.literal_eval(self.msg['msg']['log'].encode('utf-8'))
-        except ValueError:
-            logger.debug('Wrong value in request from upstream monitoring service')
-            return
-        except SyntaxError:
-            logger.debug('wrong request from upstream monitoring service')
-            return
-        self.package = rebase_helper_msg.get('package')
-        logger.info('Package %s', self.package)
-        self.version = rebase_helper_msg.get('version')
-        self.arguments.append(self.version)
+        inner = self.msg['msg'].get('message', self.msg['msg'])
+        distros = [p['distro'] for p in inner['packages']]
+        pprint(inner)
+
+        for package in inner['packages']:
+            self.package = package['package_name']
+            self.version = inner['upstream_version']
+            # TODO use logger instead of print like /var/log/rebase-helper-upstream.log
+            #print (self.version, self.package)
+            logger.info('Package %s', self.package)
+            logger.info(self.arguments)
+            self.arguments.append(self.version)
+            logger.info(self.arguments)
 
     def _print_patches(self):
         if self.patches['deleted']:
@@ -102,12 +106,25 @@ class UpstreamMonitoring(object):
 
         """ Clonning repository and call rebase-helper """
         logger.info('Clonning repository %s', self.url)
-        git.Git().clone(self.url)
+        try:
+            # git clone http://pkgs.fedoraproject.org/cgit/emacs.git/
+            git.Git().clone(self.url)
+        except git.exc.GitCommandError as gce:
+            logger.error(gce.message)
+            return
         os.chdir(self.package)
+        pprint(self.arguments)
         cli = CLI(self.arguments)
         try:
             app = Application(cli)
-            app.run()
+            # TDO After a deep testing app.run() will be used
+            #app.run()
+            logger.info(app.kwargs)
+            sources = app.prepare_sources()
+            app.patch_sources(sources)
+            build = app.build_packages()
+            if build:
+                app.pkgdiff_packages()
             self.patches = app.rebased_patches
             self._print_patches()
             logger.info(app.debug_log_file)
@@ -117,14 +134,11 @@ class UpstreamMonitoring(object):
     def process_messsage(self):
 
         """ Process message from fedmsg """
-        #print ('NEW REQUEST')
-        #print('TOPIC:', self.topic)
-        #print('MSG:', self.msg)
-        if self.topic == 'org.fedoraproject.dev.logger.log':
-            self._get_package_version()
-            self.parse_fedpkg_conf()
-            tempdir = tempfile.mkdtemp(suffix='-rebase-helper')
-            cwd = os.getcwd()
-            os.chdir(tempdir)
-            self._call_rebase_helper()
-            os.chdir(cwd)
+        self._get_package_version()
+        self.parse_fedpkg_conf()
+        tempdir = tempfile.mkdtemp(suffix='-rebase-helper')
+        cwd = os.getcwd()
+        os.chdir(tempdir)
+        self._call_rebase_helper()
+        os.chdir(cwd)
+        shutil.rmtree(tempdir)

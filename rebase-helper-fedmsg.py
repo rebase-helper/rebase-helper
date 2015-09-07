@@ -25,12 +25,27 @@
 # It requires fedmsg package
 from __future__ import print_function
 import fedmsg
+import requests
 from rebasehelper.upstream_monitoring import UpstreamMonitoring
 
 # Testing command line
 # echo "{'package':'wget', 'version': '1.6.13'} | fedmsg-logger
 
-for name, endpoint, topic, msg in fedmsg.tail_messages():
-    if msg['username'] == 'phracek':
-        up = UpstreamMonitoring(name, endpoint, topic, msg)
-        up.process_messsage()
+# version update is
+VERSION_UPDATE = 'anitya.project.version.update'
+while True:
+    try:
+        message = fedmsg.tail_messages()
+        for name, endpoint, topic, msg in message:
+            # TODO Use logger instead of print like rebase-upstream.log file in /var/log/
+            #print (topic)
+            if topic.endswith(VERSION_UPDATE):
+                #print (endpoint)
+                #print (msg)
+                try:
+                    up = UpstreamMonitoring(name, endpoint, topic, msg)
+                    up.process_messsage()
+                except:
+                    raise
+    except requests.exceptions.ConnectionError:
+        pass

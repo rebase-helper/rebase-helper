@@ -1,0 +1,6 @@
+[Unit]
+Description=Rebase-helper: tool which helps you with rebases
+
+[Service]
+Type=forking
+ExecStart=/usr/bin/rebase-helper-fedmsg.py

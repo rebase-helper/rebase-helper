@@ -181,17 +181,16 @@ class Application(object):
         found = True
         for version in ['old', 'new']:
             data = {}
-            rpm_packages = PathHelper.find_all_files(os.path.join(os.path.realpath(dirname), version, 'RPM'), '*.rpm')
-            if not rpm_packages:
-                logger.error('Your path %s%s/RPM does not contain any RPM packages' % (dirname, version))
-                found = False
+            data['name'] = self.spec_file.get_package_name()
             if version == 'old':
                 spec_version = self.spec_file.get_version()
             else:
                 spec_version = self.rebase_spec_file.get_version()
             data['version'] = spec_version
-            data['rpm'] = rpm_packages
-            data['name'] = self.spec_file.get_package_name()
+            data['rpm'] = PathHelper.find_all_files(os.path.join(os.path.realpath(dirname), version, 'RPM'), '*.rpm')
+            if not data['rpm']:
+                logger.error('Your path %s%s/RPM does not contain any RPM packages' % (dirname, version))
+                found = False
             OutputLogger.set_build_data(version, data)
         if not found:
             return False
