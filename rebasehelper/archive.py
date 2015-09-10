@@ -25,6 +25,7 @@ import tarfile
 import zipfile
 import bz2
 import os
+import shutil
 try:
     import lzma
 except ImportError:
@@ -179,6 +180,24 @@ class ZipArchiveType(ArchiveTypeBase):
         archive.extractall(path)
 
 
+@register_archive_type
+class GemPseudoArchiveType(ArchiveTypeBase):
+    """ .gem files are not archives - this is a pseudo type """
+    EXTENSION = ".gem"
+
+    @classmethod
+    def open(cls, filename=None):
+        pass
+
+    @classmethod
+    def extract(cls, archive=None, filename=None, path=None, *args, **kwargs):
+        if archive is not None:
+            raise RuntimeError("In Gem pseudo file types, the archive (pos 1) argument is not used, but passed.")
+        final_dir = os.path.join(path, os.path.basename(filename.rstrip(cls.EXTENSION)))
+        os.makedirs(final_dir)
+        shutil.copy(filename, final_dir)
+
+
 class Archive(object):
 
     """ Class representing an archive with sources """
@@ -210,7 +229,11 @@ class Archive(object):
 
         archive = self._archive_type.open(self._filename)
         self._archive_type.extract(archive, self._filename, path)
-        archive.close()
+        try:
+            archive.close()
+        except AttributeError:
+            # pseudo archive types don't return real file-like object
+            pass
 
     @classmethod
     def get_supported_archives(cls):
