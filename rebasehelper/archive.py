@@ -19,6 +19,7 @@
 #
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
+
 from __future__ import print_function
 import tarfile
 import zipfile
@@ -42,8 +43,8 @@ def register_archive_type(archive):
 
 
 class ArchiveTypeBase(object):
-
     """ Base class for various archive types """
+    EXTENSION = ""
 
     @classmethod
     def match(cls, filename=None, *args, **kwargs):
@@ -51,7 +52,10 @@ class ArchiveTypeBase(object):
         Checks if the filename matches the archive type. If yes, returns
         True, otherwise returns False.
         """
-        raise NotImplementedError()
+        if filename is not None and filename.endswith(cls.EXTENSION):
+            return True
+        else:
+            return False
 
     @classmethod
     def open(cls, filename=None, *args, **kwargs):
@@ -79,13 +83,6 @@ class TarXzArchiveType(ArchiveTypeBase):
     EXTENSION = ".tar.xz"
 
     @classmethod
-    def match(cls, filename=None):
-        if filename is not None and filename.endswith(cls.EXTENSION):
-            return True
-        else:
-            return False
-
-    @classmethod
     def open(cls, filename=None):
         if filename is None:
             raise TypeError("Expected argument 'filename' (pos 1) is missing")
@@ -105,13 +102,6 @@ class TarBz2ArchiveType(ArchiveTypeBase):
     """ .bz2 archive type """
 
     EXTENSION = ".bz2"
-
-    @classmethod
-    def match(cls, filename=None):
-        if filename is not None and filename.endswith(cls.EXTENSION):
-            return True
-        else:
-            return False
 
     @classmethod
     def open(cls, filename=None):
@@ -145,13 +135,6 @@ class TarGzArchiveType(TarBz2ArchiveType):
     EXTENSION = ".tar.gz"
 
     @classmethod
-    def match(cls, filename=None):
-        if filename is not None and filename.endswith(cls.EXTENSION):
-            return True
-        else:
-            return False
-
-    @classmethod
     def open(cls, filename=None):
         if filename is None:
             raise TypeError("Expected argument 'filename' (pos 1) is missing")
@@ -168,13 +151,6 @@ class TarGzArchiveType(TarBz2ArchiveType):
 class TgzArchiveType(TarGzArchiveType):
     """ .tgz archive type """
     EXTENSION = ".tgz"
-
-    @classmethod
-    def match(cls, filename=None):
-        if filename is not None and filename.endswith(cls.EXTENSION):
-            return True
-        else:
-            return False
 
 
 @register_archive_type
