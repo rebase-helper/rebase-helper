@@ -19,11 +19,13 @@
 #
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
+
 from __future__ import print_function
 import tarfile
 import zipfile
 import bz2
 import os
+import shutil
 try:
     import lzma
 except ImportError:
@@ -42,8 +44,8 @@ def register_archive_type(archive):
 
 
 class ArchiveTypeBase(object):
-
     """ Base class for various archive types """
+    EXTENSION = ""
 
     @classmethod
     def match(cls, filename=None, *args, **kwargs):
@@ -51,7 +53,10 @@ class ArchiveTypeBase(object):
         Checks if the filename matches the archive type. If yes, returns
         True, otherwise returns False.
         """
-        raise NotImplementedError()
+        if filename is not None and filename.endswith(cls.EXTENSION):
+            return True
+        else:
+            return False
 
     @classmethod
     def open(cls, filename=None, *args, **kwargs):
@@ -79,13 +84,6 @@ class TarXzArchiveType(ArchiveTypeBase):
     EXTENSION = ".tar.xz"
 
     @classmethod
-    def match(cls, filename=None):
-        if filename is not None and filename.endswith(cls.EXTENSION):
-            return True
-        else:
-            return False
-
-    @classmethod
     def open(cls, filename=None):
         if filename is None:
             raise TypeError("Expected argument 'filename' (pos 1) is missing")
@@ -105,13 +103,6 @@ class TarBz2ArchiveType(ArchiveTypeBase):
     """ .bz2 archive type """
 
     EXTENSION = ".bz2"
-
-    @classmethod
-    def match(cls, filename=None):
-        if filename is not None and filename.endswith(cls.EXTENSION):
-            return True
-        else:
-            return False
 
     @classmethod
     def open(cls, filename=None):
@@ -145,13 +136,6 @@ class TarGzArchiveType(TarBz2ArchiveType):
     EXTENSION = ".tar.gz"
 
     @classmethod
-    def match(cls, filename=None):
-        if filename is not None and filename.endswith(cls.EXTENSION):
-            return True
-        else:
-            return False
-
-    @classmethod
     def open(cls, filename=None):
         if filename is None:
             raise TypeError("Expected argument 'filename' (pos 1) is missing")
@@ -168,13 +152,6 @@ class TarGzArchiveType(TarBz2ArchiveType):
 class TgzArchiveType(TarGzArchiveType):
     """ .tgz archive type """
     EXTENSION = ".tgz"
-
-    @classmethod
-    def match(cls, filename=None):
-        if filename is not None and filename.endswith(cls.EXTENSION):
-            return True
-        else:
-            return False
 
 
 @register_archive_type
@@ -201,6 +178,24 @@ class ZipArchiveType(ArchiveTypeBase):
         if archive is None:
             raise TypeError("Expected argument 'archive' (pos 1) is missing")
         archive.extractall(path)
+
+
+@register_archive_type
+class GemPseudoArchiveType(ArchiveTypeBase):
+    """ .gem files are not archives - this is a pseudo type """
+    EXTENSION = ".gem"
+
+    @classmethod
+    def open(cls, filename=None):
+        pass
+
+    @classmethod
+    def extract(cls, archive=None, filename=None, path=None, *args, **kwargs):
+        if archive is not None:
+            raise RuntimeError("In Gem pseudo file types, the archive (pos 1) argument is not used, but passed.")
+        final_dir = os.path.join(path, os.path.basename(filename.rstrip(cls.EXTENSION)))
+        os.makedirs(final_dir)
+        shutil.copy(filename, final_dir)
 
 
 class Archive(object):
@@ -234,7 +229,11 @@ class Archive(object):
 
         archive = self._archive_type.open(self._filename)
         self._archive_type.extract(archive, self._filename, path)
-        archive.close()
+        try:
+            archive.close()
+        except AttributeError:
+            # pseudo archive types don't return real file-like object
+            pass
 
     @classmethod
     def get_supported_archives(cls):
