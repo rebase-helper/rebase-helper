@@ -76,4 +76,7 @@ class LoggerHelper(object):
 logger = LoggerHelper.get_basic_logger('rebase-helper')
 #  logger for output tool
 logger_output = LoggerHelper.get_basic_logger('output-tool', logging.INFO)
+logger_upstream = LoggerHelper.get_basic_logger('rebase-helper-upstream')
 LoggerHelper.add_stream_handler(logger_output)
+formatter = logging.Formatter("%(asctime)s %(levelname)s\t: %(message)s")
+LoggerHelper.add_file_handler(logger_upstream, '/tmp/rebase-helper-upstream.log', formatter=formatter)
