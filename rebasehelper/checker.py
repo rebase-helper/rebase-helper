@@ -20,6 +20,7 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
+from __future__ import print_function
 import os
 import six
 import re
@@ -319,6 +320,8 @@ class AbiCheckerTool(BaseChecker):
     """ Pkgdiff compare tool. """
     CMD = "abipkgdiff"
     results_dir = ''
+    log_name = 'abipkgdiff.log'
+
 
     # Example
     # abipkgdiff --d1 dbus-glib-debuginfo-0.80-3.fc12.x86_64.rpm \
@@ -356,7 +359,7 @@ class AbiCheckerTool(BaseChecker):
         cmd.append(debug_new[0])
         text = []
         for pkg in rest_pkgs_old:
-            command = cmd
+            command = list(cmd)
             # Package can be <letters><numbers>-<letters>-<and_whatever>
             regexp = r'^(\w*)(-\D+)?.*$'
             reg = re.compile(regexp)
@@ -366,16 +369,26 @@ class AbiCheckerTool(BaseChecker):
                 command.append(pkg)
                 find = [x for x in rest_pkgs_new if os.path.basename(x).startswith(file_name)]
                 command.append(find[0])
-                output = os.path.join(results_dir, file_name + '-abipkgdiff.log')
+                package_name = os.path.basename(os.path.basename(pkg))
+                logger.debug('Package name for ABI comparision %s', package_name)
+                regexp_name = r'(\w-)*(\D+)*'
+                reg_name = re.compile(regexp_name)
+                matched = reg_name.search(os.path.basename(pkg))
+                logger.debug('Found matches %s', matched.groups())
+                if matched:
+                    package_name = matched.group(0) + cls.log_name
+                else:
+                    package_name = package_name + '-' + cls.log_name
+                output = os.path.join(results_dir, package_name)
                 ret_code = ProcessHelper.run_subprocess(command, output=output)
                 if int(ret_code) & settings.ABIDIFF_ERROR and int(ret_code) & settings.ABIDIFF_USAGE_ERROR:
                     raise RebaseHelperError('Execution of %s failed.\nCommand line is: %s', cls.CMD, cmd)
                 if int(ret_code) == 0:
-                    text.append('ABI of the compared binaries in package %s are equal.' % file_name)
+                    text.append('ABI of the compared binaries in package %s are equal.' % package_name)
                 else:
-                    text.append('ABI of the compared binaries in package %s are not equal. See file %s' % (file_name, output))
+                    text.append('ABI of the compared binaries in package %s are not equal. See file %s' % (package_name, output))
             else:
-                logger.debug("Rebase-helper did not find a package name in '%s'", pkg)
+                logger.debug("Rebase-helper did not find a package name in '%s'", package_name)
         return text
 
 

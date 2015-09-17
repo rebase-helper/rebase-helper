@@ -148,6 +148,7 @@ class TarGzArchiveType(TarBz2ArchiveType):
             raise TypeError("Expected argument 'archive' (pos 1) is missing")
         archive.extractall(path)
 
+
 @register_archive_type
 class TgzArchiveType(TarGzArchiveType):
     """ .tgz archive type """
