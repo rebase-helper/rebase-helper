@@ -350,14 +350,22 @@ class AbiCheckerTool(BaseChecker):
         """ Compares old and new RPMs using pkgdiff """
         cls.results_dir = results_dir
 
+        text = []
         debug_old, rest_pkgs_old = cls._get_packages_for_abipkgdiff(OutputLogger.get_build('old'))
         debug_new, rest_pkgs_new = cls._get_packages_for_abipkgdiff(OutputLogger.get_build('new'))
         cmd = [cls.CMD]
-        cmd.append('--d1')
-        cmd.append(debug_old[0])
-        cmd.append('--d2')
-        cmd.append(debug_new[0])
-        text = []
+        try:
+            cmd.append('--d1')
+            cmd.append(debug_old[0])
+        except IndexError:
+            text.append('Debuginfo package not found for old package.')
+            return text
+        try:
+            cmd.append('--d2')
+            cmd.append(debug_new[0])
+        except IndexError:
+            text.append('Debuginfo package not found for new package.')
+            return text
         for pkg in rest_pkgs_old:
             command = list(cmd)
             # Package can be <letters><numbers>-<letters>-<and_whatever>
