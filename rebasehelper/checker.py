@@ -185,7 +185,7 @@ class PkgDiffTool(BaseChecker):
             with open(file_name, 'w') as f:
                 f.writelines(lines)
         except IOError:
-            raise RebaseHelperError("Unable to create XML file for pkgdiff tool '%s'", file_name)
+            raise RebaseHelperError("Unable to create XML file for pkgdiff tool '%s'" % file_name)
 
         return file_name
 
@@ -305,7 +305,7 @@ class PkgDiffTool(BaseChecker):
          other return codes means error
         """
         if int(ret_code) != 0 and int(ret_code) != 1:
-            raise RebaseHelperError('Execution of %s failed.\nCommand line is: %s', cls.CMD, cmd)
+            raise RebaseHelperError('Execution of %s failed.\nCommand line is: %s' % (cls.CMD, cmd))
         OutputLogger.set_info_text('Result HTML page from pkgdiff is store in: ', cls.pkgdiff_results_full_path)
         results_dict = cls.process_xml_results(cls.results_dir)
         text = []
@@ -382,7 +382,7 @@ class AbiCheckerTool(BaseChecker):
                 output = os.path.join(results_dir, package_name)
                 ret_code = ProcessHelper.run_subprocess(command, output=output)
                 if int(ret_code) & settings.ABIDIFF_ERROR and int(ret_code) & settings.ABIDIFF_USAGE_ERROR:
-                    raise RebaseHelperError('Execution of %s failed.\nCommand line is: %s', cls.CMD, cmd)
+                    raise RebaseHelperError('Execution of %s failed.\nCommand line is: %s' % (cls.CMD, cmd))
                 if int(ret_code) == 0:
                     text.append('ABI of the compared binaries in package %s are equal.' % package_name)
                 else:
