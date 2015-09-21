@@ -167,7 +167,7 @@ class Application(object):
 
         # We want to inform user immediatelly if compare tool doesn't exists
         if self.conf.pkgcomparetool and self.conf.pkgcomparetool not in Checker.get_supported_tools():
-            raise RebaseHelperError('You have to specify one of these check tools %s', Checker.get_supported_tools())
+            raise RebaseHelperError('You have to specify one of these check tools %s' % Checker.get_supported_tools())
 
     def _get_rebase_helper_log(self):
         return os.path.join(self.results_dir, settings.REBASE_HELPER_RESULTS_LOG)
@@ -202,7 +202,7 @@ class Application(object):
         """
         self.spec_file_path = PathHelper.find_first_file(self.execution_dir, '*.spec', 0)
         if not self.spec_file_path:
-            raise RebaseHelperError("Could not find any SPEC file in the current directory '%s'", self.execution_dir)
+            raise RebaseHelperError("Could not find any SPEC file in the current directory '%s'" % self.execution_dir)
 
     def _delete_old_builds(self):
         """
@@ -269,14 +269,14 @@ class Application(object):
         try:
             archive = Archive(archive_path)
         except NotImplementedError as ni_e:
-            raise RebaseHelperError('%s. Supported archives are %s', ni_e.message, Archive.get_supported_archives())
+            raise RebaseHelperError('%s. Supported archives are %s' % (ni_e.message, Archive.get_supported_archives()))
 
         try:
             archive.extract_archive(destination)
         except IOError:
-            raise RebaseHelperError("Archive '%s' can not be extracted", archive_path)
+            raise RebaseHelperError("Archive '%s' can not be extracted" % archive_path)
         except (EOFError, SystemError):
-            raise RebaseHelperError("Archive '%s' is damaged", archive_path)
+            raise RebaseHelperError("Archive '%s' is damaged" % archive_path)
 
     @staticmethod
     def extract_sources(archive_path, destination):
@@ -354,7 +354,7 @@ class Application(object):
         try:
             builder = Builder(self.conf.buildtool)
         except NotImplementedError as ni_e:
-            raise RebaseHelperError('%s. Supported build tools are %s', ni_e.message, Builder.get_supported_tools())
+            raise RebaseHelperError('%s. Supported build tools are %s' % (ni_e.message, Builder.get_supported_tools()))
 
         for version in ['old', 'new']:
             spec_object = self.spec_file if version == 'old' else self.rebase_spec_file
@@ -388,14 +388,14 @@ class Application(object):
                     build_log = 'build.log'
                     build_log_path = os.path.join(rpm_dir, build_log)
                     if version == 'old':
-                        raise RebaseHelperError('Building old RPM package failed. Check log %s', build_log_path)
+                        raise RebaseHelperError('Building old RPM package failed. Check log %s' % build_log_path)
                     logger.error('Building binary packages failed.')
                     try:
                         files = BuildLogAnalyzer.parse_log(rpm_dir, build_log)
                     except BuildLogAnalyzerMissingError:
-                        raise RebaseHelperError('Build log %s does not exist', build_log_path)
+                        raise RebaseHelperError('Build log %s does not exist' % build_log_path)
                     except BuildLogAnalyzerMakeError:
-                        raise RebaseHelperError('Building package failed during build. Check log %s', build_log_path)
+                        raise RebaseHelperError('Building package failed during build. Check log %s' % build_log_path)
                     except BuildLogAnalyzerPatchError:
                         raise RebaseHelperError('Building package failed during patching. Check log %s' % build_log_path)
 
@@ -406,7 +406,7 @@ class Application(object):
                         deleted_files = '\n'.join(files['deleted'])
                         logger.warning('Removed files packaged in SPEC file:\n%s', deleted_files)
                     else:
-                        raise RebaseHelperError("Build failed, but no issues were found in the build log %s", build_log)
+                        raise RebaseHelperError("Build failed, but no issues were found in the build log %s" % build_log)
                     self.rebase_spec_file.modify_spec_files_section(files)
 
                 if not self.conf.non_interactive:

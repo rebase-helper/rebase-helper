@@ -155,7 +155,7 @@ class TextOutputTool(BaseOutputTool):
         try:
             LoggerHelper.add_file_handler(logger_output, path)
         except (OSError, IOError):
-            raise RebaseHelperError("Can not create results file '%s'", path)
+            raise RebaseHelperError("Can not create results file '%s'" % path)
 
         type_pkgs = ['old', 'new']
         cls.print_patches(OutputLogger.get_patches(), '\nSummary information about patches:')

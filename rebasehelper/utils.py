@@ -150,7 +150,7 @@ class DownloadHelper(object):
                 curl.perform()
             except pycurl.error as error:
                 curl.close()
-                raise ReferenceError("Downloading '%s' failed with error '%s'.", url, error)
+                raise ReferenceError("Downloading '%s' failed with error '%s'." % (url, error))
 
             else:
                 curl.close()
@@ -536,7 +536,7 @@ One of the possible configuration can be:\n
 [merge]
     tool = mymeld
     conflictstyle = diff3"""
-            raise RebaseHelperError(message, git_config_name)
+            raise RebaseHelperError(message % git_config_name)
         return merge
 
     @staticmethod
