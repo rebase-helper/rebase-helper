@@ -26,9 +26,10 @@ import tempfile
 import git
 import os
 import shutil
+import logging
 from pprint import pprint
 from rebasehelper.cli import CLI
-from rebasehelper.logger import logger
+from rebasehelper.logger import LoggerHelper, logger, logger_upstream
 from rebasehelper.application import Application
 from rebasehelper.exceptions import RebaseHelperError
 
@@ -84,33 +85,29 @@ class UpstreamMonitoring(object):
         for package in inner['packages']:
             self.package = package['package_name']
             self.version = inner['upstream_version']
-            # TODO use logger instead of print like /var/log/rebase-helper-upstream.log
-            #print (self.version, self.package)
-            logger.info('Package %s', self.package)
-            logger.info(self.arguments)
+            logger_upstream.info('Package %s', self.package)
             self.arguments.append(self.version)
-            logger.info(self.arguments)
 
     def _print_patches(self):
         if self.patches['deleted']:
-            logger.info('Following patches were deleted %s', self.patches['deleted'])
+            logger_upstream.info('Following patches were deleted %s', ','.join(self.patches['deleted']))
         for patch in self.patches['unapplied']:
             # Remove duplicates
             self.patches['modified'] = [x for x in self.patches['modified'] if patch not in x]
         if self.patches['modified']:
-            logger.info('Following patches were modified %s', [os.path.basename(x) for x in self.patches['modified']])
+            logger_upstream.info('Following patches were modified %s', ','.join([os.path.basename(x) for x in self.patches['modified']]))
         if self.patches['unapplied']:
-            logger.info('Following patches were unapplied %s', self.patches['unapplied'])
+            logger_upstream.info('Following patches were unapplied %s', ','.join(self.patches['unapplied']))
 
     def _call_rebase_helper(self):
 
         """ Clonning repository and call rebase-helper """
-        logger.info('Clonning repository %s', self.url)
+        logger_upstream.info('Clonning repository %s', self.url)
         try:
             # git clone http://pkgs.fedoraproject.org/cgit/emacs.git/
             git.Git().clone(self.url)
         except git.exc.GitCommandError as gce:
-            logger.error(gce.message)
+            logger_upstream.error(gce.message)
             return
         os.chdir(self.package)
         pprint(self.arguments)
@@ -119,7 +116,7 @@ class UpstreamMonitoring(object):
             app = Application(cli)
             # TDO After a deep testing app.run() will be used
             #app.run()
-            logger.info(app.kwargs)
+            logger_upstream.info(app.kwargs)
             sources = app.prepare_sources()
             app.patch_sources(sources)
             build = app.build_packages()
@@ -127,9 +124,24 @@ class UpstreamMonitoring(object):
                 app.pkgdiff_packages()
             self.patches = app.rebased_patches
             self._print_patches()
-            logger.info(app.debug_log_file)
+            logger_upstream.info(app.debug_log_file)
         except RebaseHelperError as rbe:
-            logger.error(rbe.message)
+            logger_upstream.error(rbe.message)
+
+    def add_upstream_log_file(self):
+        """
+        Add the application wide debug log file
+        :return:
+        """
+        upstream_log_file = os.path.join('/tmp', 'rebase-helper-upstream.log')
+        try:
+            LoggerHelper.add_file_handler(logger_upstream,
+                                          upstream_log_file,
+                                          logging.Formatter("%(asctime)s %(levelname)s\t%(filename)s"
+                                                            ":%(lineno)s %(funcName)s: %(message)s"),
+                                          logging.DEBUG)
+        except (IOError, OSError):
+            logger.warning("Can not create debug log '%s'", upstream_log_file)
 
     def process_messsage(self):
 
