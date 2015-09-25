@@ -329,7 +329,8 @@ class Application(object):
     def patch_sources(self, sources):
         # Patch sources
         git_helper = GitHelper(sources[0])
-        git_helper.check_git_config()
+        if not self.conf.non_interactive:
+            git_helper.check_git_config()
         patch = Patcher(self.conf.patchtool)
         self.rebase_spec_file.update_changelog(self.rebase_spec_file.get_new_log(git_helper))
         try:
