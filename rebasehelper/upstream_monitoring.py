@@ -52,12 +52,18 @@ class UpstreamMonitoring(object):
     patches = {}
     url = ''
 
-    def __init__(self, name, endpoint, topic, msg):
+    def __init__(self, ):
+        self.name = None
+        self.endpoint = None
+        self.topic = None
+        self.msg = None
+        self.arguments = []
+
+    def add_message(self, name, endpoint, topic, msg):
         self.name = name
         self.endpoint = endpoint
         self.topic = topic
         self.msg = msg
-        self.arguments = ['--non-interactive']
 
     def parse_fedpkg_conf(self):
 
@@ -146,6 +152,7 @@ class UpstreamMonitoring(object):
     def process_messsage(self):
 
         """ Process message from fedmsg """
+        self.arguments = ['-v, --non-interactive']
         self._get_package_version()
         self.parse_fedpkg_conf()
         tempdir = tempfile.mkdtemp(suffix='-rebase-helper')

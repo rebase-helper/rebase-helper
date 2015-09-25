@@ -27,6 +27,7 @@ from __future__ import print_function
 import fedmsg
 import requests
 from rebasehelper.upstream_monitoring import UpstreamMonitoring
+from rebasehelper.logger import logger_upstream
 
 # Testing command line
 # echo "{'package':'wget', 'version': '1.6.13'} | fedmsg-logger
@@ -35,15 +36,13 @@ from rebasehelper.upstream_monitoring import UpstreamMonitoring
 VERSION_UPDATE = 'anitya.project.version.update'
 while True:
     try:
-        message = fedmsg.tail_messages()
-        for name, endpoint, topic, msg in message:
-            # TODO Use logger instead of print like rebase-upstream.log file in /var/log/
-            #print (topic)
+        up = UpstreamMonitoring()
+        up.add_upstream_log_file()
+        for name, endpoint, topic, msg in fedmsg.tail_messages():
+            up.add_message(name, endpoint, topic, msg)
+            logger_upstream.info('%s', topic)
             if topic.endswith(VERSION_UPDATE):
-                #print (endpoint)
-                #print (msg)
                 try:
-                    up = UpstreamMonitoring(name, endpoint, topic, msg)
                     up.process_messsage()
                 except:
                     raise
