@@ -156,12 +156,22 @@ class GitPatchTool(PatchBase):
         unapplied_patches = []
         while True:
             if int(ret_code) != 0:
-                patch_name = cls.git_helper.get_unapplied_patch(cls.output_data)
-                logger.info("Git has problems with rebasing patch %s", patch_name)
                 if not cls.non_interactive:
+                    patch_name = cls.git_helper.get_unapplied_patch(cls.output_data)
+                    logger.info("Git has problems with rebasing patch %s", patch_name)
                     cls.git_helper.command_mergetool()
                 else:
-                    unapplied_patches.append(patch_name)
+                    # Take the patch which failed from .git/rebase-apply/next file
+                    try:
+                        with open(os.path.join(cls.old_sources, '.git', 'rebase-apply', 'next')) as f:
+                            number = '\n'.join(f.readlines())
+                    except IOError:
+                        raise RuntimeError("Git rebase failed with unknown reason. Please check log file")
+                    # Getting the patch which failed
+                    unapplied_patches.append(cls.patches[int(number) - 1].get_patch_name())
+                    ret_code = cls.git_helper.command_rebase('--skip')
+                    cls._get_git_helper_data()
+                    continue
                 modified_files = cls.git_helper.command_diff_status()
                 cls.git_helper.command_add_files(parameters=modified_files)
                 base_name = os.path.join(cls.kwargs['results_dir'], patch_name)
