@@ -116,7 +116,7 @@ class UpstreamMonitoring(object):
             logger_upstream.error(gce.message)
             return
         os.chdir(self.package)
-        pprint(self.arguments)
+        logger_upstream.debug(self.arguments)
         cli = CLI(self.arguments)
         try:
             app = Application(cli)
@@ -152,7 +152,7 @@ class UpstreamMonitoring(object):
     def process_messsage(self):
 
         """ Process message from fedmsg """
-        self.arguments = ['-v, --non-interactive']
+        self.arguments = ['-v, --non-interactive', '--buildtool', 'fedpkg']
         self._get_package_version()
         self.parse_fedpkg_conf()
         tempdir = tempfile.mkdtemp(suffix='-rebase-helper')
