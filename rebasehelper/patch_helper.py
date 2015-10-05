@@ -103,6 +103,9 @@ class GitPatchTool(PatchBase):
             if int(ret_code) != 0:
                 ret_code = git_helper.command_apply(input_file=patch_name, option=patch_option, ignore_space=True)
             ret_code = GitPatchTool.commit_patch(git_helper, patch_name)
+        else:
+            # replace last commit message with patch name to preserve mapping between commits and patches
+            ret_code = git_helper.command_commit(message='Patch: {0}'.format(os.path.basename(patch_name)), amend=True)
         return ret_code
 
     @classmethod

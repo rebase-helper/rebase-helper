@@ -590,7 +590,7 @@ One of the possible configuration can be:\n
         cmd.append(directory)
         return self._call_git_command(cmd)
 
-    def command_commit(self, message=None):
+    def command_commit(self, message=None, amend=False):
 
         """
         Method commits message to Git
@@ -603,6 +603,9 @@ One of the possible configuration can be:\n
             cmd.extend(['-m', message])
         else:
             cmd.extend(['-m', 'Empty message'])
+
+        if amend:
+            cmd.append('--amend')
 
         return self._call_git_command(cmd)
 
