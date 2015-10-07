@@ -369,6 +369,8 @@ class Application(object):
             sources = spec_object.get_sources()
 
             failed_before = False
+            logger.info('Building packages for %s version %s' %
+                        (spec_object.get_package_name(), spec_object.get_version()))
             while True:
                 try:
                     build_dict.update(builder.build(spec, sources, patches, results_dir, **build_dict))
