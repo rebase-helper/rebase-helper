@@ -274,7 +274,7 @@ class MockBuildTool(BuildToolBase):
             # We need to be inform what directory to analyze and what spec file failed
             raise BinaryPackageBuildError("Building RPMs failed!", rpm_results_dir, spec)
         else:
-            logger.info("Building RPM finished successfully")
+            logger.info("Building RPMs finished successfully")
 
         rpms = [os.path.join(rpm_results_dir, os.path.basename(f)) for f in rpms]
         logger.debug("Successfully built RPMs: '%s'", str(rpms))
