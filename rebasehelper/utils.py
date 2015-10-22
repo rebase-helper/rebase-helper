@@ -426,7 +426,7 @@ class RpmHelper(object):
         :return: True if installed, False if not installed
         """
         ts = rpm.TransactionSet()
-        mi = ts.dbMatch('name', pkg_name)
+        mi = ts.dbMatch('provides', pkg_name)
         return len(mi) > 0
 
     @staticmethod
@@ -450,7 +450,7 @@ class RpmHelper(object):
         :param spec_path: absolute path to SPEC file
         :return:
         """
-        cmd = ['pkexec', 'dnf builddep', spec_path]
+        cmd = ['pkexec', 'dnf', 'builddep', spec_path]
         if assume_yes:
             cmd.append('-y')
         return ProcessHelper.run_subprocess(cmd)
