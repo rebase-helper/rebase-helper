@@ -27,7 +27,7 @@ import six
 
 from rebasehelper.archive import Archive
 from rebasehelper.specfile import SpecFile, get_rebase_name
-from rebasehelper.logger import logger, LoggerHelper
+from rebasehelper.logger import logger, logger_report, LoggerHelper
 from rebasehelper import settings
 from rebasehelper import output_tool
 from rebasehelper.utils import PathHelper, RpmHelper, ConsoleHelper, GitHelper
@@ -127,7 +127,7 @@ class Application(object):
         """
         report_log_file = os.path.join(self.results_dir, settings.REBASE_HELPER_REPORT_LOG)
         try:
-            LoggerHelper.add_file_handler(logger,
+            LoggerHelper.add_file_handler(logger_report,
                                           report_log_file,
                                           logging.Formatter("%(asctime)s\t%(filename)s:%(message)s"),
                                           logging.INFO)
@@ -477,7 +477,7 @@ class Application(object):
         output_tool.check_output_argument(self.conf.outputtool)
         output = output_tool.OutputTool(self.conf.outputtool)
         output.print_information(path=self._get_rebase_helper_log())
-        logger.info('Report file from rebase-helper is available here %s' % self._get_rebase_helper_log())
+        logger.info('Report file from rebase-helper is available here: %s' % self.report_log_file)
 
     def run(self):
         sources = self.prepare_sources()
