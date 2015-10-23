@@ -52,6 +52,7 @@ class Application(object):
     rebase_spec_file = None
     rebase_spec_file_path = None
     debug_log_file = None
+    report_log_file = None
     rebased_patches = {}
 
     def __init__(self, cli_conf=None):
@@ -87,6 +88,7 @@ class Application(object):
             os.makedirs(self.results_dir)
 
         self._add_debug_log_file()
+        self._add_report_log_file()
         self._get_spec_file()
         self._prepare_spec_objects()
 
@@ -117,6 +119,22 @@ class Application(object):
             logger.warning("Can not create debug log '%s'", debug_log_file)
         else:
             self.debug_log_file = debug_log_file
+
+    def _add_report_log_file(self):
+        """
+        Add the application report log file
+        :return:
+        """
+        report_log_file = os.path.join(self.results_dir, settings.REBASE_HELPER_REPORT_LOG)
+        try:
+            LoggerHelper.add_file_handler(logger,
+                                          report_log_file,
+                                          logging.Formatter("%(asctime)s\t%(filename)s:%(message)s"),
+                                          logging.INFO)
+        except (IOError, OSError):
+            logger.warning("Can not create report log '%s'", report_log_file)
+        else:
+            self.report_log_file = report_log_file
 
     def _prepare_spec_objects(self):
         """
@@ -459,6 +477,7 @@ class Application(object):
         output_tool.check_output_argument(self.conf.outputtool)
         output = output_tool.OutputTool(self.conf.outputtool)
         output.print_information(path=self._get_rebase_helper_log())
+        logger.info('Report file from rebase-helper is available here %s' % self._get_rebase_helper_log())
 
     def run(self):
         sources = self.prepare_sources()

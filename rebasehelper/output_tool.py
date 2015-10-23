@@ -25,7 +25,7 @@ import os
 import six
 
 from rebasehelper.exceptions import RebaseHelperError
-from rebasehelper.logger import LoggerHelper, logger, logger_output
+from rebasehelper.logger import LoggerHelper, logger, logger_report
 from rebasehelper.base_output import OutputLogger
 
 output_tools = {}
@@ -81,15 +81,15 @@ class TextOutputTool(BaseOutputTool):
 
     @classmethod
     def print_message_and_separator(cls, message="", separator='='):
-        logger_output.info(message)
-        logger_output.info(separator * len(message))
+        logger_report.info(message)
+        logger_report.info(separator * len(message))
 
     @classmethod
     def print_patches(cls, patches, summary):
         if not patches:
-            logger_output.info("Patches were neither modified nor deleted.")
+            logger_report.info("Patches were neither modified nor deleted.")
             return
-        logger_output.info(summary)
+        logger_report.info(summary)
         max_name = 0
         for value in six.itervalues(patches):
             if value:
@@ -100,7 +100,7 @@ class TextOutputTool(BaseOutputTool):
         for key, value in six.iteritems(patches):
             if value:
                 for patch in value:
-                    logger_output.info('Patch %s [%s]', os.path.basename(patch).ljust(max_name), key.ljust(max_key))
+                    logger_report.info('Patch %s [%s]', os.path.basename(patch).ljust(max_name), key.ljust(max_key))
 
     @classmethod
     def print_rpms(cls, rpms, version):
@@ -115,12 +115,12 @@ class TextOutputTool(BaseOutputTool):
                 continue
             message = "%s package(s): are in directory %s :"
             if isinstance(srpm, str):
-                logger_output.info(message, type_rpm.upper(), os.path.dirname(rpms.get(srpm, "")))
-                logger_output.info("- %s", os.path.basename(srpm))
+                logger_report.info(message, type_rpm.upper(), os.path.dirname(rpms.get(srpm, "")))
+                logger_report.info("- %s", os.path.basename(srpm))
             else:
-                logger_output.info(message, type_rpm.upper(), os.path.dirname(srpm[0]))
+                logger_report.info(message, type_rpm.upper(), os.path.dirname(srpm[0]))
                 for pkg in srpm:
-                    logger_output.info("- %s", os.path.basename(pkg))
+                    logger_report.info("- %s", os.path.basename(pkg))
 
     @classmethod
     def print_build_logs(cls, rpms, version):
@@ -133,9 +133,9 @@ class TextOutputTool(BaseOutputTool):
 
         if rpms.get('logs', None) is None:
             return
-        logger_output.info('Available %s logs:', version)
+        logger_report.info('Available %s logs:', version)
         for logs in rpms.get('logs', None):
-            logger_output.info('- %s', logs)
+            logger_report.info('- %s', logs)
 
     @classmethod
     def print_summary(cls, path):
@@ -153,7 +153,7 @@ class TextOutputTool(BaseOutputTool):
             logger.info("%s %s\n", key, value)
 
         try:
-            LoggerHelper.add_file_handler(logger_output, path)
+            LoggerHelper.add_file_handler(logger_report, path)
         except (OSError, IOError):
             raise RebaseHelperError("Can not create results file '%s'" % path)
 
@@ -176,9 +176,9 @@ class TextOutputTool(BaseOutputTool):
         if OutputLogger.get_checkers():
             for check, data in six.iteritems(OutputLogger.get_checkers()):
                 if data:
-                    logger_output.info("%s", check)
+                    logger_report.info("%s", check)
                     for checker, output in six.iteritems(data):
-                        logger_output.info("===Checker %s===\n%s\n", checker, '\n'.join(output))
+                        logger_report.info("===Checker %s===\n%s\n", checker, '\n'.join(output))
 
 
 class OutputTool(object):
