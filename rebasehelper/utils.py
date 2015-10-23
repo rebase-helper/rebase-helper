@@ -508,6 +508,8 @@ class GitHelper(object):
         self.output_data = []
         if not output_file:
             output = StringIO()
+        elif output_file == '-':
+            output = None
         else:
             output = output_file
         ret_code = ProcessHelper.run_subprocess_cwd(cmd,
@@ -657,7 +659,7 @@ One of the possible configuration can be:\n
         """Function calls git mergetool program"""
 
         cmd = ['mergetool']
-        ret_code = self._call_git_command(cmd)
+        ret_code = self._call_git_command(cmd, output_file='-')
         return ret_code
 
     def command_rebase(self, parameters, upstream_name=None, first_hash=None, last_hash=None):
