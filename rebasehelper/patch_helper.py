@@ -154,6 +154,7 @@ class GitPatchTool(PatchBase):
             ret_code = cls.git_helper.command_rebase(parameters='--skip')
         cls._get_git_helper_data()
         logger.debug(cls.output_data)
+        patch_dictionary = {}
         modified_patches = []
         deleted_patches = []
         unapplied_patches = []
@@ -196,9 +197,15 @@ class GitPatchTool(PatchBase):
             else:
                 break
         deleted_patches = cls._update_deleted_patches(deleted_patches)
+        if deleted_patches:
+            patch_dictionary['deleted'] = deleted_patches
+        if modified_patches:
+            patch_dictionary['modified'] = modified_patches
+        if unapplied_patches:
+            patch_dictionary['unapplied'] = unapplied_patches
         #TODO correct settings for merge tool in ~/.gitconfig
         # currently now meld is not started
-        return {'modified': modified_patches, 'deleted': deleted_patches, 'unapplied': unapplied_patches}
+        return patch_dictionary
 
     @staticmethod
     def commit_patch(git_helper, patch_name):

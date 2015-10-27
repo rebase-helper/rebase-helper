@@ -363,7 +363,8 @@ class Application(object):
             raise RebaseHelperError('Patching failed')
         self.rebase_spec_file.write_updated_patches(self.rebased_patches)
         if self.conf.non_interactive:
-            OutputLogger.set_patch_output('Unapplied patches:', self.rebased_patches['unapplied'])
+            if 'unapplied' in self.rebased_patches:
+                OutputLogger.set_patch_output('Unapplied patches:', self.rebased_patches['unapplied'])
         OutputLogger.set_patch_output('Patches:', self.rebased_patches)
 
     def build_packages(self):
