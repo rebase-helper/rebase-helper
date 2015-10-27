@@ -145,10 +145,6 @@ class TextOutputTool(BaseOutputTool):
         :return:
         """
 
-        # First of all we would like to print all
-        # summary information
-        OutputLogger.set_info_text("Summary output is also available in log:", path)
-        logger.info('\n')
         for key, value in six.iteritems(OutputLogger.get_summary_info()):
             logger.info("%s %s\n", key, value)
 
@@ -158,7 +154,8 @@ class TextOutputTool(BaseOutputTool):
             raise RebaseHelperError("Can not create results file '%s'" % path)
 
         type_pkgs = ['old', 'new']
-        cls.print_patches(OutputLogger.get_patches(), '\nSummary information about patches:')
+        if OutputLogger.get_patches():
+            cls.print_patches(OutputLogger.get_patches(), '\nSummary information about patches:')
         for pkg in type_pkgs:
             type_pkg = OutputLogger.get_build(pkg)
             if type_pkg:
