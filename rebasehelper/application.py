@@ -499,6 +499,7 @@ class Application(object):
                 # We don't care dirname doesn't contain any RPM packages
                 # Therefore return 1
                 if not build:
+                    logger.info('Rebase package to %s FAILED. See for more details' % self.conf.sources)
                     return 1
             if build:
                 self.pkgdiff_packages()
@@ -511,6 +512,7 @@ class Application(object):
 
         if self.debug_log_file:
             logger.info("Detailed debug log is located in '%s'", self.debug_log_file)
+        logger.info('Rebase package to %s was SUCCESSFUL.\n' % self.conf.sources)
 
 if __name__ == '__main__':
     a = Application(None)
