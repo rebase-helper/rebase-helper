@@ -80,4 +80,3 @@ logger_report = LoggerHelper.get_basic_logger('rebase-helper-report', logging.IN
 logger_upstream = LoggerHelper.get_basic_logger('rebase-helper-upstream')
 LoggerHelper.add_stream_handler(logger_output)
 formatter = logging.Formatter("%(asctime)s %(levelname)s\t: %(message)s")
-LoggerHelper.add_file_handler(logger_upstream, '/tmp/rebase-helper-upstream.log', formatter=formatter)
