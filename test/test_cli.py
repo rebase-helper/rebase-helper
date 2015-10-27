@@ -45,7 +45,7 @@ class TestCLI(object):
                 'not_download_sources': True,
                 'cont': True,
                 'non_interactive': True,
-                'comparepkgs_only': 'test_dir'}
+                'comparepkgs': 'test_dir'}
         arguments = ['--build-only', '--patch-only', 'test-1.0.3.tar.gz', '--verbose', '--patchtool',
                      'patch_test', '--buildtool', 'rpmbuild', '--pkgcomparetool',
                      'rpmdiff', '--outputtool', 'xml', '--keep-workspace', '--not-download-sources', '--continue',
