@@ -588,7 +588,6 @@ class FedpkgBuildTool(BuildToolBase):
                             tasks_x86_64 = None
                     for child in session.getTaskChildren(task_id):
                         child_id = child['id']
-                        logger.debug('Child_id %s', child_id)
                         if child_id not in tasks.keys():
                             tasks[child_id] = TaskWatcher(child_id,
                                                           session,
@@ -645,7 +644,8 @@ class FedpkgBuildTool(BuildToolBase):
     def _scratch_build(cls, session, source):
         remote = cls._upload_srpm(session, source)
         task_id = session.build(remote, cls.target_tag, cls.opts, priority=cls.priority)
-        logger.info('Koji task_id is here:\n' + cls.weburl + '/taskinfo?taskID=%i' % task_id)
+        weburl = cls.weburl + '/taskinfo?taskID=%i' % task_id
+        logger.info('Koji task_id is here:\n' + weburl)
         session.logout()
         task_dict = cls._watch_koji_tasks(session, [task_id])
         task_list = []
@@ -656,8 +656,11 @@ class FedpkgBuildTool(BuildToolBase):
             task_list.append(key)
         rpms, logs = cls._download_scratch_build(task_list, os.path.dirname(source).replace('SRPM', 'RPM'))
         if package_failed:
-            logger.info('RPM built failed %s/taskinfo?taskID=%i', cls.weburl, task_list[0])
+            weburl = '%s/taskinfo?taskID=%i' % (cls.weburl, task_list[0])
+            logger.info('RPM built failed %s', weburl)
+            logs.append(weburl)
             raise BinaryPackageBuildError
+        logs.append(weburl)
         return rpms, logs
 
     @classmethod
