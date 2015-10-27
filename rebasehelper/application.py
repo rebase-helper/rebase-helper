@@ -129,7 +129,7 @@ class Application(object):
         try:
             LoggerHelper.add_file_handler(logger_report,
                                           report_log_file,
-                                          logging.Formatter("%(asctime)s\t%(filename)s:%(message)s"),
+                                          None,
                                           logging.INFO)
         except (IOError, OSError):
             logger.warning("Can not create report log '%s'", report_log_file)
@@ -473,6 +473,17 @@ class Application(object):
             text = self._execute_checkers(self.conf.pkgcomparetool)
             pkgdiff_results[self.conf.pkgcomparetool] = text
         OutputLogger.set_checker_output('\nResults from checker(s):', pkgdiff_results)
+
+    def get_all_log_files(self):
+        """
+        Function returns all log_files created by rebase-helper
+        First if debug log file and second is report summary log file
+        :return:
+        """
+        log_list = []
+        log_list.append(self.debug_log_file)
+        log_list.append(self.report_log_file)
+        return log_list
 
     def print_summary(self):
         output_tool.check_output_argument(self.conf.outputtool)
