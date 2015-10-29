@@ -152,6 +152,16 @@ class BuildToolBase(object):
         """
         raise NotImplementedError()
 
+    @classmethod
+    def get_logs(cls, *arg, **kwargs):
+        """
+        Get logs from previously failed build
+        Returns:
+        dict with
+        'logs' -> list of absolute paths to logs
+        """
+        raise NotImplementedError()
+
 
 @register_build_tool
 class MockBuildTool(BuildToolBase):
@@ -160,6 +170,7 @@ class MockBuildTool(BuildToolBase):
     """
 
     CMD = "mock"
+    logs = []
 
     class MockTemporaryEnvironment(BuildTemporaryEnvironment):
         """
@@ -272,6 +283,7 @@ class MockBuildTool(BuildToolBase):
 
         if rpms is None:
             # We need to be inform what directory to analyze and what spec file failed
+            cls.logs.extend([l for l in PathHelper.find_all_files(rpm_results_dir, '*.log')])
             raise BinaryPackageBuildError("Building RPMs failed!", rpm_results_dir, spec)
         else:
             logger.info("Building RPMs finished successfully")
@@ -287,6 +299,10 @@ class MockBuildTool(BuildToolBase):
                 'rpm': rpms,
                 'logs': logs}
 
+    @staticmethod
+    def get_logs(cls, *arg, **kwargs):
+        return {'logs': cls.logs}
+
 
 @register_build_tool
 class RpmbuildBuildTool(BuildToolBase):
@@ -295,6 +311,7 @@ class RpmbuildBuildTool(BuildToolBase):
     """
 
     CMD = "rpmbuild"
+    logs = []
 
     class RpmbuildTemporaryEnvironment(BuildTemporaryEnvironment):
         """
@@ -426,6 +443,7 @@ class RpmbuildBuildTool(BuildToolBase):
             rpms = cls._build_rpm(srpm, tmp_dir, tmp_results_dir)
 
         if rpms is None:
+            cls.logs.extend([l for l in PathHelper.find_all_files(rpm_results_dir, '*.log')])
             raise BinaryPackageBuildError("Building RPMs failed!")
         else:
             logger.info("Building RPMs finished successfully")
@@ -442,6 +460,11 @@ class RpmbuildBuildTool(BuildToolBase):
                 'rpm': rpms,
                 'logs': logs}
 
+    @staticmethod
+    def get_logs(cls, *arg, **kwargs):
+        return {'logs': cls.logs}
+
+
 @register_build_tool
 class FedpkgBuildTool(BuildToolBase):
     """
@@ -449,6 +472,7 @@ class FedpkgBuildTool(BuildToolBase):
     """
 
     CMD = "fedpkg"
+    logs = []
 
     # Taken from https://github.com/fedora-infra/the-new-hotness/blob/develop/fedmsg.d/hotness-example.py
     koji_web = "koji.fedoraproject.org"
@@ -659,9 +683,14 @@ class FedpkgBuildTool(BuildToolBase):
             weburl = '%s/taskinfo?taskID=%i' % (cls.weburl, task_list[0])
             logger.info('RPM built failed %s', weburl)
             logs.append(weburl)
+            cls.logs.append(weburl)
             raise BinaryPackageBuildError
         logs.append(weburl)
         return rpms, logs
+
+    @classmethod
+    def get_logs(cls, *arg, **kwargs):
+        return {'logs': cls.logs}
 
     @classmethod
     def _unique_path(cls, prefix):
@@ -732,6 +761,11 @@ class Builder(object):
         """ Build sources. """
         logger.debug("Building sources using '%s'", self._tool_name)
         return self._tool.build(*args, **kwargs)
+
+    def get_logs(self):
+        """ Get logs. """
+        logger.debug("Getting logs '%s'", self._tool_name)
+        return self._tool.get_logs()
 
     @classmethod
     def get_supported_tools(cls):

@@ -407,6 +407,8 @@ class Application(object):
                 except BinaryPackageBuildError:
                     #  always fail for original version
                     rpm_dir = os.path.join(results_dir, 'RPM')
+                    build_dict.update(builder.get_logs())
+                    OutputLogger.set_build_data(version, build_dict)
                     build_log = 'build.log'
                     build_log_path = os.path.join(rpm_dir, build_log)
                     if version == 'old':
@@ -420,6 +422,8 @@ class Application(object):
                         raise RebaseHelperError('Building package failed during build. Check log %s' % build_log_path)
                     except BuildLogAnalyzerPatchError:
                         raise RebaseHelperError('Building package failed during patching. Check log %s' % build_log_path)
+                    except RuntimeError:
+                        raise RebaseHelperError('Building package failed with unknown reason. Check log %s' % build_log_path)
 
                     if files['missing']:
                         missing_files = '\n'.join(files['added'])
@@ -503,7 +507,11 @@ class Application(object):
                 if self.conf.buildtool == 'rpmbuild':
                     Application.check_build_requires(self.spec_file)
                 # Build packages
-                build = self.build_packages()
+                try:
+                    build = self.build_packages()
+                except RuntimeError:
+                    logger.error('Not know error caused by build log analysis')
+                    return 1
                 # Perform checks
             else:
                 build = self.get_rpm_packages(self.conf.comparepkgs)
