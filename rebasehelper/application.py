@@ -54,6 +54,7 @@ class Application(object):
     debug_log_file = None
     report_log_file = None
     rebased_patches = {}
+    upstream_monitoring = False
 
     def __init__(self, cli_conf=None):
         """
@@ -495,6 +496,9 @@ class Application(object):
         output.print_information(path=self._get_rebase_helper_log())
         logger.info('Report file from rebase-helper is available here: %s' % self.report_log_file)
 
+    def set_upstream_monitoring(self):
+        self.upstream_monitoring = True
+
     def run(self):
         sources = self.prepare_sources()
 
@@ -517,13 +521,13 @@ class Application(object):
                 build = self.get_rpm_packages(self.conf.comparepkgs)
                 # We don't care dirname doesn't contain any RPM packages
                 # Therefore return 1
-                if not build:
-                    logger.info('Rebase package to %s FAILED. See for more details' % self.conf.sources)
-                    return 1
             if build:
                 self.pkgdiff_packages()
+            else:
+                if not self.upstream_monitoring:
+                    logger.info('Rebase package to %s FAILED. See for more details' % self.conf.sources)
+                return 1
 
-        # print summary information
         self.print_summary()
 
         if not self.conf.keep_workspace:
@@ -531,7 +535,9 @@ class Application(object):
 
         if self.debug_log_file:
             logger.info("Detailed debug log is located in '%s'", self.debug_log_file)
-        logger.info('Rebase package to %s was SUCCESSFUL.\n' % self.conf.sources)
+        if not self.upstream_monitoring:
+            logger.info('Rebase package to %s was SUCCESSFUL.\n' % self.conf.sources)
+        return 0
 
 if __name__ == '__main__':
     a = Application(None)
