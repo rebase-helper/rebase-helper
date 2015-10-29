@@ -27,11 +27,15 @@ import git
 import os
 import shutil
 import logging
-from pprint import pprint
+import six
+import tempfile
+import pprint
+
 from rebasehelper.cli import CLI
 from rebasehelper.logger import LoggerHelper, logger, logger_upstream
 from rebasehelper.application import Application
 from rebasehelper.exceptions import RebaseHelperError
+from rebasehelper.output_tool import OutputLogger
 
 
 class UpstreamMonitoringError(RuntimeError):
@@ -51,8 +55,13 @@ class UpstreamMonitoring(object):
     arguments = []
     patches = {}
     url = ''
+    version = ''
+    dir_name = ''
+    tmp = tempfile.mkdtemp(prefix='rhu-', dir='/var/tmp')
+    report_file = ''
+    result_rh = 0
 
-    def __init__(self, ):
+    def __init__(self):
         self.name = None
         self.endpoint = None
         self.topic = None
@@ -64,6 +73,11 @@ class UpstreamMonitoring(object):
         self.endpoint = endpoint
         self.topic = topic
         self.msg = msg
+
+    def add_thn_info(self, dir_name, package, version):
+        self.package = package
+        self.version = version
+        self.dir_name = dir_name
 
     def parse_fedpkg_conf(self):
 
@@ -86,7 +100,6 @@ class UpstreamMonitoring(object):
         """ Get package and version from fedmsg  """
         inner = self.msg['msg'].get('message', self.msg['msg'])
         distros = [p['distro'] for p in inner['packages']]
-        pprint(inner)
 
         for package in inner['packages']:
             self.package = package['package_name']
@@ -107,39 +120,70 @@ class UpstreamMonitoring(object):
 
     def _call_rebase_helper(self):
 
-        """ Clonning repository and call rebase-helper """
-        logger_upstream.info('Clonning repository %s', self.url)
-        try:
-            # git clone http://pkgs.fedoraproject.org/cgit/emacs.git/
-            git.Git().clone(self.url)
-        except git.exc.GitCommandError as gce:
-            logger_upstream.error(gce.message)
-            return
-        os.chdir(self.package)
         logger_upstream.debug(self.arguments)
         cli = CLI(self.arguments)
+        pprint.pprint(self.arguments)
         try:
-            app = Application(cli)
+            rh_app = Application(cli)
+            rh_app.set_upstream_monitoring()
             # TDO After a deep testing app.run() will be used
-            #app.run()
-            logger_upstream.info(app.kwargs)
-            sources = app.prepare_sources()
-            app.patch_sources(sources)
-            build = app.build_packages()
-            if build:
-                app.pkgdiff_packages()
-            self.patches = app.rebased_patches
-            self._print_patches()
-            logger_upstream.info(app.debug_log_file)
-        except RebaseHelperError as rbe:
-            logger_upstream.error(rbe.message)
+            self.result_rh = rh_app.run()
+            #logger_upstream.info(rh_app.kwargs)
+            #sources = rh_app.prepare_sources()
+            #rh_app.patch_sources(sources)
+            #build = rh_app.build_packages()
+            #if build:
+            #    rh_app.pkgdiff_packages()
+            #rh_app.print_summary()
+            logger_upstream.info(rh_app.debug_log_file)
+            self.report_file = rh_app.report_log_file
+            self.log_files = rh_app.get_all_log_files()
+        except RebaseHelperError:
+            raise
+
+        return self.result_rh
+
+    def get_rebased_patches(self):
+        """
+        Function returns a list of patches either
+        '': [list_of_deleted_patches]
+        :return:
+        """
+        patches = False
+        output_patch_string = []
+        for key, val in six.iteritems(OutputLogger.get_patches()):
+            if key:
+                output_patch_string.append('Following patches has been %s:\n%s' % (key, val))
+                patches = True
+        if not patches:
+            output_patch_string.append('Patches were not touched. All were applied properly')
+        return output_patch_string
+
+    def get_build_log(self):
+        result = []
+        build_logs = OutputLogger.get_build('new')['logs']
+        rpm_pkgs = []
+        if 'rpm' in OutputLogger.get_build('new'):
+            rpm_pkgs = OutputLogger.get_build('new')['rpm']
+        build_logs = [x for x in build_logs if x.startswith('http')]
+        if rpm_pkgs:
+            result.append('Scratch build %s was build successfuly' % '\n'.join(build_logs))
+        else:
+            result.append('Scratch build %s failed. See for details' % '\n'.join(build_logs))
+        return result
+
+    def get_output_log(self):
+        return self.report_file
+
+    def get_rh_logs(self):
+        return self.log_files
 
     def add_upstream_log_file(self):
         """
         Add the application wide debug log file
         :return:
         """
-        upstream_log_file = os.path.join('/tmp', 'rebase-helper-upstream.log')
+        upstream_log_file = os.path.join(self.tmp, 'rebase-helper-upstream.log')
         try:
             LoggerHelper.add_file_handler(logger_upstream,
                                           upstream_log_file,
@@ -149,15 +193,16 @@ class UpstreamMonitoring(object):
         except (IOError, OSError):
             logger.warning("Can not create debug log '%s'", upstream_log_file)
 
-    def process_messsage(self):
-
-        """ Process message from fedmsg """
-        self.arguments = ['-v, --non-interactive', '--buildtool', 'fedpkg']
-        self._get_package_version()
-        self.parse_fedpkg_conf()
-        tempdir = tempfile.mkdtemp(suffix='-rebase-helper')
+    def process_thn(self):
+        self.arguments = ['--non-interactive', '--buildtool', 'fedpkg']
+        self.arguments.append(self.version)
         cwd = os.getcwd()
-        os.chdir(tempdir)
-        self._call_rebase_helper()
+        os.chdir(self.dir_name)
+        try:
+            self.result_rh = self._call_rebase_helper()
+        except RebaseHelperError as rbe:
+            logging.error('Rebase helper failed with %s' % rbe.message)
+            os.chdir(cwd)
+            return 1
         os.chdir(cwd)
-        shutil.rmtree(tempdir)
+        return self.result_rh
