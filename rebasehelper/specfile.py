@@ -978,11 +978,12 @@ class SpecFile(object):
         new_record = []
         today = date.today()
         git_name = git_helper.command_config('--get', 'user.name')
-        git_mail = git_helper.command_config('--get', 'user.mail')
-        new_record.append('* {day} {name} <{email}> - {ver}\n'.format(day=today.strftime('%a %b %d %Y'),
+        git_email = git_helper.command_config('--get', 'user.email')
+        new_record.append('* {day} {name} <{email}> - {ver}-{rel}\n'.format(day=today.strftime('%a %b %d %Y'),
                                                                       name=git_name,
-                                                                      email=git_mail,
-                                                                      ver=self.get_version()))
+                                                                      email=git_email,
+                                                                      ver=self.get_version(),
+                                                                      rel=self.get_release_number()))
         new_record.append('- New upstream release {rel}\n'.format(rel=self.get_version()))
         new_record.append('\n')
         return new_record

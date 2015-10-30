@@ -340,11 +340,11 @@ class Patcher(object):
         """
         if tool is None:
             raise TypeError("Expected argument 'tool' (pos 1) is missing")
-        self._path_tool_name = tool
+        self._patch_tool_name = tool
         self._tool = None
 
         for patch_tool in patch_tools.values():
-            if patch_tool.match(self._path_tool_name):
+            if patch_tool.match(self._patch_tool_name):
                 self._tool = patch_tool
 
         if self._tool is None:
@@ -361,7 +361,7 @@ class Patcher(object):
         :param kwargs: --
         :return:
         """
-        logger.debug("Patching source by patch tool %s", self._path_tool_name)
+        logger.debug("Patching source by patch tool %s", self._patch_tool_name)
         return self._tool.run_patch(old_dir, new_dir, rest_sources, git_helper, patches, prep, **kwargs)
 
 

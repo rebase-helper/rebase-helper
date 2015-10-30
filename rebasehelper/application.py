@@ -161,8 +161,7 @@ class Application(object):
             logger.debug("argument passed as a new source is a version")
             version, extra_version = SpecFile.split_version_string(self.conf.sources)
             self.rebase_spec_file.set_version(version)
-            if extra_version:
-                self.rebase_spec_file.set_extra_version(extra_version)
+            self.rebase_spec_file.set_extra_version(extra_version)
 
     def _initialize_data(self):
         """
