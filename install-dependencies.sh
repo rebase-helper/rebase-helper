@@ -1,5 +1,12 @@
 #!/bin/sh
 
+################################################################################
+# install-dependencies.sh:                                                     #
+# This script builds and installs rpm and it's python bindings                 #
+# into currently active Travis CI environment                                  #
+################################################################################
+
+
 package="rpm"
 version="4.12.0.1"
 
@@ -9,9 +16,18 @@ url="http://rpm.org/releases/rpm-4.12.x/$filename"
 builddir="$HOME/rpm_build"
 
 
+# make sure we are running in CI environment
+################################################################################
+if [ -z "$VIRTUAL_ENV" ]; then
+    echo "This script is intended to run in Travis CI environment!"
+    exit 1
+fi
+
+
 # determine python version
 ################################################################################
-python_version="$(python -c 'import sys; sys.stdout.write(sys.version[0])')"
+python_version="$("$VIRTUAL_ENV/bin/python" -c \
+    'import sys; sys.stdout.write(sys.version[0])')"
 
 if [ "$python_version" = "3" ]; then
     python="python3"
@@ -77,7 +93,8 @@ cd "${package}-${version}"
 libpython="$(pkg-config --libs $python)"
 libpython="${libpython#-l}"
 
-sed -i "s/\\[python\\\${PYTHON_VERSION} python\\]/[$libpython]/" configure.ac || exit 1
+sed -i "s/\\[python\\\${PYTHON_VERSION} python\\]/[$libpython]/" \
+    configure.ac || exit 1
 sed -i "s/\\[lua >= 5\\.1\\]/[lua5.2 >= 5.2]/" configure.ac || exit 1
 
 autoreconf -i -f || exit 1
@@ -120,4 +137,4 @@ sudo rpm --initdb || exit 1
 ################################################################################
 cd "python"
 
-$VIRTUAL_ENV/bin/python setup.py install --prefix=$VIRTUAL_ENV || exit 1
+"$VIRTUAL_ENV/bin/python" setup.py install --prefix="$VIRTUAL_ENV" || exit 1
