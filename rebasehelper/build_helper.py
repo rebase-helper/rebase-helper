@@ -153,7 +153,7 @@ class BuildToolBase(object):
         raise NotImplementedError()
 
     @classmethod
-    def get_logs(cls, *arg, **kwargs):
+    def get_logs(cls):
         """
         Get logs from previously failed build
         Returns:
@@ -299,8 +299,8 @@ class MockBuildTool(BuildToolBase):
                 'rpm': rpms,
                 'logs': logs}
 
-    @staticmethod
-    def get_logs(cls, *arg, **kwargs):
+    @classmethod
+    def get_logs(cls):
         return {'logs': cls.logs}
 
 
@@ -460,8 +460,8 @@ class RpmbuildBuildTool(BuildToolBase):
                 'rpm': rpms,
                 'logs': logs}
 
-    @staticmethod
-    def get_logs(cls, *arg, **kwargs):
+    @classmethod
+    def get_logs(cls):
         return {'logs': cls.logs}
 
 
@@ -689,7 +689,7 @@ class FedpkgBuildTool(BuildToolBase):
         return rpms, logs
 
     @classmethod
-    def get_logs(cls, *arg, **kwargs):
+    def get_logs(cls):
         return {'logs': cls.logs}
 
     @classmethod
