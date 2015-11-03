@@ -27,6 +27,7 @@ from rebasehelper.output_tool import OutputTool
 from rebasehelper.settings import REBASE_HELPER_RESULTS_LOG
 from rebasehelper.base_output import OutputLogger
 
+
 class TestOutputTool(BaseTest):
     """
     Class is used for testing OutputTool
@@ -57,7 +58,7 @@ Patch mytest2.patch [deleted]
 
 Old (S)RPM packages:
 ---------------------
-SRPM package(s): are in directory  :
+SRPM package(s): are in directory . :
 - test-1.2.0-1.src.rpm
 RPM package(s): are in directory . :
 - test-1.2.0-1.x86_64.rpm
@@ -68,7 +69,7 @@ Available Old logs:
 
 New (S)RPM packages:
 ---------------------
-SRPM package(s): are in directory  :
+SRPM package(s): are in directory . :
 - test-1.2.2-1.src.rpm
 RPM package(s): are in directory . :
 - test-1.2.2-1.x86_64.rpm
@@ -76,12 +77,11 @@ RPM package(s): are in directory . :
 Available New logs:
 - logfile3.log
 - logfile4.log
-Results from checker(s)
-===Checker pkgdiff===
+=== Checker Results from checker(s) results ===
 Following files were moved
 /usr/sbin/test
 /usr/sbin/test2
-"""
+See for more details pkgdiff"""
         return expected_output
 
     def test_text_output(self):
@@ -90,7 +90,8 @@ Following files were moved
         OutputLogger.set_build_data('old', data['old'])
         OutputLogger.set_build_data('new', data['new'])
         OutputLogger.set_patch_output('Patches:', data['patches'])
-        test_output = {'pkgdiff': ['Following files were moved\n%s' % '\n'.join(data['moved'])]}
+        message = 'Following files were moved\n%s\n' % '\n'.join(data['moved'])
+        test_output = {'pkgdiff': message}
         OutputLogger.set_checker_output('Results from checker(s)', test_output)
 
         logfile = os.path.join(self.TESTS_DIR, REBASE_HELPER_RESULTS_LOG)
