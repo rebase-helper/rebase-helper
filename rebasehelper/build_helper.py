@@ -22,7 +22,6 @@
 
 import shutil
 import os
-import koji
 import random
 import string
 import time
@@ -33,8 +32,15 @@ from rebasehelper.utils import PathHelper
 from rebasehelper.utils import TemporaryEnvironment
 from rebasehelper.utils import DownloadHelper
 from rebasehelper.logger import logger
-from pyrpkg.cli import TaskWatcher
-from OpenSSL import SSL
+
+koji_builder = True
+try:
+    import koji
+    from pyrpkg.cli import TaskWatcher
+    from OpenSSL import SSL
+except ImportError:
+    koji_builder = False
+
 
 build_tools = {}
 

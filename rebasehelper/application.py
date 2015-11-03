@@ -32,7 +32,7 @@ from rebasehelper import settings
 from rebasehelper import output_tool
 from rebasehelper.utils import PathHelper, RpmHelper, ConsoleHelper, GitHelper
 from rebasehelper.checker import Checker
-from rebasehelper.build_helper import Builder, SourcePackageBuildError, BinaryPackageBuildError
+from rebasehelper.build_helper import Builder, SourcePackageBuildError, BinaryPackageBuildError, koji_builder
 from rebasehelper.patch_helper import Patcher
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.build_log_analyzer import BuildLogAnalyzer, BuildLogAnalyzerMissingError
@@ -371,6 +371,9 @@ class Application(object):
         """
         Function calls build class for building packages
         """
+        if self.conf.buildtool == 'fedpkg' and not koji_builder:
+            print ('Importing module koji failed. Switching to mockbuild.')
+            self.conf.buildtool = 'mock'
         try:
             builder = Builder(self.conf.buildtool)
         except NotImplementedError as ni_e:
@@ -527,15 +530,14 @@ class Application(object):
                 if not self.upstream_monitoring:
                     logger.info('Rebase package to %s FAILED. See for more details' % self.conf.sources)
                 return 1
-
-        self.print_summary()
+            self.print_summary()
 
         if not self.conf.keep_workspace:
             self._delete_workspace_dir()
 
         if self.debug_log_file:
             logger.info("Detailed debug log is located in '%s'", self.debug_log_file)
-        if not self.upstream_monitoring:
+        if not self.upstream_monitoring and not self.conf.patch_only:
             logger.info('Rebase package to %s was SUCCESSFUL.\n' % self.conf.sources)
         return 0
 

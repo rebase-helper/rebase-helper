@@ -267,7 +267,7 @@ class GitPatchTool(PatchBase):
             with open(prep_script_path, "w") as f:
                 f.write("#!/bin/bash\n\n")
                 f.writelines('\n'.join(prep))
-            os.chmod(prep_script_path, 0755)
+            os.chmod(prep_script_path, 0o755)
         except IOError:
             logger.debug("Unable to write prep script file to '%s'", prep_script_path)
             return None
