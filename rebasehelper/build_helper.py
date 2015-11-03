@@ -34,6 +34,7 @@ from rebasehelper.utils import TemporaryEnvironment
 from rebasehelper.utils import DownloadHelper
 from rebasehelper.logger import logger
 from pyrpkg.cli import TaskWatcher
+from OpenSSL import SSL
 
 build_tools = {}
 
@@ -610,25 +611,29 @@ class FedpkgBuildTool(BuildToolBase):
                             cls._display_task_results(tasks)
                         if not task.is_success():
                             tasks_x86_64 = None
-                    for child in session.getTaskChildren(task_id):
-                        child_id = child['id']
-                        if child_id not in tasks.keys():
-                            tasks[child_id] = TaskWatcher(child_id,
-                                                          session,
-                                                          logger,
-                                                          task.level + 1,
-                                                          quiet=False)
-                            tasks[child_id].update()
-                            # If we found new children, go through the list
-                            # again, in case they have children also
-                            info = session.getTaskInfo(child_id)
-                            state = task.info['state']
-                            if state == koji.TASK_STATES['FAILED']:
-                                return {info['id']: state}
-                            else:
-                                if info['arch'] == 'x86_64':
-                                    tasks_x86_64[info['id']] = state
-                            all_done = False
+                    try:
+                        for child in session.getTaskChildren(task_id):
+                            child_id = child['id']
+                            if child_id not in tasks.keys():
+                                tasks[child_id] = TaskWatcher(child_id,
+                                                              session,
+                                                              logger,
+                                                              task.level + 1,
+                                                              quiet=False)
+                                tasks[child_id].update()
+                                # If we found new children, go through the list
+                                # again, in case they have children also
+                                info = session.getTaskInfo(child_id)
+                                state = task.info['state']
+                                if state == koji.TASK_STATES['FAILED']:
+                                    return {info['id']: state}
+                                else:
+                                    if info['arch'] == 'x86_64':
+                                        tasks_x86_64[info['id']] = state
+                                all_done = False
+                    except SSL.SysCallError as exc:
+                        logger.error('We have detected a exception %s' % exc.message)
+                        pass
                 if all_done:
                     cls._display_task_results(tasks)
                     break
