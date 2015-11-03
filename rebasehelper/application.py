@@ -470,13 +470,14 @@ class Application(object):
         pkgdiff_results = {}
         if not self.conf.pkgcomparetool:
             for checker in Checker.get_supported_tools():
-                text = self._execute_checkers(checker)
-                pkgdiff_results[checker] = text
+                results = self._execute_checkers(checker)
+                pkgdiff_results[checker] = results
 
         else:
             text = self._execute_checkers(self.conf.pkgcomparetool)
             pkgdiff_results[self.conf.pkgcomparetool] = text
-        OutputLogger.set_checker_output('\nResults from checker(s):', pkgdiff_results)
+        for diff_name, result in six.iteritems(pkgdiff_results):
+            OutputLogger.set_checker_output(diff_name, result)
 
     def get_all_log_files(self):
         """

@@ -82,6 +82,7 @@ class RpmDiffTool(BaseChecker):
     @classmethod
     def _unpack_rpm(cls, rpm_name):
         pass
+
     @classmethod
     def _analyze_logs(cls, output, results_dict):
         removed_things = ['.build-id', '.dwz', 'PROVIDE', 'REQUIRES']
@@ -152,7 +153,15 @@ class RpmDiffTool(BaseChecker):
         text = []
         for key, val in six.iteritems(results_dict):
             text.append('Following files were %s:\n%s' % (key, '\n'.join(val)))
-        return text
+
+        pkgdiff_report = os.path.join(cls.results_dir, 'report-' + cls.CMD + '.log')
+        try:
+            with open(pkgdiff_report, "w") as f:
+                f.writelines(text)
+        except IOError:
+            raise RebaseHelperError("Unable to write result from %s to '%s'" % (cls.CMD, pkgdiff_report))
+
+        return {pkgdiff_report: None}
 
 
 @register_check_tool
@@ -194,7 +203,6 @@ class PkgDiffTool(BaseChecker):
         file_list = [x for x in file_list if not x.endswith('(0%)')]
         # We need to return string without percentage
         return file_list
-
 
     @classmethod
     def fill_dictionary(cls, result_dir):
@@ -312,7 +320,14 @@ class PkgDiffTool(BaseChecker):
         for key, val in six.iteritems(results_dict):
             text.append('Following files were %s:\n%s' % (key, '\n'.join(val)))
 
-        return text
+        pkgdiff_report = os.path.join(cls.results_dir, 'report-' + cls.pkgdiff_results_filename + '.log')
+        try:
+            with open(pkgdiff_report, "w") as f:
+                f.writelines(text)
+        except IOError:
+            raise RebaseHelperError("Unable to write result from %s to '%s'" % (cls.CMD, pkgdiff_report))
+
+        return {pkgdiff_report: None}
 
 
 @register_check_tool
@@ -321,7 +336,6 @@ class AbiCheckerTool(BaseChecker):
     CMD = "abipkgdiff"
     results_dir = ''
     log_name = 'abipkgdiff.log'
-
 
     # Example
     # abipkgdiff --d1 dbus-glib-debuginfo-0.80-3.fc12.x86_64.rpm \
@@ -341,16 +355,14 @@ class AbiCheckerTool(BaseChecker):
         packages = input_structure.get('rpm', [])
         if packages:
             debug_package = [x for x in packages if 'debuginfo' in os.path.basename(x)]
-            rest_packages = [x for x in packages if not 'debuginfo' in os.path.basename(x)]
+            rest_packages = [x for x in packages if 'debuginfo' not in os.path.basename(x)]
 
         return debug_package, rest_packages
 
     @classmethod
-    def run_check(cls, results_dir):
+    def run_check(cls, result_dir):
         """ Compares old and new RPMs using pkgdiff """
-        cls.results_dir = results_dir
 
-        text = []
         debug_old, rest_pkgs_old = cls._get_packages_for_abipkgdiff(OutputLogger.get_build('old'))
         debug_new, rest_pkgs_new = cls._get_packages_for_abipkgdiff(OutputLogger.get_build('new'))
         cmd = [cls.CMD]
@@ -358,14 +370,15 @@ class AbiCheckerTool(BaseChecker):
             cmd.append('--d1')
             cmd.append(debug_old[0])
         except IndexError:
-            text.append('Debuginfo package not found for old package.')
-            return text
+            logger.error('Debuginfo package not found for old package.')
+            return None
         try:
             cmd.append('--d2')
             cmd.append(debug_new[0])
         except IndexError:
-            text.append('Debuginfo package not found for new package.')
-            return text
+            logger.error('Debuginfo package not found for new package.')
+            return None
+        reports = {}
         for pkg in rest_pkgs_old:
             command = list(cmd)
             # Package can be <letters><numbers>-<letters>-<and_whatever>
@@ -387,17 +400,18 @@ class AbiCheckerTool(BaseChecker):
                     package_name = matched.group(0) + cls.log_name
                 else:
                     package_name = package_name + '-' + cls.log_name
-                output = os.path.join(results_dir, package_name)
+                output = os.path.join(cls.results_dir, result_dir, package_name)
                 ret_code = ProcessHelper.run_subprocess(command, output=output)
                 if int(ret_code) & settings.ABIDIFF_ERROR and int(ret_code) & settings.ABIDIFF_USAGE_ERROR:
                     raise RebaseHelperError('Execution of %s failed.\nCommand line is: %s' % (cls.CMD, cmd))
                 if int(ret_code) == 0:
-                    text.append('ABI of the compared binaries in package %s are equal.' % package_name)
+                    text = 'ABI of the compared binaries in package %s are equal.' % package_name
                 else:
-                    text.append('ABI of the compared binaries in package %s are not equal. See file %s' % (package_name, output))
+                    text = 'ABI of the compared binaries in package %s are not equal.' % package_name
+                reports[output] = text
             else:
                 logger.debug("Rebase-helper did not find a package name in '%s'", package_name)
-        return text
+        return reports
 
 
 class Checker(object):
