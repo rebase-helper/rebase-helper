@@ -115,7 +115,7 @@ class TextOutputTool(BaseOutputTool):
                 continue
             message = "%s package(s): are in directory %s :"
             if isinstance(srpm, str):
-                logger_report.info(message, type_rpm.upper(), os.path.dirname(rpms.get(srpm, "")))
+                logger_report.info(message, type_rpm.upper(), os.path.dirname(srpm))
                 logger_report.info("- %s", os.path.basename(srpm))
             else:
                 logger_report.info(message, type_rpm.upper(), os.path.dirname(srpm[0]))
