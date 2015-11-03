@@ -60,6 +60,7 @@ class UpstreamMonitoring(object):
     tmp = tempfile.mkdtemp(prefix='rhu-', dir='/var/tmp')
     report_file = ''
     result_rh = 0
+    rh_stuff = {}
 
     def __init__(self):
         self.name = None
@@ -160,20 +161,28 @@ class UpstreamMonitoring(object):
         return output_patch_string
 
     def get_build_log(self):
-        result = []
+        result = {}
         build_logs = OutputLogger.get_build('new')['logs']
         rpm_pkgs = []
         if 'rpm' in OutputLogger.get_build('new'):
             rpm_pkgs = OutputLogger.get_build('new')['rpm']
         build_logs = [x for x in build_logs if x.startswith('http')]
         if rpm_pkgs:
-            result.append('Scratch build %s was build successfuly' % '\n'.join(build_logs))
+            result[0] = build_logs
         else:
-            result.append('Scratch build %s failed. See for details' % '\n'.join(build_logs))
+            result[1] = build_logs
         return result
 
     def get_output_log(self):
         return self.report_file
+
+    def get_checkers(self):
+        checkers = {}
+        if OutputLogger.get_checkers():
+            for check, data in six.iteritems(OutputLogger.get_checkers()):
+                for log, text in six.iteritems(data):
+                    checkers[check] = log
+        return checkers
 
     def get_rh_logs(self):
         return self.log_files
@@ -193,6 +202,12 @@ class UpstreamMonitoring(object):
         except (IOError, OSError):
             logger.warning("Can not create debug log '%s'", upstream_log_file)
 
+    def _get_rh_stuff(self):
+        self.rh_stuff['build_log'] = self.get_build_log()
+        self.rh_stuff['patches'] = self.get_rebased_patches()
+        self.rh_stuff['logs'] = self.get_rh_logs()
+        self.rh_stuff['checkers'] = self.get_checkers()
+
     def process_thn(self):
         self.arguments = ['--non-interactive', '--buildtool', 'fedpkg']
         self.arguments.append(self.version)
@@ -200,9 +215,10 @@ class UpstreamMonitoring(object):
         os.chdir(self.dir_name)
         try:
             self.result_rh = self._call_rebase_helper()
+            self._get_rh_stuff()
         except RebaseHelperError as rbe:
             logging.error('Rebase helper failed with %s' % rbe.message)
             os.chdir(cwd)
             return 1
         os.chdir(cwd)
-        return self.result_rh
+        return self.result_rh, self.rh_stuff
