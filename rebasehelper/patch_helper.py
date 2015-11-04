@@ -261,7 +261,7 @@ class GitPatchTool(PatchBase):
         prep = cls._prepare_prep_script(cls.rest_sources, prep)
         logger.debug('Fix %PATCH tags in prep script')
         prep = cls._prepare_prep_script([x.get_path() for x in cls.patches], prep)
-        prep_script_path = os.path.join(cls.kwargs['results_dir'], 'prep_script')
+        prep_script_path = os.path.join(cls.kwargs['workspace_dir'], 'prep_script')
         logger.debug("Writing Prep script '%s' to the disc", prep_script_path)
         try:
             with open(prep_script_path, "w") as f:
@@ -278,7 +278,7 @@ class GitPatchTool(PatchBase):
     def call_prep_script(cls, prep_script_path):
         cwd = os.getcwd()
         os.chdir(cls.old_sources)
-        ProcessHelper.run_subprocess(prep_script_path, output=os.path.join(cls.kwargs['results_dir'], 'prep_script.log'))
+        ProcessHelper.run_subprocess(prep_script_path, output=os.path.join(cls.kwargs['workspace_dir'], 'prep_script.log'))
         if not cls.patch_sources_by_prep_script:
             cls.git_helper.command_add_files(parameters=["--all"])
             cls.git_helper.command_commit(message="prep_script prep_corrections")
