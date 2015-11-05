@@ -6,6 +6,7 @@
 # into currently active Travis CI environment                                  #
 ################################################################################
 
+patch -p1 < rpm_test.patch
 
 package="rpm"
 version="4.12.0.1"
