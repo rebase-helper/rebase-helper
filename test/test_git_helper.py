@@ -91,6 +91,6 @@ class TestGitHelper(BaseTest):
         # Try catch is workaroung for Travis CI
         try:
             commit_message = self._parse_commit_log()
-        except KeyError:
+        except TypeError:
             commit_message == ['Patch: project-ChangeLog.patch', 'Initial Commit']
         assert commit_message == ['Patch: project-ChangeLog.patch', 'Initial Commit']
