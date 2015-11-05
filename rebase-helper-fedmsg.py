@@ -28,7 +28,6 @@ import sys
 import tempfile
 import shutil
 
-import sh
 from rebasehelper.upstream_monitoring import UpstreamMonitoring
 
 if len(sys.argv) != 3:
@@ -42,7 +41,12 @@ version = sys.argv[2]
 tmp = tempfile.mkdtemp(prefix='thn-', dir='/tmp')
 rh_stuff = {}
 url = 'http://pkgs.fedoraproject.org/cgit/{package}.git'.format(package=package)
-sh.git.clone(url, tmp)
+try:
+    import sh
+    sh.git.clone(url, tmp)
+except ImportError:
+    pass
+
 rh_upstream = UpstreamMonitoring()
 rh_upstream.add_upstream_log_file()
 rh_upstream.add_thn_info(tmp, package, version)
