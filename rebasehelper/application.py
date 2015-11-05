@@ -87,6 +87,7 @@ class Application(object):
         # parameter even when directory does not exist
         if not os.path.exists(self.results_dir):
             os.makedirs(self.results_dir)
+            os.makedirs(os.path.join(self.results_dir, settings.REBASE_HELPER_LOGS))
 
         self._add_debug_log_file()
         self._add_report_log_file()
@@ -274,6 +275,7 @@ class Application(object):
             logger.warning("Results directory '%s' exists, removing it", os.path.basename(self.results_dir))
             shutil.rmtree(self.results_dir)
         os.makedirs(self.results_dir)
+        os.makedirs(os.path.join(self.results_dir, settings.REBASE_HELPER_LOGS))
 
     @staticmethod
     def extract_archive(archive_path, destination):
@@ -462,7 +464,7 @@ class Application(object):
         """
         pkgchecker = Checker(checker)
         logger.info('Comparing packages using %s...', checker)
-        text = pkgchecker.run_check(self.results_dir)
+        text = pkgchecker.run_check(os.path.join(self.results_dir, settings.REBASE_HELPER_LOGS))
         return text
 
     def pkgdiff_packages(self):

@@ -33,6 +33,7 @@ from rebasehelper.utils import TemporaryEnvironment
 from rebasehelper.utils import DownloadHelper
 from rebasehelper.logger import logger
 
+
 koji_builder = True
 try:
     import koji
@@ -274,8 +275,8 @@ class MockBuildTool(BuildToolBase):
         srpm = os.path.join(srpm_results_dir, os.path.basename(srpm))
         logger.debug("Successfully built SRPM: '%s'", str(srpm))
         # gather logs
-        logs = [l for l in PathHelper.find_all_files(srpm_results_dir, '*.log')]
-        logger.debug("logs: '%s'", str(logs))
+        cls.logs = [l for l in PathHelper.find_all_files(srpm_results_dir, '*.log')]
+        logger.debug("logs: '%s'", str(cls.logs))
 
         # build RPM
         rpm_results_dir = os.path.join(results_dir, "RPM")
@@ -299,12 +300,12 @@ class MockBuildTool(BuildToolBase):
         logger.debug("Successfully built RPMs: '%s'", str(rpms))
 
         # gather logs
-        logs.extend([l for l in PathHelper.find_all_files(rpm_results_dir, '*.log')])
-        logger.debug("logs: '%s'", str(logs))
+        cls.logs.extend([l for l in PathHelper.find_all_files(rpm_results_dir, '*.log')])
+        logger.debug("logs: '%s'", str(cls.logs))
 
         return {'srpm': srpm,
                 'rpm': rpms,
-                'logs': logs}
+                'logs': cls.logs}
 
     @classmethod
     def get_logs(cls):
