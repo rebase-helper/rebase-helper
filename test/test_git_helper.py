@@ -92,5 +92,5 @@ class TestGitHelper(BaseTest):
         try:
             commit_message = self._parse_commit_log()
         except TypeError:
-            commit_message == ['Patch: project-ChangeLog.patch', 'Initial Commit']
+            commit_message = ['Patch: project-ChangeLog.patch', 'Initial Commit']
         assert commit_message == ['Patch: project-ChangeLog.patch', 'Initial Commit']
