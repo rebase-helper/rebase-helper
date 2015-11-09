@@ -128,7 +128,7 @@ class UpstreamMonitoring(object):
             rh_app = Application(cli)
             rh_app.set_upstream_monitoring()
             # TDO After a deep testing app.run() will be used
-            self.result_rh = rh_app.run()
+            result_rh = rh_app.run()
             #logger_upstream.info(rh_app.kwargs)
             #sources = rh_app.prepare_sources()
             #rh_app.patch_sources(sources)
@@ -142,7 +142,7 @@ class UpstreamMonitoring(object):
         except RebaseHelperError:
             raise
 
-        return self.result_rh
+        return result_rh
 
     def get_rebased_patches(self):
         """
@@ -214,11 +214,11 @@ class UpstreamMonitoring(object):
         cwd = os.getcwd()
         os.chdir(self.dir_name)
         try:
-            self.result_rh = self._call_rebase_helper()
+            result_rh = self._call_rebase_helper()
             self._get_rh_stuff()
         except RebaseHelperError as rbe:
             logging.error('Rebase helper failed with %s' % rbe.message)
             os.chdir(cwd)
             return 1
         os.chdir(cwd)
-        return self.result_rh, self.rh_stuff
+        return result_rh, self.rh_stuff
