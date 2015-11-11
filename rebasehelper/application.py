@@ -310,7 +310,10 @@ class Application(object):
         except IndexError:
             raise RebaseHelperError('Extraction of sources failed!')
 
-        return os.path.join(destination, sources_dir)
+        if os.path.isdir(os.path.join(destination, sources_dir)):
+            return os.path.join(destination, sources_dir)
+        else:
+            return destination
 
     @staticmethod
     def check_build_requires(spec):
