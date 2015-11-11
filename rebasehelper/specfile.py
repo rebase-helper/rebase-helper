@@ -26,6 +26,7 @@ import re
 import shutil
 import six
 import rpm
+import argparse
 from datetime import date
 from difflib import SequenceMatcher
 
@@ -1001,3 +1002,40 @@ class SpecFile(object):
         self.insert_changelog(new_log)
         self.spec_content = self._create_spec_from_sections()
         self.save()
+
+    def update_setup_dirname(self, dirname):
+
+        """
+        Update %setup or %autosetup dirname argument if needed
+        :param dirname: required dirname
+        """
+
+        for index, line in enumerate(self.spec_content):
+            if line.startswith('%setup') or line.startswith('%autosetup'):
+                args = line.split()
+                macro = args[0]
+
+                # parse macro arguments, care only about -T and -n
+                parser = argparse.ArgumentParser()
+                parser.add_argument('-T', action='store_true')
+                parser.add_argument('-n', default='%{name}-%{version}')
+
+                namespace, unknown = parser.parse_known_args(args[1:])
+
+                if namespace.T:
+                    # -T means not to extract Source0, so this macro instance
+                    # can be ignored
+                    continue
+
+                # test if modification is really necessary
+                if dirname != rpm.expandMacro(namespace.n):
+                    args = [macro]
+                    args.extend(unknown)
+                    args.append('-n')
+                    # NOTE: it would be better to substitute dirname
+                    # with macros (where possible)
+                    args.append(dirname)
+
+                    self.spec_content[index] = '#{0}'.format(line)
+                    self.spec_content.insert(index + 1, ' '.join(args))
+                    self.save()

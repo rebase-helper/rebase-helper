@@ -339,6 +339,13 @@ class Application(object):
         new_dir = Application.extract_sources(self.new_sources,
                                               os.path.join(self.execution_dir, settings.NEW_SOURCES_DIR))
 
+        # determine top-level directory in new_sources archive
+        toplevel_dir = os.path.relpath(new_dir,
+                                       os.path.join(self.execution_dir, settings.NEW_SOURCES_DIR))
+
+        if toplevel_dir != '.':
+            self.rebase_spec_file.update_setup_dirname(toplevel_dir)
+
         # This copies other sources to extracted sources marked as 0
         for rest in self.rest_sources:
             for source_dir in [old_dir, new_dir]:
