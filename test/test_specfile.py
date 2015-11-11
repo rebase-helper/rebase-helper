@@ -381,3 +381,14 @@ class TestSpecFile(BaseTest):
             lines = spec.readlines()
         lines = [x for x in lines if x.startswith('%patch4')]
         assert expected_patch == lines
+
+    def test_update_setup_dirname(self):
+        dirname = 'test-1.0.2'
+        prep = self.SPEC_FILE_OBJECT.get_spec_section('%prep')
+        self.SPEC_FILE_OBJECT.update_setup_dirname(dirname)
+        assert self.SPEC_FILE_OBJECT.get_spec_section('%prep') == prep
+
+        dirname = 'test-1.0.2rc1'
+        self.SPEC_FILE_OBJECT.update_setup_dirname(dirname)
+        prep = self.SPEC_FILE_OBJECT.get_spec_section('%prep')
+        assert '%setup -q -n {}'.format(dirname) in prep
