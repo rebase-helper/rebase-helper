@@ -40,7 +40,7 @@ class TestSpecFile(BaseTest):
     SOURCE_1 = 'source-tests.sh'
     SOURCE_2 = ''
     SOURCE_4 = 'file.txt.bz2'
-    SOURCE_5 = 'documentation.tar.bz2'
+    SOURCE_5 = 'documentation.tar.xz'
     PATCH_1 = 'test-testing.patch'
     PATCH_2 = 'test-testing2.patch'
     PATCH_3 = 'test-testing3.patch'
@@ -212,7 +212,7 @@ class TestSpecFile(BaseTest):
                             'Source2: ftp://test.com/test-source.sh\n',
                             '#Source3: source-tests.sh\n',
                             'Source4: file.txt.bz2\n',
-                            'Source5: documentation.tar.bz2\n',
+                            'Source5: documentation.tar.xz\n',
                             'Patch1: test-testing.patch\n',
                             'Patch2: test-testing2.patch\n',
                             'Patch3: test-testing3.patch\n',
