@@ -755,6 +755,34 @@ class SpecFile(object):
                 self.save()
                 break
 
+    def _set_macro(self, macro, value):
+
+        """
+        (Re)defines given macro value in the SPEC file
+
+        :param macro: macro name
+        :param value: macro value
+        """
+        macro_re = re.compile('(%global|%define)\s+(\w+)(\(.+?\))?\s+(.+)')
+        defined = False
+
+        for index, line in enumerate(self.spec_content):
+            match = macro_re.search(line)
+            if match:
+                if match.group(2) != macro:
+                    continue
+
+                if match.group(3):
+                    line = line.replace(match.group(3), '')
+
+                self.spec_content[index] = line.replace(match.group(4), value)
+                defined = True
+
+        if not defined:
+            self.spec_content.insert(0, '%global {} {}'.format(macro, value))
+
+        self.save()
+
     def set_version(self, version):
 
         """
@@ -763,12 +791,21 @@ class SpecFile(object):
         :param version: string with new version
         :return: None
         """
+        version_re = re.compile('Version:\s*(.+)')
         for index, line in enumerate(self.spec_content):
-            if not line.startswith('Version'):
-                continue
-            logger.debug("Updating version in SPEC from '%s' with '%s'", self.get_version(), version)
-            self.spec_content[index] = line.replace(self.get_version(), version)
-            break
+            match = version_re.search(line)
+            if match:
+                logger.debug("Updating version in SPEC from '%s' with '%s'", self.get_version(), version)
+
+                # search for used macros in spec file scope
+                for m in MacroHelper.get_macros(level=-1, used=True):
+                    if m['name'] in match.group(1):
+                        # redefine the macro, don't touch Version tag
+                        self._set_macro(m['name'], version)
+                        return
+
+                self.spec_content[index] = line.replace(match.group(1), version)
+                break
         #  save changes to the disc
         self.save()
 
