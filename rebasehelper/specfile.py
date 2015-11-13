@@ -30,7 +30,7 @@ import argparse
 from datetime import date
 from difflib import SequenceMatcher
 
-from rebasehelper.utils import DownloadHelper, defenc
+from rebasehelper.utils import DownloadHelper, MacroHelper, defenc
 from rebasehelper.logger import logger
 from rebasehelper import settings
 from rebasehelper.archive import Archive
@@ -1009,7 +1009,6 @@ class SpecFile(object):
         Update %setup or %autosetup dirname argument if needed
         :param dirname: required dirname
         """
-
         for index, line in enumerate(self.spec_content):
             if line.startswith('%setup') or line.startswith('%autosetup'):
                 args = line.split()
@@ -1029,12 +1028,24 @@ class SpecFile(object):
 
                 # test if modification is really necessary
                 if dirname != rpm.expandMacro(namespace.n):
+                    new_dirname = dirname
+
+                    # get %{name} and %{version} macros
+                    macros = [m for m in MacroHelper.get_macros(level=-3) if m['name'] in ('name', 'version')]
+                    # add all macros from spec file scope
+                    macros.extend(MacroHelper.get_macros(level=-1))
+                    # ensure maximal greediness
+                    macros.sort(key=lambda k: len(k['value']), reverse=True)
+
+                    # substitute tokens with macros
+                    for m in macros:
+                        if m['value'] and m['value'] in dirname:
+                            new_dirname = new_dirname.replace(m['value'], '%{{{}}}'.format(m['name']))
+
                     args = [macro]
                     args.extend(unknown)
                     args.append('-n')
-                    # NOTE: it would be better to substitute dirname
-                    # with macros (where possible)
-                    args.append(dirname)
+                    args.append(new_dirname)
 
                     self.spec_content[index] = '#{0}'.format(line)
                     self.spec_content.insert(index + 1, ' '.join(args))
