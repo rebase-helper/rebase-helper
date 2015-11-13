@@ -20,7 +20,10 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
+import io
 import os
+import re
+import sys
 import fnmatch
 import subprocess
 import tempfile
@@ -481,6 +484,74 @@ class RpmHelper(object):
         h = RpmHelper.get_header_from_rpm(rpm_name)
         name = h[info]
         return name
+
+
+class MacroHelper(object):
+
+    """Helper class for working with RPM macros """
+
+    @staticmethod
+    def _dump():
+
+        """
+        Captures output of %dump macro
+        :return: Raw %dump macro output as a list of lines
+        """
+        # %dump macro prints results to stderr
+        err = sys.stderr.fileno()
+
+        with tempfile.TemporaryFile(mode='w+b') as tmp:
+            with os.fdopen(os.dup(err), 'wb') as copied:
+                try:
+                    sys.stderr.flush()
+                    os.dup2(tmp.fileno(), err)
+                    try:
+                        rpm.expandMacro('%dump')
+                    finally:
+                        sys.stderr.flush()
+                        os.dup2(copied.fileno(), err)
+                finally:
+                    tmp.flush()
+                    tmp.seek(0, io.SEEK_SET)
+                    return tmp.readlines()
+
+    @staticmethod
+    def get_macros(**kwargs):
+
+        """
+        Returns all macros satisfying specified filters
+        :param kwargs: filters
+        :return: list of macros
+        """
+        macro_re = re.compile(
+            '''
+            ^\s*
+            (?P<level>-?\d+)
+            (?P<used>=|:)
+            [ ]
+            (?P<name>\w+)
+            (?P<options>\(.+?\))?
+            [\t]
+            (?P<value>.*)
+            $
+            ''',
+            re.VERBOSE)
+
+        macros = []
+
+        for line in MacroHelper._dump():
+            match = macro_re.match(line)
+            if match:
+                macro = match.groupdict()
+                macro['level'] = int(macro['level'])
+                macro['used'] = macro['used'] == '='
+
+                if all(macro.get(k[4:]) >= v if k.startswith('min_') else
+                       macro.get(k[4:]) <= v if k.startswith('max_') else
+                       macro.get(k) == v for k, v in kwargs.iteritems()):
+                    macros.append(macro)
+
+        return macros
 
 
 class GitHelper(object):
