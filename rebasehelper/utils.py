@@ -498,7 +498,8 @@ class MacroHelper(object):
         :return: Raw %dump macro output as a list of lines
         """
         # %dump macro prints results to stderr
-        err = sys.stderr.fileno()
+        # we cannot use sys.stderr because it can be modified by pytest
+        err = sys.__stderr__.fileno()
 
         with tempfile.TemporaryFile(mode='w+b') as tmp:
             with os.fdopen(os.dup(err), 'wb') as copied:
