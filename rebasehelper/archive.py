@@ -124,7 +124,7 @@ class TarBz2ArchiveType(ArchiveTypeBase):
             data = archive.read()
             if not os.path.exists(path):
                 os.mkdir(path)
-            with open(os.path.join(path, filename[:-4]), 'w') as f:
+            with open(os.path.join(path, filename[:-4]), 'wb') as f:
                 f.write(data)
 
 
