@@ -56,11 +56,14 @@ class PyTest(Command):
 
     def run(self):
         # only one test runner => just run the tests
-        supported = ['2.7', '3.3']
+        supported = ['2.7', '3.3', '3.4']
         potential_runners = ['py.test-' + s for s in supported]
         if self.test_runner:
             potential_runners = [self.test_runner]
         runners = [pr for pr in potential_runners if self.runner_exists(pr)]
+
+        if not runners:
+            raise SystemExit('No test runners available!')
 
         for runner in runners:
             if len(runners) > 1:
