@@ -549,7 +549,7 @@ class MacroHelper(object):
 
                 if all(macro.get(k[4:]) >= v if k.startswith('min_') else
                        macro.get(k[4:]) <= v if k.startswith('max_') else
-                       macro.get(k) == v for k, v in kwargs.iteritems()):
+                       macro.get(k) == v for k, v in six.iteritems(kwargs)):
                     macros.append(macro)
 
         return macros
