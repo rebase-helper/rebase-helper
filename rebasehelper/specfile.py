@@ -915,13 +915,19 @@ class SpecFile(object):
                 # We check if patch is mentioned in SPEC file but not used.
                 # We are comment out the patch
                 check_not_applied = [x for x in self.get_not_used_patches() if int(x.get_index()) == int(patch_num)]
-                patch_removed = [x for x in patches['deleted'] if patch_name in x]
+                if 'deleted' in patches:
+                    patch_removed = [x for x in patches['deleted'] if patch_name in x]
+                else:
+                    patch_removed = None
                 if check_not_applied or patch_removed:
                     comment = '#'
                     self.spec_content[index] = comment + ' '.join(fields[:-1]) + ' ' + os.path.basename(patch_name) + '\n'
                     if patch_removed:
                         removed_patches.append(patch_num)
-                patch = [x for x in patches['modified'] if patch_name in x]
+                if 'modified' in patches:
+                    patch = [x for x in patches['modified'] if patch_name in x]
+                else:
+                    patch = None
                 if patch:
                     fields[1] = os.path.join(settings.REBASE_HELPER_RESULTS_DIR, patch_name)
                     self.spec_content[index] = ' '.join(fields) + '\n'
