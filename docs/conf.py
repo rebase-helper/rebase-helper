@@ -259,3 +259,11 @@ texinfo_documents = [
 
 # How to display URL addresses: 'footnote', 'no', or 'inline'.
 #texinfo_show_urls = 'footnote'
+
+
+# -- Options for autodoc --------------------------------------------------
+
+# This value contains a list of modules to be mocked up. This is useful
+# when some external dependencies are not met at build time and break
+# the building process.
+autodoc_mock_imports = ['backports.lzma', 'pycurl', 'rpm']
