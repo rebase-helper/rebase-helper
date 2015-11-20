@@ -254,11 +254,11 @@ class ProcessHelper(object):
         except:
             spooled_in_file = tempfile.SpooledTemporaryFile(mode='w+b')
             try:
-                in_data = six.b(in_file.read())
+                in_data = in_file.read()
             except AttributeError:
                 spooled_in_file.close()
             else:
-                spooled_in_file.write(in_data)
+                spooled_in_file.write(in_data.encode(defenc) if six.PY3 else in_data)
                 spooled_in_file.seek(0)
                 in_file = spooled_in_file
                 close_in_file = True
@@ -286,7 +286,10 @@ class ProcessHelper(object):
         if out_file is not None:
             # read the output
             for line in sp.stdout:
-                out_file.write(line)
+                try:
+                    out_file.write(line.decode(defenc) if six.PY3 else line)
+                except TypeError:
+                    out_file.write(line)
             # TODO: Need to figure out how to send output to stdout (without logger) and to logger
             #else:
             #   logger.debug(line.rstrip("\n"))
@@ -514,7 +517,7 @@ class MacroHelper(object):
                 finally:
                     tmp.flush()
                     tmp.seek(0, io.SEEK_SET)
-                    return tmp.readlines()
+                    return [line.decode(defenc) if six.PY3 else line for line in tmp.readlines()]
 
     @staticmethod
     def get_macros(**kwargs):
@@ -591,7 +594,7 @@ class GitHelper(object):
         if not output_file:
             out = output.readlines()
             for o in out:
-                self.output_data.append(o.strip().encode(defenc))
+                self.output_data.append(o.strip())
         return ret_code
 
     def check_git_config(self):

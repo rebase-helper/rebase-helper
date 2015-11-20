@@ -24,7 +24,7 @@ from __future__ import print_function
 import os
 import re
 from rebasehelper.logger import logger
-from rebasehelper.utils import ConsoleHelper, defenc
+from rebasehelper.utils import ConsoleHelper
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.utils import GitHelper, GitRebaseError
 
@@ -185,7 +185,7 @@ class GitPatchTool(PatchBase):
                 if not del_patches:
                     deleted_patches.append(base_name)
                 else:
-                    logger.info('Following files were modified: %s', ','.join(modified_files).decode(defenc))
+                    logger.info('Following files were modified: %s', ','.join(modified_files))
                     cls.git_helper.command_commit(message=patch_name)
                     cls.git_helper.command_diff('HEAD~1', output_file=base_name)
                     modified_patches.append(base_name)

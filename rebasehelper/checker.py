@@ -87,7 +87,6 @@ class RpmDiffTool(BaseChecker):
     def _analyze_logs(cls, output, results_dict):
         removed_things = ['.build-id', '.dwz', 'PROVIDE', 'REQUIRES']
         for line in output:
-            line = line.encode('ascii', 'ignore')
             if [x for x in removed_things if x in line]:
                 continue
 
