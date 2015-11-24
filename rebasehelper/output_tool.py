@@ -166,11 +166,12 @@ class TextOutputTool(BaseOutputTool):
         if OutputLogger.get_checkers():
             for check, data in six.iteritems(OutputLogger.get_checkers()):
                 logger_report.info("=== Checker %s results ===", check)
-                for checker, output in six.iteritems(data):
-                    if output is None:
-                        logger_report.info("Log is available here: %s\n", checker)
-                    else:
-                        logger_report.info("%s See for more details %s", output, checker)
+                if data:
+                    for checker, output in six.iteritems(data):
+                        if output is None:
+                            logger_report.info("Log is available here: %s\n", checker)
+                        else:
+                            logger_report.info("%s See for more details %s", output, checker)
 
 
 class OutputTool(object):
