@@ -953,6 +953,8 @@ class SpecFile(object):
         if regex_str == url_base:
             logger.debug('Using fallback regex to extract version from archive name.')
             regex_str = fallback_regex_str
+        else:
+            regex_str = rpm.expandMacro(regex_str)
 
         logger.debug("Extracting version using regex '%s'", regex_str)
         regex = re.compile(regex_str)
