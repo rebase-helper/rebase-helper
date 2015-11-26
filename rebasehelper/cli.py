@@ -62,11 +62,6 @@ class CLI(object):
             help="Only build SRPM and RPMs"
         )
         self.parser.add_argument(
-            "--patchtool",
-            default='git',
-            help="Select the patch tool [patch|git]"
-        )
-        self.parser.add_argument(
             "--buildtool",
             default="mock",
             help="Select the build tool [mock(default)|rpmbuild|fedpkg]"

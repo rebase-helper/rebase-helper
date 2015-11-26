@@ -65,12 +65,12 @@ class PyTest(Command):
         if not runners:
             raise SystemExit('No test runners available!')
 
+        retcode = 0
         for runner in runners:
             if len(runners) > 1:
                 print('\n' * 2)
                 print('Running tests using "{0}":'.format(runner))
 
-            retcode = 0
             cmd = [runner]
             for a in self.args:
                 cmd.append(a)
