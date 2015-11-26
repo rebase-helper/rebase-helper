@@ -98,7 +98,7 @@ class TarXzArchiveType(ArchiveTypeBase):
         archive.extractall(path)
 
 @register_archive_type
-class TarBz2ArchiveType(ArchiveTypeBase):
+class Bz2ArchiveType(ArchiveTypeBase):
 
     """ .bz2 archive type """
 
@@ -126,6 +126,14 @@ class TarBz2ArchiveType(ArchiveTypeBase):
                 os.mkdir(path)
             with open(os.path.join(path, filename[:-4]), 'wb') as f:
                 f.write(data)
+
+
+@register_archive_type
+class TarBz2ArchiveType(Bz2ArchiveType):
+
+    """ .tar.bz2 archive type """
+
+    EXTENSION = ".tar.bz2"
 
 
 @register_archive_type
