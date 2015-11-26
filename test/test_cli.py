@@ -36,7 +36,6 @@ class TestCLI(object):
                 'patch_only': True,
                 'sources': 'test-1.0.3.tar.gz',
                 'verbose': True,
-                'patchtool': 'patch_test',
                 'buildtool': 'rpmbuild',
                 'difftool': 'vimdiff',
                 'pkgcomparetool': 'rpmdiff',
@@ -47,7 +46,7 @@ class TestCLI(object):
                 'non_interactive': True,
                 'comparepkgs': 'test_dir'}
         arguments = ['--build-only', '--patch-only', 'test-1.0.3.tar.gz', '--verbose',
-                     'patch_test', '--buildtool', 'rpmbuild', '--pkgcomparetool',
+                     '--buildtool', 'rpmbuild', '--pkgcomparetool',
                      'rpmdiff', '--outputtool', 'xml', '--keep-workspace', '--not-download-sources', '--continue',
                      '--non-interactive', '--comparepkgs-only', 'test_dir']
         cli = CLI(arguments)
