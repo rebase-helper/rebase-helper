@@ -81,11 +81,11 @@ class UpstreamMonitoring(object):
         self.dir_name = dir_name
 
     def parse_fedpkg_conf(self):
-
         """
         Function parse /etc/rpkg/fedpkg.conf file
         and return anonymous URL address for clonning package
-        :return:
+
+        :return: 
         """
         config = ConfigParser.RawConfigParser()
         config.readfp(open(self.fedpkg_file))
@@ -97,8 +97,7 @@ class UpstreamMonitoring(object):
         self.url = fields.get(self.anonymous_url).replace('%(module)s', self.package)
 
     def _get_package_version(self):
-
-        """ Get package and version from fedmsg  """
+        """Get package and version from fedmsg"""
         inner = self.msg['msg'].get('message', self.msg['msg'])
         distros = [p['distro'] for p in inner['packages']]
 
@@ -148,7 +147,8 @@ class UpstreamMonitoring(object):
         """
         Function returns a list of patches either
         '': [list_of_deleted_patches]
-        :return:
+
+        :return: 
         """
         patches = False
         output_patch_string = []
@@ -190,7 +190,8 @@ class UpstreamMonitoring(object):
     def add_upstream_log_file(self):
         """
         Add the application wide debug log file
-        :return:
+
+        :return: 
         """
         upstream_log_file = os.path.join(self.tmp, 'rebase-helper-upstream.log')
         try:

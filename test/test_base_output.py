@@ -61,7 +61,7 @@ class TestBaseOutput(object):
         """
         Test Output logger info
 
-        :return:
+        :return: 
         """
         info_results = OutputLogger.get_summary_info()
         expect_dict = self.info_data
@@ -72,7 +72,7 @@ class TestBaseOutput(object):
         """
         Test Output logger patches
 
-        :return:
+        :return: 
         """
         patch_results = OutputLogger.get_patches()
         expected_patches = self.patches_data
@@ -82,7 +82,7 @@ class TestBaseOutput(object):
         """
         Test Output logger old builds
 
-        :return:
+        :return: 
         """
         build_results = OutputLogger.get_build('old')
         assert build_results == self.old_rpm_data
@@ -91,7 +91,7 @@ class TestBaseOutput(object):
         """
         Test Output logger new builds
 
-        :return:
+        :return: 
         """
         build_results = OutputLogger.get_build('new')
         assert build_results == self.new_rpm_data

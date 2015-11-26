@@ -72,7 +72,7 @@ class ArchiveTypeBase(object):
         Extracts the archive into the given path
 
         :param path: Path where to extract the archive to.
-        :return:
+        :return: 
         """
         raise NotImplementedError()
 
@@ -221,7 +221,7 @@ class Archive(object):
         Extracts the archive into the given path
 
         :param path: Path where to extract the archive to.
-        :return:
+        :return: 
         """
         if path is None:
             TypeError("Expected argument 'path' (pos 1) is missing")
@@ -238,5 +238,5 @@ class Archive(object):
 
     @classmethod
     def get_supported_archives(cls):
-        """ Return list of supported archive types """
+        """Return list of supported archive types"""
         return archive_types.keys()

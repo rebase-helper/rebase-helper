@@ -43,9 +43,7 @@ class TestConsoleHelper(BaseTest):
 
     @staticmethod
     def _setup_fake_IO(input_str):
-        """
-        Function to setup fake STDIN and STDOUT for console testing.
-        """
+        """Function to setup fake STDIN and STDOUT for console testing."""
         #  Use StringIO to be able to write and read to STDIN and from STDOUT
         sys.stdin = StringIO(input_str)
         sys.stdout = StringIO()

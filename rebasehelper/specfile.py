@@ -40,10 +40,10 @@ PATCH_PREFIX = '%patch'
 
 
 def get_rebase_name(name):
-
     """
     Function returns a name in results directory
-    :param name:
+
+    :param name: 
     :return: full path to results dir with name
     """
     dir_name = os.path.dirname(name)
@@ -128,10 +128,10 @@ class SpecFile(object):
         self._update_data()
 
     def _update_data(self):
-
         """
         Function updates data from given SPEC file
-        :return:
+
+        :return: 
         """
         # Load rpm information
         self.spc = rpm.spec(self.path)
@@ -149,10 +149,7 @@ class SpecFile(object):
         self.patches = self._get_initial_patches_list()
 
     def _get_initial_sources_list(self):
-
-        """
-        Function returns all sources mentioned in SPEC file
-        """
+        """Function returns all sources mentioned in SPEC file"""
         # get all regular sources
         sources = []
         tar_sources = []
@@ -173,10 +170,7 @@ class SpecFile(object):
         return sources, tar_sources
 
     def _get_initial_patches_list(self):
-
-        """
-        Method returns a list of patches from a spec file
-        """
+        """Method returns a list of patches from a spec file"""
         patches_applied = []
         patches_not_used = []
         patches_list = [p for p in self.spc.sources if p[2] == 2]
@@ -213,10 +207,10 @@ class SpecFile(object):
         return new_object
 
     def get_patch_option(self, line):
-
         """
         Function returns a patch options
-        :param line:
+
+        :param line: 
         :return: patch options like -p1
         """
         spl = line.strip().split()
@@ -226,12 +220,10 @@ class SpecFile(object):
             return spl[0], spl[1]
 
     def _create_spec_from_sections(self):
-
         """
         Spec file has defined order
         First we write a header
         """
-
         new_spec_file = []
 
         try:
@@ -248,7 +240,6 @@ class SpecFile(object):
         return new_spec_file
 
     def _split_sections(self):
-
         """
         Function split spec file to well known SPEC sections
 
@@ -287,7 +278,6 @@ class SpecFile(object):
         return sections
 
     def get_spec_section(self, section_name):
-
         """
         Returns the section of selected name
 
@@ -299,7 +289,6 @@ class SpecFile(object):
                 return section
 
     def set_spec_section(self, section_name, new_section):
-
         """
         Returns the section of selected name
 
@@ -314,17 +303,17 @@ class SpecFile(object):
                     self.rpm_sections[key] = (section_name, new_section)
 
     def get_path(self):
-
         """
         Return only spec file path
-        :return:
+
+        :return: 
         """
         return self.path
 
     def is_test_suite_enabled(self):
-
         """
         Returns whether test suite is enabled during the build time
+
         :return: True if enabled or False if not
         """
         check_section = self.get_spec_section('%check')
@@ -339,20 +328,17 @@ class SpecFile(object):
             return False
 
     def _get_patch_number(self, fields):
-
         """
         Function returns patch number
-        :param line:
+
+        :param line: 
         :return: patch_num
         """
         patch_num = fields[0].replace('Patch', '')[:-1]
         return patch_num
 
     def _read_spec_content(self):
-
-        """
-        Method reads the content SPEC file and updates internal variables.
-        """
+        """Method reads the content SPEC file and updates internal variables."""
         try:
             with open(self.path) as f:
                 lines = f.readlines()
@@ -362,10 +348,7 @@ class SpecFile(object):
         self.spec_content = lines
 
     def _get_patches_flags(self):
-
-        """
-        For all patches: get flags passed to %patch macro and index of application
-        """
+        """For all patches: get flags passed to %patch macro and index of application"""
         patch_flags = {}
         patches = [x for x in self.spec_content if x.startswith(PATCH_PREFIX)]
         if not patches:
@@ -381,18 +364,18 @@ class SpecFile(object):
         return patch_flags
 
     def get_release(self):
-
         """
         Method for getting full release string of the package
-        :return:
+
+        :return: 
         """
         return self.hdr[rpm.RPMTAG_RELEASE].decode(defenc) if six.PY3 else self.hdr[rpm.RPMTAG_RELEASE]
 
     def get_release_number(self):
-
         """
         Method for getting the release of the package
-        :return:
+
+        :return: 
         """
         for line in self.spec_content:
             match = re.search(r'Release:\s*([0-9.]+).*%{\?dist}\s*', line)
@@ -400,39 +383,38 @@ class SpecFile(object):
                 return match.group(1)
 
     def get_version(self):
-
         """
         Method returns the version
-        :return:
+
+        :return: 
         """
         return self.hdr[rpm.RPMTAG_VERSION].decode(defenc) if six.PY3 else self.hdr[rpm.RPMTAG_VERSION]
 
     def get_extra_version(self):
-
         """
         Returns an extra version of the package - like b1, rc2, ...
+
         :return: String
         """
         return self.extra_version
 
     def get_package_name(self):
-
         """
         Function returns a package name
-        :return:
+
+        :return: 
         """
         return self.hdr[rpm.RPMTAG_NAME].decode(defenc) if six.PY3 else self.hdr[rpm.RPMTAG_NAME]
 
     def get_requires(self):
-
         """
         Function returns a package requirements
-        :return:
+
+        :return: 
         """
         return [r.decode(defenc) if six.PY3 else r for r in self.hdr[rpm.RPMTAG_REQUIRES]]
 
     def is_patch_git_generated(self, full_patch_name):
-
         """
         Return:
           True if patch is generated by git ('git diff' or 'git format-patch')
@@ -449,60 +431,47 @@ class SpecFile(object):
         return False
 
     def get_patches(self):
-
         """
         Method returns list of all applied and not applied patches
+
         :return: list of PatchObject
         """
         return self.get_applied_patches() + self.get_not_used_patches()
 
     def get_applied_patches(self):
-
         """
         Method returns list of all applied patches.
 
         :return: list of PatchObject
         """
-
         return self.patches['applied']
 
     def get_not_used_patches(self):
-
         """
         Method returns list of all unpplied patches.
 
         :return: list of PatchObject
         """
-
         return self.patches['not_applied']
 
     def get_sources(self):
-
         """
         Method returns dictionary with sources list.
 
-        :return:
+        :return: 
         """
         return self.sources
 
     def get_archive(self):
-
-        """
-        Function returns the first archive name [0] from SPEC file
-        """
+        """Function returns the first archive name [0] from SPEC file"""
         return self.get_archives()[0]
 
     def get_archives(self):
-
-        """
-        Function returns the archives name from SPEC file
-        """
+        """Function returns the archives name from SPEC file"""
         return [os.path.basename(x).strip() for x in self.tar_sources]
 
     def get_prep_section(self):
-        """
-        Function returns whole prep section
-        """
+        """Function returns whole prep section"""
         prep_section = []
         start_prep_section = False
         for line in self.prep_section.split('\n'):
@@ -516,7 +485,6 @@ class SpecFile(object):
         return prep_section
 
     def _get_raw_source_string(self, source_num):
-
         """
         Method returns raw string, possibly with RPM macros, of a Source with passed number.
 
@@ -533,7 +501,6 @@ class SpecFile(object):
 
     @staticmethod
     def get_paths_with_rpm_macros(files):
-
         """
         Method modifies paths in passed list to use RPM macros
 
@@ -564,7 +531,6 @@ class SpecFile(object):
 
     @staticmethod
     def construct_string_with_comment(lines):
-
         """
         Wraps the line in a rebase-helper specific comments
 
@@ -615,11 +581,11 @@ class SpecFile(object):
                 self.rpm_sections[key] = (sec_name, '\n'.join(sec_content))
 
     def modify_spec_files_section(self, files):
-
         """
         Function repairs spec file according to new sources.
-        :param files:
-        :return:
+
+        :param files: 
+        :return: 
         """
         # Files which are missing in SPEC file.
         try:
@@ -642,10 +608,7 @@ class SpecFile(object):
         self.save()
 
     def _write_spec_file_to_disc(self):
-
-        """
-        Write the current SPEC file to the disc
-        """
+        """Write the current SPEC file to the disc"""
         logger.debug("Writing SPEC file '%s' to the disc", self.path)
         try:
             with open(self.path, "w") as f:
@@ -654,7 +617,6 @@ class SpecFile(object):
             raise RebaseHelperError("Unable to write updated data to SPEC file '%s'", self.path)
 
     def _comment_out_patches(self, patch_num):
-
         """
         Comment out patches from SPEC file
 
@@ -673,8 +635,8 @@ class SpecFile(object):
                         break
 
     def _correct_rebased_patches(self, patch_num):
-
-        """Comment out patches from SPEC file
+        """
+        Comment out patches from SPEC file
 
         :var patch_num: list with patch numbers to update
         """
@@ -698,11 +660,11 @@ class SpecFile(object):
                         break
 
     def set_release_number(self, release):
-
         """
         Method to set release number
-        :param release:
-        :return:
+
+        :param release: 
+        :return: 
         """
         for index, line in enumerate(self.spec_content):
             if line.startswith('Release:'):
@@ -714,11 +676,11 @@ class SpecFile(object):
                 break
 
     def redefine_release_with_macro(self, macro):
-
         """
         Method redefines the Release: line to include passed macro and comments out the old line
-        :param macro:
-        :return:
+
+        :param macro: 
+        :return: 
         """
         for index, line in enumerate(self.spec_content):
             if line.startswith('Release:'):
@@ -732,11 +694,11 @@ class SpecFile(object):
                 break
 
     def revert_redefine_release_with_macro(self, macro):
-
         """
         Method removes the redefined the Release: line with given macro and uncomments the old Release line.
-        :param macro:
-        :return:
+
+        :param macro: 
+        :return: 
         """
         search_re = re.compile('Release:\s*[0-9.]*[0-9]+{0}%{{\?dist}}\s*'.format(macro))
 
@@ -784,7 +746,6 @@ class SpecFile(object):
         self.save()
 
     def set_version(self, version):
-
         """
         Method to update the version in the SPEC file
 
@@ -810,7 +771,6 @@ class SpecFile(object):
         self.save()
 
     def set_extra_version(self, extra_version):
-
         """
         Method to update the extra version in the SPEC file. Redefined Source0 if needed and also changes
         Release accordingly.
@@ -882,13 +842,12 @@ class SpecFile(object):
         self.save()
 
     def set_version_using_archive(self, archive_path):
-
         """
         Method to update the version in the SPEC file using a archive path. The version
         is extracted from the archive name.
 
-        :param archive_path:
-        :return:
+        :param archive_path: 
+        :return: 
         """
         version, extra_version = SpecFile.extract_version_from_archive_name(archive_path,
                                                                             self._get_raw_source_string(0))
@@ -896,10 +855,7 @@ class SpecFile(object):
         self.set_extra_version(extra_version)
 
     def write_updated_patches(self, patches):
-
-        """
-        Function writes the patches to -rebase.spec file
-        """
+        """Function writes the patches to -rebase.spec file"""
         #  TODO: this method should not take whole kwargs as argument, take only what it needs.
         if not patches:
             return None
@@ -939,10 +895,7 @@ class SpecFile(object):
         self.save()
 
     def save(self):
-
-        """
-        Save changes made to the spec_content to the disc and update internal variables
-        """
+        """Save changes made to the spec_content to the disc and update internal variables"""
         #  Write changes to the disc
         self._write_spec_file_to_disc()
         #  Update internal variables
@@ -950,7 +903,6 @@ class SpecFile(object):
 
     @staticmethod
     def split_version_string(version_string=''):
-
         """
         Method splits version string into version and possibly extra string as 'rc1' or 'b1', ...
 
@@ -971,7 +923,6 @@ class SpecFile(object):
 
     @staticmethod
     def extract_version_from_archive_name(archive_path, source_string=''):
-
         """
         Method extracts the version from archive name based on the source string from SPEC file.
         It extracts also an extra version such as 'b1', 'rc1', ...
@@ -1038,18 +989,15 @@ class SpecFile(object):
         self.set_spec_section(changelog, new_log)
 
     def update_changelog(self, new_log):
-
-        """
-        Function updates changelog with new version
-        """
+        """Function updates changelog with new version"""
         self.insert_changelog(new_log)
         self.spec_content = self._create_spec_from_sections()
         self.save()
 
     def update_setup_dirname(self, dirname):
-
         """
         Update %setup or %autosetup dirname argument if needed
+
         :param dirname: required dirname
         """
         for index, line in enumerate(self.spec_content):

@@ -84,7 +84,8 @@ class OutputLogger(object):
     def set_patch_output(cls, text, data):
         """
         Method stores information from patch class
-        :param patch_name Name of patch class
+
+        :param patch_name: Name of patch class
         :param text: text provided by patch class
         """
         cls.set_output('patch', text, data)
@@ -93,10 +94,11 @@ class OutputLogger(object):
     def set_checker_output(cls, text, data):
         """
         Method stores information from checker class
+
         :param checker_name: Checker name like pkgdiff
-        :param text
+        :param text: 
         :param data: text from checker class.
-        :return:
+        :return: 
         """
         cls.set_output('checker', text, data)
 

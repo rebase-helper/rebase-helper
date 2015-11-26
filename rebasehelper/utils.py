@@ -66,10 +66,10 @@ class GitRebaseError(RuntimeError):
 
 
 def get_value_from_kwargs(kwargs, field, source='old'):
-
     """
     Function returns a part of self.kwargs dictionary
-    :param kwargs:
+
+    :param kwargs: 
     :param source: 'old' or 'new'
     :param field: like 'patches', 'source'
     :return: value from dictionary
@@ -136,7 +136,7 @@ class DownloadHelper(object):
 
         :param url: URL from which to download the file
         :param destination_name: path where to store downloaded file
-        :return None
+        :return: None
         """
         if os.path.exists(destination_name):
             return
@@ -320,11 +320,12 @@ class PathHelper(object):
 
     @staticmethod
     def find_first_dir_with_file(top_path, pattern):
-
-        """ Finds a file that matches the given 'pattern' recursively
+        """
+        Finds a file that matches the given 'pattern' recursively
         starting in the 'top_path' directory. If found, returns full path
         to the directory with first occurrence of the file, otherwise
-        returns None. """
+        returns None.
+        """
         for root, dirs, files in os.walk(top_path):
             dirs.sort()
             for f in files:
@@ -334,10 +335,11 @@ class PathHelper(object):
 
     @staticmethod
     def find_first_file(top_path, pattern, recursion_level=None):
-
-        """ Finds a file that matches the given 'pattern' recursively
+        """
+        Finds a file that matches the given 'pattern' recursively
         starting in the 'top_path' directory. If found, returns full path
-        to the first occurrence of the file, otherwise returns None. """
+        to the first occurrence of the file, otherwise returns None.
+        """
         for loop, (root, dirs, files) in enumerate(os.walk(top_path)):
             dirs.sort()
             for f in files:
@@ -350,10 +352,11 @@ class PathHelper(object):
 
     @staticmethod
     def find_all_files(top_path, pattern):
-
-        """ Finds a file that matches the given 'pattern' recursively
+        """
+        Finds a file that matches the given 'pattern' recursively
         starting in the 'top_path' directory. If found, returns full path
-        to the first occurrence of the file, otherwise returns None. """
+        to the first occurrence of the file, otherwise returns None.
+        """
         files_list = []
         for root, dirs, files in os.walk(top_path):
             dirs.sort()
@@ -364,8 +367,7 @@ class PathHelper(object):
 
     @staticmethod
     def get_temp_dir():
-
-        """ Returns a path to new temporary directory. """
+        """Returns a path to new temporary directory."""
         return tempfile.mkdtemp(prefix=settings.REBASE_HELPER_PREFIX)
 
 
@@ -403,17 +405,17 @@ class TemporaryEnvironment(object):
         return "<TemporaryEnvironment path='%s'>", self.path()
 
     def path(self):
-
         """
         Returns path to the temporary environment.
+
         :return: abs path to the environment
         """
         return self._env.get(self.TEMPDIR, '')
 
     def env(self):
-
         """
         Returns copy of _env dictionary.
+
         :return: copy of _env dictionary
         """
         return self._env.copy()
@@ -450,11 +452,11 @@ class RpmHelper(object):
 
     @staticmethod
     def install_build_dependencies(spec_path=None, assume_yes=False):
-
         """
         Install all build requires for a package using PolicyKits
+
         :param spec_path: absolute path to SPEC file
-        :return:
+        :return: 
         """
         cmd = ['pkexec', 'dnf', 'builddep', spec_path]
         if assume_yes:
@@ -463,12 +465,12 @@ class RpmHelper(object):
 
     @staticmethod
     def get_header_from_rpm(rpm_name):
-
         """
         Function returns a rpm header from given rpm package
         for later on analysis
-        :param pkg_name:
-        :return:
+
+        :param pkg_name: 
+        :return: 
         """
         ts = rpm.TransactionSet()
         h = None
@@ -478,11 +480,11 @@ class RpmHelper(object):
 
     @staticmethod
     def get_info_from_rpm(rpm_name, info):
-
         """
         Method returns a name of the package from RPM file format
-        :param pkg_name:
-        :return:
+
+        :param pkg_name: 
+        :return: 
         """
         h = RpmHelper.get_header_from_rpm(rpm_name)
         name = h[info]
@@ -495,9 +497,9 @@ class MacroHelper(object):
 
     @staticmethod
     def _dump():
-
         """
         Captures output of %dump macro
+
         :return: Raw %dump macro output as a list of lines
         """
         # %dump macro prints results to stderr
@@ -521,9 +523,9 @@ class MacroHelper(object):
 
     @staticmethod
     def get_macros(**kwargs):
-
         """
         Returns all macros satisfying specified filters
+
         :param kwargs: filters
         :return: list of macros
         """
@@ -569,9 +571,9 @@ class GitHelper(object):
         self.git_directory = git_directory
 
     def _call_git_command(self, command, input_file=None, output_file=None):
-
         """
         Class calls git command
+
         :param command: git command which is executed
         :param directory: git directory
         :param input_file: input file for git operations
@@ -598,9 +600,9 @@ class GitHelper(object):
         return ret_code
 
     def check_git_config(self):
-
         """
         Function checks whether you have setup a merge tool in ~/.gitconfig
+
         :return: True or False
         """
         merge = self.command_config('--get', 'merge.tool')
@@ -642,9 +644,7 @@ One of the possible configuration can be:\n
 
     @staticmethod
     def get_modified_files(output):
-
         """Function returns list of modified files from output text"""
-
         modified_files = []
         for line in output:
             if 'modified:' not in line:
@@ -668,9 +668,9 @@ One of the possible configuration can be:\n
         return self._call_git_command(cmd)
 
     def command_commit(self, message=None, amend=False):
-
         """
         Method commits message to Git
+
         :param directory: Git directtory
         :param message: commit message
         :return: return code from ProcessHelper
@@ -687,9 +687,7 @@ One of the possible configuration can be:\n
         return self._call_git_command(cmd)
 
     def command_remote_add(self, upstream_name, directory):
-
         """Function add remote git repository to old_sources before a rebase"""
-
         cmd = []
         cmd.append('remote')
         cmd.append('add')
@@ -698,9 +696,7 @@ One of the possible configuration can be:\n
         return self._call_git_command(cmd)
 
     def command_diff_status(self):
-
         """Function shows which files are modified"""
-
         cmd = []
         cmd.append('diff')
         cmd.append('--name-only')
@@ -714,11 +710,11 @@ One of the possible configuration can be:\n
         return self._call_git_command(cmd)
 
     def command_log(self, parameters=None):
-
         """
         Function returns git log
+
         :param parameters: a parameter to git log command
-        :return:
+        :return: 
         """
         cmd = ['log']
         if parameters:
@@ -730,17 +726,13 @@ One of the possible configuration can be:\n
             return self.output_data
 
     def command_mergetool(self):
-
         """Function calls git mergetool program"""
-
         cmd = ['mergetool']
         ret_code = self._call_git_command(cmd, output_file='-')
         return ret_code
 
     def command_rebase(self, parameters, upstream_name=None, first_hash=None, last_hash=None):
-
         """Function calls git rebase"""
-
         cmd = ['rebase']
         if parameters == '--onto':
             cmd.append(parameters)
@@ -787,5 +779,5 @@ One of the possible configuration can be:\n
         return self.output_data[0]
 
     def get_output_data(self):
-        """ Function returns output_data after calling call_git_command """
+        """Function returns output_data after calling call_git_command"""
         return self.output_data

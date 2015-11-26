@@ -61,7 +61,7 @@ class Application(object):
         Initialize the application
 
         :param cli_conf: CLI object with configuration gathered from commandline
-        :return:
+        :return: 
         """
         self.conf = cli_conf
 
@@ -108,7 +108,8 @@ class Application(object):
     def _add_debug_log_file(self):
         """
         Add the application wide debug log file
-        :return:
+
+        :return: 
         """
         debug_log_file = os.path.join(self.results_dir, settings.REBASE_HELPER_DEBUG_LOG)
         try:
@@ -125,7 +126,8 @@ class Application(object):
     def _add_report_log_file(self):
         """
         Add the application report log file
-        :return:
+
+        :return: 
         """
         report_log_file = os.path.join(self.results_dir, settings.REBASE_HELPER_REPORT_LOG)
         try:
@@ -141,7 +143,8 @@ class Application(object):
     def _prepare_spec_objects(self):
         """
         Prepare spec files and initialize objects
-        :return:
+
+        :return: 
         """
         self.rebase_spec_file_path = get_rebase_name(self.spec_file_path)
 
@@ -165,9 +168,7 @@ class Application(object):
             self.rebase_spec_file.set_extra_version(extra_version)
 
     def _initialize_data(self):
-        """
-        Function fill dictionary with default data
-        """
+        """Function fill dictionary with default data"""
         # Get all tarballs before self.kwargs initialization
         self.old_sources = self.spec_file.get_archive()
         new_sources = self.rebase_spec_file.get_archive()
@@ -194,8 +195,9 @@ class Application(object):
     def get_rpm_packages(self, dirname):
         """
         Function returns RPM packages stored in dirname/old and dirname/new directories
+
         :param dirname: directory where are stored old and new RPMS
-        :return:
+        :return: 
         """
         found = True
         for version in ['old', 'new']:
@@ -216,9 +218,7 @@ class Application(object):
         return True
 
     def _get_spec_file(self):
-        """
-        Function gets the spec file from the execution_dir directory
-        """
+        """Function gets the spec file from the execution_dir directory"""
         self.spec_file_path = PathHelper.find_first_file(self.execution_dir, '*.spec', 0)
         if not self.spec_file_path:
             raise RebaseHelperError("Could not find any SPEC file in the current directory '%s'" % self.execution_dir)
@@ -226,7 +226,8 @@ class Application(object):
     def _delete_old_builds(self):
         """
         Deletes the old and new result dir from previous build
-        :return:
+
+        :return: 
         """
         self._delete_new_results_dir()
         self._delete_old_results_dir()
@@ -234,7 +235,8 @@ class Application(object):
     def _delete_old_results_dir(self):
         """
         Deletes old result dir
-        :return:
+
+        :return: 
         """
         if os.path.isdir(os.path.join(self.results_dir, 'old')):
             shutil.rmtree(os.path.join(self.results_dir, 'old'))
@@ -242,7 +244,8 @@ class Application(object):
     def _delete_new_results_dir(self):
         """
         Deletes new result dir
-        :return:
+
+        :return: 
         """
         if os.path.isdir(os.path.join(self.results_dir, 'new')):
             shutil.rmtree(os.path.join(self.results_dir, 'new'))
@@ -250,7 +253,8 @@ class Application(object):
     def _delete_workspace_dir(self):
         """
         Deletes workspace directory and loggs message
-        :return:
+
+        :return: 
         """
         logger.debug("Removing the workspace directory '%s'", self.workspace_dir)
         shutil.rmtree(self.workspace_dir)
@@ -258,7 +262,8 @@ class Application(object):
     def _check_workspace_dir(self):
         """
         Check if workspace dir exists, and removes it if yes.
-        :return:
+
+        :return: 
         """
         if os.path.exists(self.workspace_dir):
             logger.warning("Workspace directory '%s' exists, removing it", os.path.basename(self.workspace_dir))
@@ -268,7 +273,8 @@ class Application(object):
     def _check_results_dir(self):
         """
         Check if  results dir exists, and removes it if yes.
-        :return:
+
+        :return: 
         """
         # TODO: We may not want to delete the directory in the future
         if os.path.exists(self.results_dir):
@@ -284,7 +290,7 @@ class Application(object):
 
         :param archive_path: path to the archive to be extracted
         :param destination: path to a destination, where the archive should be extracted to
-        :return:
+        :return: 
         """
         try:
             archive = Archive(archive_path)
@@ -300,9 +306,7 @@ class Application(object):
 
     @staticmethod
     def extract_sources(archive_path, destination):
-        """
-        Function extracts a given Archive and returns a full dirname to sources
-        """
+        """Function extracts a given Archive and returns a full dirname to sources"""
         Application.extract_archive(archive_path, destination)
 
         try:
@@ -320,8 +324,9 @@ class Application(object):
         """
         Check if all build dependencies are installed. If not, asks user they should be installed.
         If yes, it installs build dependencies using PolicyKit.
+
         :param spec: SpecFile object
-        :return:
+        :return: 
         """
         req_pkgs = spec.get_requires()
         if not RpmHelper.all_packages_installed(req_pkgs):
@@ -332,7 +337,8 @@ class Application(object):
     def prepare_sources(self):
         """
         Function prepares a sources.
-        :return:
+
+        :return: 
         """
         old_dir = Application.extract_sources(self.old_sources,
                                               os.path.join(self.execution_dir, settings.OLD_SOURCES_DIR))
@@ -380,9 +386,7 @@ class Application(object):
         OutputLogger.set_patch_output('Patches:', self.rebased_patches)
 
     def build_packages(self):
-        """
-        Function calls build class for building packages
-        """
+        """Function calls build class for building packages"""
         if self.conf.buildtool == 'fedpkg' and not koji_builder:
             print ('Importing module koji failed. Switching to mockbuild.')
             self.conf.buildtool = 'mock'
@@ -469,6 +473,7 @@ class Application(object):
     def _execute_checkers(self, checker):
         """
         Function executes a checker based on command line arguments
+
         :param checker: checker name based from command line
         :return: Nothing
         """
@@ -480,7 +485,8 @@ class Application(object):
     def pkgdiff_packages(self):
         """
         Function calls pkgdiff class for comparing packages
-        :return:
+
+        :return: 
         """
         pkgdiff_results = {}
         if not self.conf.pkgcomparetool:
@@ -498,7 +504,8 @@ class Application(object):
         """
         Function returns all log_files created by rebase-helper
         First if debug log file and second is report summary log file
-        :return:
+
+        :return: 
         """
         log_list = []
         log_list.append(self.debug_log_file)

@@ -104,9 +104,7 @@ class BuildTemporaryEnvironment(TemporaryEnvironment):
         return obj
 
     def _create_directory_sctructure(self):
-        """
-        Function creating the directory structure in the TemporaryEnvironment.
-        """
+        """Function creating the directory structure in the TemporaryEnvironment."""
         raise NotImplementedError('The create directory function has to be implemented in child class!')
 
     def _build_env_exit_callback(self, results_dir, **kwargs):
@@ -115,7 +113,7 @@ class BuildTemporaryEnvironment(TemporaryEnvironment):
         It copies packages and logs into the results directory.
 
         :param results_dir: absolute path to results directory
-        :return:
+        :return: 
         """
         os.makedirs(results_dir)
         log_message = "Copying '%s' '%s' to '%s'"
@@ -136,9 +134,7 @@ class BuildToolBase(object):
 
     @classmethod
     def match(cls, cmd=None, *args, **kwargs):
-        """
-        Checks if tool name matches the desired one.
-        """
+        """Checks if tool name matches the desired one."""
         raise NotImplementedError()
 
     @classmethod
@@ -194,7 +190,7 @@ class MockBuildTool(BuildToolBase):
 
     @classmethod
     def _build_srpm(cls, spec, sources, results_dir, root=None, arch=None):
-        """ Build SRPM using mock. """
+        """Build SRPM using mock."""
         logger.info("Building SRPM")
         output = os.path.join(results_dir, "mock_output.log")
 
@@ -213,7 +209,7 @@ class MockBuildTool(BuildToolBase):
 
     @classmethod
     def _build_rpm(cls, srpm, results_dir, root=None, arch=None):
-        """ Build RPM using mock. """
+        """Build RPM using mock."""
         logger.info("Building RPMs")
         output = os.path.join(results_dir, "mock_output.log")
 
@@ -253,7 +249,6 @@ class MockBuildTool(BuildToolBase):
                  'rpm' -> list with absolute paths to RPMs
                  'logs' -> list with absolute paths to logs
         """
-
         rpms = None
         srpm = None
 
@@ -417,7 +412,6 @@ class RpmbuildBuildTool(BuildToolBase):
                  'rpm' -> list with absolute paths to RPMs
                  'logs' -> list with absolute paths to build_logs
         """
-
         rpms = None
         srpm = None
 
@@ -567,9 +561,7 @@ class FedpkgBuildTool(BuildToolBase):
 
     @classmethod
     def _display_task_results(cls, tasks):
-        """
-        Function is copy/paste from pyrpkg/cli.py
-        """
+        """Function is copy/paste from pyrpkg/cli.py"""
         for task in [task for task in tasks.values() if task.level == 0]:
             state = task.info['state']
             task_label = task.str()
@@ -587,9 +579,7 @@ class FedpkgBuildTool(BuildToolBase):
 
     @classmethod
     def _watch_koji_tasks(cls, session, tasklist):
-        """
-        Function is copy/paste from pyrpkg/cli.py
-        """
+        """Function is copy/paste from pyrpkg/cli.py"""
         if not tasklist:
             return
         # Place holder for return value
@@ -770,12 +760,12 @@ class Builder(object):
         return "<Builder tool_name='{_tool_name}' tool='{_tool}'>".format(**vars(self))
 
     def build(self, *args, **kwargs):
-        """ Build sources. """
+        """Build sources."""
         logger.debug("Building sources using '%s'", self._tool_name)
         return self._tool.build(*args, **kwargs)
 
     def get_logs(self):
-        """ Get logs. """
+        """Get logs."""
         logger.debug("Getting logs '%s'", self._tool_name)
         return self._tool.get_logs()
 

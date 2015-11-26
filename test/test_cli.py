@@ -28,10 +28,7 @@ class TestCLI(object):
     The test suite is used for testing CLI class
     """
     def test_cli_unit(self):
-        """
-        Function tests cli class with all arguments
-
-        """
+        """Function tests cli class with all arguments"""
         conf = {'build_only': True,
                 'patch_only': True,
                 'sources': 'test-1.0.3.tar.gz',

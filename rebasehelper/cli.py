@@ -34,7 +34,7 @@ class CLI(object):
     """ Class for processing data from commandline """
 
     def __init__(self, args=None):
-        """ parse arguments """
+        """parse arguments"""
         self.parser = argparse.ArgumentParser(description=PROGRAM_DESCRIPTION)
         self.add_args()
         self.args = self.parser.parse_args(args)

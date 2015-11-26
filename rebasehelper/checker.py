@@ -54,9 +54,7 @@ class BaseChecker(object):
 
     @classmethod
     def run_check(cls, results_dir):
-        """
-        Perform the check itself and return results.
-        """
+        """Perform the check itself and return results."""
         raise NotImplementedError()
 
 
@@ -124,7 +122,7 @@ class RpmDiffTool(BaseChecker):
 
     @classmethod
     def run_check(cls, results_dir):
-        """ Compares old and new RPMs using pkgdiff """
+        """Compares old and new RPMs using pkgdiff"""
         results_dict = {}
 
         for tag in settings.CHECKER_TAGS:
@@ -207,7 +205,8 @@ class PkgDiffTool(BaseChecker):
     def fill_dictionary(cls, result_dir):
         """
         Parsed files.xml and symbols.xml and fill dictionary
-        :return:
+
+        :return: 
         """
         XML_FILES = ['files.xml', 'symbols.xml']
         results_dict = {}
@@ -266,6 +265,7 @@ class PkgDiffTool(BaseChecker):
     def process_xml_results(cls, result_dir):
         """
         Function for filling dictionary with keys like 'added', 'removed'
+
         :return: dict = {'added': [list_of_added],
                          'removed': [list of removed],
                          'changed': [list of changed],
@@ -289,7 +289,7 @@ class PkgDiffTool(BaseChecker):
 
     @classmethod
     def run_check(cls, results_dir):
-        """ Compares old and new RPMs using pkgdiff """
+        """Compares old and new RPMs using pkgdiff"""
         cls.results_dir = results_dir
         cls.pkgdiff_results_full_path = os.path.join(cls.results_dir, cls.pkgdiff_results_filename)
 
@@ -360,8 +360,7 @@ class AbiCheckerTool(BaseChecker):
 
     @classmethod
     def run_check(cls, result_dir):
-        """ Compares old and new RPMs using pkgdiff """
-
+        """Compares old and new RPMs using pkgdiff"""
         debug_old, rest_pkgs_old = cls._get_packages_for_abipkgdiff(OutputLogger.get_build('old'))
         debug_new, rest_pkgs_new = cls._get_packages_for_abipkgdiff(OutputLogger.get_build('new'))
         cmd = [cls.CMD]
@@ -435,11 +434,11 @@ class Checker(object):
         return "<Checker tool_name='{_tool_name}' tool={_tool}>".format(**vars(self))
 
     def run_check(self, results_dir):
-        """ Run the check """
+        """Run the check"""
         logger.debug("Running tests on packages using '%s'", self._tool_name)
         return self._tool.run_check(results_dir)
 
     @classmethod
     def get_supported_tools(cls):
-        """ Return list of supported tools """
+        """Return list of supported tools"""
         return check_tools.keys()

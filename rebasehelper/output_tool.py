@@ -37,9 +37,7 @@ def register_output_tool(output_tool):
 
 
 def check_output_argument(output_tool):
-    """
-    Function checks whether output_tool argument is allowed
-    """
+    """Function checks whether output_tool argument is allowed"""
     if output_tool not in output_tools.keys():
         logger.error('You have to specify one of these printing output tools %s', output_tools.keys())
         sys.exit(0)
@@ -124,13 +122,12 @@ class TextOutputTool(BaseOutputTool):
 
     @classmethod
     def print_build_logs(cls, rpms, version):
-
         """
         Function is used for printing rpm build logs
-        :param kwargs:
-        :return:
-        """
 
+        :param kwargs: 
+        :return: 
+        """
         if rpms.get('logs', None) is None:
             return
         logger_report.info('Available %s logs:', version)
@@ -139,12 +136,11 @@ class TextOutputTool(BaseOutputTool):
 
     @classmethod
     def print_summary(cls, path):
-
         """
         Function is used for printing summary informations
-        :return:
-        """
 
+        :return: 
+        """
         for key, value in six.iteritems(OutputLogger.get_summary_info()):
             logger.info("%s %s\n", key, value)
 
@@ -166,10 +162,7 @@ class TextOutputTool(BaseOutputTool):
 
     @classmethod
     def print_pkgdiff_tool(cls):
-
-        """
-        Function prints a summary information about pkgcomparetool
-        """
+        """Function prints a summary information about pkgcomparetool"""
         if OutputLogger.get_checkers():
             for check, data in six.iteritems(OutputLogger.get_checkers()):
                 logger_report.info("=== Checker %s results ===", check)
@@ -198,6 +191,6 @@ class OutputTool(object):
             raise NotImplementedError("Unsupported output tool")
 
     def print_information(self, path):
-        """ Build sources. """
+        """Build sources."""
         logger.debug("Printing information using '%s'", self._output_tool_name)
         return self._tool.print_summary(path)

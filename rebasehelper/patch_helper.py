@@ -89,7 +89,6 @@ class GitPatchTool(PatchBase):
         Function applies patches to old sources
         It tries apply patch with am command and if it fails
         then with command --apply
-
         """
         logger.debug('Applying patch with am')
 
@@ -209,9 +208,7 @@ class GitPatchTool(PatchBase):
 
     @staticmethod
     def commit_patch(git_helper, patch_name):
-
         """Function commits patched files to git"""
-
         logger.debug('Commit patch')
         ret_code = git_helper.command_add_files(parameters=['--all'])
         if int(ret_code) != 0:
@@ -243,9 +240,7 @@ class GitPatchTool(PatchBase):
 
     @classmethod
     def create_prep_script(cls, prep):
-
         """Function abstract special things from prep section and apply them to old sources"""
-
         logger.debug('Extract prep script')
         # Check whether patch or git am is used inside %prep section
         # If yes then execute whole %prep section
@@ -286,9 +281,7 @@ class GitPatchTool(PatchBase):
 
     @classmethod
     def init_git(cls, directory):
-
-        """ Function initialize old and new Git repository"""
-
+        """Function initialize old and new Git repository"""
         gh = GitHelper(directory)
         gh.command_init(directory)
         gh.command_add_files('.')
@@ -296,7 +289,6 @@ class GitPatchTool(PatchBase):
 
     @classmethod
     def run_patch(cls, old_dir, new_dir, rest_sources, git_helper, patches, prep, **kwargs):
-
         """
         The function can be used for patching one
         directory against another
@@ -359,7 +351,7 @@ class Patcher(object):
         :param patches: old patches
         :param rebased_patches: rebased patches
         :param kwargs: --
-        :return:
+        :return: 
         """
         logger.debug("Patching source by patch tool %s", self._patch_tool_name)
         return self._tool.run_patch(old_dir, new_dir, rest_sources, git_helper, patches, prep, **kwargs)
