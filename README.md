@@ -40,4 +40,4 @@ Packages which needs to be installed before you execute rebase-helper for first 
 
 ## How to execute rebase-helper from CLI
 
-Go to a git directory of your package and execute command ./rebase-helper <new_upstream_version>
+Go to a git directory of your package and execute command /path_to_rebase-helper/rebase-helper.py <new_upstream_version> (e.g. /home/user/phracek/rebase-helper/rebase-helper.py "3.1.10")
