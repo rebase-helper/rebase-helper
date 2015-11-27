@@ -182,6 +182,23 @@ class ZipArchiveType(ArchiveTypeBase):
 
 
 @register_archive_type
+class AscArchiveType(ArchiveTypeBase):
+    """ .asc files are not archives - this is a PGP file type"""
+    EXTENSION = ".asc"
+
+    @classmethod
+    def open(cls, filename=None):
+        pass
+
+    @classmethod
+    def extract(cls, archive=None, filename=None, path=None, *args, **kwargs):
+        if archive is not None:
+            raise RuntimeError("In Asc files, the archive (pos 1) argument is not used, but passed")
+        final_dir = os.path.join(path, os.path.basename(filename.rstrip(cls.EXTENSION)))
+        os.makedirs(final_dir)
+        shutil.copy(filename, final_dir)
+
+@register_archive_type
 class GemPseudoArchiveType(ArchiveTypeBase):
     """ .gem files are not archives - this is a pseudo type """
     EXTENSION = ".gem"
