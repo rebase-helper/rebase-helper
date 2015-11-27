@@ -23,6 +23,10 @@
 import os
 import shutil
 import tempfile
+import pytest
+
+skip_on_travis = pytest.mark.skipif(os.getenv('TRAVIS') == 'true',
+                                    reason='redundant on Travis CI')
 
 
 class BaseTest(object):

@@ -16,6 +16,3 @@ sudo apt-get -qq update || exit 1
 
 # install package
 sudo apt-get -y install "$package" || exit 1
-
-# patch test_utils.py to remove rpm tests
-patch -p1 -i rpm_test.patch

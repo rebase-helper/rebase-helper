@@ -27,6 +27,7 @@ import string
 import sys
 from six import StringIO
 
+from .base_test import skip_on_travis
 from .base_test import BaseTest
 from rebasehelper.utils import ConsoleHelper
 from rebasehelper.utils import DownloadHelper
@@ -489,6 +490,7 @@ class TestTemporaryEnvironment(BaseTest):
         os.unlink(tmp_path)
 
 
+@skip_on_travis
 class TestRpmHelper(BaseTest):
     """ RpmHelper class tests. """
 
