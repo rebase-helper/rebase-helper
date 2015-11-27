@@ -193,7 +193,7 @@ class AscArchiveType(ArchiveTypeBase):
     @classmethod
     def extract(cls, archive=None, filename=None, path=None, *args, **kwargs):
         if archive is not None:
-		        raise RuntimeError("In Asc files, the archive (pos 1) argument is not used, but passed")
+            raise RuntimeError("In Asc files, the archive (pos 1) argument is not used, but passed")
         final_dir = os.path.join(path, os.path.basename(filename.rstrip(cls.EXTENSION)))
         os.makedirs(final_dir)
         shutil.copy(filename, final_dir)
