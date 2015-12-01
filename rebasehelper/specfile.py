@@ -386,7 +386,7 @@ class SpecFile(object):
         :return: 
         """
         for line in self.spec_content:
-            match = re.search(r'Release:\s*([0-9.]+).*%{\?dist}\s*', line)
+            match = re.search(r'^Release:\s*([0-9.]+).*%{\?dist}\s*', line)
             if match:
                 return match.group(1)
 
@@ -708,7 +708,7 @@ class SpecFile(object):
         :param macro: 
         :return: 
         """
-        search_re = re.compile('Release:\s*[0-9.]*[0-9]+{0}%{{\?dist}}\s*'.format(macro))
+        search_re = re.compile('^Release:\s*[0-9.]*[0-9]+{0}%{{\?dist}}\s*'.format(macro))
 
         for index, line in enumerate(self.spec_content):
             match = search_re.search(line)
@@ -760,7 +760,7 @@ class SpecFile(object):
         :param version: string with new version
         :return: None
         """
-        version_re = re.compile('Version:\s*(.+)')
+        version_re = re.compile('^Version:\s*(.+)')
         for index, line in enumerate(self.spec_content):
             match = version_re.search(line)
             if match:
@@ -815,7 +815,7 @@ class SpecFile(object):
                 self.set_release_number('0.1')
                 self.redefine_release_with_macro(extra_version_macro)
                 # change the Source0 definition
-                source0_re = re.compile(r'Source0?:.*')
+                source0_re = re.compile(r'^Source0?:.*')
                 for index, line in enumerate(self.spec_content):
                     if source0_re.search(line):
                         # comment out the original Source0 line
