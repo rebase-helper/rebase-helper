@@ -168,6 +168,7 @@ class PkgDiffTool(BaseChecker):
     pkgdiff_results_filename = 'pkgdiff_reports.html'
     files_xml = "files.xml"
     results_dir = ''
+    results_dict = {}
 
     @classmethod
     def match(cls, cmd=None):
@@ -178,6 +179,12 @@ class PkgDiffTool(BaseChecker):
 
     @classmethod
     def _create_xml(cls, name, input_structure):
+        """
+        Function creates a XML format for pkgdiff command
+        :param name: package name
+        :param input_structure: structure provided by OutputLogger.get_build('new' or 'old')
+        :return:
+        """
         file_name = os.path.join(cls.results_dir, name + ".xml")
         tags = {'version': input_structure.get('version', ""),
                 'group': input_structure.get('name', ''),
@@ -196,73 +203,73 @@ class PkgDiffTool(BaseChecker):
         return file_name
 
     @classmethod
-    def _remove_not_changed_files(cls, file_list):
-        file_list = [x for x in file_list if not x.endswith('(0%)')]
-        # We need to return string without percentage
-        return file_list
+    def _remove_not_changed_files(cls):
+        """
+        Function removes all rows which were not changed
+        """
+        for tag in settings.CHECKER_TAGS:
+            cls.results_dict[tag] = [x for x in cls.results_dict[tag] if not x.endswith('(0%)')]
 
     @classmethod
-    def fill_dictionary(cls, result_dir):
+    def fill_dictionary(cls, result_dir, old_version, new_version):
         """
         Parsed files.xml and symbols.xml and fill dictionary
-
-        :return: 
+        :param result_dir: where should be stored file for pkgdiff
+        :param old_version: old version of package
+        :param new_version: new version of package
+        :return:
         """
         XML_FILES = ['files.xml', 'symbols.xml']
-        results_dict = {}
 
         for tag in settings.CHECKER_TAGS:
-            results_dict[tag] = []
+            cls.results_dict[tag] = []
         for file_name in [os.path.join(result_dir, x) for x in XML_FILES]:
             logger.info('Processing %s file.', file_name)
             try:
                 with open(file_name, "r") as f:
-                    lines = f.readlines()
-                    lines.insert(0, '<pkgdiff>')
+                    lines = ['<pkgdiff>']
+                    lines.extend(f.readlines())
                     lines.append('</pkgdiff>')
                     pkgdiff_tree = ElementTree.fromstringlist(lines)
                     for tag in settings.CHECKER_TAGS:
                         for pkgdiff in pkgdiff_tree.findall('.//' + tag):
-                            results_dict[tag].extend([x.strip() for x in pkgdiff.text.strip().split('\n')])
+                            files = [x.strip() for x in pkgdiff.text.strip().split('\n')]
+                            files = [x.replace(old_version, '*') for x in files]
+                            files = [x.replace(new_version, '*') for x in files]
+                            cls.results_dict[tag].extend(files)
             except IOError:
                 continue
 
-        return results_dict
-
     @classmethod
-    def _update_added_removed(cls, results_dict, key):
-        update = []
-        for items in results_dict[key]:
-            # We find whether file exists in 'moved' section
-            # If yes then do not include in key set
-            found = [x for x in results_dict['moved'] if items in x]
-            if not found:
-                update.append(items)
-        return update
-
-    @classmethod
-    def _update_changed_moved(cls, results_dict, key):
+    def _update_changed_moved(cls, key):
         updated_list = []
-        for item in results_dict[key]:
+        for item in cls.results_dict[key]:
             fields = item.split(';')
-            found = [x for x in results_dict['changed'] if os.path.basename(fields[0]) in x]
+            found = [x for x in cls.results_dict['changed'] if os.path.basename(fields[0]) in x]
             if not found:
                 updated_list.append(item)
         return updated_list
 
     @classmethod
     def _remove_not_checked_files(cls, results_dict):
+        """
+        Function removes things which we don't care like
+        ['.build-id', '.dwz']
+        :return:
+        """
         update_list = []
         removed_things = ['.build-id', '.dwz']
         for item in results_dict:
             removed = [x for x in removed_things if x in item]
             if removed:
                 continue
+            if item.endswith('.debug'):
+                continue
             update_list.append(item)
         return update_list
 
     @classmethod
-    def process_xml_results(cls, result_dir):
+    def process_xml_results(cls, result_dir, old_version, new_version):
         """
         Function for filling dictionary with keys like 'added', 'removed'
 
@@ -272,30 +279,36 @@ class PkgDiffTool(BaseChecker):
                          'moved': [list of moved]
                         }
         """
-        results_dict = cls.fill_dictionary(result_dir)
+        cls.fill_dictionary(result_dir, old_version, new_version)
 
-        # TODO for now we are skipping the some files/directories
-        for items in ['added', 'removed']:
-            results_dict[items] = cls._update_added_removed(results_dict, items)
-        # remove unchanged files and remove things which are not checked
+        # Remove all files which were not changed
+        cls._remove_not_changed_files()
         for tag in settings.CHECKER_TAGS:
-            results_dict[tag] = cls._remove_not_changed_files(results_dict[tag])
-            results_dict[tag] = cls._remove_not_checked_files(results_dict[tag])
+            cls.results_dict[tag] = cls._remove_not_checked_files(cls.results_dict[tag])
+
+        added, removed = set(cls.results_dict['added']), set(cls.results_dict['removed'])
+        cls.results_dict['added'] = list(added - removed)
+        cls.results_dict['removed'] = list(removed - added)
+
+        # remove unchanged files and remove things which are not checked
         # remove files from 'moved' if they are in 'changed' section
-        results_dict['moved'] = cls._update_changed_moved(results_dict, 'moved')
+        cls.results_dict['moved'] = cls._update_changed_moved('moved')
 
         # Remove empty items
-        return dict((k, v) for k, v in six.iteritems(results_dict) if v)
+        return dict((k, v) for k, v in six.iteritems(cls.results_dict) if v)
 
     @classmethod
     def run_check(cls, results_dir):
-        """Compares old and new RPMs using pkgdiff"""
+        """
+        Compares old and new RPMs using pkgdiff
+        :param results_dir result dir where are stored results
+        """
         cls.results_dir = results_dir
         cls.pkgdiff_results_full_path = os.path.join(cls.results_dir, cls.pkgdiff_results_filename)
 
-        versions = ['old', 'new']
         cmd = [cls.CMD]
-        for version in versions:
+        cmd.append('-hide-unchanged')
+        for version in ['old', 'new']:
             old = OutputLogger.get_build(version)
             if old:
                 file_name = cls._create_xml(version, input_structure=old)
@@ -314,10 +327,17 @@ class PkgDiffTool(BaseChecker):
         if int(ret_code) != 0 and int(ret_code) != 1:
             raise RebaseHelperError('Execution of %s failed.\nCommand line is: %s' % (cls.CMD, cmd))
         OutputLogger.set_info_text('Result HTML page from pkgdiff is store in: ', cls.pkgdiff_results_full_path)
-        results_dict = cls.process_xml_results(cls.results_dir)
+        results_dict = cls.process_xml_results(cls.results_dir,
+                                               OutputLogger.get_build('old').get('version'),
+                                               OutputLogger.get_build('new').get('version'))
         text = []
+
+        import pprint
+        pprint.pprint(results_dict)
+
         for key, val in six.iteritems(results_dict):
-            text.append('Following files were %s:\n%s' % (key, '\n'.join(val)))
+            if val:
+                text.append('Following files were %s:\n%s' % (key, '\n'.join(val)))
 
         pkgdiff_report = os.path.join(cls.results_dir, 'report-' + cls.pkgdiff_results_filename + '.log')
         try:
