@@ -27,6 +27,7 @@ import shutil
 import six
 import rpm
 import argparse
+import shlex
 from datetime import date
 from difflib import SequenceMatcher
 
@@ -478,15 +479,15 @@ class SpecFile(object):
         """Function returns the archives name from SPEC file"""
         return [os.path.basename(x).strip() for x in self.tar_sources]
 
-    def get_prep_section(self):
+    def get_prep_section(self, complete=False):
         """Function returns whole prep section"""
         prep_section = []
-        start_prep_section = False
+        start_prep_section = complete
         for line in self.prep_section.split('\n'):
             if start_prep_section:
                 prep_section.append(line)
                 continue
-            if line.startswith('/usr/bin/chmod -Rf a+rX'):
+            if line.startswith('/usr/bin/chmod -Rf a+rX') and not complete:
                 start_prep_section = True
                 continue
 
@@ -1054,3 +1055,42 @@ class SpecFile(object):
                     self.spec_content[index] = '#{0}'.format(line)
                     self.spec_content.insert(index + 1, ' '.join(args))
                     self.save()
+
+    def find_archive_target_in_prep(self, archive):
+        """
+        Tries to find a command that is used to extract the specified archive
+        and attempts to determine target path from it.
+        'tar' and 'unzip' commands are supported so far.
+
+        :param archive: Path to archive
+        :return: Target path relative to builddir or None if not determined
+        """
+        cd_parser = argparse.ArgumentParser()
+        cd_parser.add_argument('dir', default='')
+        tar_parser = argparse.ArgumentParser()
+        tar_parser.add_argument('-C', default='.', dest='target')
+        unzip_parser = argparse.ArgumentParser()
+        unzip_parser.add_argument('-d', default='.', dest='target')
+        prep = self.get_prep_section(complete=True)
+        archive = os.path.basename(archive)
+        builddir = rpm.expandMacro('%{_builddir}')
+        basedir = builddir
+        for line in prep:
+            if line.strip().startswith('#'):
+                # skip comments
+                continue
+            if 'cd' in line:
+                # keep track of current directory
+                ns, _ = cd_parser.parse_known_args(shlex.split(line)[1:])
+                basedir = ns.dir if os.path.isabs(ns.dir) else os.path.join(basedir, ns.dir)
+            if archive in line:
+                if 'tar' in line:
+                    parser = tar_parser
+                elif 'unzip' in line:
+                    parser = unzip_parser
+                else:
+                    continue
+                ns, _ = parser.parse_known_args(shlex.split(line)[1:])
+                basedir = os.path.relpath(basedir, builddir)
+                return os.path.normpath(os.path.join(basedir, ns.target))
+        return None

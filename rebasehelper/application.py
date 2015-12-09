@@ -356,7 +356,7 @@ class Application(object):
         if toplevel_dir != '.':
             self.rebase_spec_file.update_setup_dirname(toplevel_dir)
 
-        # extract rest of source archives
+        # extract rest of source archives to correct paths
         rest_sources = [self.old_rest_sources, self.new_rest_sources]
         spec_files = [self.spec_file, self.rebase_spec_file]
         sources_dirs = [settings.OLD_SOURCES_DIR, settings.NEW_SOURCES_DIR]
@@ -364,7 +364,9 @@ class Application(object):
             for rest in sources:
                 archive = [x for x in Archive.get_supported_archives() if rest.endswith(x)]
                 if archive:
-                    Application.extract_sources(rest, os.path.join(self.execution_dir, sources_dir))
+                    dest_dir = spec_file.find_archive_target_in_prep(rest)
+                    if dest_dir:
+                        Application.extract_sources(rest, os.path.join(self.execution_dir, sources_dir, dest_dir))
 
         return [old_dir, new_dir]
 
