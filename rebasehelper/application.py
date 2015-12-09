@@ -46,8 +46,9 @@ class Application(object):
     temp_dir = ""
     kwargs = {}
     old_sources = ""
-    rest_sources = []
     new_sources = ""
+    old_rest_sources = []
+    new_rest_sources = []
     spec_file = None
     spec_file_path = None
     rebase_spec_file = None
@@ -183,8 +184,10 @@ class Application(object):
         else:
             self.new_sources = os.path.abspath(self.conf.sources)
         # Contains all source except the Source0
-        self.rest_sources = self.spec_file.get_sources()[1:]
-        self.rest_sources = [os.path.abspath(x) for x in self.rest_sources]
+        self.old_rest_sources = self.spec_file.get_sources()[1:]
+        self.old_rest_sources = [os.path.abspath(x) for x in self.old_rest_sources]
+        self.new_rest_sources = self.rebase_spec_file.get_sources()[1:]
+        self.new_rest_sources = [os.path.abspath(x) for x in self.new_rest_sources]
 
         # We want to inform user immediatelly if compare tool doesn't exists
         if self.conf.pkgcomparetool and self.conf.pkgcomparetool not in Checker.get_supported_tools():
@@ -353,13 +356,15 @@ class Application(object):
         if toplevel_dir != '.':
             self.rebase_spec_file.update_setup_dirname(toplevel_dir)
 
-        # This copies other sources to extracted sources marked as 0
-        for rest in self.rest_sources:
-            for source_dir in [old_dir, new_dir]:
+        # extract rest of source archives
+        rest_sources = [self.old_rest_sources, self.new_rest_sources]
+        spec_files = [self.spec_file, self.rebase_spec_file]
+        sources_dirs = [settings.OLD_SOURCES_DIR, settings.NEW_SOURCES_DIR]
+        for sources, spec_file, sources_dir in zip(rest_sources, spec_files, sources_dirs):
+            for rest in sources:
                 archive = [x for x in Archive.get_supported_archives() if rest.endswith(x)]
-                # if the source is a remote file, download it
                 if archive:
-                    Application.extract_sources(rest, os.path.join(self.execution_dir, source_dir))
+                    Application.extract_sources(rest, os.path.join(self.execution_dir, sources_dir))
 
         return [old_dir, new_dir]
 
@@ -373,7 +378,7 @@ class Application(object):
         try:
             self.rebased_patches = patch.patch(sources[0],
                                                sources[1],
-                                               self.rest_sources,
+                                               self.old_rest_sources,
                                                git_helper,
                                                self.spec_file.get_applied_patches(),
                                                self.spec_file.get_prep_section(),
