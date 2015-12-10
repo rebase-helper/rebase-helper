@@ -286,9 +286,10 @@ class PkgDiffTool(BaseChecker):
         for tag in settings.CHECKER_TAGS:
             cls.results_dict[tag] = cls._remove_not_checked_files(cls.results_dict[tag])
 
-        added, removed = set(cls.results_dict['added']), set(cls.results_dict['removed'])
-        cls.results_dict['added'] = list(added - removed)
-        cls.results_dict['removed'] = list(removed - added)
+        added = [x for x in cls.results_dict['added'] if x not in cls.results_dict['removed']]
+        removed = [x for x in cls.results_dict['removed'] if x not in cls.results_dict['added']]
+        cls.results_dict['added'] = added
+        cls.results_dict['removed'] = removed
 
         # remove unchanged files and remove things which are not checked
         # remove files from 'moved' if they are in 'changed' section
