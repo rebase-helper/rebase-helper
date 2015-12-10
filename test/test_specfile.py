@@ -41,6 +41,7 @@ class TestSpecFile(BaseTest):
     SOURCE_2 = ''
     SOURCE_4 = 'file.txt.bz2'
     SOURCE_5 = 'documentation.tar.xz'
+    SOURCE_6 = 'misc.zip'
     PATCH_1 = 'test-testing.patch'
     PATCH_2 = 'test-testing2.patch'
     PATCH_3 = 'test-testing3.patch'
@@ -115,10 +116,10 @@ class TestSpecFile(BaseTest):
         assert self.SPEC_FILE_OBJECT.get_archive() == self.OLD_ARCHIVE
 
     def test_get_sources(self):
-        sources = [self.SOURCE_0, self.SOURCE_1, self.SOURCE_4, self.SOURCE_5, self.OLD_ARCHIVE]
+        sources = [self.SOURCE_0, self.SOURCE_1, self.SOURCE_4, self.SOURCE_5, self.SOURCE_6, self.OLD_ARCHIVE]
         sources = [os.path.join(self.WORKING_DIR, f) for f in sources]
-        archives = [self.OLD_ARCHIVE, self.SOURCE_4, self.SOURCE_5]
-        assert len(set(sources).intersection(set(self.SPEC_FILE_OBJECT.get_sources()))) == 5
+        archives = [self.OLD_ARCHIVE, self.SOURCE_4, self.SOURCE_5, self.SOURCE_6]
+        assert len(set(sources).intersection(set(self.SPEC_FILE_OBJECT.get_sources()))) == 6
         # The Source0 has to be always in the beginning
         assert self.SPEC_FILE_OBJECT.get_archive() == 'test-1.0.2.tar.xz'
         assert self.SPEC_FILE_OBJECT.get_archives() == archives
@@ -213,6 +214,7 @@ class TestSpecFile(BaseTest):
                             '#Source3: source-tests.sh\n',
                             'Source4: file.txt.bz2\n',
                             'Source5: documentation.tar.xz\n',
+                            'Source6: misc.zip\n',
                             'Patch1: test-testing.patch\n',
                             'Patch2: test-testing2.patch\n',
                             'Patch3: test-testing3.patch\n',
@@ -226,11 +228,13 @@ class TestSpecFile(BaseTest):
                                    '\n']],
             3: ['%description devel', ['Testing devel spec file\n',
                                        '\n']],
-            4: ['%prep', ['%setup -q\n',
+            4: ['%prep', ['%setup -q -a 5\n',
                           '%patch1\n',
                           '%patch2 -p1\n',
                           '%patch3 -p1 -b .testing3\n',
                           '%patch4 -p0 -b .testing4\n',
+                          'mkdir misc\n',
+                          'tar -xf %{SOURCE6} -C misc\n',
                           '\n']],
             5: ['%build', ['autoreconf -vi\n',
                            '\n',
@@ -389,8 +393,14 @@ class TestSpecFile(BaseTest):
 
         self.SPEC_FILE_OBJECT.update_setup_dirname('test-1.0.2rc1')
         prep = self.SPEC_FILE_OBJECT.get_spec_section('%prep')
-        assert '%setup -q -n %{name}-%{REBASE_VER}' in prep
+        assert '%setup -q -a 5 -n %{name}-%{REBASE_VER}' in prep
 
         self.SPEC_FILE_OBJECT.update_setup_dirname('test-1.0.2-rc1')
         prep = self.SPEC_FILE_OBJECT.get_spec_section('%prep')
-        assert '%setup -q -n %{name}-%{version}-%{REBASE_EXTRA_VER}' in prep
+        assert '%setup -q -a 5 -n %{name}-%{version}-%{REBASE_EXTRA_VER}' in prep
+
+    def test_find_archive_target_in_prep(self):
+        target = self.SPEC_FILE_OBJECT.find_archive_target_in_prep('documentation.tar.xz')
+        assert target == 'test-1.0.2'
+        target = self.SPEC_FILE_OBJECT.find_archive_target_in_prep('misc.zip')
+        assert target == 'test-1.0.2/misc'
