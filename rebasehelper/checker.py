@@ -333,9 +333,6 @@ class PkgDiffTool(BaseChecker):
                                                OutputLogger.get_build('new').get('version'))
         text = []
 
-        import pprint
-        pprint.pprint(results_dict)
-
         for key, val in six.iteritems(results_dict):
             if val:
                 text.append('Following files were %s:\n%s' % (key, '\n'.join(val)))
