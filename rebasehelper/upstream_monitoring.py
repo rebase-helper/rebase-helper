@@ -128,13 +128,6 @@ class UpstreamMonitoring(object):
             rh_app.set_upstream_monitoring()
             # TDO After a deep testing app.run() will be used
             result_rh = rh_app.run()
-            #logger_upstream.info(rh_app.kwargs)
-            #sources = rh_app.prepare_sources()
-            #rh_app.patch_sources(sources)
-            #build = rh_app.build_packages()
-            #if build:
-            #    rh_app.pkgdiff_packages()
-            #rh_app.print_summary()
             logger_upstream.info(rh_app.debug_log_file)
             self.report_file = rh_app.report_log_file
             self.log_files = rh_app.get_all_log_files()

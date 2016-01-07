@@ -20,6 +20,7 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
+from __future__ import print_function
 import os
 import shutil
 import logging
@@ -497,6 +498,7 @@ class Application(object):
         else:
             text = self._execute_checkers(self.conf.pkgcomparetool)
             pkgdiff_results[self.conf.pkgcomparetool] = text
+        logger.info(pkgdiff_results)
         for diff_name, result in six.iteritems(pkgdiff_results):
             OutputLogger.set_checker_output(diff_name, result)
 
@@ -512,6 +514,47 @@ class Application(object):
         log_list.append(self.report_log_file)
         return log_list
 
+    def get_new_build_logs(self):
+        result = {}
+        build_logs = None
+        if 'logs' in OutputLogger.get_build('new'):
+            build_logs = OutputLogger.get_build('new')['logs']
+        else:
+            return None
+        rpm_pkgs = []
+        if 'rpm' in OutputLogger.get_build('new'):
+            rpm_pkgs = OutputLogger.get_build('new')['rpm']
+        build_logs = [x for x in build_logs if x.startswith('http')]
+        if rpm_pkgs:
+            result[0] = build_logs
+        else:
+            result[1] = build_logs
+        return result
+
+    def get_checker_outputs(self):
+        checkers = {}
+        if OutputLogger.get_checkers():
+            for check, data in six.iteritems(OutputLogger.get_checkers()):
+                for log, text in six.iteritems(data):
+                    checkers[check] = log
+        return checkers
+
+    def get_rebased_patches(self):
+        """
+        Function returns a list of patches either
+        '': [list_of_deleted_patches]
+        :return:
+        """
+        patches = False
+        output_patch_string = []
+        for key, val in six.iteritems(OutputLogger.get_patches()):
+            if key:
+                output_patch_string.append('Following patches has been %s:\n%s' % (key, val))
+                patches = True
+        if not patches:
+            output_patch_string.append('Patches were not touched. All were applied properly')
+        return output_patch_string
+
     def print_summary(self):
         output_tool.check_output_argument(self.conf.outputtool)
         output = output_tool.OutputTool(self.conf.outputtool)
@@ -520,6 +563,14 @@ class Application(object):
 
     def set_upstream_monitoring(self):
         self.upstream_monitoring = True
+
+    def get_rebasehelper_data(self):
+        rh_stuff = {}
+        rh_stuff['build_logs'] = self.get_new_build_logs()
+        rh_stuff['patches'] = self.get_rebased_patches()
+        rh_stuff['checkers'] = self.get_checker_outputs()
+        rh_stuff['logs'] = self.get_all_log_files()
+        return rh_stuff
 
     def run(self):
         sources = self.prepare_sources()
