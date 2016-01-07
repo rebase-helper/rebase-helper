@@ -498,9 +498,10 @@ class Application(object):
         else:
             text = self._execute_checkers(self.conf.pkgcomparetool)
             pkgdiff_results[self.conf.pkgcomparetool] = text
-        logger.info(pkgdiff_results)
-        for diff_name, result in six.iteritems(pkgdiff_results):
-            OutputLogger.set_checker_output(diff_name, result)
+        if pkgdiff_results:
+            logger.info(pkgdiff_results)
+            for diff_name, result in six.iteritems(pkgdiff_results):
+                OutputLogger.set_checker_output(diff_name, result)
 
     def get_all_log_files(self):
         """
