@@ -132,13 +132,13 @@ class TestDownloadHelper(BaseTest):
 
     KNOWN_URL = 'http://fedoraproject.org/static/hotspot.txt'
     LOCAL_FILE = os.path.basename(KNOWN_URL)
-    KNOWN_URL_CONTENT = 'OK\n'
+    KNOWN_URL_CONTENT = 'OK'
 
     def test_download_source(self):
         DownloadHelper.download_file(self.KNOWN_URL, self.LOCAL_FILE)
         assert os.path.isfile(self.LOCAL_FILE)
         with open(self.LOCAL_FILE) as f:
-            assert f.read() == self.KNOWN_URL_CONTENT
+            assert f.read().strip() == self.KNOWN_URL_CONTENT
 
 
 class TestProcessHelper(BaseTest):
