@@ -536,8 +536,11 @@ class Application(object):
         checkers = {}
         if OutputLogger.get_checkers():
             for check, data in six.iteritems(OutputLogger.get_checkers()):
-                for log, text in six.iteritems(data):
-                    checkers[check] = log
+                if data:
+                    for log, text in six.iteritems(data):
+                        checkers[check] = log
+                else:
+                    checkers[check] = None
         return checkers
 
     def get_rebased_patches(self):
