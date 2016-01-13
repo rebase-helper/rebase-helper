@@ -20,6 +20,7 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
+from __future__ import print_function
 import shutil
 import os
 import random
@@ -583,7 +584,7 @@ class FedpkgBuildTool(BuildToolBase):
         if not tasklist:
             return
         # Place holder for return value
-        tasks_x86_64 = {}
+        rh_tasks = {}
         try:
             tasks = {}
 
@@ -599,15 +600,15 @@ class FedpkgBuildTool(BuildToolBase):
                     if state == koji.TASK_STATES['FAILED']:
                         return {info['id']: state}
                     else:
-                        if info['arch'] == 'x86_64':
-                            tasks_x86_64[info['id']] = state
+                        if info['arch'] == 'x86_64' or info['arch'] == 'noarch':
+                            rh_tasks[info['id']] = state
                     if not task.is_done():
                         all_done = False
                     else:
                         if changed:
                             cls._display_task_results(tasks)
                         if not task.is_success():
-                            tasks_x86_64 = None
+                            rh_tasks = None
                     try:
                         for child in session.getTaskChildren(task_id):
                             child_id = child['id']
@@ -625,8 +626,8 @@ class FedpkgBuildTool(BuildToolBase):
                                 if state == koji.TASK_STATES['FAILED']:
                                     return {info['id']: state}
                                 else:
-                                    if info['arch'] == 'x86_64':
-                                        tasks_x86_64[info['id']] = state
+                                    if info['arch'] == 'x86_64' or info['arch'] == 'noarch':
+                                        rh_tasks[info['id']] = state
                                 all_done = False
                     except SSL.SysCallError as exc:
                         logger.error('We have detected a exception %s' % exc.message)
@@ -639,8 +640,8 @@ class FedpkgBuildTool(BuildToolBase):
         except (KeyboardInterrupt):
             # A ^c should return non-zero so that it doesn't continue
             # on to any && commands.
-            tasks_x86_64 = None
-        return tasks_x86_64
+            rh_tasks = None
+        return rh_tasks
 
     @classmethod
     def _download_scratch_build(cls, task_list, dir_name):
