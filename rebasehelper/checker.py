@@ -382,6 +382,9 @@ class AbiCheckerTool(BaseChecker):
         debug_old, rest_pkgs_old = cls._get_packages_for_abipkgdiff(OutputLogger.get_build('old'))
         debug_new, rest_pkgs_new = cls._get_packages_for_abipkgdiff(OutputLogger.get_build('new'))
         cmd = [cls.CMD]
+        if debug_old is None:
+            logger.warning("Package doesn't contain any debug package")
+            return None
         try:
             cmd.append('--d1')
             cmd.append(debug_old[0])
