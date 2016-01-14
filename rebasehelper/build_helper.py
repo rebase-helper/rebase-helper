@@ -662,7 +662,7 @@ class FedpkgBuildTool(BuildToolBase):
                                                  downloaded_file)
                     if filename.endswith('.rpm'):
                         rpms.append(downloaded_file)
-                    if filename.endswith('build.log'):
+                    if filename.endswith('.log'):
                         logs.append(downloaded_file)
         session.logout()
         return rpms, logs
