@@ -31,7 +31,7 @@ from rebasehelper.specfile import SpecFile, get_rebase_name
 from rebasehelper.logger import logger, logger_report, LoggerHelper
 from rebasehelper import settings
 from rebasehelper import output_tool
-from rebasehelper.utils import PathHelper, RpmHelper, ConsoleHelper, GitHelper
+from rebasehelper.utils import PathHelper, RpmHelper, ConsoleHelper, GitHelper, KojiHelper
 from rebasehelper.checker import Checker
 from rebasehelper.build_helper import Builder, SourcePackageBuildError, BinaryPackageBuildError, koji_builder
 from rebasehelper.patch_helper import Patcher
@@ -412,7 +412,7 @@ class Application(object):
                         (spec_object.get_package_name(), spec_object.get_version()))
             while True:
                 try:
-                    build_dict.update(builder.build(spec, sources, patches, results_dir, **build_dict))
+                    build_dict.update(builder.build(spec, sources, patches, results_dir, self.upstream_monitoring, **build_dict))
                     OutputLogger.set_build_data(version, build_dict)
                     break
 
@@ -517,19 +517,24 @@ class Application(object):
 
     def get_new_build_logs(self):
         result = {}
-        build_logs = None
         if 'logs' in OutputLogger.get_build('new'):
-            build_logs = OutputLogger.get_build('new')['logs']
+            logs = OutputLogger.get_build('new')['logs']
+            try:
+                result['logs'] = [x for x in logs if not x.startswith('http')]
+            except TypeError:
+                result['logs'] = None
         else:
             return None
-        rpm_pkgs = []
-        if 'rpm' in OutputLogger.get_build('new'):
-            rpm_pkgs = OutputLogger.get_build('new')['rpm']
-        build_logs = [x for x in build_logs if x.startswith('http')]
-        if rpm_pkgs:
-            result[0] = build_logs
-        else:
-            result[1] = build_logs
+        result['build_ref'] = {}
+        for version in ['old', 'new']:
+            if 'rpm' in OutputLogger.get_build(version):
+                rpm_pkgs = OutputLogger.get_build(version)['rpm']
+                if rpm_pkgs:
+                    try:
+                        build_logs = [x for x in logs if x.startswith('http')]
+                        result['build_ref'][version] = build_logs
+                    except TypeError:
+                        result['build_ref'][version] = rpm_pkgs
         return result
 
     def get_checker_outputs(self):
@@ -551,10 +556,11 @@ class Application(object):
         """
         patches = False
         output_patch_string = []
-        for key, val in six.iteritems(OutputLogger.get_patches()):
-            if key:
-                output_patch_string.append('Following patches has been %s:\n%s' % (key, val))
-                patches = True
+        if OutputLogger.get_patches():
+            for key, val in six.iteritems(OutputLogger.get_patches()):
+                if key:
+                    output_patch_string.append('Following patches has been %s:\n%s' % (key, val))
+                    patches = True
         if not patches:
             output_patch_string.append('Patches were not touched. All were applied properly')
         return output_patch_string
@@ -576,9 +582,25 @@ class Application(object):
         rh_stuff['logs'] = self.get_all_log_files()
         return rh_stuff
 
+    def run_download_compare(self, tasks_dict, dir_name):
+        self.set_upstream_monitoring()
+        kh = KojiHelper()
+        rh_dict = {}
+        for version in ['old', 'new']:
+            compare_dirname = os.path.join(dir_name, version)
+            if not os.path.exists(compare_dirname):
+                os.mkdir(compare_dirname, 0o777)
+            (task, upstream_version, package) = tasks_dict[version]
+            rh_dict['rpm'], rh_dict['logs'] = kh.get_koji_tasks([task], compare_dirname)
+            rh_dict['version'] = upstream_version
+            rh_dict['name'] = package
+            OutputLogger.set_build_data(version, rh_dict)
+        self.pkgdiff_packages()
+        rh_stuff = self.get_rebasehelper_data()
+        return rh_stuff
+
     def run(self):
         sources = self.prepare_sources()
-
         if not self.conf.build_only and not self.conf.comparepkgs:
             self.patch_sources(sources)
 
@@ -590,6 +612,9 @@ class Application(object):
                 # Build packages
                 try:
                     build = self.build_packages()
+                    if self.upstream_monitoring:
+                        print(self.get_rebasehelper_data())
+                        return 0
                 except RuntimeError:
                     logger.error('Not know error caused by build log analysis')
                     return 1

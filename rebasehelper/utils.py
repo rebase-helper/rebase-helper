@@ -32,12 +32,25 @@ import shutil
 import rpm
 import six
 import locale
+import time
+import random
+import string
+import urlgrabber
+
 from six import StringIO
 from six.moves import input
 from distutils.util import strtobool
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.logger import logger
 from rebasehelper import settings
+
+koji_builder = True
+try:
+    import koji
+    from pyrpkg.cli import TaskWatcher
+    from OpenSSL import SSL
+except ImportError:
+    koji_builder = False
 
 defenc = locale.getpreferredencoding()
 defenc = 'utf-8' if defenc == 'ascii' else defenc
@@ -781,3 +794,186 @@ One of the possible configuration can be:\n
     def get_output_data(self):
         """Function returns output_data after calling call_git_command"""
         return self.output_data
+
+
+class KojiHelper(object):
+
+    cert = os.path.expanduser('~/.fedora.cert')
+    ca_cert = os.path.expanduser('~/.fedora-server-ca.cert')
+    koji_web = "koji.fedoraproject.org"
+    server = "https://%s/kojihub" % koji_web
+    scratch_url = "http://%s/work/" % koji_web
+    baseurl = 'http://kojipkgs.fedoraproject.org/work/'
+    server_http = "http://%s/kojihub" % koji_web
+
+    @classmethod
+    def _unique_path(cls, prefix):
+        suffix = ''.join([random.choice(string.ascii_letters) for i in range(8)])
+        return '%s/%r.%s' % (prefix, time.time(), suffix)
+
+    @classmethod
+    def session_maker(cls, baseurl=None):
+        if baseurl is None:
+            koji_session = koji.ClientSession(cls.server, {'timeout': 3600})
+        else:
+            koji_session = koji.ClientSession(baseurl)
+            return koji_session
+        koji_session.ssl_login(cls.cert, cls.ca_cert, cls.ca_cert)
+        return koji_session
+
+    @classmethod
+    def upload_srpm(cls, session, source):
+        server_dir = cls._unique_path('cli-build')
+        session.uploadWrapper(source, server_dir)
+        return '%s/%s' % (server_dir, os.path.basename(source))
+
+    @classmethod
+    def display_task_results(cls, tasks):
+        """Function is copy/paste from pyrpkg/cli.py"""
+        for task in [task for task in tasks.values() if task.level == 0]:
+            state = task.info['state']
+            task_label = task.str()
+
+            logger.info('State %s (%s)', state, task_label)
+            if state == koji.TASK_STATES['CLOSED']:
+                logger.info('%s completed successfully', task_label)
+            elif state == koji.TASK_STATES['FAILED']:
+                logger.info('%s failed', task_label)
+            elif state == koji.TASK_STATES['CANCELED']:
+                logger.info('%s was canceled', task_label)
+            else:
+                # shouldn't happen
+                logger.info('%s has not completed', task_label)
+
+    @classmethod
+    def watch_koji_tasks(cls, session, tasklist):
+        """Function is copy/paste from pyrpkg/cli.py"""
+        if not tasklist:
+            return
+        # Place holder for return value
+        rh_tasks = {}
+        try:
+            tasks = {}
+
+            for task_id in tasklist:
+                tasks[task_id] = TaskWatcher(task_id, session, logger,
+                                             quiet=False)
+            while True:
+                all_done = True
+                for task_id, task in tasks.items():
+                    changed = task.update()
+                    info = session.getTaskInfo(task_id)
+                    state = task.info['state']
+                    if state == koji.TASK_STATES['FAILED']:
+                        return {info['id']: state}
+                    else:
+                        if info['arch'] == 'x86_64' or info['arch'] == 'noarch':
+                            rh_tasks[info['id']] = state
+                    if not task.is_done():
+                        all_done = False
+                    else:
+                        if changed:
+                            cls.display_task_results(tasks)
+                        if not task.is_success():
+                            rh_tasks = None
+                    try:
+                        for child in session.getTaskChildren(task_id):
+                            child_id = child['id']
+                            if child_id not in tasks.keys():
+                                tasks[child_id] = TaskWatcher(child_id,
+                                                              session,
+                                                              logger,
+                                                              task.level + 1,
+                                                              quiet=False)
+                                tasks[child_id].update()
+                                # If we found new children, go through the list
+                                # again, in case they have children also
+                                info = session.getTaskInfo(child_id)
+                                state = task.info['state']
+                                if state == koji.TASK_STATES['FAILED']:
+                                    return {info['id']: state}
+                                else:
+                                    if info['arch'] == 'x86_64' or info['arch'] == 'noarch':
+                                        rh_tasks[info['id']] = state
+                                all_done = False
+                    except SSL.SysCallError as exc:
+                        logger.error('We have detected a exception %s' % exc.message)
+                        pass
+                if all_done:
+                    cls.display_task_results(tasks)
+                    break
+
+                time.sleep(1)
+        except (KeyboardInterrupt):
+            # A ^c should return non-zero so that it doesn't continue
+            # on to any && commands.
+            rh_tasks = None
+        return rh_tasks
+
+    @classmethod
+    def download_scratch_build(cls, task_list, dir_name):
+        session = cls.session_maker()
+        rpms = []
+        logs = []
+        for task_id in task_list:
+            logger.info('Downloading packages and logs for %s taskID', task_id)
+            task = session.getTaskInfo(task_id)
+            tasks = [task]
+            for task in tasks:
+                base_path = koji.pathinfo.taskrelpath(task_id)
+                output = session.listTaskOutput(task['id'])
+                for filename in output:
+                    logger.info('Downloading file %s', filename)
+                    downloaded_file = os.path.join(dir_name, filename)
+                    DownloadHelper.download_file(cls.scratch_url + base_path + '/' + filename,
+                                                 downloaded_file)
+                    if filename.endswith('.rpm'):
+                        rpms.append(downloaded_file)
+                    if filename.endswith('.log'):
+                        logs.append(downloaded_file)
+        session.logout()
+        return rpms, logs
+
+    @classmethod
+    def get_koji_tasks(cls, task_list, dir_name):
+        session = cls.session_maker(baseurl=cls.server_http)
+        task_list = [int(task) for task in task_list]
+        rpm = []
+        logs = []
+        for task_id in task_list:
+            tasks = []
+            task = session.getTaskInfo(task_id, request=True)
+            if task['state'] in (koji.TASK_STATES['FREE'], koji.TASK_STATES['OPEN']):
+                continue
+            elif task['state'] != koji.TASK_STATES['CLOSED']:
+                logger.info('Task %i did not complete successfully')
+
+            if task['method'] == 'build':
+                logger.info('Getting rpms for chilren of task %i: %s' % (task['id'], koji.taskLabel(task)))
+                # getting rpms from children of task
+                tasks = session.listTasks(opts={'parent': task_id,
+                                                'method': 'buildArch',
+                                                'state': [koji.TASK_STATES['CLOSED'], koji.TASK_STATES['FAILED']],
+                                                'decode': True})
+            elif task['method'] == 'buildArch':
+                tasks = [task]
+            for task in tasks:
+                base_path = koji.pathinfo.taskrelpath(task['id'])
+                output = session.listTaskOutput(task['id'])
+                if output is None:
+                    return None
+                for filename in output:
+                    full_path_name = os.path.join(dir_name, filename)
+                    if filename.endswith('.src.rpm'):
+                        continue
+                    if filename.endswith('.rpm'):
+                        arch = filename.rsplit('.', 3)[2]
+                        download = arch in ['noarch', 'x86_64']
+                        rpm.append(full_path_name)
+                    else:
+                        download = True
+                        logs.append(full_path_name)
+                    if download:
+                        urlgrabber.grabber.urlgrab(cls.baseurl + base_path + '/' + filename,
+                                                   full_path_name)
+        return rpm, logs
