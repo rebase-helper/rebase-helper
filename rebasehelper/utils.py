@@ -152,8 +152,15 @@ class DownloadHelper(object):
         """
         def progress(download_total, downloaded, upload_total, uploaded):
             r = downloaded / download_total if download_total else 0.0
+            t = time.time() - start
+            if 0.0 < r < 1.0:
+                h, rem = divmod(int(t/r - t), 3600)
+                m, s = divmod(rem, 60)
+                est = '({:0>2d}:{:0>2d}:{:0>2d} remaining)'.format(h, m, s)
+            else:
+                est = '                    '
             # no point to log progress, write directly to stdout
-            sys.stdout.write('{:>3d}%\r'.format(int(r * 100)))
+            sys.stdout.write('{:>3d}% {}\r'.format(int(r * 100), est))
             sys.stdout.flush()
             return 0
 
@@ -171,6 +178,7 @@ class DownloadHelper(object):
             curl.setopt(pycurl.PROGRESSFUNCTION, progress)
             try:
                 logger.info('Downloading sources from URL %s', url)
+                start = time.time()
                 curl.perform()
                 sys.stdout.write('\n')
                 sys.stdout.flush()
