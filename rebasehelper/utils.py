@@ -35,7 +35,6 @@ import locale
 import time
 import random
 import string
-import urlgrabber
 
 from six import StringIO
 from six.moves import input
@@ -974,6 +973,6 @@ class KojiHelper(object):
                         download = True
                         logs.append(full_path_name)
                     if download:
-                        urlgrabber.grabber.urlgrab(cls.baseurl + base_path + '/' + filename,
-                                                   full_path_name)
+                        DownloadHelper.download_file(cls.baseurl + base_path + '/' + filename,
+                                                     full_path_name)
         return rpm, logs
