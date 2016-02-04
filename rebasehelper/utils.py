@@ -150,6 +150,13 @@ class DownloadHelper(object):
         :param destination_name: path where to store downloaded file
         :return: None
         """
+        def progress(download_total, downloaded, upload_total, uploaded):
+            r = downloaded / download_total if download_total else 0.0
+            # no point to log progress, write directly to stdout
+            sys.stdout.write('{:>3d}%\r'.format(int(r * 100)))
+            sys.stdout.flush()
+            return 0
+
         if os.path.exists(destination_name):
             return
         with open(destination_name, 'wb') as f:
@@ -160,9 +167,13 @@ class DownloadHelper(object):
             curl.setopt(pycurl.MAXREDIRS, 5)
             curl.setopt(pycurl.TIMEOUT, 300)
             curl.setopt(pycurl.WRITEDATA, f)
+            curl.setopt(pycurl.NOPROGRESS, 0)
+            curl.setopt(pycurl.PROGRESSFUNCTION, progress)
             try:
                 logger.info('Downloading sources from URL %s', url)
                 curl.perform()
+                sys.stdout.write('\n')
+                sys.stdout.flush()
             except pycurl.error as error:
                 curl.close()
                 raise ReferenceError("Downloading '%s' failed with error '%s'." % (url, error))
