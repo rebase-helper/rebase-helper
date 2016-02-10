@@ -397,7 +397,7 @@ class RpmbuildBuildTool(BuildToolBase):
             return False
 
     @classmethod
-    def build(cls, spec, sources, patches, results_dir, upstream_monitoring=False, **kwargs):
+    def build(cls, spec, sources, patches, results_dir, **kwargs):
         """
         Builds the SRPM and RPMs using rpmbuild
 
@@ -544,12 +544,13 @@ class FedpkgBuildTool(BuildToolBase):
             return PathHelper.find_first_file(workdir, '*.src.rpm')
 
     @classmethod
-    def _scratch_build(cls, source, upstream_monitoring):
+    def _scratch_build(cls, source, **kwargs):
+        koji_task_id = None
         session = cls.koji_helper.session_maker()
         remote = cls.koji_helper.upload_srpm(session, source)
         task_id = session.build(remote, cls.target_tag, cls.opts, priority=cls.priority)
-        if upstream_monitoring:
-            return [task_id], None
+        if kwargs['builds_nowait']:
+            return None, None, task_id
         weburl = cls.weburl + '/taskinfo?taskID=%i' % task_id
         logger.info('Koji task_id is here:\n' + weburl)
         session.logout()
@@ -568,14 +569,14 @@ class FedpkgBuildTool(BuildToolBase):
             cls.logs.append(weburl)
             raise BinaryPackageBuildError
         logs.append(weburl)
-        return rpms, logs
+        return rpms, logs, koji_task_id
 
     @classmethod
     def get_logs(cls):
         return {'logs': cls.logs}
 
     @classmethod
-    def build(cls, spec, sources, patches, results_dir, upstream_monitoring=False, **kwargs):
+    def build(cls, spec, sources, patches, results_dir, **kwargs):
         """
         Builds the SRPM using rpmbuild
         Builds the RPMs using fedpkg
@@ -608,10 +609,11 @@ class FedpkgBuildTool(BuildToolBase):
         rpm_results_dir = os.path.join(results_dir, "RPM")
         os.makedirs(rpm_results_dir)
         cls.koji_helper = KojiHelper()
-        rpms, logs = cls._scratch_build(srpm, upstream_monitoring)
+        rpms, logs, koji_task_id = cls._scratch_build(srpm, **kwargs)
         return {'srpm': srpm,
                 'rpm': rpms,
-                'logs': logs}
+                'logs': logs,
+                'koji_task_id': koji_task_id}
 
 
 class Builder(object):

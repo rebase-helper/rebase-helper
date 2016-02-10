@@ -500,7 +500,7 @@ class RpmHelper(object):
         Function returns a rpm header from given rpm package
         for later on analysis
 
-        :param pkg_name: 
+        :param rpm_name:
         :return: 
         """
         ts = rpm.TransactionSet()
@@ -953,45 +953,52 @@ class KojiHelper(object):
         return rpms, logs
 
     @classmethod
-    def get_koji_tasks(cls, task_list, dir_name):
+    def get_koji_tasks(cls, task_id, dir_name):
         session = cls.session_maker(baseurl=cls.server_http)
-        task_list = [int(task) for task in task_list]
-        rpm = []
-        logs = []
-        for task_id in task_list:
-            tasks = []
-            task = session.getTaskInfo(task_id, request=True)
-            if task['state'] in (koji.TASK_STATES['FREE'], koji.TASK_STATES['OPEN']):
-                continue
-            elif task['state'] != koji.TASK_STATES['CLOSED']:
-                logger.info('Task %i did not complete successfully')
+        task_id = int(task_id)
+        rpm_list = []
+        log_list = []
+        tasks = []
+        task = session.getTaskInfo(task_id, request=True)
+        logger.info(task['state'])
+        if task['state'] in (koji.TASK_STATES['FREE'], koji.TASK_STATES['OPEN']):
+            return None, None
+        elif task['state'] != koji.TASK_STATES['CLOSED']:
+            logger.info('Task %i did not complete successfully' % task_id)
 
-            if task['method'] == 'build':
-                logger.info('Getting rpms for chilren of task %i: %s' % (task['id'], koji.taskLabel(task)))
-                # getting rpms from children of task
-                tasks = session.listTasks(opts={'parent': task_id,
-                                                'method': 'buildArch',
-                                                'state': [koji.TASK_STATES['CLOSED'], koji.TASK_STATES['FAILED']],
-                                                'decode': True})
-            elif task['method'] == 'buildArch':
-                tasks = [task]
-            for task in tasks:
-                base_path = koji.pathinfo.taskrelpath(task['id'])
-                output = session.listTaskOutput(task['id'])
-                if output is None:
-                    return None
-                for filename in output:
-                    full_path_name = os.path.join(dir_name, filename)
-                    if filename.endswith('.src.rpm'):
+        if task['method'] == 'build':
+            logger.info('Getting rpms for chilren of task %i: %s' % (task['id'], koji.taskLabel(task)))
+            # getting rpms from children of task
+            tasks = session.listTasks(opts={'parent': task_id,
+                                            'method': 'buildArch',
+                                            'state': [koji.TASK_STATES['CLOSED'], koji.TASK_STATES['FAILED']],
+                                            'decode': True})
+        elif task['method'] == 'buildArch':
+            tasks = [task]
+        logger.info(tasks)
+        for task in tasks:
+            base_path = koji.pathinfo.taskrelpath(task['id'])
+            output = session.listTaskOutput(task['id'])
+            if output is None:
+                return None
+            for filename in output:
+                download = False
+                full_path_name = os.path.join(dir_name, filename)
+                if filename.endswith('.src.rpm'):
+                    continue
+                if filename.endswith('.rpm'):
+                    if task['state'] != koji.TASK_STATES['CLOSED']:
                         continue
-                    if filename.endswith('.rpm'):
-                        arch = filename.rsplit('.', 3)[2]
+                    arch = filename.rsplit('.', 3)[2]
+                    if full_path_name not in rpm_list:
                         download = arch in ['noarch', 'x86_64']
-                        rpm.append(full_path_name)
-                    else:
+                        if download:
+                            rpm_list.append(full_path_name)
+                else:
+                    if full_path_name not in log_list:
+                        log_list.append(full_path_name)
                         download = True
-                        logs.append(full_path_name)
-                    if download:
-                        DownloadHelper.download_file(cls.baseurl + base_path + '/' + filename,
-                                                     full_path_name)
-        return rpm, logs
+                if download:
+                    DownloadHelper.download_file(cls.baseurl + base_path + '/' + filename,
+                                                 full_path_name)
+        return rpm_list, log_list
