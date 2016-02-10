@@ -113,7 +113,23 @@ class CLI(object):
             "--comparepkgs-only",
             default=False,
             dest="comparepkgs",
-            help="Specify dir with old and new RPM packages. Dir structure has to be like testdir/{old,new}/RPM"
+            action="store_true",
+            help="Specify dir with old and new RPM packages. Dir structure has to be like <dir_name>/{old,new}/RPM"
+        )
+        self.parser.add_argument(
+            "--builds-nowait",
+            default=False,
+            action="store_true",
+            help="It starts a koji builds and does not care how they finish. Useful for fedpkg build tool."
+        )
+        self.parser.add_argument(
+            "--fedpkg-build-tasks",
+            dest="build_tasks",
+            help="Specify tasks ids in order old and new. They has to be comma, separated."
+        )
+        self.parser.add_argument(
+            "--results-dir",
+            help="Specify results dir where you would like to stored rebase-helper stuff."
         )
 
     def __getattr__(self, name):

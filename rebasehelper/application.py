@@ -93,16 +93,17 @@ class Application(object):
 
         self._add_debug_log_file()
         self._add_report_log_file()
-        self._get_spec_file()
-        self._prepare_spec_objects()
+        if self.conf.build_tasks is None:
+            self._get_spec_file()
+            self._prepare_spec_objects()
 
-        # check the workspace dir
-        if not self.conf.cont:
-            self._check_workspace_dir()
+            # check the workspace dir
+            if not self.conf.cont:
+                self._check_workspace_dir()
 
-        # TODO: Remove the value from kwargs and use only CLI attribute!
-        self.kwargs['continue'] = self.conf.cont
-        self._initialize_data()
+            # TODO: Remove the value from kwargs and use only CLI attribute!
+            self.kwargs['continue'] = self.conf.cont
+            self._initialize_data()
 
         if self.conf.cont or self.conf.build_only:
             self._delete_old_builds()
@@ -286,6 +287,8 @@ class Application(object):
             shutil.rmtree(self.results_dir)
         os.makedirs(self.results_dir)
         os.makedirs(os.path.join(self.results_dir, settings.REBASE_HELPER_LOGS))
+        os.makedirs(os.path.join(self.results_dir, 'old'))
+        os.makedirs(os.path.join(self.results_dir, 'new'))
 
     @staticmethod
     def extract_archive(archive_path, destination):
@@ -406,20 +409,45 @@ class Application(object):
         for version in ['old', 'new']:
             spec_object = self.spec_file if version == 'old' else self.rebase_spec_file
             build_dict = {}
-            build_dict['name'] = spec_object.get_package_name()
-            build_dict['version'] = spec_object.get_version()
-            logger.debug(build_dict)
-            patches = [x.get_path() for x in spec_object.get_patches()]
+            task_id = None
+            if self.conf.build_tasks is None:
+                build_dict['name'] = spec_object.get_package_name()
+                build_dict['version'] = spec_object.get_version()
+                patches = [x.get_path() for x in spec_object.get_patches()]
+                spec = spec_object.get_path()
+                sources = spec_object.get_sources()
+                logger.info('Building packages for %s version %s' %
+                            (spec_object.get_package_name(), spec_object.get_version()))
+            else:
+                if version == 'old':
+                    task_id = self.conf.build_tasks.split(',')[0]
+                else:
+                    task_id = self.conf.build_tasks.split(',')[1]
             results_dir = os.path.join(self.results_dir, version)
-            spec = spec_object.get_path()
-            sources = spec_object.get_sources()
+            build_dict['builds_nowait'] = self.conf.builds_nowait
+            build_dict['build_tasks'] = self.conf.build_tasks
 
             failed_before = False
             logger.info('Building packages for %s version %s' %
                         (spec_object.get_package_name(), spec_object.get_version()))
             while True:
                 try:
-                    build_dict.update(builder.build(spec, sources, patches, results_dir, self.upstream_monitoring, **build_dict))
+                    if self.conf.build_tasks is None:
+                        build_dict.update(builder.build(spec, sources, patches, results_dir, **build_dict))
+                    if not self.conf.builds_nowait:
+                        # TODO Wait till koji tasks are not finished
+                        pass
+                    else:
+                        if self.conf.build_tasks:
+                            kh = KojiHelper()
+                            try:
+                                build_dict['rpm'], build_dict['logs'] = kh.get_koji_tasks(task_id, results_dir)
+                                OutputLogger.set_build_data(version, build_dict)
+                                if not build_dict['rpm']:
+                                    return False
+                            except TypeError as te:
+                                logger.info('Koji tasks are not finished yet. Try again later')
+                                return False
                     OutputLogger.set_build_data(version, build_dict)
                     break
 
@@ -602,15 +630,31 @@ class Application(object):
             rh_dict['version'] = upstream_version
             rh_dict['name'] = package
             OutputLogger.set_build_data(version, rh_dict)
-        self.pkgdiff_packages()
+        logger.info('How does it look like data?')
+        logger.info(OutputLogger.get_all())
+        if tasks_dict['status'] == 'CLOSED':
+            self.pkgdiff_packages(dir_name)
+        self.print_summary()
         rh_stuff = self.get_rebasehelper_data()
+        logger.info(rh_stuff)
         return rh_stuff
 
     def run(self):
-        sources = self.prepare_sources()
-        if not self.conf.build_only and not self.conf.comparepkgs:
-            self.patch_sources(sources)
+        if self.conf.build_tasks and not self.conf.builds_nowait:
+            if self.conf.buildtool == 'fedpkg':
+                logger.error("--builds-nowait has to be specified with --fedpkg-build-tasks.")
+                return 1
+            else:
+                logger.warning("Options are allowed only for fedpkg build tool. Suppress them.")
+                self.conf.build_tasks = self.conf.builds_nowait = False
 
+        sources = None
+        if not self.conf.builds_nowait and self.conf.build_tasks is None:
+            sources = self.prepare_sources()
+            if not self.conf.build_only and not self.conf.comparepkgs:
+                self.patch_sources(sources)
+
+        build = False
         if not self.conf.patch_only:
             if not self.conf.comparepkgs:
                 # check build dependencies for rpmbuild
@@ -619,8 +663,7 @@ class Application(object):
                 # Build packages
                 try:
                     build = self.build_packages()
-                    if self.upstream_monitoring:
-                        print(self.get_rebasehelper_data())
+                    if self.conf.builds_nowait and not self.conf.build_tasks:
                         return 0
                 except RuntimeError:
                     logger.error('Not know error caused by build log analysis')
