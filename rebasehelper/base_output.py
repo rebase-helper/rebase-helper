@@ -120,6 +120,14 @@ class OutputLogger(object):
         return cls.out_logger.get_specific_value('build', version)
 
     @classmethod
+    def get_old_build(cls):
+        return cls.get_build('old')
+
+    @classmethod
+    def get_new_build(cls):
+        return cls.get_build('new')
+
+    @classmethod
     def get_patches(cls):
         return cls.out_logger.get_specific_value('patch', 'Patches:')
 

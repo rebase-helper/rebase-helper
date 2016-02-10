@@ -131,8 +131,8 @@ class RpmDiffTool(BaseChecker):
 
         # Only S (size), M(mode) and 5 (checksum) are now important
         not_catched_flags = ['T', 'F', 'G', 'U', 'V', 'L', 'D', 'N']
-        old_pkgs = cls._get_rpms(OutputLogger.get_build('old').get('rpm', None))
-        new_pkgs = cls._get_rpms(OutputLogger.get_build('new').get('rpm', None))
+        old_pkgs = cls._get_rpms(OutputLogger.get_old_build().get('rpm', None))
+        new_pkgs = cls._get_rpms(OutputLogger.get_new_build().get('rpm', None))
         for key, value in six.iteritems(old_pkgs):
             cmd = [cls.CMD]
             # TODO modify to online command
@@ -211,7 +211,7 @@ class PkgDiffTool(BaseChecker):
             cls.results_dict[tag] = [x for x in cls.results_dict[tag] if not x.endswith('(0%)')]
 
     @classmethod
-    def fill_dictionary(cls, result_dir, old_version, new_version):
+    def fill_dictionary(cls, result_dir):
         """
         Parsed files.xml and symbols.xml and fill dictionary
         :param result_dir: where should be stored file for pkgdiff
@@ -220,6 +220,12 @@ class PkgDiffTool(BaseChecker):
         :return:
         """
         XML_FILES = ['files.xml', 'symbols.xml']
+        old_version = OutputLogger.get_old_build().get('version')
+        if old_version is '':
+            old_version = cls._get_rpm_info('version', OutputLogger.get_old_build()['rpm'])
+        new_version = OutputLogger.get_new_build().get('version')
+        if new_version is '':
+            new_version = cls._get_rpm_info('version', OutputLogger.get_new_build()['rpm'])
 
         for tag in settings.CHECKER_TAGS:
             cls.results_dict[tag] = []
@@ -269,7 +275,7 @@ class PkgDiffTool(BaseChecker):
         return update_list
 
     @classmethod
-    def process_xml_results(cls, result_dir, old_version, new_version):
+    def process_xml_results(cls, result_dir):
         """
         Function for filling dictionary with keys like 'added', 'removed'
 
@@ -279,7 +285,7 @@ class PkgDiffTool(BaseChecker):
                          'moved': [list of moved]
                         }
         """
-        cls.fill_dictionary(result_dir, old_version, new_version)
+        cls.fill_dictionary(result_dir)
 
         # Remove all files which were not changed
         cls._remove_not_changed_files()
@@ -307,6 +313,7 @@ class PkgDiffTool(BaseChecker):
         cls.results_dir = results_dir
         cls.pkgdiff_results_full_path = os.path.join(cls.results_dir, cls.pkgdiff_results_filename)
 
+
         cmd = [cls.CMD]
         cmd.append('-hide-unchanged')
         for version in ['old', 'new']:
@@ -328,9 +335,7 @@ class PkgDiffTool(BaseChecker):
         if int(ret_code) != 0 and int(ret_code) != 1:
             raise RebaseHelperError('Execution of %s failed.\nCommand line is: %s' % (cls.CMD, cmd))
         OutputLogger.set_info_text('Result HTML page from pkgdiff is store in: ', cls.pkgdiff_results_full_path)
-        results_dict = cls.process_xml_results(cls.results_dir,
-                                               OutputLogger.get_build('old').get('version'),
-                                               OutputLogger.get_build('new').get('version'))
+        results_dict = cls.process_xml_results(cls.results_dir)
         text = []
 
         for key, val in six.iteritems(results_dict):
