@@ -73,7 +73,11 @@ class Application(object):
             LoggerHelper.add_stream_handler(logger, logging.INFO)
 
         # The directory in which rebase-helper was executed
-        self.execution_dir = os.getcwd()
+        if self.conf.results_dir is None:
+            self.execution_dir = os.getcwd()
+        else:
+            self.execution_dir = self.conf.results_dir
+
         # Temporary workspace for Builder, checks, ...
         self.kwargs['workspace_dir'] = self.workspace_dir = os.path.join(self.execution_dir,
                                                                          settings.REBASE_HELPER_WORKSPACE_DIR)
@@ -428,8 +432,6 @@ class Application(object):
             build_dict['build_tasks'] = self.conf.build_tasks
 
             failed_before = False
-            logger.info('Building packages for %s version %s' %
-                        (spec_object.get_package_name(), spec_object.get_version()))
             while True:
                 try:
                     if self.conf.build_tasks is None:
@@ -506,7 +508,7 @@ class Application(object):
                 shutil.rmtree(os.path.join(results_dir, 'SRPM'))
         return True
 
-    def _execute_checkers(self, checker):
+    def _execute_checkers(self, checker, dir_name):
         """
         Function executes a checker based on command line arguments
 
@@ -515,23 +517,23 @@ class Application(object):
         """
         pkgchecker = Checker(checker)
         logger.info('Comparing packages using %s...', checker)
-        text = pkgchecker.run_check(os.path.join(self.results_dir, settings.REBASE_HELPER_LOGS))
+        text = pkgchecker.run_check(dir_name)
         return text
 
-    def pkgdiff_packages(self):
+    def pkgdiff_packages(self, dir_name):
         """
         Function calls pkgdiff class for comparing packages
-
+        :param dir_name: specify a result dir
         :return: 
         """
         pkgdiff_results = {}
         if not self.conf.pkgcomparetool:
             for checker in Checker.get_supported_tools():
-                results = self._execute_checkers(checker)
+                results = self._execute_checkers(checker, dir_name)
                 pkgdiff_results[checker] = results
 
         else:
-            text = self._execute_checkers(self.conf.pkgcomparetool)
+            text = self._execute_checkers(self.conf.pkgcomparetool, dir_name)
             pkgdiff_results[self.conf.pkgcomparetool] = text
         if pkgdiff_results:
             logger.info(pkgdiff_results)
@@ -552,24 +554,9 @@ class Application(object):
 
     def get_new_build_logs(self):
         result = {}
-        if 'logs' in OutputLogger.get_build('new'):
-            logs = OutputLogger.get_build('new')['logs']
-            try:
-                result['logs'] = [x for x in logs if not x.startswith('http')]
-            except TypeError:
-                result['logs'] = None
-        else:
-            return None
         result['build_ref'] = {}
         for version in ['old', 'new']:
-            if 'rpm' in OutputLogger.get_build(version):
-                rpm_pkgs = OutputLogger.get_build(version)['rpm']
-                if rpm_pkgs:
-                    try:
-                        build_logs = [x for x in logs if x.startswith('http')]
-                        result['build_ref'][version] = build_logs
-                    except TypeError:
-                        result['build_ref'][version] = rpm_pkgs
+            result['build_ref'][version] = OutputLogger.get_build(version)
         return result
 
     def get_checker_outputs(self):
@@ -620,8 +607,8 @@ class Application(object):
     def run_download_compare(self, tasks_dict, dir_name):
         self.set_upstream_monitoring()
         kh = KojiHelper()
-        rh_dict = {}
         for version in ['old', 'new']:
+            rh_dict = {}
             compare_dirname = os.path.join(dir_name, version)
             if not os.path.exists(compare_dirname):
                 os.mkdir(compare_dirname, 0o777)
@@ -630,8 +617,6 @@ class Application(object):
             rh_dict['version'] = upstream_version
             rh_dict['name'] = package
             OutputLogger.set_build_data(version, rh_dict)
-        logger.info('How does it look like data?')
-        logger.info(OutputLogger.get_all())
         if tasks_dict['status'] == 'CLOSED':
             self.pkgdiff_packages(dir_name)
         self.print_summary()
@@ -674,7 +659,7 @@ class Application(object):
                 # We don't care dirname doesn't contain any RPM packages
                 # Therefore return 1
             if build:
-                self.pkgdiff_packages()
+                self.pkgdiff_packages(self.results_dir)
             else:
                 if not self.upstream_monitoring:
                     logger.info('Rebase package to %s FAILED. See for more details' % self.conf.sources)
