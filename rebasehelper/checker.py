@@ -178,6 +178,13 @@ class PkgDiffTool(BaseChecker):
             return False
 
     @classmethod
+    def _get_rpm_info(cls, name, packages):
+        if packages is None:
+            return None
+        basic_package = sorted(packages)[0]
+        return RpmHelper.get_info_from_rpm(basic_package, name)
+
+    @classmethod
     def _create_xml(cls, name, input_structure):
         """
         Function creates a XML format for pkgdiff command
@@ -186,6 +193,12 @@ class PkgDiffTool(BaseChecker):
         :return:
         """
         file_name = os.path.join(cls.results_dir, name + ".xml")
+        if input_structure.get('version', '') == '':
+            input_structure['version'] = cls._get_rpm_info('version', input_structure['rpm'])
+
+        if input_structure.get('name', '') == '':
+            input_structure['name'] = cls._get_rpm_info('name', input_structure['rpm'])
+
         tags = {'version': input_structure.get('version', ""),
                 'group': input_structure.get('name', ''),
                 'packages': input_structure.get('rpm', [])}
