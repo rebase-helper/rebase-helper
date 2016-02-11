@@ -22,7 +22,6 @@
 
 from __future__ import print_function
 import os
-import re
 from rebasehelper.logger import logger
 from rebasehelper.utils import ConsoleHelper
 from rebasehelper.utils import ProcessHelper
@@ -220,7 +219,9 @@ class GitPatchTool(PatchBase):
     def apply_old_patches(cls):
         """Function applies a patch to a old/new sources"""
         for patch in cls.patches:
-            logger.info("Applying patch '%s' to '%s'", os.path.basename(patch.get_path()), os.path.basename(cls.source_dir))
+            logger.info("Applying patch '%s' to '%s'",
+                        os.path.basename(patch.get_path()),
+                        os.path.basename(cls.source_dir))
             ret_code = GitPatchTool.apply_patch(cls.git_helper, patch)
             # unexpected
             if int(ret_code) != 0:
@@ -273,7 +274,8 @@ class GitPatchTool(PatchBase):
     def call_prep_script(cls, prep_script_path):
         cwd = os.getcwd()
         os.chdir(cls.old_sources)
-        ProcessHelper.run_subprocess(prep_script_path, output=os.path.join(cls.kwargs['workspace_dir'], 'prep_script.log'))
+        ProcessHelper.run_subprocess(prep_script_path,
+                                     output=os.path.join(cls.kwargs['workspace_dir'], 'prep_script.log'))
         if not cls.patch_sources_by_prep_script:
             cls.git_helper.command_add_files(parameters=["--all"])
             cls.git_helper.command_commit(message="prep_script prep_corrections")

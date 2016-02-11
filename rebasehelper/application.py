@@ -219,7 +219,7 @@ class Application(object):
             data['version'] = spec_version
             data['rpm'] = PathHelper.find_all_files(os.path.join(os.path.realpath(dirname), version, 'RPM'), '*.rpm')
             if not data['rpm']:
-                logger.error('Your path %s%s/RPM does not contain any RPM packages' % (dirname, version))
+                logger.error('Your path %s%s/RPM does not contain any RPM packages', dirname, version)
                 found = False
             OutputLogger.set_build_data(version, data)
         if not found:
@@ -230,7 +230,7 @@ class Application(object):
         """Function gets the spec file from the execution_dir directory"""
         self.spec_file_path = PathHelper.find_first_file(self.execution_dir, '*.spec', 0)
         if not self.spec_file_path:
-            raise RebaseHelperError("Could not find any SPEC file in the current directory '%s'" % self.execution_dir)
+            raise RebaseHelperError("Could not find any SPEC file in the current directory '%s'", self.execution_dir)
 
     def _delete_old_builds(self):
         """
@@ -392,7 +392,7 @@ class Application(object):
                                                self.spec_file.get_applied_patches(),
                                                self.spec_file.get_prep_section(),
                                                **self.kwargs)
-        except RuntimeError as run_e:
+        except RuntimeError:
             raise RebaseHelperError('Patching failed')
         self.rebase_spec_file.write_updated_patches(self.rebased_patches)
         if self.conf.non_interactive:
@@ -420,8 +420,9 @@ class Application(object):
                 patches = [x.get_path() for x in spec_object.get_patches()]
                 spec = spec_object.get_path()
                 sources = spec_object.get_sources()
-                logger.info('Building packages for %s version %s' %
-                            (spec_object.get_package_name(), spec_object.get_version()))
+                logger.info('Building packages for %s version %s',
+                            spec_object.get_package_name(),
+                            spec_object.get_version())
             else:
                 if version == 'old':
                     task_id = self.conf.build_tasks.split(',')[0]
@@ -437,8 +438,11 @@ class Application(object):
                     if self.conf.build_tasks is None:
                         build_dict.update(builder.build(spec, sources, patches, results_dir, **build_dict))
                     if not self.conf.builds_nowait:
-                        # TODO Wait till koji tasks are not finished
-                        pass
+                        while True:
+                            kh = KojiHelper()
+                            build_dict['rpm'], build_dict['logs'] = kh.get_koji_tasks(task_id, results_dir)
+                            if build_dict['rpm']:
+                                break
                     else:
                         if self.conf.build_tasks:
                             kh = KojiHelper()
@@ -447,7 +451,7 @@ class Application(object):
                                 OutputLogger.set_build_data(version, build_dict)
                                 if not build_dict['rpm']:
                                     return False
-                            except TypeError as te:
+                            except TypeError:
                                 logger.info('Koji tasks are not finished yet. Try again later')
                                 return False
                     OutputLogger.set_build_data(version, build_dict)
@@ -469,18 +473,19 @@ class Application(object):
                     build_log = 'build.log'
                     build_log_path = os.path.join(rpm_dir, build_log)
                     if version == 'old':
-                        raise RebaseHelperError('Building old RPM package failed. Check log %s' % build_log_path)
+                        raise RebaseHelperError('Building old RPM package failed. Check log %s', build_log_path)
                     logger.error('Building binary packages failed.')
+                    msg = 'Building package failes'
                     try:
                         files = BuildLogAnalyzer.parse_log(rpm_dir, build_log)
                     except BuildLogAnalyzerMissingError:
-                        raise RebaseHelperError('Build log %s does not exist' % build_log_path)
+                        raise RebaseHelperError('Build log %s does not exist', build_log_path)
                     except BuildLogAnalyzerMakeError:
-                        raise RebaseHelperError('Building package failed during build. Check log %s' % build_log_path)
+                        raise RebaseHelperError('%s during build. Check log %s', msg, build_log_path)
                     except BuildLogAnalyzerPatchError:
-                        raise RebaseHelperError('Building package failed during patching. Check log %s' % build_log_path)
+                        raise RebaseHelperError('%s during patching. Check log %s', msg, build_log_path)
                     except RuntimeError:
-                        raise RebaseHelperError('Building package failed with unknown reason. Check log %s' % build_log_path)
+                        raise RebaseHelperError('%s with unknown reason. Check log %s',msg, build_log_path)
 
                     if 'missing' in files:
                         missing_files = '\n'.join(files['missing'])
@@ -494,7 +499,8 @@ class Application(object):
 
                 if not self.conf.non_interactive:
                     if failed_before:
-                        if not ConsoleHelper.get_message('Do you want rebase-helper to try build the packages one more time'):
+                        msg = 'Do you want rebase-helper to try build the packages one more time'
+                        if not ConsoleHelper.get_message(msg):
                             raise KeyboardInterrupt
                 else:
                     logger.warning('Some patches were not successfully applied')
@@ -536,7 +542,6 @@ class Application(object):
             text = self._execute_checkers(self.conf.pkgcomparetool, dir_name)
             pkgdiff_results[self.conf.pkgcomparetool] = text
         if pkgdiff_results:
-            logger.info(pkgdiff_results)
             for diff_name, result in six.iteritems(pkgdiff_results):
                 OutputLogger.set_checker_output(diff_name, result)
 
@@ -564,7 +569,7 @@ class Application(object):
         if OutputLogger.get_checkers():
             for check, data in six.iteritems(OutputLogger.get_checkers()):
                 if data:
-                    for log, text in six.iteritems(data):
+                    for log in six.iterkeys(data):
                         checkers[check] = log
                 else:
                     checkers[check] = None
@@ -591,7 +596,7 @@ class Application(object):
         output_tool.check_output_argument(self.conf.outputtool)
         output = output_tool.OutputTool(self.conf.outputtool)
         output.print_information(path=self._get_rebase_helper_log())
-        logger.info('Report file from rebase-helper is available here: %s' % self.report_log_file)
+        logger.info('Report file from rebase-helper is available here: %s', self.report_log_file)
 
     def set_upstream_monitoring(self):
         self.upstream_monitoring = True
@@ -662,7 +667,7 @@ class Application(object):
                 self.pkgdiff_packages(self.results_dir)
             else:
                 if not self.upstream_monitoring:
-                    logger.info('Rebase package to %s FAILED. See for more details' % self.conf.sources)
+                    logger.info('Rebase package to %s FAILED. See for more details', self.conf.sources)
                 return 1
             self.print_summary()
 
@@ -672,7 +677,7 @@ class Application(object):
         if self.debug_log_file:
             logger.info("Detailed debug log is located in '%s'", self.debug_log_file)
         if not self.upstream_monitoring and not self.conf.patch_only:
-            logger.info('Rebase package to %s was SUCCESSFUL.\n' % self.conf.sources)
+            logger.info('Rebase package to %s was SUCCESSFUL.\n', self.conf.sources)
         return 0
 
 if __name__ == '__main__':

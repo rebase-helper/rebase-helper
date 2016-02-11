@@ -188,13 +188,16 @@ class TestSpecFile(BaseTest):
         assert SpecFile.extract_version_from_archive_name('/home/user/test-1.0.1.tar.gz',
                                                           'ftp://ftp.test.org/test-%{version}.tar.gz') == ('1.0.1', '')
         # Real world tests
+        name = 'http://www.cups.org/software/%{version}/cups-%{version}-source.tar.bz2'
         assert SpecFile.extract_version_from_archive_name('cups-1.7.5-source.tar.bz2',
-                                                          'http://www.cups.org/software/%{version}/cups-%{version}-source.tar.bz2') == ('1.7.5', '')
+                                                          name) == ('1.7.5', '')
         # the 'rc1' can't be in the version number
+        name = 'ftp://ftp.isc.org/isc/bind9/%{VERSION}/bind-%{VERSION}.tar.gz'
         assert SpecFile.extract_version_from_archive_name('bind-9.9.5rc2.tar.gz',
-                                                          'ftp://ftp.isc.org/isc/bind9/%{VERSION}/bind-%{VERSION}.tar.gz') == ('9.9.5', 'rc2')
+                                                          name) == ('9.9.5', 'rc2')
+        name = 'http://www.thekelleys.org.uk/dnsmasq/%{?extrapath}%{name}-%{version}%{?extraversion}.tar.xz'
         assert SpecFile.extract_version_from_archive_name('dnsmasq-2.69rc1.tar.xz',
-                                                          'http://www.thekelleys.org.uk/dnsmasq/%{?extrapath}%{name}-%{version}%{?extraversion}.tar.xz') == ('2.69', 'rc1')
+                                                          name) == ('2.69', 'rc1')
 
     def test__split_sections(self):
         expected_sections = {

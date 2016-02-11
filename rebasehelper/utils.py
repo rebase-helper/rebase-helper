@@ -915,8 +915,7 @@ class KojiHelper(object):
                                         rh_tasks[info['id']] = state
                                 all_done = False
                     except SSL.SysCallError as exc:
-                        logger.error('We have detected a exception %s' % exc.message)
-                        pass
+                        logger.error('We have detected a exception %s', exc.message)
                 if all_done:
                     cls.display_task_results(tasks)
                     break
@@ -967,7 +966,9 @@ class KojiHelper(object):
             logger.info('Task %i did not complete successfully' % task_id)
 
         if task['method'] == 'build':
-            logger.info('Getting rpms for chilren of task %i: %s' % (task['id'], koji.taskLabel(task)))
+            logger.info('Getting rpms for chilren of task %i: %s',
+                        task['id'],
+                        koji.taskLabel(task))
             # getting rpms from children of task
             tasks = session.listTasks(opts={'parent': task_id,
                                             'method': 'buildArch',
