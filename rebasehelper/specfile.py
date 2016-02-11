@@ -546,10 +546,11 @@ class SpecFile(object):
         :param lines: line (or list of lines) to be wrapped
         :return: list with lines
         """
-        comm_lines = [settings.BEGIN_COMMENT]
+        sec = '\n'
+        comm_lines = [settings.BEGIN_COMMENT + sec]
         for l in lines if not isinstance(lines, six.string_types) else [lines]:
-            comm_lines.append(l)
-        comm_lines.append(settings.END_COMMENT)
+            comm_lines.append(l + sec)
+        comm_lines.append(settings.END_COMMENT + sec)
         return comm_lines
 
     def _correct_missing_files(self, missing):
