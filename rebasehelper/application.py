@@ -482,10 +482,10 @@ class Application(object):
                     except RuntimeError:
                         raise RebaseHelperError('Building package failed with unknown reason. Check log %s' % build_log_path)
 
-                    if files['missing']:
-                        missing_files = '\n'.join(files['added'])
+                    if 'missing' in files:
+                        missing_files = '\n'.join(files['missing'])
                         logger.info('Files not packaged in the SPEC file:\n%s', missing_files)
-                    elif files['deleted']:
+                    elif 'deleted' in files:
                         deleted_files = '\n'.join(files['deleted'])
                         logger.warning('Removed files packaged in SPEC file:\n%s', deleted_files)
                     else:
