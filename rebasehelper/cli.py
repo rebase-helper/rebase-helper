@@ -113,7 +113,6 @@ class CLI(object):
             "--comparepkgs-only",
             default=False,
             dest="comparepkgs",
-            action="store_true",
             help="Specify dir with old and new RPM packages. Dir structure has to be like <dir_name>/{old,new}/RPM"
         )
         self.parser.add_argument(

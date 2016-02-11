@@ -580,15 +580,16 @@ class SpecFile(object):
             if match:
                 # Check what files are in section
                 # and comment only relevant
-                f_exists = [f for f in sources if os.path.basename(f) in sec_content]
+                f_exists = [f for f in sources for sec in sec_content if os.path.basename(f) in sec]
                 if not f_exists:
                     continue
                 for f in f_exists:
-                    sec_content = sec_content.split('\n')
+                    index = 0
                     for index, row in enumerate(sec_content):
                         if f in row:
-                            sec_content[index] = SpecFile.construct_string_with_comment('#' + row)
-                self.rpm_sections[key] = (sec_name, '\n'.join(sec_content))
+                            break
+                    sec_content[index: index+1] = SpecFile.construct_string_with_comment('#' + row)
+                self.rpm_sections[key] = (sec_name, sec_content)
 
     def modify_spec_files_section(self, files):
         """

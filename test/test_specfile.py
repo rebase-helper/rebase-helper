@@ -275,7 +275,12 @@ class TestSpecFile(BaseTest):
         files = {'missing': ['/usr/bin/test2']}
         self.SPEC_FILE_OBJECT.modify_spec_files_section(files)
         section = self.SPEC_FILE_OBJECT.get_spec_section('%files')
-        assert '%{_bindir}/test2' in section
+        expected = ['#BEGIN THIS MODIFIED BY REBASE-HELPER\n',
+                    '%{_bindir}/test2\n',
+                    '#END THIS MODIFIED BY REBASE-HELPER\n',
+                    '%{_bindir}/file.txt\n',
+                    '\n']
+        assert expected == section
 
     def test_spec_remove_file(self):
         files = {'deleted': ['/usr/lib/test.so']}
@@ -285,19 +290,34 @@ class TestSpecFile(BaseTest):
 
     def test_spec_missing_and_remove_file(self):
         files = {'missing': ['/usr/bin/test2'],
-                 'deleted': ['/usr/lib/test.so']}
+                 'deleted': ['/usr/lib/my_test.so']}
         self.SPEC_FILE_OBJECT.modify_spec_files_section(files)
         section = self.SPEC_FILE_OBJECT.get_spec_section('%files')
-        assert '%{_bindir}/test2' in section
-        section = self.SPEC_FILE_OBJECT.get_spec_section('%files devel')
-        assert '%{_libdir}/test.so' not in section
+        expected = ['#BEGIN THIS MODIFIED BY REBASE-HELPER\n',
+                    '%{_bindir}/test2\n',
+                    '#END THIS MODIFIED BY REBASE-HELPER\n',
+                    '%{_bindir}/file.txt\n',
+                    '\n']
+        assert expected == section
+        section_devel = self.SPEC_FILE_OBJECT.get_spec_section('%files devel')
+        expected_devel = ['%{_bindir}/test_example\n',
+                          '#BEGIN THIS MODIFIED BY REBASE-HELPER\n',
+                          '#%{_libdir}/my_test.so\n\n',
+                          '#END THIS MODIFIED BY REBASE-HELPER\n',
+                          '\n']
+        assert expected_devel == section_devel
 
     def test_spec_missing_from_logfile(self):
         shutil.move('build_missing.log', 'build.log')
         files = BuildLogAnalyzer.parse_log(self.WORKING_DIR, 'build.log')
         self.SPEC_FILE_OBJECT.modify_spec_files_section(files)
         section = self.SPEC_FILE_OBJECT.get_spec_section('%files')
-        assert '%{_bindir}/test2' in section
+        expected = ['#BEGIN THIS MODIFIED BY REBASE-HELPER\n',
+                    '%{_bindir}/test2\n',
+                    '#END THIS MODIFIED BY REBASE-HELPER\n',
+                    '%{_bindir}/file.txt\n',
+                    '\n']
+        assert expected == section
 
     def test_spec_obsolete_from_logfile(self):
         shutil.move('build_obsoletes.log', 'build.log')

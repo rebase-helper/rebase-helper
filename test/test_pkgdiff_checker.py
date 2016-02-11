@@ -55,7 +55,7 @@ class TestPkgDiff(BaseTest):
                                      '/usr/lib/libtest3.so']}
         pdt = PkgDiffTool()
         pdt.results_dir = self.TEST_FILES_DIR
-        pdt.fill_dictionary(pdt.results_dir, '1.0.1', '1.0.2')
+        pdt.fill_dictionary(pdt.results_dir, old_version='1.0.1', new_version='1.0.2')
         assert pdt.results_dict == expected_dict
 
     def test_process_xml(self):
@@ -72,6 +72,6 @@ class TestPkgDiff(BaseTest):
                                      '/usr/lib/libtest3.so']}
         pdt = PkgDiffTool()
         pdt.results_dir = self.TEST_FILES_DIR
-        res_dict = pdt.process_xml_results(pdt.results_dir, '1.0.1', '1.0.2')
+        res_dict = pdt.process_xml_results(pdt.results_dir, old_version="1.0.1", new_version="1.0.2")
         assert res_dict == expected_dict
 

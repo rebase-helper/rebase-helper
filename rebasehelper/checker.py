@@ -224,7 +224,7 @@ class PkgDiffTool(BaseChecker):
             cls.results_dict[tag] = [x for x in cls.results_dict[tag] if not x.endswith('(0%)')]
 
     @classmethod
-    def fill_dictionary(cls, result_dir):
+    def fill_dictionary(cls, result_dir, old_version=None, new_version=None):
         """
         Parsed files.xml and symbols.xml and fill dictionary
         :param result_dir: where should be stored file for pkgdiff
@@ -233,12 +233,14 @@ class PkgDiffTool(BaseChecker):
         :return:
         """
         XML_FILES = ['files.xml', 'symbols.xml']
-        old_version = OutputLogger.get_old_build().get('version')
-        if old_version is '':
-            old_version = cls._get_rpm_info('version', OutputLogger.get_old_build()['rpm'])
-        new_version = OutputLogger.get_new_build().get('version')
-        if new_version is '':
-            new_version = cls._get_rpm_info('version', OutputLogger.get_new_build()['rpm'])
+        if old_version is None:
+            old_version = OutputLogger.get_old_build().get('version')
+            if old_version is '':
+                old_version = cls._get_rpm_info('version', OutputLogger.get_old_build()['rpm'])
+        if new_version is None:
+            new_version = OutputLogger.get_new_build().get('version')
+            if new_version is '':
+                new_version = cls._get_rpm_info('version', OutputLogger.get_new_build()['rpm'])
 
         for tag in settings.CHECKER_TAGS:
             cls.results_dict[tag] = []
@@ -288,7 +290,7 @@ class PkgDiffTool(BaseChecker):
         return update_list
 
     @classmethod
-    def process_xml_results(cls, result_dir):
+    def process_xml_results(cls, result_dir, old_version=None, new_version=None):
         """
         Function for filling dictionary with keys like 'added', 'removed'
 
@@ -298,7 +300,7 @@ class PkgDiffTool(BaseChecker):
                          'moved': [list of moved]
                         }
         """
-        cls.fill_dictionary(result_dir)
+        cls.fill_dictionary(result_dir, old_version=old_version, new_version=new_version)
 
         # Remove all files which were not changed
         cls._remove_not_changed_files()
