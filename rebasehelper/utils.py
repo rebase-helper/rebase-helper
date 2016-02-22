@@ -959,7 +959,6 @@ class KojiHelper(object):
         log_list = []
         tasks = []
         task = session.getTaskInfo(task_id, request=True)
-        logger.info(task['state'])
         if task['state'] in (koji.TASK_STATES['FREE'], koji.TASK_STATES['OPEN']):
             return None, None
         elif task['state'] != koji.TASK_STATES['CLOSED']:
@@ -976,7 +975,6 @@ class KojiHelper(object):
                                             'decode': True})
         elif task['method'] == 'buildArch':
             tasks = [task]
-        logger.info(tasks)
         for task in tasks:
             base_path = koji.pathinfo.taskrelpath(task['id'])
             output = session.listTaskOutput(task['id'])
