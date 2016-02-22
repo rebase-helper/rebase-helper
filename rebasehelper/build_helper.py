@@ -545,7 +545,6 @@ class FedpkgBuildTool(BuildToolBase):
 
     @classmethod
     def _scratch_build(cls, source, **kwargs):
-        koji_task_id = None
         session = cls.koji_helper.session_maker()
         remote = cls.koji_helper.upload_srpm(session, source)
         task_id = session.build(remote, cls.target_tag, cls.opts, priority=cls.priority)
@@ -569,7 +568,7 @@ class FedpkgBuildTool(BuildToolBase):
             cls.logs.append(weburl)
             raise BinaryPackageBuildError
         logs.append(weburl)
-        return rpms, logs, koji_task_id
+        return rpms, logs, task_id
 
     @classmethod
     def get_logs(cls):

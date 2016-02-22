@@ -438,11 +438,12 @@ class Application(object):
                     if self.conf.build_tasks is None:
                         build_dict.update(builder.build(spec, sources, patches, results_dir, **build_dict))
                     if not self.conf.builds_nowait:
-                        while True:
-                            kh = KojiHelper()
-                            build_dict['rpm'], build_dict['logs'] = kh.get_koji_tasks(task_id, results_dir)
-                            if build_dict['rpm']:
-                                break
+                        if self.conf.buildtool == 'fedpkg':
+                            while True:
+                                kh = KojiHelper()
+                                build_dict['rpm'], build_dict['logs'] = kh.get_koji_tasks(build_dict['koji_task_id'], results_dir)
+                                if build_dict['rpm']:
+                                    break
                     else:
                         if self.conf.build_tasks:
                             kh = KojiHelper()
