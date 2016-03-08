@@ -157,6 +157,14 @@ class GitPatchTool(PatchBase):
         deleted_patches = []
         unapplied_patches = []
         while True:
+            log = cls.git_helper.command_log(parameters='--pretty=oneline')
+            for patch_name in cls.git_helper.get_automerged_patches(cls.output_data):
+                index = [i for i, l in enumerate(log) if l.endswith(patch_name)]
+                if index:
+                    commit = GitHelper.get_commit_hash_log(log, number=index[0])
+                    base_name = os.path.join(cls.kwargs['results_dir'], patch_name)
+                    cls.git_helper.command_diff('{}~1'.format(commit), commit, output_file=base_name)
+                    modified_patches.append(base_name)
             if int(ret_code) != 0:
                 if not cls.non_interactive:
                     patch_name = cls.git_helper.get_unapplied_patch(cls.output_data)

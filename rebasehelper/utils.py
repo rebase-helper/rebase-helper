@@ -684,6 +684,18 @@ One of the possible configuration can be:\n
         return modified_files
 
     @staticmethod
+    def get_automerged_patches(output):
+        automerged_patches = []
+        patch_name = None
+        for line in output:
+            if line.startswith('Applying:'):
+                patch_name = line.split()[-1]
+            elif line.startswith('Auto-merging'):
+                if patch_name and patch_name not in automerged_patches:
+                    automerged_patches.append(patch_name)
+        return automerged_patches
+
+    @staticmethod
     def get_unapplied_patch(output):
         patch_name = None
         lines = [x for x in output if x.startswith("Patch failed at")]
@@ -780,9 +792,11 @@ One of the possible configuration can be:\n
             cmd.extend(parameters)
         return self._call_git_command(cmd)
 
-    def command_diff(self, head, output_file=None):
+    def command_diff(self, head, head2=None, output_file=None):
         cmd = ['diff']
         cmd.append(head)
+        if head2:
+            cmd.append(head2)
         return self._call_git_command(cmd, output_file=output_file)
 
     def command_am(self, parameters=None, input_file=None):
