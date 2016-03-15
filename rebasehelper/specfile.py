@@ -26,10 +26,12 @@ import re
 import shutil
 import six
 import rpm
+import argparse
+import shlex
 from datetime import date
 from difflib import SequenceMatcher
 
-from rebasehelper.utils import DownloadHelper, defenc
+from rebasehelper.utils import DownloadHelper, MacroHelper, defenc
 from rebasehelper.logger import logger
 from rebasehelper import settings
 from rebasehelper.archive import Archive
@@ -39,10 +41,10 @@ PATCH_PREFIX = '%patch'
 
 
 def get_rebase_name(name):
-
     """
     Function returns a name in results directory
-    :param name:
+
+    :param name: 
     :return: full path to results dir with name
     """
     dir_name = os.path.dirname(name)
@@ -127,10 +129,10 @@ class SpecFile(object):
         self._update_data()
 
     def _update_data(self):
-
         """
         Function updates data from given SPEC file
-        :return:
+
+        :return: 
         """
         # Load rpm information
         self.spc = rpm.spec(self.path)
@@ -148,10 +150,7 @@ class SpecFile(object):
         self.patches = self._get_initial_patches_list()
 
     def _get_initial_sources_list(self):
-
-        """
-        Function returns all sources mentioned in SPEC file
-        """
+        """Function returns all sources mentioned in SPEC file"""
         # get all regular sources
         sources = []
         tar_sources = []
@@ -172,10 +171,7 @@ class SpecFile(object):
         return sources, tar_sources
 
     def _get_initial_patches_list(self):
-
-        """
-        Method returns a list of patches from a spec file
-        """
+        """Method returns a list of patches from a spec file"""
         patches_applied = []
         patches_not_used = []
         patches_list = [p for p in self.spc.sources if p[2] == 2]
@@ -212,10 +208,10 @@ class SpecFile(object):
         return new_object
 
     def get_patch_option(self, line):
-
         """
         Function returns a patch options
-        :param line:
+
+        :param line: 
         :return: patch options like -p1
         """
         spl = line.strip().split()
@@ -225,12 +221,10 @@ class SpecFile(object):
             return spl[0], spl[1]
 
     def _create_spec_from_sections(self):
-
         """
         Spec file has defined order
         First we write a header
         """
-
         new_spec_file = []
 
         try:
@@ -247,7 +241,6 @@ class SpecFile(object):
         return new_spec_file
 
     def _split_sections(self):
-
         """
         Function split spec file to well known SPEC sections
 
@@ -286,7 +279,6 @@ class SpecFile(object):
         return sections
 
     def get_spec_section(self, section_name):
-
         """
         Returns the section of selected name
 
@@ -298,7 +290,6 @@ class SpecFile(object):
                 return section
 
     def set_spec_section(self, section_name, new_section):
-
         """
         Returns the section of selected name
 
@@ -313,17 +304,17 @@ class SpecFile(object):
                     self.rpm_sections[key] = (section_name, new_section)
 
     def get_path(self):
-
         """
         Return only spec file path
-        :return:
+
+        :return: 
         """
         return self.path
 
     def is_test_suite_enabled(self):
-
         """
         Returns whether test suite is enabled during the build time
+
         :return: True if enabled or False if not
         """
         check_section = self.get_spec_section('%check')
@@ -338,20 +329,17 @@ class SpecFile(object):
             return False
 
     def _get_patch_number(self, fields):
-
         """
         Function returns patch number
-        :param line:
+
+        :param line: 
         :return: patch_num
         """
         patch_num = fields[0].replace('Patch', '')[:-1]
         return patch_num
 
     def _read_spec_content(self):
-
-        """
-        Method reads the content SPEC file and updates internal variables.
-        """
+        """Method reads the content SPEC file and updates internal variables."""
         try:
             with open(self.path) as f:
                 lines = f.readlines()
@@ -361,10 +349,7 @@ class SpecFile(object):
         self.spec_content = lines
 
     def _get_patches_flags(self):
-
-        """
-        For all patches: get flags passed to %patch macro and index of application
-        """
+        """For all patches: get flags passed to %patch macro and index of application"""
         patch_flags = {}
         patches = [x for x in self.spec_content if x.startswith(PATCH_PREFIX)]
         if not patches:
@@ -379,59 +364,66 @@ class SpecFile(object):
         # {num: index of application}
         return patch_flags
 
-    def get_release(self):
+    def get_epoch_number(self):
+        """
+        Method for getting epoch of the package
 
+        :return: 
+        """
+        return self.hdr[rpm.RPMTAG_EPOCHNUM]
+
+    def get_release(self):
         """
         Method for getting full release string of the package
-        :return:
+
+        :return: 
         """
-        return self.hdr[rpm.RPMTAG_RELEASE].decode(defenc)
+        return self.hdr[rpm.RPMTAG_RELEASE].decode(defenc) if six.PY3 else self.hdr[rpm.RPMTAG_RELEASE]
 
     def get_release_number(self):
-
         """
         Method for getting the release of the package
-        :return:
+
+        :return: 
         """
         for line in self.spec_content:
-            match = re.search(r'Release:\s*([0-9.]+).*%{\?dist}\s*', line)
+            match = re.search(r'^Release:\s*([0-9.]+).*%{\?dist}\s*', line)
             if match:
                 return match.group(1)
 
     def get_version(self):
-
         """
         Method returns the version
-        :return:
+
+        :return: 
         """
-        return self.hdr[rpm.RPMTAG_VERSION].decode(defenc)
+        return self.hdr[rpm.RPMTAG_VERSION].decode(defenc) if six.PY3 else self.hdr[rpm.RPMTAG_VERSION]
 
     def get_extra_version(self):
-
         """
         Returns an extra version of the package - like b1, rc2, ...
+
         :return: String
         """
         return self.extra_version
 
     def get_package_name(self):
-
         """
         Function returns a package name
-        :return:
+
+        :return: 
         """
-        return self.hdr[rpm.RPMTAG_NAME].decode(defenc)
+        return self.hdr[rpm.RPMTAG_NAME].decode(defenc) if six.PY3 else self.hdr[rpm.RPMTAG_NAME]
 
     def get_requires(self):
-
         """
         Function returns a package requirements
-        :return:
+
+        :return: 
         """
-        return [r.decode(defenc) for r in self.hdr[rpm.RPMTAG_REQUIRES]]
+        return [r.decode(defenc) if six.PY3 else r for r in self.hdr[rpm.RPMTAG_REQUIRES]]
 
     def is_patch_git_generated(self, full_patch_name):
-
         """
         Return:
           True if patch is generated by git ('git diff' or 'git format-patch')
@@ -448,74 +440,60 @@ class SpecFile(object):
         return False
 
     def get_patches(self):
-
         """
         Method returns list of all applied and not applied patches
+
         :return: list of PatchObject
         """
         return self.get_applied_patches() + self.get_not_used_patches()
 
     def get_applied_patches(self):
-
         """
         Method returns list of all applied patches.
 
         :return: list of PatchObject
         """
-
         return self.patches['applied']
 
     def get_not_used_patches(self):
-
         """
         Method returns list of all unpplied patches.
 
         :return: list of PatchObject
         """
-
         return self.patches['not_applied']
 
     def get_sources(self):
-
         """
         Method returns dictionary with sources list.
 
-        :return:
+        :return: 
         """
         return self.sources
 
     def get_archive(self):
-
-        """
-        Function returns the first archive name [0] from SPEC file
-        """
+        """Function returns the first archive name [0] from SPEC file"""
         return self.get_archives()[0]
 
     def get_archives(self):
-
-        """
-        Function returns the archives name from SPEC file
-        """
+        """Function returns the archives name from SPEC file"""
         return [os.path.basename(x).strip() for x in self.tar_sources]
 
-    def get_prep_section(self):
-        """
-        Function returns whole prep section
-        """
+    def get_prep_section(self, complete=False):
+        """Function returns whole prep section"""
         prep_section = []
-        start_prep_section = False
+        start_prep_section = complete
         for line in self.prep_section.split('\n'):
             if start_prep_section:
                 prep_section.append(line)
                 continue
-            if line.startswith('/usr/bin/chmod -Rf a+rX'):
+            if line.startswith('/usr/bin/chmod -Rf a+rX') and not complete:
                 start_prep_section = True
                 continue
 
         return prep_section
 
     def _get_raw_source_string(self, source_num):
-
         """
         Method returns raw string, possibly with RPM macros, of a Source with passed number.
 
@@ -532,7 +510,6 @@ class SpecFile(object):
 
     @staticmethod
     def get_paths_with_rpm_macros(files):
-
         """
         Method modifies paths in passed list to use RPM macros
 
@@ -563,17 +540,17 @@ class SpecFile(object):
 
     @staticmethod
     def construct_string_with_comment(lines):
-
         """
         Wraps the line in a rebase-helper specific comments
 
         :param lines: line (or list of lines) to be wrapped
         :return: list with lines
         """
-        comm_lines = [settings.BEGIN_COMMENT]
+        sec = '\n'
+        comm_lines = [settings.BEGIN_COMMENT + sec]
         for l in lines if not isinstance(lines, six.string_types) else [lines]:
-            comm_lines.append(l)
-        comm_lines.append(settings.END_COMMENT)
+            comm_lines.append(l + sec)
+        comm_lines.append(settings.END_COMMENT + sec)
         return comm_lines
 
     def _correct_missing_files(self, missing):
@@ -603,22 +580,23 @@ class SpecFile(object):
             if match:
                 # Check what files are in section
                 # and comment only relevant
-                f_exists = [f for f in sources if os.path.basename(f) in sec_content]
+                f_exists = [f for f in sources for sec in sec_content if os.path.basename(f) in sec]
                 if not f_exists:
                     continue
                 for f in f_exists:
-                    sec_content = sec_content.split('\n')
+                    index = 0
                     for index, row in enumerate(sec_content):
                         if f in row:
-                            sec_content[index] = SpecFile.construct_string_with_comment('#' + row)
-                self.rpm_sections[key] = (sec_name, '\n'.join(sec_content))
+                            break
+                    sec_content[index: index+1] = SpecFile.construct_string_with_comment('#' + row)
+                self.rpm_sections[key] = (sec_name, sec_content)
 
     def modify_spec_files_section(self, files):
-
         """
         Function repairs spec file according to new sources.
-        :param files:
-        :return:
+
+        :param files: 
+        :return: 
         """
         # Files which are missing in SPEC file.
         try:
@@ -641,10 +619,7 @@ class SpecFile(object):
         self.save()
 
     def _write_spec_file_to_disc(self):
-
-        """
-        Write the current SPEC file to the disc
-        """
+        """Write the current SPEC file to the disc"""
         logger.debug("Writing SPEC file '%s' to the disc", self.path)
         try:
             with open(self.path, "w") as f:
@@ -653,7 +628,6 @@ class SpecFile(object):
             raise RebaseHelperError("Unable to write updated data to SPEC file '%s'", self.path)
 
     def _comment_out_patches(self, patch_num):
-
         """
         Comment out patches from SPEC file
 
@@ -672,8 +646,8 @@ class SpecFile(object):
                         break
 
     def _correct_rebased_patches(self, patch_num):
-
-        """Comment out patches from SPEC file
+        """
+        Comment out patches from SPEC file
 
         :var patch_num: list with patch numbers to update
         """
@@ -697,11 +671,11 @@ class SpecFile(object):
                         break
 
     def set_release_number(self, release):
-
         """
         Method to set release number
-        :param release:
-        :return:
+
+        :param release: 
+        :return: 
         """
         for index, line in enumerate(self.spec_content):
             if line.startswith('Release:'):
@@ -713,11 +687,11 @@ class SpecFile(object):
                 break
 
     def redefine_release_with_macro(self, macro):
-
         """
         Method redefines the Release: line to include passed macro and comments out the old line
-        :param macro:
-        :return:
+
+        :param macro: 
+        :return: 
         """
         for index, line in enumerate(self.spec_content):
             if line.startswith('Release:'):
@@ -731,13 +705,13 @@ class SpecFile(object):
                 break
 
     def revert_redefine_release_with_macro(self, macro):
-
         """
         Method removes the redefined the Release: line with given macro and uncomments the old Release line.
-        :param macro:
-        :return:
+
+        :param macro: 
+        :return: 
         """
-        search_re = re.compile('Release:\s*[0-9.]*[0-9]+{0}%{{\?dist}}\s*'.format(macro))
+        search_re = re.compile('^Release:\s*[0-9.]*[0-9]+{0}%{{\?dist}}\s*'.format(macro))
 
         for index, line in enumerate(self.spec_content):
             match = search_re.search(line)
@@ -754,25 +728,60 @@ class SpecFile(object):
                 self.save()
                 break
 
-    def set_version(self, version):
+    def _set_macro(self, macro, value):
 
+        """
+        (Re)defines given macro value in the SPEC file
+
+        :param macro: macro name
+        :param value: macro value
+        """
+        macro_re = re.compile('(%global|%define)\s+(\w+)(\(.+?\))?\s+(.+)')
+        defined = False
+
+        for index, line in enumerate(self.spec_content):
+            match = macro_re.search(line)
+            if match:
+                if match.group(2) != macro:
+                    continue
+
+                if match.group(3):
+                    line = line.replace(match.group(3), '')
+
+                self.spec_content[index] = line.replace(match.group(4), value)
+                defined = True
+
+        if not defined:
+            self.spec_content.insert(0, '%global {} {}'.format(macro, value))
+
+        self.save()
+
+    def set_version(self, version):
         """
         Method to update the version in the SPEC file
 
         :param version: string with new version
         :return: None
         """
+        version_re = re.compile('^Version:\s*(.+)')
         for index, line in enumerate(self.spec_content):
-            if not line.startswith('Version'):
-                continue
-            logger.debug("Updating version in SPEC from '%s' with '%s'", self.get_version(), version)
-            self.spec_content[index] = line.replace(self.get_version(), version)
-            break
+            match = version_re.search(line)
+            if match:
+                logger.debug("Updating version in SPEC from '%s' with '%s'", self.get_version(), version)
+
+                # search for used macros in spec file scope
+                for m in MacroHelper.get_macros(level=-1, used=True):
+                    if m['name'] in match.group(1):
+                        # redefine the macro, don't touch Version tag
+                        self._set_macro(m['name'], version)
+                        return
+
+                self.spec_content[index] = line.replace(match.group(1), version)
+                break
         #  save changes to the disc
         self.save()
 
     def set_extra_version(self, extra_version):
-
         """
         Method to update the extra version in the SPEC file. Redefined Source0 if needed and also changes
         Release accordingly.
@@ -809,7 +818,7 @@ class SpecFile(object):
                 self.set_release_number('0.1')
                 self.redefine_release_with_macro(extra_version_macro)
                 # change the Source0 definition
-                source0_re = re.compile(r'Source0?:.*')
+                source0_re = re.compile(r'^Source0?:.*')
                 for index, line in enumerate(self.spec_content):
                     if source0_re.search(line):
                         # comment out the original Source0 line
@@ -844,13 +853,12 @@ class SpecFile(object):
         self.save()
 
     def set_version_using_archive(self, archive_path):
-
         """
         Method to update the version in the SPEC file using a archive path. The version
         is extracted from the archive name.
 
-        :param archive_path:
-        :return:
+        :param archive_path: 
+        :return: 
         """
         version, extra_version = SpecFile.extract_version_from_archive_name(archive_path,
                                                                             self._get_raw_source_string(0))
@@ -858,10 +866,7 @@ class SpecFile(object):
         self.set_extra_version(extra_version)
 
     def write_updated_patches(self, patches):
-
-        """
-        Function writes the patches to -rebase.spec file
-        """
+        """Function writes the patches to -rebase.spec file"""
         #  TODO: this method should not take whole kwargs as argument, take only what it needs.
         if not patches:
             return None
@@ -877,13 +882,19 @@ class SpecFile(object):
                 # We check if patch is mentioned in SPEC file but not used.
                 # We are comment out the patch
                 check_not_applied = [x for x in self.get_not_used_patches() if int(x.get_index()) == int(patch_num)]
-                patch_removed = [x for x in patches['deleted'] if patch_name in x]
+                if 'deleted' in patches:
+                    patch_removed = [x for x in patches['deleted'] if patch_name in x]
+                else:
+                    patch_removed = None
                 if check_not_applied or patch_removed:
                     comment = '#'
                     self.spec_content[index] = comment + ' '.join(fields[:-1]) + ' ' + os.path.basename(patch_name) + '\n'
                     if patch_removed:
                         removed_patches.append(patch_num)
-                patch = [x for x in patches['modified'] if patch_name in x]
+                if 'modified' in patches:
+                    patch = [x for x in patches['modified'] if patch_name in x]
+                else:
+                    patch = None
                 if patch:
                     fields[1] = os.path.join(settings.REBASE_HELPER_RESULTS_DIR, patch_name)
                     self.spec_content[index] = ' '.join(fields) + '\n'
@@ -895,10 +906,7 @@ class SpecFile(object):
         self.save()
 
     def save(self):
-
-        """
-        Save changes made to the spec_content to the disc and update internal variables
-        """
+        """Save changes made to the spec_content to the disc and update internal variables"""
         #  Write changes to the disc
         self._write_spec_file_to_disc()
         #  Update internal variables
@@ -906,7 +914,6 @@ class SpecFile(object):
 
     @staticmethod
     def split_version_string(version_string=''):
-
         """
         Method splits version string into version and possibly extra string as 'rc1' or 'b1', ...
 
@@ -927,7 +934,6 @@ class SpecFile(object):
 
     @staticmethod
     def extract_version_from_archive_name(archive_path, source_string=''):
-
         """
         Method extracts the version from archive name based on the source string from SPEC file.
         It extracts also an extra version such as 'b1', 'rc1', ...
@@ -950,6 +956,8 @@ class SpecFile(object):
         if regex_str == url_base:
             logger.debug('Using fallback regex to extract version from archive name.')
             regex_str = fallback_regex_str
+        else:
+            regex_str = rpm.expandMacro(regex_str)
 
         logger.debug("Extracting version using regex '%s'", regex_str)
         regex = re.compile(regex_str)
@@ -979,11 +987,14 @@ class SpecFile(object):
         today = date.today()
         git_name = git_helper.command_config('--get', 'user.name')
         git_email = git_helper.command_config('--get', 'user.email')
-        new_record.append('* {day} {name} <{email}> - {ver}-{rel}\n'.format(day=today.strftime('%a %b %d %Y'),
+        evr = '{epoch}:{ver}-{rel}'.format(epoch=self.get_epoch_number(),
+                                           ver=self.get_version(),
+                                           rel=self.get_release_number())
+        evr = evr[2:] if evr.startswith('0:') else evr
+        new_record.append('* {day} {name} <{email}> - {evr}\n'.format(day=today.strftime('%a %b %d %Y'),
                                                                       name=git_name,
                                                                       email=git_email,
-                                                                      ver=self.get_version(),
-                                                                      rel=self.get_release_number()))
+                                                                      evr=evr))
         new_record.append('- New upstream release {rel}\n'.format(rel=self.get_version()))
         new_record.append('\n')
         return new_record
@@ -994,10 +1005,94 @@ class SpecFile(object):
         self.set_spec_section(changelog, new_log)
 
     def update_changelog(self, new_log):
-
-        """
-        Function updates changelog with new version
-        """
+        """Function updates changelog with new version"""
         self.insert_changelog(new_log)
         self.spec_content = self._create_spec_from_sections()
         self.save()
+
+    def update_setup_dirname(self, dirname):
+        """
+        Update %setup or %autosetup dirname argument if needed
+
+        :param dirname: required dirname
+        """
+        for index, line in enumerate(self.spec_content):
+            if line.startswith('%setup') or line.startswith('%autosetup'):
+                args = line.split()
+                macro = args[0]
+
+                # parse macro arguments, care only about -T and -n
+                parser = argparse.ArgumentParser()
+                parser.add_argument('-T', action='store_true')
+                parser.add_argument('-n', default='%{name}-%{version}')
+
+                namespace, unknown = parser.parse_known_args(args[1:])
+
+                if namespace.T:
+                    # -T means not to extract Source0, so this macro instance
+                    # can be ignored
+                    continue
+
+                # test if modification is really necessary
+                if dirname != rpm.expandMacro(namespace.n):
+                    new_dirname = dirname
+
+                    # get %{name} and %{version} macros
+                    macros = [m for m in MacroHelper.get_macros(level=-3) if m['name'] in ('name', 'version')]
+                    # add all macros from spec file scope
+                    macros.extend(MacroHelper.get_macros(level=-1))
+                    # ensure maximal greediness
+                    macros.sort(key=lambda k: len(k['value']), reverse=True)
+
+                    # substitute tokens with macros
+                    for m in macros:
+                        if m['value'] and m['value'] in dirname:
+                            new_dirname = new_dirname.replace(m['value'], '%{{{}}}'.format(m['name']))
+
+                    args = [macro]
+                    args.extend(unknown)
+                    args.append('-n')
+                    args.append(new_dirname)
+
+                    self.spec_content[index] = '#{0}'.format(line)
+                    self.spec_content.insert(index + 1, ' '.join(args))
+                    self.save()
+
+    def find_archive_target_in_prep(self, archive):
+        """
+        Tries to find a command that is used to extract the specified archive
+        and attempts to determine target path from it.
+        'tar' and 'unzip' commands are supported so far.
+
+        :param archive: Path to archive
+        :return: Target path relative to builddir or None if not determined
+        """
+        cd_parser = argparse.ArgumentParser()
+        cd_parser.add_argument('dir', default='')
+        tar_parser = argparse.ArgumentParser()
+        tar_parser.add_argument('-C', default='.', dest='target')
+        unzip_parser = argparse.ArgumentParser()
+        unzip_parser.add_argument('-d', default='.', dest='target')
+        prep = self.get_prep_section(complete=True)
+        archive = os.path.basename(archive)
+        builddir = rpm.expandMacro('%{_builddir}')
+        basedir = builddir
+        for line in prep:
+            if line.strip().startswith('#'):
+                # skip comments
+                continue
+            if 'cd' in line:
+                # keep track of current directory
+                ns, _ = cd_parser.parse_known_args(shlex.split(line)[1:])
+                basedir = ns.dir if os.path.isabs(ns.dir) else os.path.join(basedir, ns.dir)
+            if archive in line:
+                if 'tar' in line:
+                    parser = tar_parser
+                elif 'unzip' in line:
+                    parser = unzip_parser
+                else:
+                    continue
+                ns, _ = parser.parse_known_args(shlex.split(line)[1:])
+                basedir = os.path.relpath(basedir, builddir)
+                return os.path.normpath(os.path.join(basedir, ns.target))
+        return None

@@ -1,10 +1,5 @@
 sudo: true
 language: python
-python:
-  - "2.7"
-  - "3.3"
-  - "3.4"
-before_install: ./install-dependencies.sh
-install:
-  - pip install -r requirements.txt
-script: python setup.py test
+before_install: ./install-rpm.sh
+install: pip install tox
+script: tox

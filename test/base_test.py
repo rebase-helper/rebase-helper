@@ -23,6 +23,10 @@
 import os
 import shutil
 import tempfile
+import pytest
+
+skip_on_travis = pytest.mark.skipif(os.getenv('TRAVIS') == 'true',
+                                    reason='redundant on Travis CI')
 
 
 class BaseTest(object):
@@ -39,9 +43,7 @@ class BaseTest(object):
     TEST_FILES = []
 
     def setup(self):
-        """
-        Setup the temporary environment and change the working directory to it.
-        """
+        """Setup the temporary environment and change the working directory to it."""
         self.WORKING_DIR = tempfile.mkdtemp(prefix="rebase-helper-test-")
         os.chdir(self.WORKING_DIR)
         # copy files into the testing environment directory
@@ -51,7 +53,8 @@ class BaseTest(object):
     def teardown(self):
         """
         Destroy the temporary environment.
-        :return:
+
+        :return: 
         """
         os.chdir(self.TESTS_DIR)
         shutil.rmtree(self.WORKING_DIR)

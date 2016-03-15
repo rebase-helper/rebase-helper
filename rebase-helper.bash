@@ -31,12 +31,11 @@ _local_archives()
 # fill --*tool arguments into ARGUMENTS variable
 _complete_tool_arguments()
 {
-    patchtools="patch git"
     buildtools="mock rpmbuild"
     difftools="meld"
     pkgcomparetools="pkgdiff"
     outputtools="text"
-    
+
     if [ $# != 1 ]; then
         ARGUMENTS=()
     else
@@ -58,7 +57,6 @@ _rebase-helper()
           -v --verbose \
           -p --patch-only \
           -b --build-only \
-          --patchtool \
           --buildtool \
           --difftool \
           --pkgcomparetool \

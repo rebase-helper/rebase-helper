@@ -40,7 +40,8 @@ class TestSpecFile(BaseTest):
     SOURCE_1 = 'source-tests.sh'
     SOURCE_2 = ''
     SOURCE_4 = 'file.txt.bz2'
-    SOURCE_5 = 'documentation.tar.bz2'
+    SOURCE_5 = 'documentation.tar.xz'
+    SOURCE_6 = 'misc.zip'
     PATCH_1 = 'test-testing.patch'
     PATCH_2 = 'test-testing2.patch'
     PATCH_3 = 'test-testing3.patch'
@@ -115,10 +116,10 @@ class TestSpecFile(BaseTest):
         assert self.SPEC_FILE_OBJECT.get_archive() == self.OLD_ARCHIVE
 
     def test_get_sources(self):
-        sources = [self.SOURCE_0, self.SOURCE_1, self.SOURCE_4, self.SOURCE_5, self.OLD_ARCHIVE]
+        sources = [self.SOURCE_0, self.SOURCE_1, self.SOURCE_4, self.SOURCE_5, self.SOURCE_6, self.OLD_ARCHIVE]
         sources = [os.path.join(self.WORKING_DIR, f) for f in sources]
-        archives = [self.OLD_ARCHIVE, self.SOURCE_4, self.SOURCE_5]
-        assert len(set(sources).intersection(set(self.SPEC_FILE_OBJECT.get_sources()))) == 5
+        archives = [self.OLD_ARCHIVE, self.SOURCE_4, self.SOURCE_5, self.SOURCE_6]
+        assert len(set(sources).intersection(set(self.SPEC_FILE_OBJECT.get_sources()))) == 6
         # The Source0 has to be always in the beginning
         assert self.SPEC_FILE_OBJECT.get_archive() == 'test-1.0.2.tar.xz'
         assert self.SPEC_FILE_OBJECT.get_archives() == archives
@@ -187,13 +188,16 @@ class TestSpecFile(BaseTest):
         assert SpecFile.extract_version_from_archive_name('/home/user/test-1.0.1.tar.gz',
                                                           'ftp://ftp.test.org/test-%{version}.tar.gz') == ('1.0.1', '')
         # Real world tests
+        name = 'http://www.cups.org/software/%{version}/cups-%{version}-source.tar.bz2'
         assert SpecFile.extract_version_from_archive_name('cups-1.7.5-source.tar.bz2',
-                                                          'http://www.cups.org/software/%{version}/cups-%{version}-source.tar.bz2') == ('1.7.5', '')
+                                                          name) == ('1.7.5', '')
         # the 'rc1' can't be in the version number
+        name = 'ftp://ftp.isc.org/isc/bind9/%{VERSION}/bind-%{VERSION}.tar.gz'
         assert SpecFile.extract_version_from_archive_name('bind-9.9.5rc2.tar.gz',
-                                                          'ftp://ftp.isc.org/isc/bind9/%{VERSION}/bind-%{VERSION}.tar.gz') == ('9.9.5', 'rc2')
+                                                          name) == ('9.9.5', 'rc2')
+        name = 'http://www.thekelleys.org.uk/dnsmasq/%{?extrapath}%{name}-%{version}%{?extraversion}.tar.xz'
         assert SpecFile.extract_version_from_archive_name('dnsmasq-2.69rc1.tar.xz',
-                                                          'http://www.thekelleys.org.uk/dnsmasq/%{?extrapath}%{name}-%{version}%{?extraversion}.tar.xz') == ('2.69', 'rc1')
+                                                          name) == ('2.69', 'rc1')
 
     def test__split_sections(self):
         expected_sections = {
@@ -212,7 +216,8 @@ class TestSpecFile(BaseTest):
                             'Source2: ftp://test.com/test-source.sh\n',
                             '#Source3: source-tests.sh\n',
                             'Source4: file.txt.bz2\n',
-                            'Source5: documentation.tar.bz2\n',
+                            'Source5: documentation.tar.xz\n',
+                            'Source6: misc.zip\n',
                             'Patch1: test-testing.patch\n',
                             'Patch2: test-testing2.patch\n',
                             'Patch3: test-testing3.patch\n',
@@ -226,11 +231,13 @@ class TestSpecFile(BaseTest):
                                    '\n']],
             3: ['%description devel', ['Testing devel spec file\n',
                                        '\n']],
-            4: ['%prep', ['%setup -q\n',
+            4: ['%prep', ['%setup -q -a 5\n',
                           '%patch1\n',
                           '%patch2 -p1\n',
                           '%patch3 -p1 -b .testing3\n',
                           '%patch4 -p0 -b .testing4\n',
+                          'mkdir misc\n',
+                          'tar -xf %{SOURCE6} -C misc\n',
                           '\n']],
             5: ['%build', ['autoreconf -vi\n',
                            '\n',
@@ -271,7 +278,12 @@ class TestSpecFile(BaseTest):
         files = {'missing': ['/usr/bin/test2']}
         self.SPEC_FILE_OBJECT.modify_spec_files_section(files)
         section = self.SPEC_FILE_OBJECT.get_spec_section('%files')
-        assert '%{_bindir}/test2' in section
+        expected = ['#BEGIN THIS MODIFIED BY REBASE-HELPER\n',
+                    '%{_bindir}/test2\n',
+                    '#END THIS MODIFIED BY REBASE-HELPER\n',
+                    '%{_bindir}/file.txt\n',
+                    '\n']
+        assert expected == section
 
     def test_spec_remove_file(self):
         files = {'deleted': ['/usr/lib/test.so']}
@@ -281,19 +293,34 @@ class TestSpecFile(BaseTest):
 
     def test_spec_missing_and_remove_file(self):
         files = {'missing': ['/usr/bin/test2'],
-                 'deleted': ['/usr/lib/test.so']}
+                 'deleted': ['/usr/lib/my_test.so']}
         self.SPEC_FILE_OBJECT.modify_spec_files_section(files)
         section = self.SPEC_FILE_OBJECT.get_spec_section('%files')
-        assert '%{_bindir}/test2' in section
-        section = self.SPEC_FILE_OBJECT.get_spec_section('%files devel')
-        assert '%{_libdir}/test.so' not in section
+        expected = ['#BEGIN THIS MODIFIED BY REBASE-HELPER\n',
+                    '%{_bindir}/test2\n',
+                    '#END THIS MODIFIED BY REBASE-HELPER\n',
+                    '%{_bindir}/file.txt\n',
+                    '\n']
+        assert expected == section
+        section_devel = self.SPEC_FILE_OBJECT.get_spec_section('%files devel')
+        expected_devel = ['%{_bindir}/test_example\n',
+                          '#BEGIN THIS MODIFIED BY REBASE-HELPER\n',
+                          '#%{_libdir}/my_test.so\n\n',
+                          '#END THIS MODIFIED BY REBASE-HELPER\n',
+                          '\n']
+        assert expected_devel == section_devel
 
     def test_spec_missing_from_logfile(self):
         shutil.move('build_missing.log', 'build.log')
         files = BuildLogAnalyzer.parse_log(self.WORKING_DIR, 'build.log')
         self.SPEC_FILE_OBJECT.modify_spec_files_section(files)
         section = self.SPEC_FILE_OBJECT.get_spec_section('%files')
-        assert '%{_bindir}/test2' in section
+        expected = ['#BEGIN THIS MODIFIED BY REBASE-HELPER\n',
+                    '%{_bindir}/test2\n',
+                    '#END THIS MODIFIED BY REBASE-HELPER\n',
+                    '%{_bindir}/file.txt\n',
+                    '\n']
+        assert expected == section
 
     def test_spec_obsolete_from_logfile(self):
         shutil.move('build_obsoletes.log', 'build.log')
@@ -381,3 +408,22 @@ class TestSpecFile(BaseTest):
             lines = spec.readlines()
         lines = [x for x in lines if x.startswith('%patch4')]
         assert expected_patch == lines
+
+    def test_update_setup_dirname(self):
+        prep = self.SPEC_FILE_OBJECT.get_spec_section('%prep')
+        self.SPEC_FILE_OBJECT.update_setup_dirname('test-1.0.2')
+        assert self.SPEC_FILE_OBJECT.get_spec_section('%prep') == prep
+
+        self.SPEC_FILE_OBJECT.update_setup_dirname('test-1.0.2rc1')
+        prep = self.SPEC_FILE_OBJECT.get_spec_section('%prep')
+        assert '%setup -q -a 5 -n %{name}-%{REBASE_VER}' in prep
+
+        self.SPEC_FILE_OBJECT.update_setup_dirname('test-1.0.2-rc1')
+        prep = self.SPEC_FILE_OBJECT.get_spec_section('%prep')
+        assert '%setup -q -a 5 -n %{name}-%{version}-%{REBASE_EXTRA_VER}' in prep
+
+    def test_find_archive_target_in_prep(self):
+        target = self.SPEC_FILE_OBJECT.find_archive_target_in_prep('documentation.tar.xz')
+        assert target == 'test-1.0.2'
+        target = self.SPEC_FILE_OBJECT.find_archive_target_in_prep('misc.zip')
+        assert target == 'test-1.0.2/misc'

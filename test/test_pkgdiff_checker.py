@@ -41,22 +41,22 @@ class TestPkgDiff(BaseTest):
 
     def test_fill_dictionary(self):
         expected_dict = {'added': ['/usr/sbin/test',
-                                   '/usr/sbin/pkg-1.0.2/binary_test',
+                                   '/usr/sbin/pkg-*/binary_test',
                                    '/usr/lib64/libtest.so',
                                    '/usr/lib64/libtest.so.1'],
                          'removed': ['/usr/sbin/my_test',
-                                     '/usr/sbin/pkg-1.0.1/binary_test',
+                                     '/usr/sbin/pkg-*/binary_test',
                                      '/usr/lib64/libtest2.so',
                                      '/usr/lib64/libtest2.so.1'],
                          'changed': ['/usr/share/test.man'],
                          'moved': ['/usr/local/test.sh',
-                                   '/usr/sbin/pkg-1.0.1/binary_test;/usr/sbin/pkg-1.0.2/binary_test (1%)'],
+                                   '/usr/sbin/pkg-*/binary_test;/usr/sbin/pkg-*/binary_test (1%)'],
                          'renamed': ['/usr/lib/libtest3.so.3',
                                      '/usr/lib/libtest3.so']}
         pdt = PkgDiffTool()
         pdt.results_dir = self.TEST_FILES_DIR
-        res_dict = pdt.fill_dictionary(pdt.results_dir)
-        assert res_dict == expected_dict
+        pdt.fill_dictionary(pdt.results_dir, old_version='1.0.1', new_version='1.0.2')
+        assert pdt.results_dict == expected_dict
 
     def test_process_xml(self):
         expected_dict = {'added': ['/usr/sbin/test',
@@ -64,7 +64,7 @@ class TestPkgDiff(BaseTest):
                                    '/usr/lib64/libtest.so.1'],
                          'changed': ['/usr/share/test.man'],
                          'moved': ['/usr/local/test.sh',
-                                   '/usr/sbin/pkg-1.0.1/binary_test;/usr/sbin/pkg-1.0.2/binary_test (1%)'],
+                                   '/usr/sbin/pkg-*/binary_test;/usr/sbin/pkg-*/binary_test (1%)'],
                          'removed': ['/usr/sbin/my_test',
                                      '/usr/lib64/libtest2.so',
                                      '/usr/lib64/libtest2.so.1'],
@@ -72,6 +72,6 @@ class TestPkgDiff(BaseTest):
                                      '/usr/lib/libtest3.so']}
         pdt = PkgDiffTool()
         pdt.results_dir = self.TEST_FILES_DIR
-        res_dict = pdt.process_xml_results(pdt.results_dir)
+        res_dict = pdt.process_xml_results(pdt.results_dir, old_version="1.0.1", new_version="1.0.2")
         assert res_dict == expected_dict
 

@@ -20,6 +20,7 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
+from __future__ import print_function
 import os
 import shutil
 import logging
@@ -30,7 +31,7 @@ from rebasehelper.specfile import SpecFile, get_rebase_name
 from rebasehelper.logger import logger, logger_report, LoggerHelper
 from rebasehelper import settings
 from rebasehelper import output_tool
-from rebasehelper.utils import PathHelper, RpmHelper, ConsoleHelper, GitHelper
+from rebasehelper.utils import PathHelper, RpmHelper, ConsoleHelper, GitHelper, KojiHelper, FileHelper
 from rebasehelper.checker import Checker
 from rebasehelper.build_helper import Builder, SourcePackageBuildError, BinaryPackageBuildError, koji_builder
 from rebasehelper.patch_helper import Patcher
@@ -45,8 +46,9 @@ class Application(object):
     temp_dir = ""
     kwargs = {}
     old_sources = ""
-    rest_sources = []
     new_sources = ""
+    old_rest_sources = []
+    new_rest_sources = []
     spec_file = None
     spec_file_path = None
     rebase_spec_file = None
@@ -61,7 +63,7 @@ class Application(object):
         Initialize the application
 
         :param cli_conf: CLI object with configuration gathered from commandline
-        :return:
+        :return: 
         """
         self.conf = cli_conf
 
@@ -71,7 +73,11 @@ class Application(object):
             LoggerHelper.add_stream_handler(logger, logging.INFO)
 
         # The directory in which rebase-helper was executed
-        self.execution_dir = os.getcwd()
+        if self.conf.results_dir is None:
+            self.execution_dir = os.getcwd()
+        else:
+            self.execution_dir = self.conf.results_dir
+
         # Temporary workspace for Builder, checks, ...
         self.kwargs['workspace_dir'] = self.workspace_dir = os.path.join(self.execution_dir,
                                                                          settings.REBASE_HELPER_WORKSPACE_DIR)
@@ -91,16 +97,17 @@ class Application(object):
 
         self._add_debug_log_file()
         self._add_report_log_file()
-        self._get_spec_file()
-        self._prepare_spec_objects()
+        if self.conf.build_tasks is None:
+            self._get_spec_file()
+            self._prepare_spec_objects()
 
-        # check the workspace dir
-        if not self.conf.cont:
-            self._check_workspace_dir()
+            # check the workspace dir
+            if not self.conf.cont:
+                self._check_workspace_dir()
 
-        # TODO: Remove the value from kwargs and use only CLI attribute!
-        self.kwargs['continue'] = self.conf.cont
-        self._initialize_data()
+            # TODO: Remove the value from kwargs and use only CLI attribute!
+            self.kwargs['continue'] = self.conf.cont
+            self._initialize_data()
 
         if self.conf.cont or self.conf.build_only:
             self._delete_old_builds()
@@ -108,7 +115,8 @@ class Application(object):
     def _add_debug_log_file(self):
         """
         Add the application wide debug log file
-        :return:
+
+        :return: 
         """
         debug_log_file = os.path.join(self.results_dir, settings.REBASE_HELPER_DEBUG_LOG)
         try:
@@ -125,7 +133,8 @@ class Application(object):
     def _add_report_log_file(self):
         """
         Add the application report log file
-        :return:
+
+        :return: 
         """
         report_log_file = os.path.join(self.results_dir, settings.REBASE_HELPER_REPORT_LOG)
         try:
@@ -141,7 +150,8 @@ class Application(object):
     def _prepare_spec_objects(self):
         """
         Prepare spec files and initialize objects
-        :return:
+
+        :return: 
         """
         self.rebase_spec_file_path = get_rebase_name(self.spec_file_path)
 
@@ -165,9 +175,7 @@ class Application(object):
             self.rebase_spec_file.set_extra_version(extra_version)
 
     def _initialize_data(self):
-        """
-        Function fill dictionary with default data
-        """
+        """Function fill dictionary with default data"""
         # Get all tarballs before self.kwargs initialization
         self.old_sources = self.spec_file.get_archive()
         new_sources = self.rebase_spec_file.get_archive()
@@ -181,8 +189,10 @@ class Application(object):
         else:
             self.new_sources = os.path.abspath(self.conf.sources)
         # Contains all source except the Source0
-        self.rest_sources = self.spec_file.get_sources()[1:]
-        self.rest_sources = [os.path.abspath(x) for x in self.rest_sources]
+        self.old_rest_sources = self.spec_file.get_sources()[1:]
+        self.old_rest_sources = [os.path.abspath(x) for x in self.old_rest_sources]
+        self.new_rest_sources = self.rebase_spec_file.get_sources()[1:]
+        self.new_rest_sources = [os.path.abspath(x) for x in self.new_rest_sources]
 
         # We want to inform user immediatelly if compare tool doesn't exists
         if self.conf.pkgcomparetool and self.conf.pkgcomparetool not in Checker.get_supported_tools():
@@ -194,8 +204,9 @@ class Application(object):
     def get_rpm_packages(self, dirname):
         """
         Function returns RPM packages stored in dirname/old and dirname/new directories
+
         :param dirname: directory where are stored old and new RPMS
-        :return:
+        :return: 
         """
         found = True
         for version in ['old', 'new']:
@@ -208,7 +219,7 @@ class Application(object):
             data['version'] = spec_version
             data['rpm'] = PathHelper.find_all_files(os.path.join(os.path.realpath(dirname), version, 'RPM'), '*.rpm')
             if not data['rpm']:
-                logger.error('Your path %s%s/RPM does not contain any RPM packages' % (dirname, version))
+                logger.error('Your path %s%s/RPM does not contain any RPM packages', dirname, version)
                 found = False
             OutputLogger.set_build_data(version, data)
         if not found:
@@ -216,17 +227,16 @@ class Application(object):
         return True
 
     def _get_spec_file(self):
-        """
-        Function gets the spec file from the execution_dir directory
-        """
+        """Function gets the spec file from the execution_dir directory"""
         self.spec_file_path = PathHelper.find_first_file(self.execution_dir, '*.spec', 0)
         if not self.spec_file_path:
-            raise RebaseHelperError("Could not find any SPEC file in the current directory '%s'" % self.execution_dir)
+            raise RebaseHelperError("Could not find any SPEC file in the current directory '%s'", self.execution_dir)
 
     def _delete_old_builds(self):
         """
         Deletes the old and new result dir from previous build
-        :return:
+
+        :return: 
         """
         self._delete_new_results_dir()
         self._delete_old_results_dir()
@@ -234,7 +244,8 @@ class Application(object):
     def _delete_old_results_dir(self):
         """
         Deletes old result dir
-        :return:
+
+        :return: 
         """
         if os.path.isdir(os.path.join(self.results_dir, 'old')):
             shutil.rmtree(os.path.join(self.results_dir, 'old'))
@@ -242,7 +253,8 @@ class Application(object):
     def _delete_new_results_dir(self):
         """
         Deletes new result dir
-        :return:
+
+        :return: 
         """
         if os.path.isdir(os.path.join(self.results_dir, 'new')):
             shutil.rmtree(os.path.join(self.results_dir, 'new'))
@@ -250,7 +262,8 @@ class Application(object):
     def _delete_workspace_dir(self):
         """
         Deletes workspace directory and loggs message
-        :return:
+
+        :return: 
         """
         logger.debug("Removing the workspace directory '%s'", self.workspace_dir)
         shutil.rmtree(self.workspace_dir)
@@ -258,7 +271,8 @@ class Application(object):
     def _check_workspace_dir(self):
         """
         Check if workspace dir exists, and removes it if yes.
-        :return:
+
+        :return: 
         """
         if os.path.exists(self.workspace_dir):
             logger.warning("Workspace directory '%s' exists, removing it", os.path.basename(self.workspace_dir))
@@ -268,7 +282,8 @@ class Application(object):
     def _check_results_dir(self):
         """
         Check if  results dir exists, and removes it if yes.
-        :return:
+
+        :return: 
         """
         # TODO: We may not want to delete the directory in the future
         if os.path.exists(self.results_dir):
@@ -276,6 +291,8 @@ class Application(object):
             shutil.rmtree(self.results_dir)
         os.makedirs(self.results_dir)
         os.makedirs(os.path.join(self.results_dir, settings.REBASE_HELPER_LOGS))
+        os.makedirs(os.path.join(self.results_dir, 'old'))
+        os.makedirs(os.path.join(self.results_dir, 'new'))
 
     @staticmethod
     def extract_archive(archive_path, destination):
@@ -284,7 +301,7 @@ class Application(object):
 
         :param archive_path: path to the archive to be extracted
         :param destination: path to a destination, where the archive should be extracted to
-        :return:
+        :return: 
         """
         try:
             archive = Archive(archive_path)
@@ -300,9 +317,7 @@ class Application(object):
 
     @staticmethod
     def extract_sources(archive_path, destination):
-        """
-        Function extracts a given Archive and returns a full dirname to sources
-        """
+        """Function extracts a given Archive and returns a full dirname to sources"""
         Application.extract_archive(archive_path, destination)
 
         try:
@@ -310,15 +325,19 @@ class Application(object):
         except IndexError:
             raise RebaseHelperError('Extraction of sources failed!')
 
-        return os.path.join(destination, sources_dir)
+        if os.path.isdir(os.path.join(destination, sources_dir)):
+            return os.path.join(destination, sources_dir)
+        else:
+            return destination
 
     @staticmethod
     def check_build_requires(spec):
         """
         Check if all build dependencies are installed. If not, asks user they should be installed.
         If yes, it installs build dependencies using PolicyKit.
+
         :param spec: SpecFile object
-        :return:
+        :return: 
         """
         req_pkgs = spec.get_requires()
         if not RpmHelper.all_packages_installed(req_pkgs):
@@ -329,20 +348,32 @@ class Application(object):
     def prepare_sources(self):
         """
         Function prepares a sources.
-        :return:
+
+        :return: 
         """
         old_dir = Application.extract_sources(self.old_sources,
                                               os.path.join(self.execution_dir, settings.OLD_SOURCES_DIR))
         new_dir = Application.extract_sources(self.new_sources,
                                               os.path.join(self.execution_dir, settings.NEW_SOURCES_DIR))
 
-        # This copies other sources to extracted sources marked as 0
-        for rest in self.rest_sources:
-            for source_dir in [old_dir, new_dir]:
+        # determine top-level directory in new_sources archive
+        toplevel_dir = os.path.relpath(new_dir,
+                                       os.path.join(self.execution_dir, settings.NEW_SOURCES_DIR))
+
+        if toplevel_dir != '.':
+            self.rebase_spec_file.update_setup_dirname(toplevel_dir)
+
+        # extract rest of source archives to correct paths
+        rest_sources = [self.old_rest_sources, self.new_rest_sources]
+        spec_files = [self.spec_file, self.rebase_spec_file]
+        sources_dirs = [settings.OLD_SOURCES_DIR, settings.NEW_SOURCES_DIR]
+        for sources, spec_file, sources_dir in zip(rest_sources, spec_files, sources_dirs):
+            for rest in sources:
                 archive = [x for x in Archive.get_supported_archives() if rest.endswith(x)]
-                # if the source is a remote file, download it
                 if archive:
-                    Application.extract_sources(rest, os.path.join(self.execution_dir, source_dir))
+                    dest_dir = spec_file.find_archive_target_in_prep(rest)
+                    if dest_dir:
+                        Application.extract_sources(rest, os.path.join(self.execution_dir, sources_dir, dest_dir))
 
         return [old_dir, new_dir]
 
@@ -351,17 +382,17 @@ class Application(object):
         git_helper = GitHelper(sources[0])
         if not self.conf.non_interactive:
             git_helper.check_git_config()
-        patch = Patcher(self.conf.patchtool)
+        patch = Patcher(GitHelper.GIT)
         self.rebase_spec_file.update_changelog(self.rebase_spec_file.get_new_log(git_helper))
         try:
             self.rebased_patches = patch.patch(sources[0],
                                                sources[1],
-                                               self.rest_sources,
+                                               self.old_rest_sources,
                                                git_helper,
                                                self.spec_file.get_applied_patches(),
                                                self.spec_file.get_prep_section(),
                                                **self.kwargs)
-        except RuntimeError as run_e:
+        except RuntimeError:
             raise RebaseHelperError('Patching failed')
         self.rebase_spec_file.write_updated_patches(self.rebased_patches)
         if self.conf.non_interactive:
@@ -370,9 +401,7 @@ class Application(object):
         OutputLogger.set_patch_output('Patches:', self.rebased_patches)
 
     def build_packages(self):
-        """
-        Function calls build class for building packages
-        """
+        """Function calls build class for building packages"""
         if self.conf.buildtool == 'fedpkg' and not koji_builder:
             print ('Importing module koji failed. Switching to mockbuild.')
             self.conf.buildtool = 'mock'
@@ -384,20 +413,48 @@ class Application(object):
         for version in ['old', 'new']:
             spec_object = self.spec_file if version == 'old' else self.rebase_spec_file
             build_dict = {}
-            build_dict['name'] = spec_object.get_package_name()
-            build_dict['version'] = spec_object.get_version()
-            logger.debug(build_dict)
-            patches = [x.get_path() for x in spec_object.get_patches()]
+            task_id = None
+            if self.conf.build_tasks is None:
+                build_dict['name'] = spec_object.get_package_name()
+                build_dict['version'] = spec_object.get_version()
+                patches = [x.get_path() for x in spec_object.get_patches()]
+                spec = spec_object.get_path()
+                sources = spec_object.get_sources()
+                logger.info('Building packages for %s version %s',
+                            spec_object.get_package_name(),
+                            spec_object.get_version())
+            else:
+                if version == 'old':
+                    task_id = self.conf.build_tasks.split(',')[0]
+                else:
+                    task_id = self.conf.build_tasks.split(',')[1]
             results_dir = os.path.join(self.results_dir, version)
-            spec = spec_object.get_path()
-            sources = spec_object.get_sources()
+            build_dict['builds_nowait'] = self.conf.builds_nowait
+            build_dict['build_tasks'] = self.conf.build_tasks
 
             failed_before = False
-            logger.info('Building packages for %s version %s' %
-                        (spec_object.get_package_name(), spec_object.get_version()))
             while True:
                 try:
-                    build_dict.update(builder.build(spec, sources, patches, results_dir, **build_dict))
+                    if self.conf.build_tasks is None:
+                        build_dict.update(builder.build(spec, sources, patches, results_dir, **build_dict))
+                    if not self.conf.builds_nowait:
+                        if self.conf.buildtool == 'fedpkg':
+                            while True:
+                                kh = KojiHelper()
+                                build_dict['rpm'], build_dict['logs'] = kh.get_koji_tasks(build_dict['koji_task_id'], results_dir)
+                                if build_dict['rpm']:
+                                    break
+                    else:
+                        if self.conf.build_tasks:
+                            kh = KojiHelper()
+                            try:
+                                build_dict['rpm'], build_dict['logs'] = kh.get_koji_tasks(task_id, results_dir)
+                                OutputLogger.set_build_data(version, build_dict)
+                                if not build_dict['rpm']:
+                                    return False
+                            except TypeError:
+                                logger.info('Koji tasks are not finished yet. Try again later')
+                                return False
                     OutputLogger.set_build_data(version, build_dict)
                     break
 
@@ -417,23 +474,24 @@ class Application(object):
                     build_log = 'build.log'
                     build_log_path = os.path.join(rpm_dir, build_log)
                     if version == 'old':
-                        raise RebaseHelperError('Building old RPM package failed. Check log %s' % build_log_path)
+                        raise RebaseHelperError('Building old RPM package failed. Check log %s', build_log_path)
                     logger.error('Building binary packages failed.')
+                    msg = 'Building package failes'
                     try:
                         files = BuildLogAnalyzer.parse_log(rpm_dir, build_log)
                     except BuildLogAnalyzerMissingError:
-                        raise RebaseHelperError('Build log %s does not exist' % build_log_path)
+                        raise RebaseHelperError('Build log %s does not exist', build_log_path)
                     except BuildLogAnalyzerMakeError:
-                        raise RebaseHelperError('Building package failed during build. Check log %s' % build_log_path)
+                        raise RebaseHelperError('%s during build. Check log %s', msg, build_log_path)
                     except BuildLogAnalyzerPatchError:
-                        raise RebaseHelperError('Building package failed during patching. Check log %s' % build_log_path)
+                        raise RebaseHelperError('%s during patching. Check log %s', msg, build_log_path)
                     except RuntimeError:
-                        raise RebaseHelperError('Building package failed with unknown reason. Check log %s' % build_log_path)
+                        raise RebaseHelperError('%s with unknown reason. Check log %s',msg, build_log_path)
 
-                    if files['missing']:
-                        missing_files = '\n'.join(files['added'])
+                    if 'missing' in files:
+                        missing_files = '\n'.join(files['missing'])
                         logger.info('Files not packaged in the SPEC file:\n%s', missing_files)
-                    elif files['deleted']:
+                    elif 'deleted' in files:
                         deleted_files = '\n'.join(files['deleted'])
                         logger.warning('Removed files packaged in SPEC file:\n%s', deleted_files)
                     else:
@@ -442,7 +500,8 @@ class Application(object):
 
                 if not self.conf.non_interactive:
                     if failed_before:
-                        if not ConsoleHelper.get_message('Do you want rebase-helper to try build the packages one more time'):
+                        msg = 'Do you want rebase-helper to try build the packages one more time'
+                        if not ConsoleHelper.get_message(msg):
                             raise KeyboardInterrupt
                 else:
                     logger.warning('Some patches were not successfully applied')
@@ -456,60 +515,147 @@ class Application(object):
                 shutil.rmtree(os.path.join(results_dir, 'SRPM'))
         return True
 
-    def _execute_checkers(self, checker):
+    def _execute_checkers(self, checker, dir_name):
         """
         Function executes a checker based on command line arguments
+
         :param checker: checker name based from command line
         :return: Nothing
         """
         pkgchecker = Checker(checker)
         logger.info('Comparing packages using %s...', checker)
-        text = pkgchecker.run_check(os.path.join(self.results_dir, settings.REBASE_HELPER_LOGS))
+        text = pkgchecker.run_check(dir_name)
         return text
 
-    def pkgdiff_packages(self):
+    def pkgdiff_packages(self, dir_name):
         """
         Function calls pkgdiff class for comparing packages
-        :return:
+        :param dir_name: specify a result dir
+        :return: 
         """
         pkgdiff_results = {}
         if not self.conf.pkgcomparetool:
             for checker in Checker.get_supported_tools():
-                results = self._execute_checkers(checker)
+                results = self._execute_checkers(checker, dir_name)
                 pkgdiff_results[checker] = results
 
         else:
-            text = self._execute_checkers(self.conf.pkgcomparetool)
+            text = self._execute_checkers(self.conf.pkgcomparetool, dir_name)
             pkgdiff_results[self.conf.pkgcomparetool] = text
-        for diff_name, result in six.iteritems(pkgdiff_results):
-            OutputLogger.set_checker_output(diff_name, result)
+        if pkgdiff_results:
+            for diff_name, result in six.iteritems(pkgdiff_results):
+                OutputLogger.set_checker_output(diff_name, result)
 
     def get_all_log_files(self):
         """
         Function returns all log_files created by rebase-helper
         First if debug log file and second is report summary log file
-        :return:
+
+        :return: 
         """
         log_list = []
-        log_list.append(self.debug_log_file)
-        log_list.append(self.report_log_file)
+        if FileHelper.file_available(self.debug_log_file):
+            log_list.append(self.debug_log_file)
+        if FileHelper.file_available(self.report_log_file):
+            log_list.append(self.report_log_file)
         return log_list
+
+    def get_new_build_logs(self):
+        result = {}
+        result['build_ref'] = {}
+        for version in ['old', 'new']:
+            result['build_ref'][version] = OutputLogger.get_build(version)
+        return result
+
+    def get_checker_outputs(self):
+        checkers = {}
+        if OutputLogger.get_checkers():
+            for check, data in six.iteritems(OutputLogger.get_checkers()):
+                if data:
+                    for log in six.iterkeys(data):
+                        if FileHelper.file_available(log):
+                            checkers[check] = log
+                else:
+                    checkers[check] = None
+        return checkers
+
+    def get_rebased_patches(self):
+        """
+        Function returns a list of patches either
+        '': [list_of_deleted_patches]
+        :return:
+        """
+        patches = False
+        output_patch_string = []
+        if OutputLogger.get_patches():
+            for key, val in six.iteritems(OutputLogger.get_patches()):
+                if key:
+                    output_patch_string.append('Following patches has been %s:\n%s' % (key, val))
+                    patches = True
+        if not patches:
+            output_patch_string.append('Patches were not touched. All were applied properly')
+        return output_patch_string
 
     def print_summary(self):
         output_tool.check_output_argument(self.conf.outputtool)
         output = output_tool.OutputTool(self.conf.outputtool)
         output.print_information(path=self._get_rebase_helper_log())
-        logger.info('Report file from rebase-helper is available here: %s' % self.report_log_file)
+        logger.info('Report file from rebase-helper is available here: %s', self.report_log_file)
+
+    def print_koji_logs(self):
+        logs = self.get_new_build_logs()['build_ref']
+        message = "Scratch build for '%s' version is: http://koji.fedoraproject.org/koji/taskinfo?taskID=%s"
+        for version in ['old', 'new']:
+            data = logs[version]
+            logger.info(message % (data['version'], data['koji_task_id']))
 
     def set_upstream_monitoring(self):
         self.upstream_monitoring = True
 
+    def get_rebasehelper_data(self):
+        rh_stuff = {}
+        rh_stuff['build_logs'] = self.get_new_build_logs()
+        rh_stuff['patches'] = self.get_rebased_patches()
+        rh_stuff['checkers'] = self.get_checker_outputs()
+        rh_stuff['logs'] = self.get_all_log_files()
+        return rh_stuff
+
+    def run_download_compare(self, tasks_dict, dir_name):
+        self.set_upstream_monitoring()
+        kh = KojiHelper()
+        for version in ['old', 'new']:
+            rh_dict = {}
+            compare_dirname = os.path.join(dir_name, version)
+            if not os.path.exists(compare_dirname):
+                os.mkdir(compare_dirname, 0o777)
+            (task, upstream_version, package) = tasks_dict[version]
+            rh_dict['rpm'], rh_dict['logs'] = kh.get_koji_tasks([task], compare_dirname)
+            rh_dict['version'] = upstream_version
+            rh_dict['name'] = package
+            OutputLogger.set_build_data(version, rh_dict)
+        if tasks_dict['status'] == 'CLOSED':
+            self.pkgdiff_packages(dir_name)
+        self.print_summary()
+        rh_stuff = self.get_rebasehelper_data()
+        logger.info(rh_stuff)
+        return rh_stuff
+
     def run(self):
-        sources = self.prepare_sources()
+        if self.conf.build_tasks and not self.conf.builds_nowait:
+            if self.conf.buildtool == 'fedpkg':
+                logger.error("--builds-nowait has to be specified with --fedpkg-build-tasks.")
+                return 1
+            else:
+                logger.warning("Options are allowed only for fedpkg build tool. Suppress them.")
+                self.conf.build_tasks = self.conf.builds_nowait = False
 
-        if not self.conf.build_only and not self.conf.comparepkgs:
-            self.patch_sources(sources)
+        sources = None
+        if self.conf.build_tasks is None:
+            sources = self.prepare_sources()
+            if not self.conf.build_only and not self.conf.comparepkgs:
+                self.patch_sources(sources)
 
+        build = False
         if not self.conf.patch_only:
             if not self.conf.comparepkgs:
                 # check build dependencies for rpmbuild
@@ -518,6 +664,9 @@ class Application(object):
                 # Build packages
                 try:
                     build = self.build_packages()
+                    if self.conf.builds_nowait and not self.conf.build_tasks:
+                        self.print_koji_logs()
+                        return 0
                 except RuntimeError:
                     logger.error('Not know error caused by build log analysis')
                     return 1
@@ -527,10 +676,10 @@ class Application(object):
                 # We don't care dirname doesn't contain any RPM packages
                 # Therefore return 1
             if build:
-                self.pkgdiff_packages()
+                self.pkgdiff_packages(self.results_dir)
             else:
                 if not self.upstream_monitoring:
-                    logger.info('Rebase package to %s FAILED. See for more details' % self.conf.sources)
+                    logger.info('Rebase package to %s FAILED. See for more details', self.conf.sources)
                 return 1
             self.print_summary()
 
@@ -540,7 +689,7 @@ class Application(object):
         if self.debug_log_file:
             logger.info("Detailed debug log is located in '%s'", self.debug_log_file)
         if not self.upstream_monitoring and not self.conf.patch_only:
-            logger.info('Rebase package to %s was SUCCESSFUL.\n' % self.conf.sources)
+            logger.info('Rebase package to %s was SUCCESSFUL.\n', self.conf.sources)
         return 0
 
 if __name__ == '__main__':

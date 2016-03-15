@@ -20,7 +20,10 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
+import io
 import os
+import re
+import sys
 import fnmatch
 import subprocess
 import tempfile
@@ -29,12 +32,24 @@ import shutil
 import rpm
 import six
 import locale
+import time
+import random
+import string
+
 from six import StringIO
 from six.moves import input
 from distutils.util import strtobool
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.logger import logger
 from rebasehelper import settings
+
+koji_builder = True
+try:
+    import koji
+    from pyrpkg.cli import TaskWatcher
+    from OpenSSL import SSL
+except ImportError:
+    koji_builder = False
 
 defenc = locale.getpreferredencoding()
 defenc = 'utf-8' if defenc == 'ascii' else defenc
@@ -63,10 +78,10 @@ class GitRebaseError(RuntimeError):
 
 
 def get_value_from_kwargs(kwargs, field, source='old'):
-
     """
     Function returns a part of self.kwargs dictionary
-    :param kwargs:
+
+    :param kwargs: 
     :param source: 'old' or 'new'
     :param field: like 'patches', 'source'
     :return: value from dictionary
@@ -133,8 +148,22 @@ class DownloadHelper(object):
 
         :param url: URL from which to download the file
         :param destination_name: path where to store downloaded file
-        :return None
+        :return: None
         """
+        def progress(download_total, downloaded, upload_total, uploaded):
+            r = downloaded / download_total if download_total else 0.0
+            t = time.time() - start
+            if 0.0 < r < 1.0:
+                h, rem = divmod(int(t/r - t), 3600)
+                m, s = divmod(rem, 60)
+                est = '({:0>2d}:{:0>2d}:{:0>2d} remaining)'.format(h, m, s)
+            else:
+                est = '                    '
+            # no point to log progress, write directly to stdout
+            sys.stdout.write('{:>3d}% {}\r'.format(int(r * 100), est))
+            sys.stdout.flush()
+            return 0
+
         if os.path.exists(destination_name):
             return
         with open(destination_name, 'wb') as f:
@@ -145,9 +174,14 @@ class DownloadHelper(object):
             curl.setopt(pycurl.MAXREDIRS, 5)
             curl.setopt(pycurl.TIMEOUT, 300)
             curl.setopt(pycurl.WRITEDATA, f)
+            curl.setopt(pycurl.NOPROGRESS, 0)
+            curl.setopt(pycurl.PROGRESSFUNCTION, progress)
             try:
                 logger.info('Downloading sources from URL %s', url)
+                start = time.time()
                 curl.perform()
+                sys.stdout.write('\n')
+                sys.stdout.flush()
             except pycurl.error as error:
                 curl.close()
                 raise ReferenceError("Downloading '%s' failed with error '%s'." % (url, error))
@@ -251,11 +285,11 @@ class ProcessHelper(object):
         except:
             spooled_in_file = tempfile.SpooledTemporaryFile(mode='w+b')
             try:
-                in_data = six.b(in_file.read())
+                in_data = in_file.read()
             except AttributeError:
                 spooled_in_file.close()
             else:
-                spooled_in_file.write(in_data)
+                spooled_in_file.write(in_data.encode(defenc) if six.PY3 else in_data)
                 spooled_in_file.seek(0)
                 in_file = spooled_in_file
                 close_in_file = True
@@ -283,7 +317,10 @@ class ProcessHelper(object):
         if out_file is not None:
             # read the output
             for line in sp.stdout:
-                out_file.write(line)
+                try:
+                    out_file.write(line.decode(defenc) if six.PY3 else line)
+                except TypeError:
+                    out_file.write(line)
             # TODO: Need to figure out how to send output to stdout (without logger) and to logger
             #else:
             #   logger.debug(line.rstrip("\n"))
@@ -314,11 +351,12 @@ class PathHelper(object):
 
     @staticmethod
     def find_first_dir_with_file(top_path, pattern):
-
-        """ Finds a file that matches the given 'pattern' recursively
+        """
+        Finds a file that matches the given 'pattern' recursively
         starting in the 'top_path' directory. If found, returns full path
         to the directory with first occurrence of the file, otherwise
-        returns None. """
+        returns None.
+        """
         for root, dirs, files in os.walk(top_path):
             dirs.sort()
             for f in files:
@@ -328,10 +366,11 @@ class PathHelper(object):
 
     @staticmethod
     def find_first_file(top_path, pattern, recursion_level=None):
-
-        """ Finds a file that matches the given 'pattern' recursively
+        """
+        Finds a file that matches the given 'pattern' recursively
         starting in the 'top_path' directory. If found, returns full path
-        to the first occurrence of the file, otherwise returns None. """
+        to the first occurrence of the file, otherwise returns None.
+        """
         for loop, (root, dirs, files) in enumerate(os.walk(top_path)):
             dirs.sort()
             for f in files:
@@ -344,10 +383,11 @@ class PathHelper(object):
 
     @staticmethod
     def find_all_files(top_path, pattern):
-
-        """ Finds a file that matches the given 'pattern' recursively
+        """
+        Finds a file that matches the given 'pattern' recursively
         starting in the 'top_path' directory. If found, returns full path
-        to the first occurrence of the file, otherwise returns None. """
+        to the first occurrence of the file, otherwise returns None.
+        """
         files_list = []
         for root, dirs, files in os.walk(top_path):
             dirs.sort()
@@ -358,8 +398,7 @@ class PathHelper(object):
 
     @staticmethod
     def get_temp_dir():
-
-        """ Returns a path to new temporary directory. """
+        """Returns a path to new temporary directory."""
         return tempfile.mkdtemp(prefix=settings.REBASE_HELPER_PREFIX)
 
 
@@ -397,17 +436,17 @@ class TemporaryEnvironment(object):
         return "<TemporaryEnvironment path='%s'>", self.path()
 
     def path(self):
-
         """
         Returns path to the temporary environment.
+
         :return: abs path to the environment
         """
         return self._env.get(self.TEMPDIR, '')
 
     def env(self):
-
         """
         Returns copy of _env dictionary.
+
         :return: copy of _env dictionary
         """
         return self._env.copy()
@@ -426,7 +465,7 @@ class RpmHelper(object):
         :return: True if installed, False if not installed
         """
         ts = rpm.TransactionSet()
-        mi = ts.dbMatch('name', pkg_name)
+        mi = ts.dbMatch('provides', pkg_name)
         return len(mi) > 0
 
     @staticmethod
@@ -444,25 +483,25 @@ class RpmHelper(object):
 
     @staticmethod
     def install_build_dependencies(spec_path=None, assume_yes=False):
-
         """
         Install all build requires for a package using PolicyKits
+
         :param spec_path: absolute path to SPEC file
-        :return:
+        :return: 
         """
-        cmd = ['pkexec', 'dnf builddep', spec_path]
+        cmd = ['pkexec', 'dnf', 'builddep', spec_path]
         if assume_yes:
             cmd.append('-y')
         return ProcessHelper.run_subprocess(cmd)
 
     @staticmethod
     def get_header_from_rpm(rpm_name):
-
         """
         Function returns a rpm header from given rpm package
         for later on analysis
-        :param pkg_name:
-        :return:
+
+        :param rpm_name:
+        :return: 
         """
         ts = rpm.TransactionSet()
         h = None
@@ -472,15 +511,84 @@ class RpmHelper(object):
 
     @staticmethod
     def get_info_from_rpm(rpm_name, info):
-
         """
         Method returns a name of the package from RPM file format
-        :param pkg_name:
-        :return:
+
+        :param pkg_name: 
+        :return: 
         """
         h = RpmHelper.get_header_from_rpm(rpm_name)
         name = h[info]
         return name
+
+
+class MacroHelper(object):
+
+    """Helper class for working with RPM macros """
+
+    @staticmethod
+    def _dump():
+        """
+        Captures output of %dump macro
+
+        :return: Raw %dump macro output as a list of lines
+        """
+        # %dump macro prints results to stderr
+        # we cannot use sys.stderr because it can be modified by pytest
+        err = sys.__stderr__.fileno()
+
+        with tempfile.TemporaryFile(mode='w+b') as tmp:
+            with os.fdopen(os.dup(err), 'wb') as copied:
+                try:
+                    sys.stderr.flush()
+                    os.dup2(tmp.fileno(), err)
+                    try:
+                        rpm.expandMacro('%dump')
+                    finally:
+                        sys.stderr.flush()
+                        os.dup2(copied.fileno(), err)
+                finally:
+                    tmp.flush()
+                    tmp.seek(0, io.SEEK_SET)
+                    return [line.decode(defenc) if six.PY3 else line for line in tmp.readlines()]
+
+    @staticmethod
+    def get_macros(**kwargs):
+        """
+        Returns all macros satisfying specified filters
+
+        :param kwargs: filters
+        :return: list of macros
+        """
+        macro_re = re.compile(
+            '''
+            ^\s*
+            (?P<level>-?\d+)
+            (?P<used>=|:)
+            [ ]
+            (?P<name>\w+)
+            (?P<options>\(.+?\))?
+            [\t]
+            (?P<value>.*)
+            $
+            ''',
+            re.VERBOSE)
+
+        macros = []
+
+        for line in MacroHelper._dump():
+            match = macro_re.match(line)
+            if match:
+                macro = match.groupdict()
+                macro['level'] = int(macro['level'])
+                macro['used'] = macro['used'] == '='
+
+                if all(macro.get(k[4:]) >= v if k.startswith('min_') else
+                       macro.get(k[4:]) <= v if k.startswith('max_') else
+                       macro.get(k) == v for k, v in six.iteritems(kwargs)):
+                    macros.append(macro)
+
+        return macros
 
 
 class GitHelper(object):
@@ -494,9 +602,9 @@ class GitHelper(object):
         self.git_directory = git_directory
 
     def _call_git_command(self, command, input_file=None, output_file=None):
-
         """
         Class calls git command
+
         :param command: git command which is executed
         :param directory: git directory
         :param input_file: input file for git operations
@@ -519,13 +627,13 @@ class GitHelper(object):
         if not output_file:
             out = output.readlines()
             for o in out:
-                self.output_data.append(o.strip().encode(defenc))
+                self.output_data.append(o.strip())
         return ret_code
 
     def check_git_config(self):
-
         """
         Function checks whether you have setup a merge tool in ~/.gitconfig
+
         :return: True or False
         """
         merge = self.command_config('--get', 'merge.tool')
@@ -534,7 +642,7 @@ class GitHelper(object):
             message = """[merge] section is not defined in %s.\n
 One of the possible configuration can be:\n
 [mergetool "mymeld"]
-    cmd = meld --auto-merge --output $MERGED $LOCAL $BASE $REMOTE --diff $BASE $LOCAL --diff $BASE $REMOTE
+    cmd = meld --auto-merge --output $MERGED $LOCAL $BASE $REMOTE --diff $BASE $LOCAL --diff $BASE $REMOTE --label old_sources --label merge --label new_sources
 [merge]
     tool = mymeld
     conflictstyle = diff3"""
@@ -567,15 +675,25 @@ One of the possible configuration can be:\n
 
     @staticmethod
     def get_modified_files(output):
-
         """Function returns list of modified files from output text"""
-
         modified_files = []
         for line in output:
             if 'modified:' not in line:
                 continue
             modified_files.append(line.strip().split()[1])
         return modified_files
+
+    @staticmethod
+    def get_automerged_patches(output):
+        automerged_patches = []
+        patch_name = None
+        for line in output:
+            if line.startswith('Applying:'):
+                patch_name = line.split()[-1]
+            elif line.startswith('Auto-merging'):
+                if patch_name and patch_name not in automerged_patches:
+                    automerged_patches.append(patch_name)
+        return automerged_patches
 
     @staticmethod
     def get_unapplied_patch(output):
@@ -593,9 +711,9 @@ One of the possible configuration can be:\n
         return self._call_git_command(cmd)
 
     def command_commit(self, message=None, amend=False):
-
         """
         Method commits message to Git
+
         :param directory: Git directtory
         :param message: commit message
         :return: return code from ProcessHelper
@@ -612,9 +730,7 @@ One of the possible configuration can be:\n
         return self._call_git_command(cmd)
 
     def command_remote_add(self, upstream_name, directory):
-
         """Function add remote git repository to old_sources before a rebase"""
-
         cmd = []
         cmd.append('remote')
         cmd.append('add')
@@ -623,9 +739,7 @@ One of the possible configuration can be:\n
         return self._call_git_command(cmd)
 
     def command_diff_status(self):
-
         """Function shows which files are modified"""
-
         cmd = []
         cmd.append('diff')
         cmd.append('--name-only')
@@ -639,11 +753,11 @@ One of the possible configuration can be:\n
         return self._call_git_command(cmd)
 
     def command_log(self, parameters=None):
-
         """
         Function returns git log
+
         :param parameters: a parameter to git log command
-        :return:
+        :return: 
         """
         cmd = ['log']
         if parameters:
@@ -655,17 +769,13 @@ One of the possible configuration can be:\n
             return self.output_data
 
     def command_mergetool(self):
-
         """Function calls git mergetool program"""
-
         cmd = ['mergetool']
         ret_code = self._call_git_command(cmd, output_file='-')
         return ret_code
 
     def command_rebase(self, parameters, upstream_name=None, first_hash=None, last_hash=None):
-
         """Function calls git rebase"""
-
         cmd = ['rebase']
         if parameters == '--onto':
             cmd.append(parameters)
@@ -682,9 +792,11 @@ One of the possible configuration can be:\n
             cmd.extend(parameters)
         return self._call_git_command(cmd)
 
-    def command_diff(self, head, output_file=None):
+    def command_diff(self, head, head2=None, output_file=None):
         cmd = ['diff']
         cmd.append(head)
+        if head2:
+            cmd.append(head2)
         return self._call_git_command(cmd, output_file=output_file)
 
     def command_am(self, parameters=None, input_file=None):
@@ -712,5 +824,204 @@ One of the possible configuration can be:\n
         return self.output_data[0]
 
     def get_output_data(self):
-        """ Function returns output_data after calling call_git_command """
+        """Function returns output_data after calling call_git_command"""
         return self.output_data
+
+
+class KojiHelper(object):
+
+    cert = os.path.expanduser('~/.fedora.cert')
+    ca_cert = os.path.expanduser('~/.fedora-server-ca.cert')
+    koji_web = "koji.fedoraproject.org"
+    server = "https://%s/kojihub" % koji_web
+    scratch_url = "http://%s/work/" % koji_web
+    baseurl = 'http://kojipkgs.fedoraproject.org/work/'
+    server_http = "http://%s/kojihub" % koji_web
+
+    @classmethod
+    def _unique_path(cls, prefix):
+        suffix = ''.join([random.choice(string.ascii_letters) for i in range(8)])
+        return '%s/%r.%s' % (prefix, time.time(), suffix)
+
+    @classmethod
+    def session_maker(cls, baseurl=None):
+        if baseurl is None:
+            koji_session = koji.ClientSession(cls.server, {'timeout': 3600})
+        else:
+            koji_session = koji.ClientSession(baseurl)
+            return koji_session
+        koji_session.ssl_login(cls.cert, cls.ca_cert, cls.ca_cert)
+        return koji_session
+
+    @classmethod
+    def upload_srpm(cls, session, source):
+        server_dir = cls._unique_path('cli-build')
+        session.uploadWrapper(source, server_dir)
+        return '%s/%s' % (server_dir, os.path.basename(source))
+
+    @classmethod
+    def display_task_results(cls, tasks):
+        """Function is copy/paste from pyrpkg/cli.py"""
+        for task in [task for task in tasks.values() if task.level == 0]:
+            state = task.info['state']
+            task_label = task.str()
+
+            logger.info('State %s (%s)', state, task_label)
+            if state == koji.TASK_STATES['CLOSED']:
+                logger.info('%s completed successfully', task_label)
+            elif state == koji.TASK_STATES['FAILED']:
+                logger.info('%s failed', task_label)
+            elif state == koji.TASK_STATES['CANCELED']:
+                logger.info('%s was canceled', task_label)
+            else:
+                # shouldn't happen
+                logger.info('%s has not completed', task_label)
+
+    @classmethod
+    def watch_koji_tasks(cls, session, tasklist):
+        """Function is copy/paste from pyrpkg/cli.py"""
+        if not tasklist:
+            return
+        # Place holder for return value
+        rh_tasks = {}
+        try:
+            tasks = {}
+
+            for task_id in tasklist:
+                tasks[task_id] = TaskWatcher(task_id, session, logger,
+                                             quiet=False)
+            while True:
+                all_done = True
+                for task_id, task in tasks.items():
+                    changed = task.update()
+                    info = session.getTaskInfo(task_id)
+                    state = task.info['state']
+                    if state == koji.TASK_STATES['FAILED']:
+                        return {info['id']: state}
+                    else:
+                        if info['arch'] == 'x86_64' or info['arch'] == 'noarch':
+                            rh_tasks[info['id']] = state
+                    if not task.is_done():
+                        all_done = False
+                    else:
+                        if changed:
+                            cls.display_task_results(tasks)
+                        if not task.is_success():
+                            rh_tasks = None
+                    try:
+                        for child in session.getTaskChildren(task_id):
+                            child_id = child['id']
+                            if child_id not in tasks.keys():
+                                tasks[child_id] = TaskWatcher(child_id,
+                                                              session,
+                                                              logger,
+                                                              task.level + 1,
+                                                              quiet=False)
+                                tasks[child_id].update()
+                                # If we found new children, go through the list
+                                # again, in case they have children also
+                                info = session.getTaskInfo(child_id)
+                                state = task.info['state']
+                                if state == koji.TASK_STATES['FAILED']:
+                                    return {info['id']: state}
+                                else:
+                                    if info['arch'] == 'x86_64' or info['arch'] == 'noarch':
+                                        rh_tasks[info['id']] = state
+                                all_done = False
+                    except SSL.SysCallError as exc:
+                        logger.error('We have detected a exception %s', exc.message)
+                if all_done:
+                    cls.display_task_results(tasks)
+                    break
+
+                time.sleep(1)
+        except (KeyboardInterrupt):
+            # A ^c should return non-zero so that it doesn't continue
+            # on to any && commands.
+            rh_tasks = None
+        return rh_tasks
+
+    @classmethod
+    def download_scratch_build(cls, task_list, dir_name):
+        session = cls.session_maker()
+        rpms = []
+        logs = []
+        for task_id in task_list:
+            logger.info('Downloading packages and logs for %s taskID', task_id)
+            task = session.getTaskInfo(task_id)
+            tasks = [task]
+            for task in tasks:
+                base_path = koji.pathinfo.taskrelpath(task_id)
+                output = session.listTaskOutput(task['id'])
+                for filename in output:
+                    logger.info('Downloading file %s', filename)
+                    downloaded_file = os.path.join(dir_name, filename)
+                    DownloadHelper.download_file(cls.scratch_url + base_path + '/' + filename,
+                                                 downloaded_file)
+                    if filename.endswith('.rpm'):
+                        rpms.append(downloaded_file)
+                    if filename.endswith('.log'):
+                        logs.append(downloaded_file)
+        session.logout()
+        return rpms, logs
+
+    @classmethod
+    def get_koji_tasks(cls, task_id, dir_name):
+        session = cls.session_maker(baseurl=cls.server_http)
+        task_id = int(task_id)
+        rpm_list = []
+        log_list = []
+        tasks = []
+        task = session.getTaskInfo(task_id, request=True)
+        if task['state'] in (koji.TASK_STATES['FREE'], koji.TASK_STATES['OPEN']):
+            return None, None
+        elif task['state'] != koji.TASK_STATES['CLOSED']:
+            logger.info('Task %i did not complete successfully' % task_id)
+
+        if task['method'] == 'build':
+            logger.info('Getting rpms for chilren of task %i: %s',
+                        task['id'],
+                        koji.taskLabel(task))
+            # getting rpms from children of task
+            tasks = session.listTasks(opts={'parent': task_id,
+                                            'method': 'buildArch',
+                                            'state': [koji.TASK_STATES['CLOSED'], koji.TASK_STATES['FAILED']],
+                                            'decode': True})
+        elif task['method'] == 'buildArch':
+            tasks = [task]
+        for task in tasks:
+            base_path = koji.pathinfo.taskrelpath(task['id'])
+            output = session.listTaskOutput(task['id'])
+            if output is None:
+                return None
+            for filename in output:
+                download = False
+                full_path_name = os.path.join(dir_name, filename)
+                if filename.endswith('.src.rpm'):
+                    continue
+                if filename.endswith('.rpm'):
+                    if task['state'] != koji.TASK_STATES['CLOSED']:
+                        continue
+                    arch = filename.rsplit('.', 3)[2]
+                    if full_path_name not in rpm_list:
+                        download = arch in ['noarch', 'x86_64']
+                        if download:
+                            rpm_list.append(full_path_name)
+                else:
+                    if full_path_name not in log_list:
+                        log_list.append(full_path_name)
+                        download = True
+                if download:
+                    DownloadHelper.download_file(cls.baseurl + base_path + '/' + filename,
+                                                 full_path_name)
+        return rpm_list, log_list
+
+
+class FileHelper(object):
+
+    @staticmethod
+    def file_available(filename):
+        if os.path.exists(filename) and os.path.getsize(filename) != 0:
+            return True
+        else:
+            return False

@@ -22,9 +22,8 @@
 
 from __future__ import print_function
 import os
-import re
 from rebasehelper.logger import logger
-from rebasehelper.utils import ConsoleHelper, defenc
+from rebasehelper.utils import ConsoleHelper
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.utils import GitHelper, GitRebaseError
 
@@ -89,7 +88,6 @@ class GitPatchTool(PatchBase):
         Function applies patches to old sources
         It tries apply patch with am command and if it fails
         then with command --apply
-
         """
         logger.debug('Applying patch with am')
 
@@ -159,6 +157,14 @@ class GitPatchTool(PatchBase):
         deleted_patches = []
         unapplied_patches = []
         while True:
+            log = cls.git_helper.command_log(parameters='--pretty=oneline')
+            for patch_name in cls.git_helper.get_automerged_patches(cls.output_data):
+                index = [i for i, l in enumerate(log) if l.endswith(patch_name)]
+                if index:
+                    commit = GitHelper.get_commit_hash_log(log, number=index[0])
+                    base_name = os.path.join(cls.kwargs['results_dir'], patch_name)
+                    cls.git_helper.command_diff('{}~1'.format(commit), commit, output_file=base_name)
+                    modified_patches.append(base_name)
             if int(ret_code) != 0:
                 if not cls.non_interactive:
                     patch_name = cls.git_helper.get_unapplied_patch(cls.output_data)
@@ -185,7 +191,7 @@ class GitPatchTool(PatchBase):
                 if not del_patches:
                     deleted_patches.append(base_name)
                 else:
-                    logger.info('Following files were modified: %s', ','.join(modified_files).decode(defenc))
+                    logger.info('Following files were modified: %s', ','.join(modified_files))
                     cls.git_helper.command_commit(message=patch_name)
                     cls.git_helper.command_diff('HEAD~1', output_file=base_name)
                     modified_patches.append(base_name)
@@ -209,9 +215,7 @@ class GitPatchTool(PatchBase):
 
     @staticmethod
     def commit_patch(git_helper, patch_name):
-
         """Function commits patched files to git"""
-
         logger.debug('Commit patch')
         ret_code = git_helper.command_add_files(parameters=['--all'])
         if int(ret_code) != 0:
@@ -223,7 +227,9 @@ class GitPatchTool(PatchBase):
     def apply_old_patches(cls):
         """Function applies a patch to a old/new sources"""
         for patch in cls.patches:
-            logger.info("Applying patch '%s' to '%s'", os.path.basename(patch.get_path()), os.path.basename(cls.source_dir))
+            logger.info("Applying patch '%s' to '%s'",
+                        os.path.basename(patch.get_path()),
+                        os.path.basename(cls.source_dir))
             ret_code = GitPatchTool.apply_patch(cls.git_helper, patch)
             # unexpected
             if int(ret_code) != 0:
@@ -243,9 +249,7 @@ class GitPatchTool(PatchBase):
 
     @classmethod
     def create_prep_script(cls, prep):
-
         """Function abstract special things from prep section and apply them to old sources"""
-
         logger.debug('Extract prep script')
         # Check whether patch or git am is used inside %prep section
         # If yes then execute whole %prep section
@@ -278,7 +282,8 @@ class GitPatchTool(PatchBase):
     def call_prep_script(cls, prep_script_path):
         cwd = os.getcwd()
         os.chdir(cls.old_sources)
-        ProcessHelper.run_subprocess(prep_script_path, output=os.path.join(cls.kwargs['workspace_dir'], 'prep_script.log'))
+        ProcessHelper.run_subprocess(prep_script_path,
+                                     output=os.path.join(cls.kwargs['workspace_dir'], 'prep_script.log'))
         if not cls.patch_sources_by_prep_script:
             cls.git_helper.command_add_files(parameters=["--all"])
             cls.git_helper.command_commit(message="prep_script prep_corrections")
@@ -286,9 +291,7 @@ class GitPatchTool(PatchBase):
 
     @classmethod
     def init_git(cls, directory):
-
-        """ Function initialize old and new Git repository"""
-
+        """Function initialize old and new Git repository"""
         gh = GitHelper(directory)
         gh.command_init(directory)
         gh.command_add_files('.')
@@ -296,7 +299,6 @@ class GitPatchTool(PatchBase):
 
     @classmethod
     def run_patch(cls, old_dir, new_dir, rest_sources, git_helper, patches, prep, **kwargs):
-
         """
         The function can be used for patching one
         directory against another
@@ -359,7 +361,7 @@ class Patcher(object):
         :param patches: old patches
         :param rebased_patches: rebased patches
         :param kwargs: --
-        :return:
+        :return: 
         """
         logger.debug("Patching source by patch tool %s", self._patch_tool_name)
         return self._tool.run_patch(old_dir, new_dir, rest_sources, git_helper, patches, prep, **kwargs)

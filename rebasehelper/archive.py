@@ -72,7 +72,7 @@ class ArchiveTypeBase(object):
         Extracts the archive into the given path
 
         :param path: Path where to extract the archive to.
-        :return:
+        :return: 
         """
         raise NotImplementedError()
 
@@ -98,7 +98,7 @@ class TarXzArchiveType(ArchiveTypeBase):
         archive.extractall(path)
 
 @register_archive_type
-class TarBz2ArchiveType(ArchiveTypeBase):
+class Bz2ArchiveType(ArchiveTypeBase):
 
     """ .bz2 archive type """
 
@@ -124,8 +124,16 @@ class TarBz2ArchiveType(ArchiveTypeBase):
             data = archive.read()
             if not os.path.exists(path):
                 os.mkdir(path)
-            with open(os.path.join(path, filename[:-4]), 'w') as f:
+            with open(os.path.join(path, filename[:-4]), 'wb') as f:
                 f.write(data)
+
+
+@register_archive_type
+class TarBz2ArchiveType(Bz2ArchiveType):
+
+    """ .tar.bz2 archive type """
+
+    EXTENSION = ".tar.bz2"
 
 
 @register_archive_type
@@ -182,6 +190,42 @@ class ZipArchiveType(ArchiveTypeBase):
 
 
 @register_archive_type
+class SigArchiveType(ArchiveTypeBase):
+    """ .sig955015
+     files are not archives - this is a PGP file type"""
+    EXTENSION = ".sig"
+
+    @classmethod
+    def open(cls, filename=None):
+        pass
+
+    @classmethod
+    def extract(cls, archive=None, filename=None, path=None, *args, **kwargs):
+        if archive is not None:
+            raise RuntimeError("In Sig files, the archive (pos 1) argument is not used, but passed")
+        final_dir = os.path.join(path, os.path.basename(filename.rstrip(cls.EXTENSION)))
+        os.makedirs(final_dir)
+        shutil.copy(filename, final_dir)
+
+
+@register_archive_type
+class AscArchiveType(ArchiveTypeBase):
+    """ .asc files are not archives - this is a PGP file type"""
+    EXTENSION = ".asc"
+
+    @classmethod
+    def open(cls, filename=None):
+        pass
+
+    @classmethod
+    def extract(cls, archive=None, filename=None, path=None, *args, **kwargs):
+        if archive is not None:
+            raise RuntimeError("In Asc files, the archive (pos 1) argument is not used, but passed")
+        final_dir = os.path.join(path, os.path.basename(filename.rstrip(cls.EXTENSION)))
+        os.makedirs(final_dir)
+        shutil.copy(filename, final_dir)
+
+@register_archive_type
 class GemPseudoArchiveType(ArchiveTypeBase):
     """ .gem files are not archives - this is a pseudo type """
     EXTENSION = ".gem"
@@ -221,7 +265,7 @@ class Archive(object):
         Extracts the archive into the given path
 
         :param path: Path where to extract the archive to.
-        :return:
+        :return: 
         """
         if path is None:
             TypeError("Expected argument 'path' (pos 1) is missing")
@@ -238,5 +282,5 @@ class Archive(object):
 
     @classmethod
     def get_supported_archives(cls):
-        """ Return list of supported archive types """
+        """Return list of supported archive types"""
         return archive_types.keys()

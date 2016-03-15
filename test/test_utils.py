@@ -27,6 +27,7 @@ import string
 import sys
 from six import StringIO
 
+from .base_test import skip_on_travis
 from .base_test import BaseTest
 from rebasehelper.utils import ConsoleHelper
 from rebasehelper.utils import DownloadHelper
@@ -43,9 +44,7 @@ class TestConsoleHelper(BaseTest):
 
     @staticmethod
     def _setup_fake_IO(input_str):
-        """
-        Function to setup fake STDIN and STDOUT for console testing.
-        """
+        """Function to setup fake STDIN and STDOUT for console testing."""
         #  Use StringIO to be able to write and read to STDIN and from STDOUT
         sys.stdin = StringIO(input_str)
         sys.stdout = StringIO()
@@ -133,13 +132,13 @@ class TestDownloadHelper(BaseTest):
 
     KNOWN_URL = 'http://fedoraproject.org/static/hotspot.txt'
     LOCAL_FILE = os.path.basename(KNOWN_URL)
-    KNOWN_URL_CONTENT = 'OK\n'
+    KNOWN_URL_CONTENT = 'OK'
 
     def test_download_source(self):
         DownloadHelper.download_file(self.KNOWN_URL, self.LOCAL_FILE)
         assert os.path.isfile(self.LOCAL_FILE)
         with open(self.LOCAL_FILE) as f:
-            assert f.read() == self.KNOWN_URL_CONTENT
+            assert f.read().strip() == self.KNOWN_URL_CONTENT
 
 
 class TestProcessHelper(BaseTest):
@@ -491,6 +490,7 @@ class TestTemporaryEnvironment(BaseTest):
         os.unlink(tmp_path)
 
 
+@skip_on_travis
 class TestRpmHelper(BaseTest):
     """ RpmHelper class tests. """
 

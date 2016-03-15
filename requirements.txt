@@ -1,3 +1,0 @@
-backports.lzma
-six
-pycurl

@@ -54,9 +54,7 @@ class BaseChecker(object):
 
     @classmethod
     def run_check(cls, results_dir):
-        """
-        Perform the check itself and return results.
-        """
+        """Perform the check itself and return results."""
         raise NotImplementedError()
 
 
@@ -87,7 +85,6 @@ class RpmDiffTool(BaseChecker):
     def _analyze_logs(cls, output, results_dict):
         removed_things = ['.build-id', '.dwz', 'PROVIDE', 'REQUIRES']
         for line in output:
-            line = line.encode('ascii', 'ignore')
             if [x for x in removed_things if x in line]:
                 continue
 
@@ -125,7 +122,7 @@ class RpmDiffTool(BaseChecker):
 
     @classmethod
     def run_check(cls, results_dir):
-        """ Compares old and new RPMs using pkgdiff """
+        """Compares old and new RPMs using pkgdiff"""
         results_dict = {}
 
         for tag in settings.CHECKER_TAGS:
@@ -134,8 +131,8 @@ class RpmDiffTool(BaseChecker):
 
         # Only S (size), M(mode) and 5 (checksum) are now important
         not_catched_flags = ['T', 'F', 'G', 'U', 'V', 'L', 'D', 'N']
-        old_pkgs = cls._get_rpms(OutputLogger.get_build('old').get('rpm', None))
-        new_pkgs = cls._get_rpms(OutputLogger.get_build('new').get('rpm', None))
+        old_pkgs = cls._get_rpms(OutputLogger.get_old_build().get('rpm', None))
+        new_pkgs = cls._get_rpms(OutputLogger.get_new_build().get('rpm', None))
         for key, value in six.iteritems(old_pkgs):
             cmd = [cls.CMD]
             # TODO modify to online command
@@ -171,6 +168,7 @@ class PkgDiffTool(BaseChecker):
     pkgdiff_results_filename = 'pkgdiff_reports.html'
     files_xml = "files.xml"
     results_dir = ''
+    results_dict = {}
 
     @classmethod
     def match(cls, cmd=None):
@@ -180,8 +178,27 @@ class PkgDiffTool(BaseChecker):
             return False
 
     @classmethod
+    def _get_rpm_info(cls, name, packages):
+        if packages is None:
+            return None
+        basic_package = sorted(packages)[0]
+        return RpmHelper.get_info_from_rpm(basic_package, name)
+
+    @classmethod
     def _create_xml(cls, name, input_structure):
+        """
+        Function creates a XML format for pkgdiff command
+        :param name: package name
+        :param input_structure: structure provided by OutputLogger.get_build('new' or 'old')
+        :return:
+        """
         file_name = os.path.join(cls.results_dir, name + ".xml")
+        if input_structure.get('version', '') == '':
+            input_structure['version'] = cls._get_rpm_info('version', input_structure['rpm'])
+
+        if input_structure.get('name', '') == '':
+            input_structure['name'] = cls._get_rpm_info('name', input_structure['rpm'])
+
         tags = {'version': input_structure.get('version', ""),
                 'group': input_structure.get('name', ''),
                 'packages': input_structure.get('rpm', [])}
@@ -199,104 +216,122 @@ class PkgDiffTool(BaseChecker):
         return file_name
 
     @classmethod
-    def _remove_not_changed_files(cls, file_list):
-        file_list = [x for x in file_list if not x.endswith('(0%)')]
-        # We need to return string without percentage
-        return file_list
+    def _remove_not_changed_files(cls):
+        """
+        Function removes all rows which were not changed
+        """
+        for tag in settings.CHECKER_TAGS:
+            cls.results_dict[tag] = [x for x in cls.results_dict[tag] if not x.endswith('(0%)')]
 
     @classmethod
-    def fill_dictionary(cls, result_dir):
+    def fill_dictionary(cls, result_dir, old_version=None, new_version=None):
         """
         Parsed files.xml and symbols.xml and fill dictionary
+        :param result_dir: where should be stored file for pkgdiff
+        :param old_version: old version of package
+        :param new_version: new version of package
         :return:
         """
         XML_FILES = ['files.xml', 'symbols.xml']
-        results_dict = {}
+        if old_version is None:
+            old_version = OutputLogger.get_old_build().get('version')
+            if old_version is '':
+                old_version = cls._get_rpm_info('version', OutputLogger.get_old_build()['rpm'])
+        if new_version is None:
+            new_version = OutputLogger.get_new_build().get('version')
+            if new_version is '':
+                new_version = cls._get_rpm_info('version', OutputLogger.get_new_build()['rpm'])
 
         for tag in settings.CHECKER_TAGS:
-            results_dict[tag] = []
+            cls.results_dict[tag] = []
         for file_name in [os.path.join(result_dir, x) for x in XML_FILES]:
             logger.info('Processing %s file.', file_name)
             try:
                 with open(file_name, "r") as f:
-                    lines = f.readlines()
-                    lines.insert(0, '<pkgdiff>')
+                    lines = ['<pkgdiff>']
+                    lines.extend(f.readlines())
                     lines.append('</pkgdiff>')
                     pkgdiff_tree = ElementTree.fromstringlist(lines)
                     for tag in settings.CHECKER_TAGS:
                         for pkgdiff in pkgdiff_tree.findall('.//' + tag):
-                            results_dict[tag].extend([x.strip() for x in pkgdiff.text.strip().split('\n')])
+                            files = [x.strip() for x in pkgdiff.text.strip().split('\n')]
+                            files = [x.replace(old_version, '*') for x in files]
+                            files = [x.replace(new_version, '*') for x in files]
+                            cls.results_dict[tag].extend(files)
             except IOError:
                 continue
 
-        return results_dict
-
     @classmethod
-    def _update_added_removed(cls, results_dict, key):
-        update = []
-        for items in results_dict[key]:
-            # We find whether file exists in 'moved' section
-            # If yes then do not include in key set
-            found = [x for x in results_dict['moved'] if items in x]
-            if not found:
-                update.append(items)
-        return update
-
-    @classmethod
-    def _update_changed_moved(cls, results_dict, key):
+    def _update_changed_moved(cls, key):
         updated_list = []
-        for item in results_dict[key]:
+        for item in cls.results_dict[key]:
             fields = item.split(';')
-            found = [x for x in results_dict['changed'] if os.path.basename(fields[0]) in x]
+            found = [x for x in cls.results_dict['changed'] if os.path.basename(fields[0]) in x]
             if not found:
                 updated_list.append(item)
         return updated_list
 
     @classmethod
     def _remove_not_checked_files(cls, results_dict):
+        """
+        Function removes things which we don't care like
+        ['.build-id', '.dwz']
+        :return:
+        """
         update_list = []
         removed_things = ['.build-id', '.dwz']
         for item in results_dict:
             removed = [x for x in removed_things if x in item]
             if removed:
                 continue
+            if item.endswith('.debug'):
+                continue
             update_list.append(item)
         return update_list
 
     @classmethod
-    def process_xml_results(cls, result_dir):
+    def process_xml_results(cls, result_dir, old_version=None, new_version=None):
         """
         Function for filling dictionary with keys like 'added', 'removed'
+
         :return: dict = {'added': [list_of_added],
                          'removed': [list of removed],
                          'changed': [list of changed],
                          'moved': [list of moved]
                         }
         """
-        results_dict = cls.fill_dictionary(result_dir)
+        cls.fill_dictionary(result_dir, old_version=old_version, new_version=new_version)
 
-        # TODO for now we are skipping the some files/directories
-        for items in ['added', 'removed']:
-            results_dict[items] = cls._update_added_removed(results_dict, items)
-        # remove unchanged files and remove things which are not checked
+        # Remove all files which were not changed
+        cls._remove_not_changed_files()
         for tag in settings.CHECKER_TAGS:
-            results_dict[tag] = cls._remove_not_changed_files(results_dict[tag])
-            results_dict[tag] = cls._remove_not_checked_files(results_dict[tag])
+            cls.results_dict[tag] = cls._remove_not_checked_files(cls.results_dict[tag])
+
+        added = [x for x in cls.results_dict['added'] if x not in cls.results_dict['removed']]
+        removed = [x for x in cls.results_dict['removed'] if x not in cls.results_dict['added']]
+        cls.results_dict['added'] = added
+        cls.results_dict['removed'] = removed
+
+        # remove unchanged files and remove things which are not checked
         # remove files from 'moved' if they are in 'changed' section
-        results_dict['moved'] = cls._update_changed_moved(results_dict, 'moved')
+        cls.results_dict['moved'] = cls._update_changed_moved('moved')
 
         # Remove empty items
-        return dict((k, v) for k, v in six.iteritems(results_dict) if v)
+        return dict((k, v) for k, v in six.iteritems(cls.results_dict) if v)
 
     @classmethod
     def run_check(cls, results_dir):
-        """ Compares old and new RPMs using pkgdiff """
+        """
+        Compares old and new RPMs using pkgdiff
+        :param results_dir result dir where are stored results
+        """
         cls.results_dir = results_dir
         cls.pkgdiff_results_full_path = os.path.join(cls.results_dir, cls.pkgdiff_results_filename)
 
-        versions = ['old', 'new']
+
         cmd = [cls.CMD]
-        for version in versions:
+        cmd.append('-hide-unchanged')
+        for version in ['old', 'new']:
             old = OutputLogger.get_build(version)
             if old:
                 file_name = cls._create_xml(version, input_structure=old)
@@ -317,8 +352,10 @@ class PkgDiffTool(BaseChecker):
         OutputLogger.set_info_text('Result HTML page from pkgdiff is store in: ', cls.pkgdiff_results_full_path)
         results_dict = cls.process_xml_results(cls.results_dir)
         text = []
+
         for key, val in six.iteritems(results_dict):
-            text.append('Following files were %s:\n%s' % (key, '\n'.join(val)))
+            if val:
+                text.append('Following files were %s:\n%s' % (key, '\n'.join(val)))
 
         pkgdiff_report = os.path.join(cls.results_dir, 'report-' + cls.pkgdiff_results_filename + '.log')
         try:
@@ -361,11 +398,13 @@ class AbiCheckerTool(BaseChecker):
 
     @classmethod
     def run_check(cls, result_dir):
-        """ Compares old and new RPMs using pkgdiff """
-
+        """Compares old and new RPMs using pkgdiff"""
         debug_old, rest_pkgs_old = cls._get_packages_for_abipkgdiff(OutputLogger.get_build('old'))
         debug_new, rest_pkgs_new = cls._get_packages_for_abipkgdiff(OutputLogger.get_build('new'))
         cmd = [cls.CMD]
+        if debug_old is None:
+            logger.warning("Package doesn't contain any debug package")
+            return None
         try:
             cmd.append('--d1')
             cmd.append(debug_old[0])
@@ -436,11 +475,11 @@ class Checker(object):
         return "<Checker tool_name='{_tool_name}' tool={_tool}>".format(**vars(self))
 
     def run_check(self, results_dir):
-        """ Run the check """
+        """Run the check"""
         logger.debug("Running tests on packages using '%s'", self._tool_name)
         return self._tool.run_check(results_dir)
 
     @classmethod
     def get_supported_tools(cls):
-        """ Return list of supported tools """
+        """Return list of supported tools"""
         return check_tools.keys()

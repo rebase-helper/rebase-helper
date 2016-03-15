@@ -3,4 +3,4 @@ Utils module
 
 .. automodule:: rebasehelper.utils
    :members:
-   :undocs-members:
+   :undoc-members:

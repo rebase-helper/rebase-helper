@@ -20,17 +20,15 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
+from __future__ import print_function
 import shutil
 import os
-import random
-import string
-import time
 import six
 
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.utils import PathHelper
+from rebasehelper.utils import KojiHelper
 from rebasehelper.utils import TemporaryEnvironment
-from rebasehelper.utils import DownloadHelper
 from rebasehelper.logger import logger
 
 
@@ -104,9 +102,7 @@ class BuildTemporaryEnvironment(TemporaryEnvironment):
         return obj
 
     def _create_directory_sctructure(self):
-        """
-        Function creating the directory structure in the TemporaryEnvironment.
-        """
+        """Function creating the directory structure in the TemporaryEnvironment."""
         raise NotImplementedError('The create directory function has to be implemented in child class!')
 
     def _build_env_exit_callback(self, results_dir, **kwargs):
@@ -115,7 +111,7 @@ class BuildTemporaryEnvironment(TemporaryEnvironment):
         It copies packages and logs into the results directory.
 
         :param results_dir: absolute path to results directory
-        :return:
+        :return: 
         """
         os.makedirs(results_dir)
         log_message = "Copying '%s' '%s' to '%s'"
@@ -136,9 +132,7 @@ class BuildToolBase(object):
 
     @classmethod
     def match(cls, cmd=None, *args, **kwargs):
-        """
-        Checks if tool name matches the desired one.
-        """
+        """Checks if tool name matches the desired one."""
         raise NotImplementedError()
 
     @classmethod
@@ -194,7 +188,7 @@ class MockBuildTool(BuildToolBase):
 
     @classmethod
     def _build_srpm(cls, spec, sources, results_dir, root=None, arch=None):
-        """ Build SRPM using mock. """
+        """Build SRPM using mock."""
         logger.info("Building SRPM")
         output = os.path.join(results_dir, "mock_output.log")
 
@@ -213,7 +207,7 @@ class MockBuildTool(BuildToolBase):
 
     @classmethod
     def _build_rpm(cls, srpm, results_dir, root=None, arch=None):
-        """ Build RPM using mock. """
+        """Build RPM using mock."""
         logger.info("Building RPMs")
         output = os.path.join(results_dir, "mock_output.log")
 
@@ -253,7 +247,6 @@ class MockBuildTool(BuildToolBase):
                  'rpm' -> list with absolute paths to RPMs
                  'logs' -> list with absolute paths to logs
         """
-
         rpms = None
         srpm = None
 
@@ -417,7 +410,6 @@ class RpmbuildBuildTool(BuildToolBase):
                  'rpm' -> list with absolute paths to RPMs
                  'logs' -> list with absolute paths to build_logs
         """
-
         rpms = None
         srpm = None
 
@@ -481,14 +473,12 @@ class FedpkgBuildTool(BuildToolBase):
 
     CMD = "fedpkg"
     logs = []
+    koji_helper = None
 
     # Taken from https://github.com/fedora-infra/the-new-hotness/blob/develop/fedmsg.d/hotness-example.py
     koji_web = "koji.fedoraproject.org"
     server = "https://%s/kojihub" % koji_web
     weburl = "http://%s/koji" % koji_web
-    scratch_url = "http://%s/work/" % koji_web
-    cert = os.path.expanduser('~/.fedora.cert')
-    ca_cert = os.path.expanduser('~/.fedora-server-ca.cert')
     git_url = 'http://pkgs.fedoraproject.org/cgit/{package}.git'
     opts = {'scratch': True}
     target_tag = 'rawhide'
@@ -554,143 +544,23 @@ class FedpkgBuildTool(BuildToolBase):
             return PathHelper.find_first_file(workdir, '*.src.rpm')
 
     @classmethod
-    def _session_maker(cls):
-        koji_session = koji.ClientSession(cls.server, {'timeout': 3600})
-        koji_session.ssl_login(cls.cert, cls.ca_cert, cls.ca_cert)
-        return koji_session
-
-    @classmethod
-    def _upload_srpm(cls, session, source):
-        server_dir = cls._unique_path('cli-build')
-        session.uploadWrapper(source, server_dir)
-        return '%s/%s' % (server_dir, os.path.basename(source))
-
-    @classmethod
-    def _display_task_results(cls, tasks):
-        """
-        Function is copy/paste from pyrpkg/cli.py
-        """
-        for task in [task for task in tasks.values() if task.level == 0]:
-            state = task.info['state']
-            task_label = task.str()
-
-            logger.info('State %s (%s)', state, task_label)
-            if state == koji.TASK_STATES['CLOSED']:
-                logger.info('%s completed successfully', task_label)
-            elif state == koji.TASK_STATES['FAILED']:
-                logger.info('%s failed', task_label)
-            elif state == koji.TASK_STATES['CANCELED']:
-                logger.info('%s was canceled', task_label)
-            else:
-                # shouldn't happen
-                logger.info('%s has not completed', task_label)
-
-    @classmethod
-    def _watch_koji_tasks(cls, session, tasklist):
-        """
-        Function is copy/paste from pyrpkg/cli.py
-        """
-        if not tasklist:
-            return
-        # Place holder for return value
-        tasks_x86_64 = {}
-        try:
-            tasks = {}
-
-            for task_id in tasklist:
-                tasks[task_id] = TaskWatcher(task_id, session, logger,
-                                             quiet=False)
-            while True:
-                all_done = True
-                for task_id, task in tasks.items():
-                    changed = task.update()
-                    info = session.getTaskInfo(task_id)
-                    state = task.info['state']
-                    if state == koji.TASK_STATES['FAILED']:
-                        return {info['id']: state}
-                    else:
-                        if info['arch'] == 'x86_64':
-                            tasks_x86_64[info['id']] = state
-                    if not task.is_done():
-                        all_done = False
-                    else:
-                        if changed:
-                            cls._display_task_results(tasks)
-                        if not task.is_success():
-                            tasks_x86_64 = None
-                    try:
-                        for child in session.getTaskChildren(task_id):
-                            child_id = child['id']
-                            if child_id not in tasks.keys():
-                                tasks[child_id] = TaskWatcher(child_id,
-                                                              session,
-                                                              logger,
-                                                              task.level + 1,
-                                                              quiet=False)
-                                tasks[child_id].update()
-                                # If we found new children, go through the list
-                                # again, in case they have children also
-                                info = session.getTaskInfo(child_id)
-                                state = task.info['state']
-                                if state == koji.TASK_STATES['FAILED']:
-                                    return {info['id']: state}
-                                else:
-                                    if info['arch'] == 'x86_64':
-                                        tasks_x86_64[info['id']] = state
-                                all_done = False
-                    except SSL.SysCallError as exc:
-                        logger.error('We have detected a exception %s' % exc.message)
-                        pass
-                if all_done:
-                    cls._display_task_results(tasks)
-                    break
-
-                time.sleep(1)
-        except (KeyboardInterrupt):
-            # A ^c should return non-zero so that it doesn't continue
-            # on to any && commands.
-            tasks_x86_64 = None
-        return tasks_x86_64
-
-    @classmethod
-    def _download_scratch_build(cls, task_list, dir_name):
-        session = cls._session_maker()
-        rpms = []
-        logs = []
-        for task_id in task_list:
-            logger.info('Downloading packaged for %i taskID', task_id)
-            task = session.getTaskInfo(task_id)
-            tasks = [task]
-            for task in tasks:
-                base_path = koji.pathinfo.taskrelpath(task_id)
-                output = session.listTaskOutput(task['id'])
-                for filename in output:
-                    logger.info('Downloading file %s', filename)
-                    downloaded_file = os.path.join(dir_name, filename)
-                    DownloadHelper.download_file(cls.scratch_url + base_path + '/' + filename,
-                                                 downloaded_file)
-                    if filename.endswith('.rpm'):
-                        rpms.append(downloaded_file)
-                    if filename.endswith('build.log'):
-                        logs.append(downloaded_file)
-        session.logout()
-        return rpms, logs
-
-    @classmethod
-    def _scratch_build(cls, session, source):
-        remote = cls._upload_srpm(session, source)
+    def _scratch_build(cls, source, **kwargs):
+        session = cls.koji_helper.session_maker()
+        remote = cls.koji_helper.upload_srpm(session, source)
         task_id = session.build(remote, cls.target_tag, cls.opts, priority=cls.priority)
+        if kwargs['builds_nowait']:
+            return None, None, task_id
         weburl = cls.weburl + '/taskinfo?taskID=%i' % task_id
         logger.info('Koji task_id is here:\n' + weburl)
         session.logout()
-        task_dict = cls._watch_koji_tasks(session, [task_id])
+        task_dict = cls.koji_helper.watch_koji_tasks(session, [task_id])
         task_list = []
         package_failed = False
         for key in six.iterkeys(task_dict):
             if task_dict[key] == koji.TASK_STATES['FAILED']:
                 package_failed = True
             task_list.append(key)
-        rpms, logs = cls._download_scratch_build(task_list, os.path.dirname(source).replace('SRPM', 'RPM'))
+        rpms, logs = cls.koji_helper.download_scratch_build(task_list, os.path.dirname(source).replace('SRPM', 'RPM'))
         if package_failed:
             weburl = '%s/taskinfo?taskID=%i' % (cls.weburl, task_list[0])
             logger.info('RPM built failed %s', weburl)
@@ -698,16 +568,11 @@ class FedpkgBuildTool(BuildToolBase):
             cls.logs.append(weburl)
             raise BinaryPackageBuildError
         logs.append(weburl)
-        return rpms, logs
+        return rpms, logs, task_id
 
     @classmethod
     def get_logs(cls):
         return {'logs': cls.logs}
-
-    @classmethod
-    def _unique_path(cls, prefix):
-        suffix = ''.join([random.choice(string.ascii_letters) for i in range(8)])
-        return '%s/%r.%s' % (prefix, time.time(), suffix)
 
     @classmethod
     def build(cls, spec, sources, patches, results_dir, **kwargs):
@@ -719,6 +584,7 @@ class FedpkgBuildTool(BuildToolBase):
         :param sources: list with absolute paths to SOURCES
         :param patches: list with absolute paths to PATCHES
         :param results_dir: absolute path to DIR where results should be stored
+        :param upstream_monitoring: specify if build is handled by upstream monitoring
         :return: dict with:
                  'srpm' -> absolute path to SRPM
                  'rpm' -> list with absolute paths to RPMs
@@ -741,11 +607,12 @@ class FedpkgBuildTool(BuildToolBase):
         srpm = os.path.join(srpm_results_dir, os.path.basename(srpm))
         rpm_results_dir = os.path.join(results_dir, "RPM")
         os.makedirs(rpm_results_dir)
-        session = cls._session_maker()
-        rpms, logs = cls._scratch_build(session, srpm)
+        cls.koji_helper = KojiHelper()
+        rpms, logs, koji_task_id = cls._scratch_build(srpm, **kwargs)
         return {'srpm': srpm,
                 'rpm': rpms,
-                'logs': logs}
+                'logs': logs,
+                'koji_task_id': koji_task_id}
 
 
 class Builder(object):
@@ -770,12 +637,12 @@ class Builder(object):
         return "<Builder tool_name='{_tool_name}' tool='{_tool}'>".format(**vars(self))
 
     def build(self, *args, **kwargs):
-        """ Build sources. """
+        """Build sources."""
         logger.debug("Building sources using '%s'", self._tool_name)
         return self._tool.build(*args, **kwargs)
 
     def get_logs(self):
-        """ Get logs. """
+        """Get logs."""
         logger.debug("Getting logs '%s'", self._tool_name)
         return self._tool.get_logs()
 

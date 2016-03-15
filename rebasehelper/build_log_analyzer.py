@@ -69,7 +69,7 @@ class BuildLogAnalyzer(object):
         """
         Function analyzes log files in our case build.log
 
-        :param log_name:
+        :param log_name: 
         :return: list of files which are either missing or not exists
         """
         files = {}

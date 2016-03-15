@@ -6,3 +6,12 @@ Module Overview
    application
    patchhelper
    utils
+   archive
+   baseoutput
+   buildhelper
+   buildloganalyzer
+   exceptions
+   logger
+   outputtool
+   patchhelper
+   specfile

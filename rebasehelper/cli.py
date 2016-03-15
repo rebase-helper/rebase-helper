@@ -34,7 +34,7 @@ class CLI(object):
     """ Class for processing data from commandline """
 
     def __init__(self, args=None):
-        """ parse arguments """
+        """parse arguments"""
         self.parser = argparse.ArgumentParser(description=PROGRAM_DESCRIPTION)
         self.add_args()
         self.args = self.parser.parse_args(args)
@@ -60,11 +60,6 @@ class CLI(object):
             default=False,
             action="store_true",
             help="Only build SRPM and RPMs"
-        )
-        self.parser.add_argument(
-            "--patchtool",
-            default='git',
-            help="Select the patch tool [patch|git]"
         )
         self.parser.add_argument(
             "--buildtool",
@@ -118,7 +113,22 @@ class CLI(object):
             "--comparepkgs-only",
             default=False,
             dest="comparepkgs",
-            help="Specify dir with old and new RPM packages. Dir structure has to be like testdir/{old,new}/RPM"
+            help="Specify dir with old and new RPM packages. Dir structure has to be like <dir_name>/{old,new}/RPM"
+        )
+        self.parser.add_argument(
+            "--builds-nowait",
+            default=False,
+            action="store_true",
+            help="It starts a koji builds and does not care how they finish. Useful for fedpkg build tool."
+        )
+        self.parser.add_argument(
+            "--fedpkg-build-tasks",
+            dest="build_tasks",
+            help="Specify tasks ids in order old and new. They has to be comma, separated."
+        )
+        self.parser.add_argument(
+            "--results-dir",
+            help="Specify results dir where you would like to stored rebase-helper stuff."
         )
 
     def __getattr__(self, name):

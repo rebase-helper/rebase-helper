@@ -48,9 +48,7 @@ class TestArchive(BaseTest):
     ]
 
     def extraction_test(self, archive):
-        """
-        Generic test for extraction of all types of archives
-        """
+        """Generic test for extraction of all types of archives"""
         EXTRACT_DIR = os.path.join(os.getcwd(), 'dir')
         EXTRACTED_FILE = os.path.join(EXTRACT_DIR, self.ARCHIVED_FILE)
 
@@ -66,37 +64,25 @@ class TestArchive(BaseTest):
             assert f.read().strip() == self.ARCHIVED_FILE_CONTENT
 
     def test_tar_bz2_archive(self):
-        """
-        Test .tar.bz2 archive extraction.
-        """
+        """Test .tar.bz2 archive extraction."""
         self.extraction_test(self.TAR_BZ2)
 
     def test_tar_gz_archive(self):
-        """
-        Test .tar.gz archive extraction.
-        """
+        """Test .tar.gz archive extraction."""
         self.extraction_test(self.TAR_GZ)
 
     def test_tgz_archive(self):
-        """
-        Test .tgz archive extraction.
-        """
+        """Test .tgz archive extraction."""
         self.extraction_test(self.TGZ)
 
     def test_tar_xz_archive(self):
-        """
-        Test .tar.xz archive extraction.
-        """
+        """Test .tar.xz archive extraction."""
         self.extraction_test(self.TAR_XZ)
 
     def test_bz2_archive(self):
-        """
-        Test .bz2 archive extraction.
-        """
+        """Test .bz2 archive extraction."""
         self.extraction_test(self.BZ2)
 
     def test_zip_archive(self):
-        """
-        Test .zip archive extraction.
-        """
+        """Test .zip archive extraction."""
         self.extraction_test(self.ZIP)

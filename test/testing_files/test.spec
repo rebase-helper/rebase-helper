@@ -13,7 +13,8 @@ Source1: source-tests.sh
 Source2: ftp://test.com/test-source.sh
 #Source3: source-tests.sh
 Source4: file.txt.bz2
-Source5: documentation.tar.bz2
+Source5: documentation.tar.xz
+Source6: misc.zip
 Patch1: test-testing.patch
 Patch2: test-testing2.patch
 Patch3: test-testing3.patch
@@ -31,11 +32,13 @@ Summary: A testing devel package
 Testing devel spec file
 
 %prep
-%setup -q
+%setup -q -a 5
 %patch1
 %patch2 -p1
 %patch3 -p1 -b .testing3
 %patch4 -p0 -b .testing4
+mkdir misc
+tar -xf %{SOURCE6} -C misc
 
 %build
 autoreconf -vi
