@@ -31,7 +31,7 @@ from rebasehelper.specfile import SpecFile, get_rebase_name
 from rebasehelper.logger import logger, logger_report, LoggerHelper
 from rebasehelper import settings
 from rebasehelper import output_tool
-from rebasehelper.utils import PathHelper, RpmHelper, ConsoleHelper, GitHelper, KojiHelper
+from rebasehelper.utils import PathHelper, RpmHelper, ConsoleHelper, GitHelper, KojiHelper, FileHelper
 from rebasehelper.checker import Checker
 from rebasehelper.build_helper import Builder, SourcePackageBuildError, BinaryPackageBuildError, koji_builder
 from rebasehelper.patch_helper import Patcher
@@ -554,8 +554,10 @@ class Application(object):
         :return: 
         """
         log_list = []
-        log_list.append(self.debug_log_file)
-        log_list.append(self.report_log_file)
+        if FileHelper.file_available(self.debug_log_file):
+            log_list.append(self.debug_log_file)
+        if FileHelper.file_available(self.report_log_file):
+            log_list.append(self.report_log_file)
         return log_list
 
     def get_new_build_logs(self):
@@ -571,7 +573,8 @@ class Application(object):
             for check, data in six.iteritems(OutputLogger.get_checkers()):
                 if data:
                     for log in six.iterkeys(data):
-                        checkers[check] = log
+                        if FileHelper.file_available(log):
+                            checkers[check] = log
                 else:
                     checkers[check] = None
         return checkers

@@ -1015,3 +1015,13 @@ class KojiHelper(object):
                     DownloadHelper.download_file(cls.baseurl + base_path + '/' + filename,
                                                  full_path_name)
         return rpm_list, log_list
+
+
+class FileHelper(object):
+
+    @staticmethod
+    def file_available(filename):
+        if os.path.exists(filename) and os.path.getsize(filename) != 0:
+            return True
+        else:
+            return False
