@@ -642,7 +642,7 @@ class GitHelper(object):
             message = """[merge] section is not defined in %s.\n
 One of the possible configuration can be:\n
 [mergetool "mymeld"]
-    cmd = meld --auto-merge --output $MERGED $LOCAL $BASE $REMOTE --diff $BASE $LOCAL --diff $BASE $REMOTE
+    cmd = meld --auto-merge --output $MERGED $LOCAL $BASE $REMOTE --diff $BASE $LOCAL --diff $BASE $REMOTE --label old_sources --label merge --label new_sources
 [merge]
     tool = mymeld
     conflictstyle = diff3"""
