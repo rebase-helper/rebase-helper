@@ -599,6 +599,13 @@ class Application(object):
         output.print_information(path=self._get_rebase_helper_log())
         logger.info('Report file from rebase-helper is available here: %s', self.report_log_file)
 
+    def print_koji_logs(self):
+        logs = self.get_new_build_logs()['build_ref']
+        message = "Scratch build for '%s' version is: http://koji.fedoraproject.org/koji/taskinfo?taskID=%s"
+        for version in ['old', 'new']:
+            data = logs[version]
+            logger.info(message % (data['version'], data['koji_task_id']))
+
     def set_upstream_monitoring(self):
         self.upstream_monitoring = True
 
@@ -640,7 +647,7 @@ class Application(object):
                 self.conf.build_tasks = self.conf.builds_nowait = False
 
         sources = None
-        if not self.conf.builds_nowait and self.conf.build_tasks is None:
+        if self.conf.build_tasks is None:
             sources = self.prepare_sources()
             if not self.conf.build_only and not self.conf.comparepkgs:
                 self.patch_sources(sources)
@@ -655,6 +662,7 @@ class Application(object):
                 try:
                     build = self.build_packages()
                     if self.conf.builds_nowait and not self.conf.build_tasks:
+                        self.print_koji_logs()
                         return 0
                 except RuntimeError:
                     logger.error('Not know error caused by build log analysis')
