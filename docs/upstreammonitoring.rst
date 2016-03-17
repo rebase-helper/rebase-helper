@@ -1,7 +1,7 @@
 How to use rebase-helper for Upstream Monitoring systems
 ========================================================
 
-The page describes an integration rebase-helper into an upstream monitoring systems.
+The page describes integration of rebase-helper into upstream monitoring systems.
 Of course you need to install rebase-helper package
 - either as RPM::
 
@@ -11,8 +11,8 @@ Of course you need to install rebase-helper package
 
   git clone https://github.com/phracek/rebase-helper
 
-Nowadays we supporting only koji build systems as a support for upstream monitoring systems.
-But time changes and we are opened for the another build systems.
+Nowadays we support only koji build systems as a support for upstream monitoring systems.
+But time changes and we are open to the another build systems.
 
 - Patch the new sources and run koji scratch build
 -- Python API usage::
