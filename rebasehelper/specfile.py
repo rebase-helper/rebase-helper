@@ -124,6 +124,7 @@ class SpecFile(object):
         #  Read the content of the whole SPEC file
         self._read_spec_content()
         # Load rpm information
+        rpm.addMacro('_sourcedir', '.')
         self.spc = rpm.spec(self.path)
         self.patches = self._get_initial_patches_list()
         self._update_data()
@@ -135,8 +136,9 @@ class SpecFile(object):
         :return: 
         """
         # Load rpm information
+        rpm.addMacro('_sourcedir', '.')
         self.spc = rpm.spec(self.path)
-        self.prep_section = rpm.spec(self.path).prep
+        self.prep_section = self.spc.prep
         # HEADER of SPEC file
         self.hdr = self.spc.sourceHeader
 
