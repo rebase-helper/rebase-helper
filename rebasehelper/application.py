@@ -266,7 +266,8 @@ class Application(object):
         :return: 
         """
         logger.debug("Removing the workspace directory '%s'", self.workspace_dir)
-        shutil.rmtree(self.workspace_dir)
+        if os.path.isdir(self.workspace_dir):
+            shutil.rmtree(self.workspace_dir)
 
     def _check_workspace_dir(self):
         """
