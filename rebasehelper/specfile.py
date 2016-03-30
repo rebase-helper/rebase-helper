@@ -122,6 +122,7 @@ class SpecFile(object):
         self.download = download
         self.sources_location = sources_location
         #  Read the content of the whole SPEC file
+        rpm.addMacro("_sourcedir", sources_location)
         self._read_spec_content()
         # Load rpm information
         rpm.addMacro('_sourcedir', '.')
