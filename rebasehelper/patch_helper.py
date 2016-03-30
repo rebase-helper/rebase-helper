@@ -55,6 +55,7 @@ class PatchBase(object):
         """Method will check all patches in relevant package"""
         return NotImplementedError()
 
+
 @register_patch_tool
 class GitPatchTool(PatchBase):
 
@@ -130,7 +131,7 @@ class GitPatchTool(PatchBase):
         updated_patches = []
         for patch in cls.patches:
             patch_name = patch.get_patch_name()
-            if not [x for x in cls.output_data if patch_name in x] and patch_name not in deleted_patches:
+            if [x for x in cls.output_data if patch_name in x] and patch_name not in deleted_patches:
                 updated_patches.append(patch_name)
         return updated_patches
 
