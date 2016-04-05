@@ -136,7 +136,10 @@ class SpecFile(object):
         :return: 
         """
         # Load rpm information
-        self.spc = rpm.spec(self.path)
+        try:
+            self.spc = rpm.spec(self.path)
+        except ValueError:
+            raise RebaseHelperError("Problem with parsing SPEC file '%s'" % self.path)
         self.prep_section = self.spc.prep
         # HEADER of SPEC file
         self.hdr = self.spc.sourceHeader
