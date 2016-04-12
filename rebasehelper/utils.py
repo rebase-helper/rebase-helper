@@ -110,9 +110,9 @@ class ConsoleHelper(object):
         :return: True or False, based on user's input
         """
         if default_yes:
-            choice = '([y]/n)'
+            choice = '[Y/n]'
         else:
-            choice = '(y/[n])'
+            choice = '[y/N]'
 
         if any_input:
             msg = '{0} '.format(message)
@@ -128,7 +128,7 @@ class ConsoleHelper(object):
             try:
                 user_input = strtobool(user_input)
             except ValueError:
-                logger.error('You have to type [y]es or [n]o.')
+                logger.error('You have to type y(es) or n(o).')
                 continue
 
             if any_input:

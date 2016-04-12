@@ -57,7 +57,7 @@ class TestConsoleHelper(BaseTest):
         inp = ConsoleHelper.get_message(question)
         sys.stdout.seek(0)
 
-        assert sys.stdout.readline() == question + ' ([y]/n)? '
+        assert sys.stdout.readline() == question + ' [Y/n]? '
         assert inp is True
 
     def test_get_message_no(self):
@@ -68,7 +68,7 @@ class TestConsoleHelper(BaseTest):
         inp = ConsoleHelper.get_message(question)
         sys.stdout.seek(0)
 
-        assert sys.stdout.readline() == question + ' ([y]/n)? '
+        assert sys.stdout.readline() == question + ' [Y/n]? '
         assert inp is False
 
     def test_get_message_yes_default_no(self):
@@ -79,7 +79,7 @@ class TestConsoleHelper(BaseTest):
         inp = ConsoleHelper.get_message(question, default_yes=False)
         sys.stdout.seek(0)
 
-        assert sys.stdout.readline() == question + ' (y/[n])? '
+        assert sys.stdout.readline() == question + ' [y/N]? '
         assert inp is True
 
     def test_get_message_no_input_default_yes(self):
@@ -90,7 +90,7 @@ class TestConsoleHelper(BaseTest):
         inp = ConsoleHelper.get_message(question)
         sys.stdout.seek(0)
 
-        assert sys.stdout.readline() == question + ' ([y]/n)? '
+        assert sys.stdout.readline() == question + ' [Y/n]? '
         assert inp is True
 
     def test_get_message_no_input_default_no(self):
@@ -101,7 +101,7 @@ class TestConsoleHelper(BaseTest):
         inp = ConsoleHelper.get_message(question, default_yes=False)
         sys.stdout.seek(0)
 
-        assert sys.stdout.readline() == question + ' (y/[n])? '
+        assert sys.stdout.readline() == question + ' [y/N]? '
         assert inp is False
 
     def test_get_message_any_input_default_yes(self):
