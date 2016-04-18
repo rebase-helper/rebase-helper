@@ -591,7 +591,7 @@ class Application(object):
         if OutputLogger.get_patches():
             for key, val in six.iteritems(OutputLogger.get_patches()):
                 if key:
-                    output_patch_string.append('Following patches has been %s:\n%s' % (key, val))
+                    output_patch_string.append('Following patches have been %s:\n%s' % (key, val))
                     patches = True
         if not patches:
             output_patch_string.append('Patches were not touched. All were applied properly')
