@@ -568,6 +568,8 @@ class RpmHelper(object):
         :return: 
         """
         ts = rpm.TransactionSet()
+        # disable signature checking
+        ts.setVSFlags(rpm._RPMVSF_NOSIGNATURES)
         h = None
         with open(rpm_name, "r") as f:
             h = ts.hdrFromFdno(f)
