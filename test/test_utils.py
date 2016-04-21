@@ -25,6 +25,7 @@ import tempfile
 import random
 import string
 import sys
+import rpm
 from six import StringIO
 
 from .base_test import skip_on_travis
@@ -35,6 +36,7 @@ from rebasehelper.utils import ProcessHelper
 from rebasehelper.utils import PathHelper
 from rebasehelper.utils import TemporaryEnvironment
 from rebasehelper.utils import RpmHelper
+from rebasehelper.utils import MacroHelper
 
 
 class TestConsoleHelper(BaseTest):
@@ -125,6 +127,19 @@ class TestConsoleHelper(BaseTest):
 
         assert sys.stdout.readline() == question + ' '
         assert inp is False
+
+    def test_capture_output(self):
+        def write():
+            with os.fdopen(sys.__stdout__.fileno(), 'w') as f:
+                f.write('test stdout')
+            with os.fdopen(sys.__stderr__.fileno(), 'w') as f:
+                f.write('test stderr')
+
+        stdout, stderr = ConsoleHelper.capture_output(
+            write, capture_stdout=True, capture_stderr=True)
+
+        assert stdout == 'test stdout'
+        assert stderr == 'test stderr'
 
 
 class TestDownloadHelper(BaseTest):
@@ -507,3 +522,14 @@ class TestRpmHelper(BaseTest):
 
     def test_all_packages_installed_one_non_existing(self):
         assert RpmHelper.all_packages_installed(['glibc', 'coreutils', 'non-existing-package']) is False
+
+
+class TestMacroHelper(BaseTest):
+
+    def test_get_macros(self):
+        rpm.addMacro('test_macro', 'test_macro value')
+        macros = MacroHelper.get_macros(name='test_macro')
+        assert len(macros) == 1
+        assert macros[0]['name'] == 'test_macro'
+        assert macros[0]['value'] == 'test_macro value'
+        assert macros[0]['level'] == -1
