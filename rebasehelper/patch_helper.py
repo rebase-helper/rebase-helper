@@ -125,13 +125,15 @@ class GitPatchTool(PatchBase):
         cls.output_data = cls.git_helper.get_output_data()
 
     @classmethod
-    def _update_deleted_patches(cls, deleted_patches):
+    def _update_deleted_patches(cls, deleted_patches, unapplied_patches):
         """Function checks patches against rebase-patches"""
         cls.output_data = cls.git_helper.command_log(parameters='--pretty=oneline')
         updated_patches = []
         for patch in cls.patches:
             patch_name = patch.get_patch_name()
-            if [x for x in cls.output_data if patch_name in x] and patch_name not in deleted_patches:
+            if (not [x for x in cls.output_data if patch_name in x] and
+                    patch_name not in deleted_patches and
+                    patch_name not in unapplied_patches):
                 updated_patches.append(patch_name)
         return updated_patches
 
@@ -203,7 +205,8 @@ class GitPatchTool(PatchBase):
                 cls._get_git_helper_data()
             else:
                 break
-        deleted_patches = cls._update_deleted_patches(deleted_patches)
+        deleted_patches = cls._update_deleted_patches(deleted_patches,
+                                                      unapplied_patches)
         if deleted_patches:
             patch_dictionary['deleted'] = deleted_patches
         if modified_patches:
