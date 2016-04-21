@@ -136,6 +136,78 @@ class ConsoleHelper(object):
             else:
                 return bool(user_input)
 
+    @staticmethod
+    def capture_output(func, capture_stdout=False, capture_stderr=False):
+        """
+        Captures stdout and stderr of specified function
+
+        :param func: function to be executed
+        :param capture_stdout: if True, capture stdout
+        :param capture_stderr: if True, capture stderr
+        :return: tuple containing captured stdout and stderr
+        """
+        stdout_data = None
+        stderr_data = None
+
+        stdout = sys.__stdout__.fileno()
+        stderr = sys.__stderr__.fileno()
+
+        stdout_tmp = tempfile.TemporaryFile(
+            mode='w+b') if capture_stdout else None
+        try:
+            stderr_tmp = tempfile.TemporaryFile(
+                mode='w+b') if capture_stderr else None
+            try:
+                stdout_copy = os.fdopen(
+                    os.dup(stdout), 'wb') if capture_stdout else None
+                try:
+                    stderr_copy = os.fdopen(
+                        os.dup(stderr), 'wb') if capture_stderr else None
+                    try:
+                        try:
+                            if stdout_tmp:
+                                sys.stdout.flush()
+                                os.dup2(stdout_tmp.fileno(), stdout)
+                            if stderr_tmp:
+                                sys.stderr.flush()
+                                os.dup2(stderr_tmp.fileno(), stderr)
+                            try:
+                                func()
+                            finally:
+                                if stdout_copy:
+                                    sys.stdout.flush()
+                                    os.dup2(stdout_copy.fileno(), stdout)
+                                if stderr_copy:
+                                    sys.stderr.flush()
+                                    os.dup2(stderr_copy.fileno(), stderr)
+                        finally:
+                            if stdout_tmp:
+                                stdout_tmp.flush()
+                                stdout_tmp.seek(0, io.SEEK_SET)
+                                stdout_data = stdout_tmp.read()
+                                if six.PY3:
+                                    stdout_data = stdout_data.decode(defenc)
+                            if stderr_tmp:
+                                stderr_tmp.flush()
+                                stderr_tmp.seek(0, io.SEEK_SET)
+                                stderr_data = stderr_tmp.read()
+                                if six.PY3:
+                                    stderr_data = stderr_data.decode(defenc)
+                    finally:
+                        if stderr_copy:
+                            stderr_copy.close()
+                finally:
+                    if stdout_copy:
+                        stdout_copy.close()
+            finally:
+                if stderr_tmp:
+                    stderr_tmp.close()
+        finally:
+            if stdout_tmp:
+                stdout_tmp.close()
+
+        return stdout_data, stderr_data
+
 
 class DownloadHelper(object):
 
@@ -527,32 +599,6 @@ class MacroHelper(object):
     """Helper class for working with RPM macros """
 
     @staticmethod
-    def _dump():
-        """
-        Captures output of %dump macro
-
-        :return: Raw %dump macro output as a list of lines
-        """
-        # %dump macro prints results to stderr
-        # we cannot use sys.stderr because it can be modified by pytest
-        err = sys.__stderr__.fileno()
-
-        with tempfile.TemporaryFile(mode='w+b') as tmp:
-            with os.fdopen(os.dup(err), 'wb') as copied:
-                try:
-                    sys.stderr.flush()
-                    os.dup2(tmp.fileno(), err)
-                    try:
-                        rpm.expandMacro('%dump')
-                    finally:
-                        sys.stderr.flush()
-                        os.dup2(copied.fileno(), err)
-                finally:
-                    tmp.flush()
-                    tmp.seek(0, io.SEEK_SET)
-                    return [line.decode(defenc) if six.PY3 else line for line in tmp.readlines()]
-
-    @staticmethod
     def get_macros(**kwargs):
         """
         Returns all macros satisfying specified filters
@@ -574,9 +620,12 @@ class MacroHelper(object):
             ''',
             re.VERBOSE)
 
+        _, stderr = ConsoleHelper.capture_output(
+            lambda: rpm.expandMacro('%dump'), capture_stderr=True)
+
         macros = []
 
-        for line in MacroHelper._dump():
+        for line in stderr.split('\n'):
             match = macro_re.match(line)
             if match:
                 macro = match.groupdict()
