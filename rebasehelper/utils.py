@@ -249,7 +249,7 @@ class DownloadHelper(object):
             curl.setopt(pycurl.NOPROGRESS, 0)
             curl.setopt(pycurl.PROGRESSFUNCTION, progress)
             try:
-                logger.info('Downloading sources from URL %s', url)
+                logger.info('Downloading file from URL %s', url)
                 sys.stdout.flush()
                 start = time.time()
                 curl.perform()

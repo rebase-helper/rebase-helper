@@ -349,7 +349,7 @@ class PkgDiffTool(BaseChecker):
         """
         if int(ret_code) != 0 and int(ret_code) != 1:
             raise RebaseHelperError('Execution of %s failed.\nCommand line is: %s' % (cls.CMD, cmd))
-        OutputLogger.set_info_text('Result HTML page from pkgdiff is store in: ', cls.pkgdiff_results_full_path)
+        OutputLogger.set_info_text('HTML report from pkgdiff is stored in: ', cls.pkgdiff_results_full_path)
         results_dict = cls.process_xml_results(cls.results_dir)
         text = []
 

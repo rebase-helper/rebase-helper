@@ -563,7 +563,7 @@ class FedpkgBuildTool(BuildToolBase):
         rpms, logs = cls.koji_helper.download_scratch_build(task_list, os.path.dirname(source).replace('SRPM', 'RPM'))
         if package_failed:
             weburl = '%s/taskinfo?taskID=%i' % (cls.weburl, task_list[0])
-            logger.info('RPM built failed %s', weburl)
+            logger.info('RPM build failed %s', weburl)
             logs.append(weburl)
             cls.logs.append(weburl)
             raise BinaryPackageBuildError

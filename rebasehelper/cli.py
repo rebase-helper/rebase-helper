@@ -124,7 +124,7 @@ class CLI(object):
         self.parser.add_argument(
             "--fedpkg-build-tasks",
             dest="build_tasks",
-            help="Specify tasks ids in order old and new. They has to be comma, separated."
+            help="Specify comma-separated task ids, old task first."
         )
         self.parser.add_argument(
             "--results-dir",

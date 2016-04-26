@@ -477,7 +477,7 @@ class Application(object):
                     if version == 'old':
                         raise RebaseHelperError('Building old RPM package failed. Check log %s', build_log_path)
                     logger.error('Building binary packages failed.')
-                    msg = 'Building package failes'
+                    msg = 'Building package failed'
                     try:
                         files = BuildLogAnalyzer.parse_log(rpm_dir, build_log)
                     except BuildLogAnalyzerMissingError:
@@ -669,7 +669,7 @@ class Application(object):
                         self.print_koji_logs()
                         return 0
                 except RuntimeError:
-                    logger.error('Not know error caused by build log analysis')
+                    logger.error('Unknown error caused by build log analysis')
                     return 1
                 # Perform checks
             else:
