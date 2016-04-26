@@ -253,13 +253,14 @@ class DownloadHelper(object):
                 sys.stdout.flush()
                 start = time.time()
                 curl.perform()
+            except pycurl.error as error:
                 sys.stdout.write('\n')
                 sys.stdout.flush()
-            except pycurl.error as error:
                 curl.close()
                 raise ReferenceError("Downloading '%s' failed with error '%s'." % (url, error))
-
             else:
+                sys.stdout.write('100%\n')
+                sys.stdout.flush()
                 curl.close()
 
 
