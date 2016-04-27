@@ -82,12 +82,6 @@ def get_value_from_kwargs(kwargs, field, source='old'):
     :param field: like 'patches', 'source'
     :return: value from dictionary
     """
-    if not kwargs:
-        raise
-    if source not in kwargs:
-        raise
-    if field not in kwargs[source]:
-        raise
     return kwargs[source][field]
 
 
