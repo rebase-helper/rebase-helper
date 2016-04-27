@@ -44,13 +44,16 @@ from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.logger import logger
 from rebasehelper import settings
 
-koji_builder = True
+
 try:
     import koji
     from pyrpkg.cli import TaskWatcher
     from OpenSSL import SSL
 except ImportError:
     koji_builder = False
+else:
+    koji_builder = True
+
 
 defenc = locale.getpreferredencoding()
 defenc = 'utf-8' if defenc == 'ascii' else defenc
