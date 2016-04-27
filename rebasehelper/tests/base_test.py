@@ -37,7 +37,7 @@ class BaseTest(object):
 
     WORKING_DIR = ''
     #  TODO: Maybe we should move these two to a settings file for tests??
-    TESTS_DIR = os.path.join(os.getcwd(), 'test')
+    TESTS_DIR = os.path.dirname(__file__)
     TEST_FILES_DIR = os.path.join(TESTS_DIR, 'testing_files')
 
     TEST_FILES = []
