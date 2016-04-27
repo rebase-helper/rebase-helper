@@ -36,6 +36,7 @@ import time
 import random
 import string
 
+import six
 from six import StringIO
 from six.moves import input
 from distutils.util import strtobool
@@ -53,14 +54,6 @@ except ImportError:
 
 defenc = locale.getpreferredencoding()
 defenc = 'utf-8' if defenc == 'ascii' else defenc
-
-
-def exc_as_decode_string(e):
-    if six.PY2:
-        s = unicode(e)
-    else:
-        s = str(e)
-    return s
 
 
 class GitRuntimeError(RuntimeError):
@@ -414,7 +407,7 @@ class ProcessHelper(object):
 
         sp.wait()
 
-        logger.debug("subprocess exited with return code %s", exc_as_decode_string(sp.returncode))
+        logger.debug("subprocess exited with return code %s", six.text_type(sp.returncode))
 
         return sp.returncode
 
