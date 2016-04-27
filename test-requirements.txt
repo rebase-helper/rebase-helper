@@ -1,0 +1,6 @@
+cov-core
+coverage
+pytest-cov
+pytest
+pytest-pylint
+pylint>=1.4.5
