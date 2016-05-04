@@ -152,6 +152,7 @@ class SpecFile(object):
         self.extra_version = SpecFile.extract_version_from_archive_name(self.get_archive(),
                                                                         self._get_raw_source_string(0))[1]
         self.patches = self._get_initial_patches_list()
+        self.macros = MacroHelper.dump()
 
     def _get_initial_sources_list(self):
         """Function returns all sources mentioned in SPEC file"""
@@ -774,7 +775,7 @@ class SpecFile(object):
                 logger.debug("Updating version in SPEC from '%s' with '%s'", self.get_version(), version)
 
                 # search for used macros in spec file scope
-                for m in MacroHelper.get_macros(level=-1, used=True):
+                for m in MacroHelper.filter(self.macros, level=-1, used=True):
                     if m['name'] in match.group(1):
                         # redefine the macro, don't touch Version tag
                         self._set_macro(m['name'], version)
@@ -1042,9 +1043,9 @@ class SpecFile(object):
                     new_dirname = dirname
 
                     # get %{name} and %{version} macros
-                    macros = [m for m in MacroHelper.get_macros(level=-3) if m['name'] in ('name', 'version')]
+                    macros = [m for m in MacroHelper.filter(self.macros, level=-3) if m['name'] in ('name', 'version')]
                     # add all macros from spec file scope
-                    macros.extend(MacroHelper.get_macros(level=-1))
+                    macros.extend(MacroHelper.filter(self.macros, level=-1))
                     # ensure maximal greediness
                     macros.sort(key=lambda k: len(k['value']), reverse=True)
 

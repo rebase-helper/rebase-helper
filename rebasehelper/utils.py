@@ -601,11 +601,10 @@ class MacroHelper(object):
     """Helper class for working with RPM macros """
 
     @staticmethod
-    def get_macros(**kwargs):
+    def dump():
         """
-        Returns all macros satisfying specified filters
+        Returns list of all defined macros
 
-        :param kwargs: filters
         :return: list of macros
         """
         macro_re = re.compile(
@@ -633,13 +632,25 @@ class MacroHelper(object):
                 macro = match.groupdict()
                 macro['level'] = int(macro['level'])
                 macro['used'] = macro['used'] == '='
-
-                if all(macro.get(k[4:]) >= v if k.startswith('min_') else
-                       macro.get(k[4:]) <= v if k.startswith('max_') else
-                       macro.get(k) == v for k, v in six.iteritems(kwargs)):
-                    macros.append(macro)
+                macros.append(macro)
 
         return macros
+
+    @staticmethod
+    def filter(macros, **kwargs):
+        """
+        Returns all macros satisfying specified filters
+
+        :param macros: list of macros to be filtered
+        :param kwargs: filters
+        :return: filtered list of macros
+        """
+        def _test(macro):
+            return all(macro.get(k[4:]) >= v if k.startswith('min_') else
+                       macro.get(k[4:]) <= v if k.startswith('max_') else
+                       macro.get(k) == v for k, v in six.iteritems(kwargs))
+
+        return [m for m in macros if _test(m)]
 
 
 class GitHelper(object):
