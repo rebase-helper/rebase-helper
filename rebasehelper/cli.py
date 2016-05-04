@@ -122,8 +122,14 @@ class CLI(object):
             action="store_true",
             help="It starts a koji builds and does not care how they finish. Useful for fedpkg build tool."
         )
+        # deprecated argument, kept for backward compatibility
         self.parser.add_argument(
             "--fedpkg-build-tasks",
+            dest="build_tasks",
+            help=argparse.SUPPRESS
+        )
+        self.parser.add_argument(
+            "--build-tasks",
             dest="build_tasks",
             help="Specify comma-separated task ids, old task first."
         )

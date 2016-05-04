@@ -18,7 +18,7 @@ But time changes and we are open to the another build systems.
 -- Python API usage::
 
    from rebasehelper.application import Application
-   cli = CLI([‘--non-interactive, ‘--builds-nowait’, ‘-buildtool’, ‘fedpkg’, upstream_version])
+   cli = CLI(['--non-interactive', '--builds-nowait', '--buildtool', 'fedpkg', 'upstream_version'])
    rh = Application(cli)
    rh.set_upstream_monitoring() # Switch rebase-helper to upstream release monitoring mode.
    rh.run()
@@ -30,10 +30,10 @@ But time changes and we are open to the another build systems.
 - Download logs and RPMs for comparing with checkers
 -- Python API usage::
 
-   cli = CLI([‘--non-interactive, ‘--builds-nowait’, ‘--fedpkg-build-tasks old_id,new-id])
+   cli = CLI(['--non-interactive', '--builds-nowait', '--buildtool', 'fedpkg', '--build-tasks', 'old_id,new-id'])
    rh.run() # Downloads RPMs, logs and runs checkers and provides logs.
    rh.get_rebasehelper_data() # Get all information about the results
 -- Bash usage::
 
-   rebase-helper --non-interactive --builds-nowait --fedpkg-build-tasks old_id,new-id
+   rebase-helper --non-interactive --builds-nowait --buildtool fedpkg --build-tasks old_id,new-id
 

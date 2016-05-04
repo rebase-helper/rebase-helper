@@ -646,7 +646,7 @@ class Application(object):
     def run(self):
         if self.conf.build_tasks and not self.conf.builds_nowait:
             if self.conf.buildtool == 'fedpkg':
-                logger.error("--builds-nowait has to be specified with --fedpkg-build-tasks.")
+                logger.error("--builds-nowait has to be specified with --build-tasks.")
                 return 1
             else:
                 logger.warning("Options are allowed only for fedpkg build tool. Suppress them.")
