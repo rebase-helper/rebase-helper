@@ -66,7 +66,7 @@ class BinaryPackageBuildError(RuntimeError):
 
 class BuildTemporaryEnvironment(TemporaryEnvironment):
     """
-    Class representing temporary environment for MockBuildTool.
+    Class representing temporary environment.
     """
 
     TEMPDIR_SOURCES = TemporaryEnvironment.TEMPDIR + '_SOURCES'
@@ -126,6 +126,50 @@ class BuildTemporaryEnvironment(TemporaryEnvironment):
             shutil.copy(package, results_dir)
 
 
+class RpmbuildTemporaryEnvironment(BuildTemporaryEnvironment):
+    """
+    Class representing temporary environment for RpmbuildBuildTool.
+    """
+
+    TEMPDIR_RPMBUILD = TemporaryEnvironment.TEMPDIR + '_RPMBUILD'
+    TEMPDIR_BUILD = TemporaryEnvironment.TEMPDIR + '_BUILD'
+    TEMPDIR_BUILDROOT = TemporaryEnvironment.TEMPDIR + '_BUILDROOT'
+    TEMPDIR_RPMS = TemporaryEnvironment.TEMPDIR + '_RPMS'
+    TEMPDIR_SRPMS = TemporaryEnvironment.TEMPDIR + '_SRPMS'
+
+    def _create_directory_sctructure(self):
+        # create rpmbuild directory structure
+        for dir_name in ['RESULTS', 'rpmbuild']:
+            self._env[self.TEMPDIR + '_' + dir_name.upper()] = os.path.join(
+                self._env[self.TEMPDIR], dir_name)
+            logger.debug("Creating '%s'",
+                         self._env[self.TEMPDIR + '_' + dir_name.upper()])
+            os.makedirs(self._env[self.TEMPDIR + '_' + dir_name.upper()])
+        for dir_name in ['BUILD', 'BUILDROOT', 'RPMS', 'SOURCES', 'SPECS',
+                         'SRPMS']:
+            self._env[self.TEMPDIR + '_' + dir_name] = os.path.join(
+                self._env[self.TEMPDIR_RPMBUILD],
+                dir_name)
+            logger.debug("Creating '%s'",
+                         self._env[self.TEMPDIR + '_' + dir_name])
+            os.makedirs(self._env[self.TEMPDIR + '_' + dir_name])
+
+
+class MockTemporaryEnvironment(BuildTemporaryEnvironment):
+    """
+    Class representing temporary environment for MockBuildTool.
+    """
+
+    def _create_directory_sctructure(self):
+        # create directory structure
+        for dir_name in ['SOURCES', 'SPECS', 'RESULTS']:
+            self._env[self.TEMPDIR + '_' + dir_name] = os.path.join(
+                self._env[self.TEMPDIR], dir_name)
+            logger.debug("Creating '%s'",
+                         self._env[self.TEMPDIR + '_' + dir_name])
+            os.makedirs(self._env[self.TEMPDIR + '_' + dir_name])
+
+
 class BuildToolBase(object):
     """
     Base class for various build tools
@@ -165,6 +209,69 @@ class BuildToolBase(object):
         """
         raise NotImplementedError()
 
+    @classmethod
+    def _do_build_srpm(cls, spec, workdir, results_dir):
+        """
+        Build SRPM using rpmbuild.
+
+        :param spec: abs path to SPEC file inside the rpmbuild/SPECS in workdir.
+        :param workdir: abs path to working directory with rpmbuild directory
+                        structure, which will be used as HOME dir.
+        :param results_dir: abs path to dir where the log should be placed.
+        :return: If build process ends successfully returns abs path
+                 to built SRPM, otherwise 'None'.
+        """
+        logger.info("Building SRPM")
+        spec_loc, spec_name = os.path.split(spec)
+        output = os.path.join(results_dir, "build.log")
+
+        cmd = ['rpmbuild', '-bs', spec_name]
+        ret = ProcessHelper.run_subprocess_cwd_env(cmd,
+                                                   cwd=spec_loc,
+                                                   env={'HOME': workdir},
+                                                   output=output)
+
+        if ret != 0:
+            return None
+        else:
+            return PathHelper.find_first_file(workdir, '*.src.rpm')
+
+    @classmethod
+    def _build_srpm(cls, spec, sources, patches, results_dir):
+        """
+        Builds the SRPM using rpmbuild
+
+        :param spec: absolute path to the SPEC file.
+        :param sources: list with absolute paths to SOURCES
+        :param patches: list with absolute paths to PATCHES
+        :param results_dir: absolute path to DIR where results should be stored
+        :return: absolute path to SRPM, list with absolute paths to logs
+        """
+        # build SRPM
+        srpm_results_dir = os.path.join(results_dir, "SRPM")
+        with RpmbuildTemporaryEnvironment(sources, patches, spec,
+                                          srpm_results_dir) as tmp_env:
+            env = tmp_env.env()
+            tmp_dir = tmp_env.path()
+            tmp_spec = env.get(RpmbuildTemporaryEnvironment.TEMPDIR_SPEC)
+            tmp_results_dir = env.get(
+                RpmbuildTemporaryEnvironment.TEMPDIR_RESULTS)
+            srpm = cls._do_build_srpm(tmp_spec, tmp_dir, tmp_results_dir)
+
+        if srpm is None:
+            raise SourcePackageBuildError("Building SRPM failed!")
+        else:
+            logger.info("Building SRPM finished successfully")
+
+        # srpm path in results_dir
+        srpm = os.path.join(srpm_results_dir, os.path.basename(srpm))
+        logger.debug("Successfully built SRPM: '%s'", str(srpm))
+        # gather logs
+        logs = [l for l in PathHelper.find_all_files(srpm_results_dir, '*.log')]
+        logger.debug("logs: '%s'", str(logs))
+
+        return srpm, logs
+
 
 @register_build_tool
 class MockBuildTool(BuildToolBase):
@@ -174,37 +281,6 @@ class MockBuildTool(BuildToolBase):
 
     CMD = "mock"
     logs = []
-
-    class MockTemporaryEnvironment(BuildTemporaryEnvironment):
-        """
-        Class representing temporary environment for MockBuildTool.
-        """
-
-        def _create_directory_sctructure(self):
-            # create directory structure
-            for dir_name in ['SOURCES', 'SPECS', 'RESULTS']:
-                self._env[self.TEMPDIR + '_' + dir_name] = os.path.join(self._env[self.TEMPDIR], dir_name)
-                logger.debug("Creating '%s'", self._env[self.TEMPDIR + '_' + dir_name])
-                os.makedirs(self._env[self.TEMPDIR + '_' + dir_name])
-
-    @classmethod
-    def _build_srpm(cls, spec, sources, results_dir, root=None, arch=None):
-        """Build SRPM using mock."""
-        logger.info("Building SRPM")
-        output = os.path.join(results_dir, "mock_output.log")
-
-        cmd = [cls.CMD, '--buildsrpm', '--spec', spec, '--sources', sources,
-               '--resultdir', results_dir]
-        if root is not None:
-            cmd.extend(['--root', root])
-        if arch is not None:
-            cmd.extend(['--arch', arch])
-
-        ret = ProcessHelper.run_subprocess(cmd, output=output)
-        if ret != 0:
-            return None
-        else:
-            return PathHelper.find_first_file(results_dir, '*.src.rpm')
 
     @classmethod
     def _build_rpm(cls, srpm, results_dir, root=None, arch=None):
@@ -248,35 +324,14 @@ class MockBuildTool(BuildToolBase):
                  'rpm' -> list with absolute paths to RPMs
                  'logs' -> list with absolute paths to logs
         """
-        rpms = None
-        srpm = None
-
         # build SRPM
-        srpm_results_dir = os.path.join(results_dir, "SRPM")
-        with cls.MockTemporaryEnvironment(sources, patches, spec, srpm_results_dir) as tmp_env:
-            env = tmp_env.env()
-            tmp_spec = env.get(cls.MockTemporaryEnvironment.TEMPDIR_SPEC)
-            tmp_sources_dir = env.get(cls.MockTemporaryEnvironment.TEMPDIR_SOURCES)
-            tmp_results_dir = env.get(cls.MockTemporaryEnvironment.TEMPDIR_RESULTS)
-            srpm = cls._build_srpm(tmp_spec, tmp_sources_dir, tmp_results_dir)
+        srpm, cls.logs = cls._build_srpm(spec, sources, patches, results_dir)
 
-        if srpm is None:
-            raise SourcePackageBuildError("Building SRPM failed!")
-        else:
-            logger.info("Building SRPM finished successfully")
-
-        # use the SRPM frpm results_dir
-        srpm = os.path.join(srpm_results_dir, os.path.basename(srpm))
-        logger.debug("Successfully built SRPM: '%s'", str(srpm))
-        # gather logs
-        cls.logs = [l for l in PathHelper.find_all_files(srpm_results_dir, '*.log')]
-        logger.debug("logs: '%s'", str(cls.logs))
-
-        # build RPM
+        # build RPMs
         rpm_results_dir = os.path.join(results_dir, "RPM")
-        with cls.MockTemporaryEnvironment(sources, patches, spec, rpm_results_dir) as tmp_env:
+        with MockTemporaryEnvironment(sources, patches, spec, rpm_results_dir) as tmp_env:
             env = tmp_env.env()
-            tmp_results_dir = env.get(cls.MockTemporaryEnvironment.TEMPDIR_RESULTS)
+            tmp_results_dir = env.get(MockTemporaryEnvironment.TEMPDIR_RESULTS)
             rpms = cls._build_rpm(srpm, tmp_results_dir)
             # remove SRPM - side product of building RPM
             tmp_srpm = PathHelper.find_first_file(tmp_results_dir, "*.src.rpm")
@@ -315,56 +370,6 @@ class RpmbuildBuildTool(BuildToolBase):
     CMD = "rpmbuild"
     logs = []
 
-    class RpmbuildTemporaryEnvironment(BuildTemporaryEnvironment):
-        """
-        Class representing temporary environment for RpmbuildBuildTool.
-        """
-
-        TEMPDIR_RPMBUILD = TemporaryEnvironment.TEMPDIR + '_RPMBUILD'
-        TEMPDIR_BUILD = TemporaryEnvironment.TEMPDIR + '_BUILD'
-        TEMPDIR_BUILDROOT = TemporaryEnvironment.TEMPDIR + '_BUILDROOT'
-        TEMPDIR_RPMS = TemporaryEnvironment.TEMPDIR + '_RPMS'
-        TEMPDIR_SRPMS = TemporaryEnvironment.TEMPDIR + '_SRPMS'
-
-        def _create_directory_sctructure(self):
-            # create rpmbuild directory structure
-            for dir_name in ['RESULTS', 'rpmbuild']:
-                self._env[self.TEMPDIR + '_' + dir_name.upper()] = os.path.join(self._env[self.TEMPDIR], dir_name)
-                logger.debug("Creating '%s'", self._env[self.TEMPDIR + '_' + dir_name.upper()])
-                os.makedirs(self._env[self.TEMPDIR + '_' + dir_name.upper()])
-            for dir_name in ['BUILD', 'BUILDROOT', 'RPMS', 'SOURCES', 'SPECS', 'SRPMS']:
-                self._env[self.TEMPDIR + '_' + dir_name] = os.path.join(self._env[self.TEMPDIR_RPMBUILD],
-                                                                        dir_name)
-                logger.debug("Creating '%s'", self._env[self.TEMPDIR + '_' + dir_name])
-                os.makedirs(self._env[self.TEMPDIR + '_' + dir_name])
-
-    @classmethod
-    def _build_srpm(cls, spec, workdir, results_dir):
-        """
-        Build SRPM using rpmbuild.
-
-        :param spec: abs path to SPEC file inside the rpmbuild/SPECS in workdir.
-        :param workdir: abs path to working directory with rpmbuild directory
-                        structure, which will be used as HOME dir.
-        :param results_dir: abs path to dir where the log should be placed.
-        :return: If build process ends successfully returns list of abs paths
-                 to built RPMs, otherwise 'None'.
-        """
-        logger.info("Building SRPM")
-        spec_loc, spec_name = os.path.split(spec)
-        output = os.path.join(results_dir, "rpmbuild_output.log")
-
-        cmd = [cls.CMD, '-bs', spec_name]
-        ret = ProcessHelper.run_subprocess_cwd_env(cmd,
-                                                   cwd=spec_loc,
-                                                   env={'HOME': workdir},
-                                                   output=output)
-
-        if ret != 0:
-            return None
-        else:
-            return PathHelper.find_first_file(workdir, '*.src.rpm')
-
     @classmethod
     def _build_rpm(cls, srpm, workdir, results_dir):
         """
@@ -378,7 +383,7 @@ class RpmbuildBuildTool(BuildToolBase):
                  to built RPMs, otherwise 'None'.
         """
         logger.info("Building RPMs")
-        output = os.path.join(results_dir, "rpmbuild_output.log")
+        output = os.path.join(results_dir, "build.log")
 
         cmd = [cls.CMD, '--rebuild', srpm]
         ret = ProcessHelper.run_subprocess_cwd_env(cmd,
@@ -411,36 +416,15 @@ class RpmbuildBuildTool(BuildToolBase):
                  'rpm' -> list with absolute paths to RPMs
                  'logs' -> list with absolute paths to build_logs
         """
-        rpms = None
-        srpm = None
-
         # build SRPM
-        srpm_results_dir = os.path.join(results_dir, "SRPM")
-        with cls.RpmbuildTemporaryEnvironment(sources, patches, spec, srpm_results_dir) as tmp_env:
-            env = tmp_env.env()
-            tmp_dir = tmp_env.path()
-            tmp_spec = env.get(cls.RpmbuildTemporaryEnvironment.TEMPDIR_SPEC)
-            tmp_results_dir = env.get(cls.RpmbuildTemporaryEnvironment.TEMPDIR_RESULTS)
-            srpm = cls._build_srpm(tmp_spec, tmp_dir, tmp_results_dir)
-
-        if srpm is None:
-            raise SourcePackageBuildError("Building SRPM failed!")
-        else:
-            logger.info("Building SRPM finished successfully")
-
-        # srpm path in results_dir
-        srpm = os.path.join(srpm_results_dir, os.path.basename(srpm))
-        logger.debug("Successfully built SRPM: '%s'", str(srpm))
-        # gather logs
-        logs = [l for l in PathHelper.find_all_files(srpm_results_dir, '*.log')]
-        logger.debug("logs: '%s'", str(logs))
+        srpm, cls.logs = cls._build_srpm(spec, sources, patches, results_dir)
 
         # build RPMs
         rpm_results_dir = os.path.join(results_dir, "RPM")
-        with cls.RpmbuildTemporaryEnvironment(sources, patches, spec, rpm_results_dir) as tmp_env:
+        with RpmbuildTemporaryEnvironment(sources, patches, spec, rpm_results_dir) as tmp_env:
             env = tmp_env.env()
             tmp_dir = tmp_env.path()
-            tmp_results_dir = env.get(cls.RpmbuildTemporaryEnvironment.TEMPDIR_RESULTS)
+            tmp_results_dir = env.get(RpmbuildTemporaryEnvironment.TEMPDIR_RESULTS)
             rpms = cls._build_rpm(srpm, tmp_dir, tmp_results_dir)
 
         if rpms is None:
@@ -454,12 +438,12 @@ class RpmbuildBuildTool(BuildToolBase):
         logger.debug("Successfully built RPMs: '%s'", str(rpms))
 
         # gather logs
-        logs.extend([l for l in PathHelper.find_all_files(rpm_results_dir, '*.log')])
-        logger.debug("logs: '%s'", str(logs))
+        cls.logs.extend([l for l in PathHelper.find_all_files(rpm_results_dir, '*.log')])
+        logger.debug("logs: '%s'", str(cls.logs))
 
         return {'srpm': srpm,
                 'rpm': rpms,
-                'logs': logs}
+                'logs': cls.logs}
 
     @classmethod
     def get_logs(cls):
@@ -493,56 +477,6 @@ class FedpkgBuildTool(BuildToolBase):
             return True
         else:
             return False
-
-    class FedPkgTemporaryEnvironment(BuildTemporaryEnvironment):
-        """
-        Class representing temporary environment for RpmbuildBuildTool.
-        """
-
-        TEMPDIR_RPMBUILD = TemporaryEnvironment.TEMPDIR + '_RPMBUILD'
-        TEMPDIR_BUILD = TemporaryEnvironment.TEMPDIR + '_BUILD'
-        TEMPDIR_BUILDROOT = TemporaryEnvironment.TEMPDIR + '_BUILDROOT'
-        TEMPDIR_RPMS = TemporaryEnvironment.TEMPDIR + '_RPMS'
-        TEMPDIR_SRPMS = TemporaryEnvironment.TEMPDIR + '_SRPMS'
-
-        def _create_directory_sctructure(self):
-            # create rpmbuild directory structure
-            for dir_name in ['RESULTS', 'rpmbuild']:
-                self._env[self.TEMPDIR + '_' + dir_name.upper()] = os.path.join(self._env[self.TEMPDIR], dir_name)
-                logger.debug("Creating '%s'", self._env[self.TEMPDIR + '_' + dir_name.upper()])
-                os.makedirs(self._env[self.TEMPDIR + '_' + dir_name.upper()])
-            for dir_name in ['BUILD', 'BUILDROOT', 'RPMS', 'SOURCES', 'SPECS', 'SRPMS']:
-                self._env[self.TEMPDIR + '_' + dir_name] = os.path.join(self._env[self.TEMPDIR_RPMBUILD],
-                                                                        dir_name)
-                logger.debug("Creating '%s'", self._env[self.TEMPDIR + '_' + dir_name])
-                os.makedirs(self._env[self.TEMPDIR + '_' + dir_name])
-
-    @classmethod
-    def _build_srpm(cls, spec, workdir, results_dir):
-        """
-        Build SRPM using rpmbuild.
-
-        :param spec: abs path to SPEC file inside the rpmbuild/SPECS in workdir.
-        :param workdir: abs path to working directory with rpmbuild directory
-                        structure, which will be used as HOME dir.
-        :param results_dir: abs path to dir where the log should be placed.
-        :return: If build process ends successfully returns list of abs paths
-                 to built RPMs, otherwise 'None'.
-        """
-        logger.info("Building SRPM")
-        spec_loc, spec_name = os.path.split(spec)
-        output = os.path.join(results_dir, "rpmbuild_output.log")
-
-        cmd = ['rpmbuild', '-bs', spec_name]
-        ret = ProcessHelper.run_subprocess_cwd_env(cmd,
-                                                   cwd=spec_loc,
-                                                   env={'HOME': workdir},
-                                                   output=output)
-
-        if ret != 0:
-            return None
-        else:
-            return PathHelper.find_first_file(workdir, '*.src.rpm')
 
     @classmethod
     def _scratch_build(cls, source, **kwargs):
@@ -592,27 +526,17 @@ class FedpkgBuildTool(BuildToolBase):
                  'logs' -> list with absolute paths to build_logs
         """
         # build SRPM
-        srpm_results_dir = os.path.join(results_dir, "SRPM")
-        with cls.FedPkgTemporaryEnvironment(sources, patches, spec, srpm_results_dir) as tmp_env:
-            env = tmp_env.env()
-            tmp_dir = tmp_env.path()
-            tmp_spec = env.get(cls.FedPkgTemporaryEnvironment.TEMPDIR_SPEC)
-            tmp_results_dir = env.get(cls.FedPkgTemporaryEnvironment.TEMPDIR_RESULTS)
-            srpm = cls._build_srpm(tmp_spec, tmp_dir, tmp_results_dir)
-
-        if srpm is None:
-            raise SourcePackageBuildError("Building SRPM failed!")
-        else:
-            logger.info("Building SRPM finished successfully")
-
-        srpm = os.path.join(srpm_results_dir, os.path.basename(srpm))
+        srpm, cls.logs = cls._build_srpm(spec, sources, patches, results_dir)
+        # build RPMs
         rpm_results_dir = os.path.join(results_dir, "RPM")
         os.makedirs(rpm_results_dir)
         cls.koji_helper = KojiHelper()
-        rpms, logs, koji_task_id = cls._scratch_build(srpm, **kwargs)
+        rpms, rpm_logs, koji_task_id = cls._scratch_build(srpm, **kwargs)
+        if rpm_logs:
+            cls.logs.extend(rpm_logs)
         return {'srpm': srpm,
                 'rpm': rpms,
-                'logs': logs,
+                'logs': cls.logs,
                 'koji_task_id': koji_task_id}
 
 
@@ -638,61 +562,6 @@ class CoprBuildTool(BuildToolBase):
             return True
         else:
             return False
-
-    class CoprTemporaryEnvironment(BuildTemporaryEnvironment):
-        """
-        Class representing temporary environment for CoprBuildTool.
-        """
-
-        TEMPDIR_RPMBUILD = TemporaryEnvironment.TEMPDIR + '_RPMBUILD'
-        TEMPDIR_BUILD = TemporaryEnvironment.TEMPDIR + '_BUILD'
-        TEMPDIR_BUILDROOT = TemporaryEnvironment.TEMPDIR + '_BUILDROOT'
-        TEMPDIR_RPMS = TemporaryEnvironment.TEMPDIR + '_RPMS'
-        TEMPDIR_SRPMS = TemporaryEnvironment.TEMPDIR + '_SRPMS'
-
-        def _create_directory_sctructure(self):
-            # create rpmbuild directory structure
-            for dir_name in ['RESULTS', 'rpmbuild']:
-                self._env[self.TEMPDIR + '_' + dir_name.upper()] = os.path.join(
-                    self._env[self.TEMPDIR], dir_name)
-                logger.debug("Creating '%s'",
-                             self._env[self.TEMPDIR + '_' + dir_name.upper()])
-                os.makedirs(self._env[self.TEMPDIR + '_' + dir_name.upper()])
-            for dir_name in ['BUILD', 'BUILDROOT', 'RPMS', 'SOURCES', 'SPECS',
-                             'SRPMS']:
-                self._env[self.TEMPDIR + '_' + dir_name] = os.path.join(
-                    self._env[self.TEMPDIR_RPMBUILD],
-                    dir_name)
-                logger.debug("Creating '%s'",
-                             self._env[self.TEMPDIR + '_' + dir_name])
-                os.makedirs(self._env[self.TEMPDIR + '_' + dir_name])
-
-    @classmethod
-    def _build_srpm(cls, spec, workdir, results_dir):
-        """
-        Build SRPM using rpmbuild.
-
-        :param spec: abs path to SPEC file inside the rpmbuild/SPECS in workdir.
-        :param workdir: abs path to working directory with rpmbuild directory
-                        structure, which will be used as HOME dir.
-        :param results_dir: abs path to dir where the log should be placed.
-        :return: If build process ends successfully returns list of abs paths
-                 to built RPMs, otherwise 'None'.
-        """
-        logger.info("Building SRPM")
-        spec_loc, spec_name = os.path.split(spec)
-        output = os.path.join(results_dir, "rpmbuild_output.log")
-
-        cmd = ['rpmbuild', '-bs', spec_name]
-        ret = ProcessHelper.run_subprocess_cwd_env(cmd,
-                                                   cwd=spec_loc,
-                                                   env={'HOME': workdir},
-                                                   output=output)
-
-        if ret != 0:
-            return None
-        else:
-            return PathHelper.find_first_file(workdir, '*.src.rpm')
 
     @classmethod
     def _build_rpms(cls, srpm, name, **kwargs):
@@ -734,29 +603,17 @@ class CoprBuildTool(BuildToolBase):
                  'logs' -> list with absolute paths to build_logs
         """
         # build SRPM
-        srpm_results_dir = os.path.join(results_dir, "SRPM")
-        with cls.CoprTemporaryEnvironment(sources, patches, spec,
-                                          srpm_results_dir) as tmp_env:
-            env = tmp_env.env()
-            tmp_dir = tmp_env.path()
-            tmp_spec = env.get(cls.CoprTemporaryEnvironment.TEMPDIR_SPEC)
-            tmp_results_dir = env.get(
-                cls.CoprTemporaryEnvironment.TEMPDIR_RESULTS)
-            srpm = cls._build_srpm(tmp_spec, tmp_dir, tmp_results_dir)
-
-        if srpm is None:
-            raise SourcePackageBuildError("Building SRPM failed!")
-        else:
-            logger.info("Building SRPM finished successfully")
-
-        srpm = os.path.join(srpm_results_dir, os.path.basename(srpm))
+        srpm, cls.logs = cls._build_srpm(spec, sources, patches, results_dir)
+        # build RPMs
         rpm_results_dir = os.path.join(results_dir, "RPM")
         os.makedirs(rpm_results_dir)
         cls.copr_helper = CoprHelper()
-        rpms, logs, build_id = cls._build_rpms(srpm, **kwargs)
+        rpms, rpm_logs, build_id = cls._build_rpms(srpm, **kwargs)
+        if rpm_logs:
+            cls.logs.extend(rpm_logs)
         return {'srpm': srpm,
                 'rpm': rpms,
-                'logs': logs,
+                'logs': cls.logs,
                 'copr_build_id': build_id}
 
     @classmethod
