@@ -535,14 +535,13 @@ class Application(object):
         :return: 
         """
         pkgdiff_results = {}
+        checker = Checker(os.path.dirname(__file__))
         if not self.conf.pkgcomparetool:
-            for checker in Checker.get_supported_tools():
-                results = self._execute_checkers(checker, dir_name)
-                pkgdiff_results[checker] = results
-
+            for check in checker.get_supported_tools():
+                results = checker.run_check(dir_name, checker_name=check)
+                pkgdiff_results[check] = results
         else:
-            text = self._execute_checkers(self.conf.pkgcomparetool, dir_name)
-            pkgdiff_results[self.conf.pkgcomparetool] = text
+            pkgdiff_results[self.conf.pkgcomparetool] = checker.run_check(dir_name, checker_name=self.conf.pkgcomparetool)
         if pkgdiff_results:
             for diff_name, result in six.iteritems(pkgdiff_results):
                 OutputLogger.set_checker_output(diff_name, result)
