@@ -2,4 +2,4 @@ sudo: true
 language: python
 before_install: ./install-rpm.sh
 install: pip install tox
-script: tox -e travis --recreate
+script: tox -e travis,travis-py3 --recreate
