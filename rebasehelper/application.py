@@ -307,7 +307,8 @@ class Application(object):
         try:
             archive = Archive(archive_path)
         except NotImplementedError as ni_e:
-            raise RebaseHelperError('%s. Supported archives are %s' % (ni_e.message, Archive.get_supported_archives()))
+            raise RebaseHelperError('%s. Supported archives are %s' % six.text_type(ni_e),
+                                    Archive.get_supported_archives())
 
         try:
             archive.extract_archive(destination)
@@ -409,7 +410,8 @@ class Application(object):
         try:
             builder = Builder(self.conf.buildtool)
         except NotImplementedError as ni_e:
-            raise RebaseHelperError('%s. Supported build tools are %s' % (ni_e.message, Builder.get_supported_tools()))
+            raise RebaseHelperError('%s. Supported build tools are %s' % six.text_type(ni_e),
+                                    Builder.get_supported_tools())
 
         for version in ['old', 'new']:
             spec_object = self.spec_file if version == 'old' else self.rebase_spec_file

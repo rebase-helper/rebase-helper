@@ -21,66 +21,13 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
-
-from __future__ import print_function
-import subprocess
-import os
 from rebasehelper.version import VERSION
 
 try:
-    from setuptools import setup, Command
-except:
-    from distutils.core import setup, Command
+    from setuptools import setup
+except ImportError:
+    from distutils.core import setup
 
-
-class PyTest(Command):
-    user_options = [('test-runner=',
-                     't',
-                     'test runner to use; by default, multiple py.test runners are tried')]
-    command_consumes_arguments = True
-
-    def initialize_options(self):
-        self.test_runner = None
-        self.args = []
-
-    def finalize_options(self):
-        pass
-
-    def runner_exists(self, runner):
-        syspaths = os.getenv('PATH').split(os.pathsep)
-        for p in syspaths:
-            if os.path.exists(os.path.join(p, runner)):
-                return True
-
-        return False
-
-    def run(self):
-        # only one test runner => just run the tests
-        supported = ['2.7', '3.3', '3.4']
-        potential_runners = ['py.test-' + s for s in supported]
-        if self.test_runner:
-            potential_runners = [self.test_runner]
-        runners = [pr for pr in potential_runners if self.runner_exists(pr)]
-
-        if not runners:
-            raise SystemExit('No test runners available!')
-
-        retcode = 0
-        for runner in runners:
-            if len(runners) > 1:
-                print('\n' * 2)
-                print('Running tests using "{0}":'.format(runner))
-
-            cmd = [runner]
-            for a in self.args:
-                cmd.append(a)
-            cmd.append('-v')
-            cmd.append('test')
-            t = subprocess.Popen(cmd)
-            rc = t.wait()
-            retcode = t.returncode or retcode
-
-        raise SystemExit(retcode)
 
 setup(
     name='rebasehelper',
@@ -93,15 +40,19 @@ setup(
     license='GPLv2+',
     packages=['rebasehelper'],
     include_package_data=True,
-    entry_points={'console_scripts': ['rebase-helper=rebasehelper.cli:CliHelper.run']},
+    entry_points={
+        'console_scripts': [
+            'rebase-helper=rebasehelper.cli:CliHelper.run'
+        ]
+    },
     setup_requires=[],
-    classifiers=['Development Status :: 4 - Beta',
-                   'Environment :: Console',
-                   'Intended Audience :: Developers',
-                   'License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)',
-                   'Operating System :: POSIX :: Linux',
-                   'Programming Language :: Python',
-                   'Topic :: Software Development',
-                  ],
-    cmdclass={'test': PyTest}
+    classifiers=[
+        'Development Status :: 4 - Beta',
+        'Environment :: Console',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)',
+        'Operating System :: POSIX :: Linux',
+        'Programming Language :: Python',
+        'Topic :: Software Development',
+    ]
 )

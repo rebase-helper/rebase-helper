@@ -36,6 +36,7 @@ import time
 import random
 import string
 
+import six
 from six import StringIO
 from six.moves import input
 from distutils.util import strtobool
@@ -43,24 +44,19 @@ from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.logger import logger
 from rebasehelper import settings
 
-koji_builder = True
+
 try:
     import koji
     from pyrpkg.cli import TaskWatcher
     from OpenSSL import SSL
 except ImportError:
     koji_builder = False
+else:
+    koji_builder = True
+
 
 defenc = locale.getpreferredencoding()
 defenc = 'utf-8' if defenc == 'ascii' else defenc
-
-
-def exc_as_decode_string(e):
-    if six.PY2:
-        s = unicode(e)
-    else:
-        s = str(e)
-    return s
 
 
 class GitRuntimeError(RuntimeError):
@@ -86,12 +82,6 @@ def get_value_from_kwargs(kwargs, field, source='old'):
     :param field: like 'patches', 'source'
     :return: value from dictionary
     """
-    if not kwargs:
-        raise
-    if source not in kwargs:
-        raise
-    if field not in kwargs[source]:
-        raise
     return kwargs[source][field]
 
 
@@ -414,7 +404,7 @@ class ProcessHelper(object):
 
         sp.wait()
 
-        logger.debug("subprocess exited with return code %s", exc_as_decode_string(sp.returncode))
+        logger.debug("subprocess exited with return code %s", six.text_type(sp.returncode))
 
         return sp.returncode
 

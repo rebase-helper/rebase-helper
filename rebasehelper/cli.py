@@ -23,11 +23,12 @@
 import argparse
 import sys
 
+import six
+
 from rebasehelper.constants import PROGRAM_DESCRIPTION
 from rebasehelper.application import Application
 from rebasehelper.logger import logger
 from rebasehelper.exceptions import RebaseHelperError
-from rebasehelper.utils import exc_as_decode_string
 
 
 class CLI(object):
@@ -149,7 +150,7 @@ class CliHelper(object):
         except KeyboardInterrupt:
             logger.info('\nInterrupted by user')
         except RebaseHelperError as e:
-            logger.error('\n%s', exc_as_decode_string(e))
+            logger.error('\n%s', six.text_type(e))
             sys.exit(1)
 
         sys.exit(0)
