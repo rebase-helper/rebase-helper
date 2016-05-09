@@ -125,7 +125,7 @@ class CLI(object):
         # deprecated argument, kept for backward compatibility
         self.parser.add_argument(
             "--fedpkg-build-tasks",
-            dest="build_tasks",
+            dest="fedpkg_build_tasks",
             help=argparse.SUPPRESS
         )
         self.parser.add_argument(

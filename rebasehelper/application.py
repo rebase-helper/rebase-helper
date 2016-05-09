@@ -668,6 +668,11 @@ class Application(object):
         return rh_stuff
 
     def run(self):
+        if self.conf.fedpkg_build_tasks:
+            logger.warning("Option --fedpkg-build-tasks is deprecated, use --build-tasks instead.")
+            if not self.conf.build_tasks:
+                self.conf.build_tasks = self.conf.fedpkg_build_tasks
+
         if self.conf.build_tasks and not self.conf.builds_nowait:
             if self.conf.buildtool in ['fedpkg', 'copr']:
                 logger.error("--builds-nowait has to be specified with --build-tasks.")

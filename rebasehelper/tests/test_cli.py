@@ -42,6 +42,7 @@ class TestCLI(object):
                 'cont': True,
                 'non_interactive': True,
                 'comparepkgs': 'test_dir',
+                'fedpkg_build_tasks': None,
                 'build_tasks': '123456,654321',
                 'builds_nowait': True,
                 'results_dir': '/tmp/rebase-helper'}
