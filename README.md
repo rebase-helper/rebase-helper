@@ -2,42 +2,62 @@
 
 [![Code Health](https://landscape.io/github/phracek/rebase-helper/master/landscape.svg?style=flat)](https://landscape.io/github/phracek/rebase-helper/master) [![GitLab CI build status](https://gitlab.com/rebase-helper/rebase-helper/badges/master/build.svg)](https://gitlab.com/rebase-helper/rebase-helper/commits/master) [![Travis CI build status](https://travis-ci.org/phracek/rebase-helper.svg?branch=master)](https://travis-ci.org/phracek/rebase-helper)
 
-## Rebase-helper workflow
-
-This tool helps you to rebase package to the latest version
-
-How the rebase-helper works:
-- Each action should be logged and visible by user.
-    - extract tarball with the existing sources to directory old_sources/<package_name>
-    - extract tarball with the new sources to directory new_sources/<package_name>
-    - Provide a list of patches mentioned in SPEC file
-    - New spec file is stored in results/
-- for all patches
-    - apply all patches with git command to old_sources/<package_name> directory
-    - add new_sources<package_name> to old_sources/<package_name> 
-        with command git rebase --onto new_sources <inital_commit> <last_commit>
-    - solve all conflicts which arrise during the git rebase
-- create srpm from old and new spec files & new sources & patches (Builder)
-- rebuild srpm -> RPMs (Builder)
-- Run rpmdiff tool for finding libraries and header changes.
-- Inform user what libraries and header files were changed.
+This tool helps you to rebase your package to the latest version.
 
 ## Landscape scans
 
 [**Landscape.io scans of rebase-helper**](https://landscape.io/github/phracek/rebase-helper/)
 
+## General workflow
+- *rebase-helper-results* and *rebase-helper-workspace* directories are created
+- original spec file is copied to *rebase-helper-results* directory
+  and its Version tag is modified
+- old and new sources are downloaded (if needed) and extracted
+  to *rebase-helper-workspace* directory
+- patches are rebased using git, modified patches (if any) are saved
+  to *rebase-helper-results* directory
+- old and new source RPMs are created
+- the source RPMs are rebuilt with selected build tool
+- rpmdiff, pkgdiff and abipkgdiff are run against both sets of packages
+  and their output is stored in *rebase-helper-results* directory
+- *rebase-helper-workspace* directory is removed
+
+## Patch rebasing workflow
+- new git repository is initialized and the old sources are extracted
+  and commited to it
+- every patch is applied and the changes introduced by it are commited
+- new sources are extracted and added as a remote branch to the repository
+- git rebase is used to rebase the commits on top of the new sources
+- original patches are modified/deleted accordingly
+- changes are reflected in the spec file
+
 ## Requirements
 
-Packages which needs to be installed before you execute rebase-helper for first time:
-- meld
-- mock
+Packages which need to be installed before you execute *rebase-helper*
+for the first time:
+
+- git
 - rpm-build
-- pkgdiff at least 1.6.3
-- python-six
+- mock
 - fedpkg
-- pyrpkg
+- rpmlint
+- pkgdiff
 - libabigail
+
+Python dependencies are listed in *requirements.txt* and can be installed with pip:
+
+`pip install -r requirements.txt`
 
 ## How to execute rebase-helper from CLI
 
-Go to a git directory of your package and execute command /path_to_rebase-helper/rebase-helper.py <new_upstream_version> (e.g. /home/user/phracek/rebase-helper/rebase-helper.py "3.1.10")
+Execute *rebase-helper* from a directory containing spec file, sources and patches
+(usually cloned dist-git repository).
+
+There are two ways how to specify the new version. You can pass it
+to *rebase-helper* directly, e.g.:
+
+`rebase-helper 3.1.10`
+
+or you can let *rebase-helper* determine it from the new version tarball, e.g.:
+
+`rebase-helper joe-4.2.tar.gz`
