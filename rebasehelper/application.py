@@ -39,6 +39,7 @@ from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.build_log_analyzer import BuildLogAnalyzer, BuildLogAnalyzerMissingError
 from rebasehelper.base_output import OutputLogger
 from rebasehelper.build_log_analyzer import BuildLogAnalyzerMakeError, BuildLogAnalyzerPatchError
+from rebasehelper import version
 
 
 class Application(object):
@@ -97,6 +98,7 @@ class Application(object):
 
         self._add_debug_log_file()
         self._add_report_log_file()
+        logger.debug("Rebase-helper version: %s" % version.VERSION)
         if self.conf.build_tasks is None:
             self._get_spec_file()
             self._prepare_spec_objects()
