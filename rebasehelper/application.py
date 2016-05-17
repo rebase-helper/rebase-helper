@@ -196,9 +196,10 @@ class Application(object):
         self.new_rest_sources = self.rebase_spec_file.get_sources()[1:]
         self.new_rest_sources = [os.path.abspath(x) for x in self.new_rest_sources]
 
-        # We want to inform user immediatelly if compare tool doesn't exists
-        if self.conf.pkgcomparetool and self.conf.pkgcomparetool not in Checker.get_supported_tools():
-            raise RebaseHelperError('You have to specify one of these check tools %s' % Checker.get_supported_tools())
+        # We want to inform user immediately if compare tool doesn't exist
+        supported_tools = Checker(os.path.dirname(__file__)).get_supported_tools()
+        if self.conf.pkgcomparetool and self.conf.pkgcomparetool not in supported_tools:
+            raise RebaseHelperError('You have to specify one of these check tools %s' % supported_tools)
 
     def _get_rebase_helper_log(self):
         return os.path.join(self.results_dir, settings.REBASE_HELPER_RESULTS_LOG)
