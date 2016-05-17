@@ -35,10 +35,13 @@ import locale
 import time
 import random
 import string
+import gzip
+import copr
+import pyquery
 
 import six
 from six import StringIO
-from six.moves import input
+from six.moves import input, urllib
 from distutils.util import strtobool
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.logger import logger
@@ -568,6 +571,8 @@ class RpmHelper(object):
         :return: 
         """
         ts = rpm.TransactionSet()
+        # disable signature checking
+        ts.setVSFlags(rpm._RPMVSF_NOSIGNATURES)
         h = None
         with open(rpm_name, "r") as f:
             h = ts.hdrFromFdno(f)
@@ -1067,6 +1072,113 @@ class KojiHelper(object):
                     DownloadHelper.download_file(cls.baseurl + base_path + '/' + filename,
                                                  full_path_name)
         return rpm_list, log_list
+
+
+class CoprHelper(object):
+
+    @classmethod
+    def get_client(cls):
+        try:
+            client = copr.CoprClient.create_from_file_config()
+        except (copr.client.exceptions.CoprNoConfException,
+                copr.client.exceptions.CoprConfigException):
+            raise RebaseHelperError(
+                'Missing or invalid copr configuration file')
+        else:
+            return client
+
+    @classmethod
+    def create_project(cls, client, project, chroot, description, instructions):
+        try:
+            client.create_project(projectname=project, chroots=[chroot],
+                                  description=description,
+                                  instructions=instructions)
+        except copr.client.exceptions.CoprRequestException:
+            # reuse existing project
+            pass
+
+    @classmethod
+    def build(cls, client, project, srpm):
+        try:
+            result = client.create_new_build(projectname=project, pkgs=[srpm])
+        except copr.client.exceptions.CoprRequestException:
+            raise RebaseHelperError('Failed to start copr build')
+        else:
+            return result.builds_list[0].build_id
+
+    @classmethod
+    def get_build_url(cls, client, build_id):
+        try:
+            result = client.get_build_details(build_id)
+        except copr.client.exceptions.CoprRequestException:
+            raise RebaseHelperError(
+                'Failed to get copr build details for id {}'.format(build_id))
+        else:
+            return '{}/coprs/{}/{}/build/{}/'.format(client.copr_url,
+                                                     client.username,
+                                                     result.project,
+                                                     build_id)
+
+    @classmethod
+    def get_build_status(cls, client, build_id):
+        try:
+            result = client.get_build_details(build_id)
+        except copr.client.exceptions.CoprRequestException:
+            raise RebaseHelperError(
+                'Failed to get copr build details for id {}'.format(build_id))
+        else:
+            return result.status
+
+    @classmethod
+    def watch_build(cls, client, build_id):
+        try:
+            while True:
+                status = cls.get_build_status(client, build_id)
+                if not status:
+                    return False
+                elif status in ['succeeded', 'skipped']:
+                    return True
+                elif status in ['failed', 'canceled', 'unknown']:
+                    return False
+                else:
+                    time.sleep(10)
+        except KeyboardInterrupt:
+            return False
+
+    @classmethod
+    def download_build(cls, client, build_id, destination):
+        logger.info('Downloading packages and logs for build %d', build_id)
+        try:
+            result = client.get_build_details(build_id)
+        except copr.client.exceptions.CoprRequestException:
+            raise RebaseHelperError(
+                'Failed to get copr build details for {}'.format(build_id))
+        rpms = []
+        logs = []
+        for _, url in six.iteritems(result.data['results_by_chroot']):
+            url = url if url.endswith('/') else url + '/'
+            d = pyquery.PyQuery(url, opener=lambda x: urllib.request.urlopen(x))
+            d.make_links_absolute()
+            for a in d('a[href$=\'.rpm\'], a[href$=\'.log.gz\']'):
+                fn = os.path.basename(urllib.parse.urlsplit(a.attrib['href']).path)
+                dest = os.path.join(destination, fn)
+                if fn.endswith('.src.rpm'):
+                    # skip source RPM
+                    continue
+                DownloadHelper.download_file(a.attrib['href'], dest)
+                if fn.endswith('.rpm'):
+                    rpms.append(dest)
+                elif fn.endswith('.log.gz'):
+                    extracted = dest.replace('.log.gz', '.log')
+                    try:
+                        with gzip.open(dest, 'rb') as archive:
+                            with open(extracted, 'wb') as f:
+                                f.write(archive.read())
+                    except (IOError, EOFError):
+                        raise RebaseHelperError(
+                            'Failed to extract {}'.format(dest))
+                    logs.append(extracted)
+        return rpms, logs
 
 
 class FileHelper(object):

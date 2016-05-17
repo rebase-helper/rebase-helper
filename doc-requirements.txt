@@ -1,6 +1,8 @@
 # This can not be installed from pip, on Fedora you need to install rpm-python{,3}
 #rpm-python
 backports.lzma
+copr
 # This can not be installed in readthedocs.org
 #pycurl
+pyquery
 six

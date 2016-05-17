@@ -42,6 +42,7 @@ class TestCLI(object):
                 'cont': True,
                 'non_interactive': True,
                 'comparepkgs': 'test_dir',
+                'fedpkg_build_tasks': None,
                 'build_tasks': '123456,654321',
                 'builds_nowait': True,
                 'results_dir': '/tmp/rebase-helper'}
@@ -49,7 +50,7 @@ class TestCLI(object):
                      '--buildtool', 'rpmbuild', '--pkgcomparetool',
                      'rpmdiff', '--outputtool', 'xml', '--keep-workspace', '--not-download-sources', '--continue',
                      '--non-interactive', '--comparepkgs-only', 'test_dir',
-                     '--builds-nowait', '--fedpkg-build-tasks', '123456,654321',
+                     '--builds-nowait', '--build-tasks', '123456,654321',
                      '--results-dir', '/tmp/rebase-helper']
         cli = CLI(arguments)
         for key, value in cli.args.__dict__.items():

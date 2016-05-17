@@ -31,7 +31,7 @@ from rebasehelper.specfile import SpecFile, get_rebase_name
 from rebasehelper.logger import logger, logger_report, LoggerHelper
 from rebasehelper import settings
 from rebasehelper import output_tool
-from rebasehelper.utils import PathHelper, RpmHelper, ConsoleHelper, GitHelper, KojiHelper, FileHelper
+from rebasehelper.utils import PathHelper, RpmHelper, ConsoleHelper, GitHelper, KojiHelper, FileHelper, CoprHelper
 from rebasehelper.checker import Checker
 from rebasehelper.build_helper import Builder, SourcePackageBuildError, BinaryPackageBuildError, koji_builder
 from rebasehelper.patch_helper import Patcher
@@ -449,15 +449,29 @@ class Application(object):
                                     break
                     else:
                         if self.conf.build_tasks:
-                            kh = KojiHelper()
-                            try:
-                                build_dict['rpm'], build_dict['logs'] = kh.get_koji_tasks(task_id, results_dir)
-                                OutputLogger.set_build_data(version, build_dict)
-                                if not build_dict['rpm']:
+                            if self.conf.buildtool == 'fedpkg':
+                                kh = KojiHelper()
+                                try:
+                                    build_dict['rpm'], build_dict['logs'] = kh.get_koji_tasks(task_id, results_dir)
+                                    OutputLogger.set_build_data(version, build_dict)
+                                    if not build_dict['rpm']:
+                                        return False
+                                except TypeError:
+                                    logger.info('Koji tasks are not finished yet. Try again later')
                                     return False
-                            except TypeError:
-                                logger.info('Koji tasks are not finished yet. Try again later')
-                                return False
+                            elif self.conf.buildtool == 'copr':
+                                copr_helper = CoprHelper()
+                                client = copr_helper.get_client()
+                                build_id = int(task_id)
+                                status = copr_helper.get_build_status(client, build_id)
+                                if status in ['importing', 'pending', 'starting', 'running']:
+                                    logger.info('Copr build is not finished yet. Try again later')
+                                    return False
+                                else:
+                                    build_dict['rpm'], build_dict['logs'] = copr_helper.download_build(client, build_id, results_dir)
+                                    if status not in ['succeeded', 'skipped']:
+                                        logger.info('Copr build {} did not complete successfully'.format(build_id))
+                                        return False
                     OutputLogger.set_build_data(version, build_dict)
                     break
 
@@ -612,6 +626,16 @@ class Application(object):
             data = logs[version]
             logger.info(message % (data['version'], data['koji_task_id']))
 
+    def print_copr_logs(self):
+        logs = self.get_new_build_logs()['build_ref']
+        copr_helper = CoprHelper()
+        client = copr_helper.get_client()
+        message = "Copr build for '%s' version is: %s"
+        for version in ['old', 'new']:
+            data = logs[version]
+            build_url = copr_helper.get_build_url(client, data['copr_build_id'])
+            logger.info(message % (data['version'], build_url))
+
     def set_upstream_monitoring(self):
         self.upstream_monitoring = True
 
@@ -644,12 +668,17 @@ class Application(object):
         return rh_stuff
 
     def run(self):
+        if self.conf.fedpkg_build_tasks:
+            logger.warning("Option --fedpkg-build-tasks is deprecated, use --build-tasks instead.")
+            if not self.conf.build_tasks:
+                self.conf.build_tasks = self.conf.fedpkg_build_tasks
+
         if self.conf.build_tasks and not self.conf.builds_nowait:
-            if self.conf.buildtool == 'fedpkg':
-                logger.error("--builds-nowait has to be specified with --fedpkg-build-tasks.")
+            if self.conf.buildtool in ['fedpkg', 'copr']:
+                logger.error("--builds-nowait has to be specified with --build-tasks.")
                 return 1
             else:
-                logger.warning("Options are allowed only for fedpkg build tool. Suppress them.")
+                logger.warning("Options are allowed only for fedpkg or copr build tools. Suppress them.")
                 self.conf.build_tasks = self.conf.builds_nowait = False
 
         sources = None
@@ -668,7 +697,10 @@ class Application(object):
                 try:
                     build = self.build_packages()
                     if self.conf.builds_nowait and not self.conf.build_tasks:
-                        self.print_koji_logs()
+                        if self.conf.buildtool == 'fedpkg':
+                            self.print_koji_logs()
+                        elif self.conf.buildtool == 'copr':
+                            self.print_copr_logs()
                         return 0
                 except RuntimeError:
                     logger.error('Unknown error caused by build log analysis')

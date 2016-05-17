@@ -65,7 +65,7 @@ class CLI(object):
         self.parser.add_argument(
             "--buildtool",
             default="mock",
-            help="Select the build tool [mock(default)|rpmbuild|fedpkg]"
+            help="Select the build tool [mock(default)|rpmbuild|fedpkg|copr]"
         )
         self.parser.add_argument(
             "--pkgcomparetool",
@@ -120,10 +120,16 @@ class CLI(object):
             "--builds-nowait",
             default=False,
             action="store_true",
-            help="It starts a koji builds and does not care how they finish. Useful for fedpkg build tool."
+            help="It starts koji or copr builds and does not care how they finish. Useful for fedpkg and copr build tools."
         )
+        # deprecated argument, kept for backward compatibility
         self.parser.add_argument(
             "--fedpkg-build-tasks",
+            dest="fedpkg_build_tasks",
+            help=argparse.SUPPRESS
+        )
+        self.parser.add_argument(
+            "--build-tasks",
             dest="build_tasks",
             help="Specify comma-separated task ids, old task first."
         )
