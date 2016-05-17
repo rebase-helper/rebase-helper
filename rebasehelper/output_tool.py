@@ -141,8 +141,9 @@ class TextOutputTool(BaseOutputTool):
 
         :return: 
         """
-        for key, value in six.iteritems(OutputLogger.get_summary_info()):
-            logger.info("%s %s\n", key, value)
+        if OutputLogger.get_summary_info():
+            for key, value in six.iteritems(OutputLogger.get_summary_info()):
+                logger.info("%s %s\n", key, value)
 
         try:
             LoggerHelper.add_file_handler(logger_report, path)

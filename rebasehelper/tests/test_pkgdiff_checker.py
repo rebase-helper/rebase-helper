@@ -20,8 +20,9 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
+import os
 from .base_test import BaseTest
-from rebasehelper.checker import PkgDiffTool
+from rebasehelper.checker import Checker
 
 
 class TestPkgDiff(BaseTest):
@@ -53,10 +54,12 @@ class TestPkgDiff(BaseTest):
                                    '/usr/sbin/pkg-*/binary_test;/usr/sbin/pkg-*/binary_test (1%)'],
                          'renamed': ['/usr/lib/libtest3.so.3',
                                      '/usr/lib/libtest3.so']}
-        pdt = PkgDiffTool()
-        pdt.results_dir = self.TEST_FILES_DIR
-        pdt.fill_dictionary(pdt.results_dir, old_version='1.0.1', new_version='1.0.2')
-        assert pdt.results_dict == expected_dict
+        checker = Checker(os.path.join(os.path.dirname(__file__), '..'))
+        checker.plugin_classes['pkgdiff'].results_dir = self.TEST_FILES_DIR
+        checker.plugin_classes['pkgdiff'].fill_dictionary(self.TEST_FILES_DIR,
+                                                          old_version='1.0.1',
+                                                          new_version='1.0.2')
+        assert checker.plugin_classes['pkgdiff'].results_dict == expected_dict
 
     def test_process_xml(self):
         expected_dict = {'added': ['/usr/sbin/test',
@@ -70,8 +73,10 @@ class TestPkgDiff(BaseTest):
                                      '/usr/lib64/libtest2.so.1'],
                          'renamed': ['/usr/lib/libtest3.so.3',
                                      '/usr/lib/libtest3.so']}
-        pdt = PkgDiffTool()
-        pdt.results_dir = self.TEST_FILES_DIR
-        res_dict = pdt.process_xml_results(pdt.results_dir, old_version="1.0.1", new_version="1.0.2")
+        checker = Checker(os.path.join(os.path.dirname(__file__), '..'))
+        checker.plugin_classes['pkgdiff'].results_dir = self.TEST_FILES_DIR
+        res_dict = checker.plugin_classes['pkgdiff'].process_xml_results(self.TEST_FILES_DIR,
+                                                                         old_version='1.0.1',
+                                                                         new_version='1.0.2')
         assert res_dict == expected_dict
 
