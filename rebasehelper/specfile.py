@@ -867,6 +867,11 @@ class SpecFile(object):
         """
         version, extra_version = SpecFile.extract_version_from_archive_name(archive_path,
                                                                             self._get_raw_source_string(0))
+
+        if not version:
+            # can't continue without version
+            raise RebaseHelperError('Failed to extract version from archive name')
+
         self.set_version(version)
         self.set_extra_version(extra_version)
 
