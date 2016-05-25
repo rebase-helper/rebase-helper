@@ -1090,9 +1090,18 @@ class CoprHelper(object):
     @classmethod
     def create_project(cls, client, project, chroot, description, instructions):
         try:
-            client.create_project(projectname=project, chroots=[chroot],
-                                  description=description,
-                                  instructions=instructions)
+            try:
+                client.create_project(projectname=project,
+                                      chroots=[chroot],
+                                      description=description,
+                                      instructions=instructions)
+            except TypeError:
+                # username argument is required since python-copr-1.67-1
+                client.create_project(username=None,
+                                      projectname=project,
+                                      chroots=[chroot],
+                                      description=description,
+                                      instructions=instructions)
         except copr.client.exceptions.CoprRequestException:
             # reuse existing project
             pass
