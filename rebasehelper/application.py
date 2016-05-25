@@ -66,6 +66,8 @@ class Application(object):
         :param cli_conf: CLI object with configuration gathered from commandline
         :return: 
         """
+        OutputLogger.clear()
+
         self.conf = cli_conf
 
         if self.conf.verbose:

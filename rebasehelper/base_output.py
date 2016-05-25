@@ -31,6 +31,9 @@ class OutputData(object):
     def __init__(self):
         self.summary_information = {}
 
+    def clear(self):
+        self.summary_information.clear()
+
     def update_info(self, name,  data):
         """
         Function insert a new field into summary_information
@@ -75,6 +78,10 @@ class OutputLogger(object):
     patch class, check classes
     """
     out_logger = OutputData()
+
+    @classmethod
+    def clear(cls):
+        cls.out_logger.clear()
 
     @classmethod
     def set_info_text(cls, text, data):
