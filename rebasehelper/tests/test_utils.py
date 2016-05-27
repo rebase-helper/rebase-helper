@@ -25,13 +25,16 @@ import tempfile
 import random
 import string
 import sys
+
 import rpm
+import pytest
 from six import StringIO
 
 from .base_test import skip_on_travis
 from .base_test import BaseTest
 from rebasehelper.utils import ConsoleHelper
 from rebasehelper.utils import DownloadHelper
+from rebasehelper.utils import DownloadError
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.utils import PathHelper
 from rebasehelper.utils import TemporaryEnvironment
@@ -145,15 +148,69 @@ class TestConsoleHelper(BaseTest):
 class TestDownloadHelper(BaseTest):
     """ DownloadHelper tests """
 
-    KNOWN_URL = 'http://fedoraproject.org/static/hotspot.txt'
-    LOCAL_FILE = os.path.basename(KNOWN_URL)
-    KNOWN_URL_CONTENT = 'OK'
+    def test_download_existing_file_HTTP(self):
+        """
+        Test downloading exiting file via HTTP.
+        """
+        KNOWN_URL = 'http://fedoraproject.org/static/hotspot.txt'
+        LOCAL_FILE = os.path.basename(KNOWN_URL)
+        KNOWN_URL_CONTENT = 'OK'
 
-    def test_download_source(self):
-        DownloadHelper.download_file(self.KNOWN_URL, self.LOCAL_FILE)
-        assert os.path.isfile(self.LOCAL_FILE)
-        with open(self.LOCAL_FILE) as f:
-            assert f.read().strip() == self.KNOWN_URL_CONTENT
+        DownloadHelper.download_file(KNOWN_URL, LOCAL_FILE)
+        assert os.path.isfile(LOCAL_FILE)
+        with open(LOCAL_FILE) as f:
+            assert f.read().strip() == KNOWN_URL_CONTENT
+
+    def test_download_existing_file_HTTPS(self):
+        """
+        Test downloading exiting file via HTTPS.
+        """
+        KNOWN_URL = 'https://ftp.isc.org/isc/bind9/9.10.4-P1/srcid'
+        LOCAL_FILE = os.path.basename(KNOWN_URL)
+        KNOWN_URL_CONTENT = 'SRCID=adfc588'
+
+        DownloadHelper.download_file(KNOWN_URL, LOCAL_FILE)
+        assert os.path.isfile(LOCAL_FILE)
+        with open(LOCAL_FILE) as f:
+            assert f.read().strip() == KNOWN_URL_CONTENT
+
+    def test_download_existing_file_FTP(self):
+        """
+        Test downloading exiting file via FTP
+        """
+        KNOWN_URL = 'ftp://ftp.isc.org/isc/bind9/9.10.4-P1/srcid'
+        LOCAL_FILE = os.path.basename(KNOWN_URL)
+        KNOWN_URL_CONTENT = 'SRCID=adfc588'
+
+        DownloadHelper.download_file(KNOWN_URL, LOCAL_FILE)
+        assert os.path.isfile(LOCAL_FILE)
+        with open(LOCAL_FILE) as f:
+            assert f.read().strip() == KNOWN_URL_CONTENT
+
+    def test_download_non_existing_file_HTTPS(self):
+        """
+        Test downloading NON exiting file via HTTPS
+        :return:
+        """
+        KNOWN_URL = 'https://ftp.isc.org/isc/bind9/9.10.3-P5/srcid'
+        LOCAL_FILE = os.path.basename(KNOWN_URL)
+        KNOWN_URL_CONTENT = 'SRCID=adfc588'
+
+        with pytest.raises(DownloadError):
+            DownloadHelper.download_file(KNOWN_URL, LOCAL_FILE)
+        assert not os.path.isfile(LOCAL_FILE)
+
+    def test_download_non_existing_file_FTP(self):
+        """
+        Test downloading NON exiting file via FTP
+        :return:
+        """
+        KNOWN_URL = 'ftp://ftp.isc.org/isc/bind9/9.10.3-P5/srcid'
+        LOCAL_FILE = os.path.basename(KNOWN_URL)
+
+        with pytest.raises(DownloadError):
+            DownloadHelper.download_file(KNOWN_URL, LOCAL_FILE)
+        assert not os.path.isfile(LOCAL_FILE)
 
 
 class TestProcessHelper(BaseTest):

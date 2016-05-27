@@ -203,6 +203,11 @@ class ConsoleHelper(object):
         return stdout_data, stderr_data
 
 
+class DownloadError(Exception):
+    """Exception indicating that download of a file failed."""
+    pass
+
+
 class DownloadHelper(object):
 
     """Class for downloading sources defined in SPEC file"""
