@@ -30,7 +30,6 @@ import tempfile
 import pycurl
 import shutil
 import rpm
-import six
 import locale
 import time
 import random
@@ -41,8 +40,10 @@ import pyquery
 
 import six
 from six import StringIO
-from six.moves import input, urllib
+from six.moves import input
+from six.moves import urllib
 from distutils.util import strtobool
+
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.logger import logger
 from rebasehelper import settings
