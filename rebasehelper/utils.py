@@ -212,6 +212,32 @@ class DownloadHelper(object):
     """Class for downloading sources defined in SPEC file"""
 
     @staticmethod
+    def progress(download_total, downloaded, start_time):
+        """
+        The function prints download progress and remaining time of the download directly to the standard output.
+
+        :param download_total: size of the file which is being downloaded
+        :type download_total: int or float
+        :param downloaded: already downloaded size of the file
+        :type downloaded: int or float
+        :param start_time: time in seconds since the epoch from the point when the download started. This is used to
+        calculate the remaining time of the download.
+        :type start_time: float
+        :return: None
+        """
+        r = downloaded / download_total if download_total else 0.0
+        t = time.time() - start_time
+        if 0.0 < r < 1.0:
+            h, rem = divmod(int(t / r - t), 3600)
+            m, s = divmod(rem, 60)
+            est = '({:0>2d}:{:0>2d}:{:0>2d} remaining)'.format(h, m, s)
+        else:
+            est = '                    '
+        # no point to log progress, write directly to stdout
+        sys.stdout.write('{:>3d}% {}\r'.format(int(r * 100), est))
+        sys.stdout.flush()
+
+    @staticmethod
     def download_file(url, destination_path, timeout=10, blocksize=8192):
         """
         Method for downloading file from HTTP, HTTPS and FTP URL.
@@ -222,19 +248,6 @@ class DownloadHelper(object):
         :param blocksize: size in Bytes of blocks used for downloading the file and reporting progress
         :return: None
         """
-        def progress(download_total, downloaded, start_time):
-            r = downloaded / download_total if download_total else 0.0
-            t = time.time() - start_time
-            if 0.0 < r < 1.0:
-                h, rem = divmod(int(t/r - t), 3600)
-                m, s = divmod(rem, 60)
-                est = '({:0>2d}:{:0>2d}:{:0>2d} remaining)'.format(h, m, s)
-            else:
-                est = '                    '
-            # no point to log progress, write directly to stdout
-            sys.stdout.write('{:>3d}% {}\r'.format(int(r * 100), est))
-            sys.stdout.flush()
-
         try:
             response = urllib.request.urlopen(url, timeout=timeout)
             file_size = int(response.info().get('Content-Length', 0))
@@ -270,7 +283,7 @@ class DownloadHelper(object):
                     local_file.write(buffer)
 
                     # report progress
-                    progress(file_size, downloaded, download_start)
+                    DownloadHelper.progress(file_size, downloaded, download_start)
 
         except urllib.error.URLError as e:
             raise DownloadError(str(e))
