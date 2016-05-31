@@ -148,6 +148,26 @@ class TestConsoleHelper(BaseTest):
 class TestDownloadHelper(BaseTest):
     """ DownloadHelper tests """
 
+    def test_progress_integer(self, monkeypatch):
+        """
+        Test that progress of a download is shown correctly. Test the case when size parameters are passed as integers.
+        """
+        buffer = StringIO()
+        monkeypatch.setattr('sys.stdout', buffer)
+        monkeypatch.setattr('time.time', lambda: 10.0)
+        DownloadHelper.progress(100, 25, 0.0)
+        assert buffer.getvalue() == ' 25% (00:00:30 remaining)\r'
+
+    def test_progress_float(self, monkeypatch):
+        """
+        Test that progress of a download is shown correctly. Test the case when size parameters are passed as floats.
+        """
+        buffer = StringIO()
+        monkeypatch.setattr('sys.stdout', buffer)
+        monkeypatch.setattr('time.time', lambda: 10.0)
+        DownloadHelper.progress(100.0, 25.0, 0.0)
+        assert buffer.getvalue() == ' 25% (00:00:30 remaining)\r'
+
     def test_download_existing_file_HTTP(self):
         """
         Test downloading exiting file via HTTP.
