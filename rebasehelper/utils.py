@@ -587,7 +587,7 @@ class RpmHelper(object):
         :return: 
         """
         h = RpmHelper.get_header_from_rpm(rpm_name)
-        name = h[info]
+        name = h[info].decode(defenc) if six.PY3 else h[info]
         return name
 
 
