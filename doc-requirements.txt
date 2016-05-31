@@ -2,7 +2,5 @@
 #rpm-python
 backports.lzma
 copr
-# This can not be installed in readthedocs.org
-#pycurl
 pyquery
 six
