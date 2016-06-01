@@ -2,6 +2,5 @@
 #rpm-python
 backports.lzma
 copr
-pycurl
 pyquery
 six

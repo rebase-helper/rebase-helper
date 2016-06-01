@@ -6,7 +6,7 @@ stages:
   # don't start any services (mailny not the default ones)
   services:
   script:
-    - dnf -y install python2 python2-devel python3 python3-devel rpm-python rpm-python3 python-pycurl python3-pycurl python-tox python-pip python3-pip python-setuptools python3-setuptools gcc redhat-rpm-config libxml2-devel libxslt-devel xz-devel git
+    - dnf -y install python2 python2-devel python3 python3-devel rpm-python rpm-python3 python-tox python-pip python3-pip python-setuptools python3-setuptools gcc redhat-rpm-config libxml2-devel libxslt-devel xz-devel git
     #- pip install tox setuptools
     - tox --recreate
 

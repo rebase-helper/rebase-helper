@@ -31,7 +31,7 @@ import shlex
 from datetime import date
 from difflib import SequenceMatcher
 
-from rebasehelper.utils import DownloadHelper, MacroHelper, defenc
+from rebasehelper.utils import DownloadHelper, DownloadError, MacroHelper, defenc
 from rebasehelper.logger import logger
 from rebasehelper import settings
 from rebasehelper.archive import Archive
@@ -171,7 +171,11 @@ class SpecFile(object):
             # if the source is a remote file, download it
             if archive:
                 if remote_files_re.search(src[0]) and self.download:
-                    DownloadHelper.download_file(src[0], abs_path)
+                    try:
+                        DownloadHelper.download_file(src[0], abs_path)
+                    except DownloadError as e:
+                        raise RebaseHelperError("Failed to download file from URL {}. Reason: '{}'".format(src[0],
+                                                                                                           str(e)))
                 tar_sources.append(abs_path)
         return sources, tar_sources
 

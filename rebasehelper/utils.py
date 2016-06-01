@@ -27,10 +27,8 @@ import sys
 import fnmatch
 import subprocess
 import tempfile
-import pycurl
 import shutil
 import rpm
-import six
 import locale
 import time
 import random
@@ -41,8 +39,10 @@ import pyquery
 
 import six
 from six import StringIO
-from six.moves import input, urllib
+from six.moves import input
+from six.moves import urllib
 from distutils.util import strtobool
+
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.logger import logger
 from rebasehelper import settings
@@ -202,59 +202,91 @@ class ConsoleHelper(object):
         return stdout_data, stderr_data
 
 
+class DownloadError(Exception):
+    """Exception indicating that download of a file failed."""
+    pass
+
+
 class DownloadHelper(object):
 
     """Class for downloading sources defined in SPEC file"""
 
     @staticmethod
-    def download_file(url, destination_name):
+    def progress(download_total, downloaded, start_time):
         """
-        Method for downloading file using pycurl
+        The function prints download progress and remaining time of the download directly to the standard output.
 
-        :param url: URL from which to download the file
-        :param destination_name: path where to store downloaded file
+        :param download_total: size of the file which is being downloaded
+        :type download_total: int or float
+        :param downloaded: already downloaded size of the file
+        :type downloaded: int or float
+        :param start_time: time in seconds since the epoch from the point when the download started. This is used to
+        calculate the remaining time of the download.
+        :type start_time: float
         :return: None
         """
-        def progress(download_total, downloaded, upload_total, uploaded):
-            r = downloaded / download_total if download_total else 0.0
-            t = time.time() - start
-            if 0.0 < r < 1.0:
-                h, rem = divmod(int(t/r - t), 3600)
-                m, s = divmod(rem, 60)
-                est = '({:0>2d}:{:0>2d}:{:0>2d} remaining)'.format(h, m, s)
-            else:
-                est = '                    '
-            # no point to log progress, write directly to stdout
-            sys.stdout.write('{:>3d}% {}\r'.format(int(r * 100), est))
-            sys.stdout.flush()
-            return 0
+        r = downloaded / download_total if download_total else 0.0
+        t = time.time() - start_time
+        if 0.0 < r < 1.0:
+            h, rem = divmod(int(t / r - t), 3600)
+            m, s = divmod(rem, 60)
+            est = '({:0>2d}:{:0>2d}:{:0>2d} remaining)'.format(h, m, s)
+        else:
+            est = '                    '
+        # no point to log progress, write directly to stdout
+        sys.stdout.write('{:>3d}% {}\r'.format(int(r * 100), est))
+        sys.stdout.flush()
 
-        if os.path.exists(destination_name):
-            return
-        with open(destination_name, 'wb') as f:
-            curl = pycurl.Curl()
-            curl.setopt(pycurl.URL, url)
-            curl.setopt(pycurl.CONNECTTIMEOUT, 30)
-            curl.setopt(pycurl.FOLLOWLOCATION, 1)
-            curl.setopt(pycurl.MAXREDIRS, 5)
-            curl.setopt(pycurl.TIMEOUT, 300)
-            curl.setopt(pycurl.WRITEDATA, f)
-            curl.setopt(pycurl.NOPROGRESS, 0)
-            curl.setopt(pycurl.PROGRESSFUNCTION, progress)
-            try:
+    @staticmethod
+    def download_file(url, destination_path, timeout=10, blocksize=8192):
+        """
+        Method for downloading file from HTTP, HTTPS and FTP URL.
+
+        :param url: URL from which to download the file
+        :param destination_path: path where to store downloaded file
+        :param timeout: timeout in seconds for blocking actions like connecting, etc.
+        :param blocksize: size in Bytes of blocks used for downloading the file and reporting progress
+        :return: None
+        """
+        try:
+            response = urllib.request.urlopen(url, timeout=timeout)
+            file_size = int(response.info().get('Content-Length', 0))
+
+            if not file_size:
+                raise DownloadError('The file has zero size')
+
+            # file exists, check the size
+            if os.path.exists(destination_path):
+                if file_size != os.path.getsize(destination_path):
+                    logger.info("The destination file '%s' exists, but sizes don't match! Removing it.",
+                                 destination_path)
+                    os.remove(destination_path)
+                else:
+                    logger.info("The destination file '%s' exists, and the size is correct! Skipping download.",
+                                 destination_path)
+                    return
+
+            with open(destination_path, 'wb') as local_file:
                 logger.info('Downloading file from URL %s', url)
-                sys.stdout.flush()
-                start = time.time()
-                curl.perform()
-            except pycurl.error as error:
-                sys.stdout.write('\n')
-                sys.stdout.flush()
-                curl.close()
-                raise ReferenceError("Downloading '%s' failed with error '%s'." % (url, error))
-            else:
-                sys.stdout.write('100%\n')
-                sys.stdout.flush()
-                curl.close()
+                download_start = time.time()
+                downloaded = 0
+
+                # do the actual download
+                while True:
+                    buffer = response.read(blocksize)
+
+                    # no more data to read
+                    if not buffer:
+                        break
+
+                    downloaded += len(buffer)
+                    local_file.write(buffer)
+
+                    # report progress
+                    DownloadHelper.progress(file_size, downloaded, download_start)
+
+        except urllib.error.URLError as e:
+            raise DownloadError(str(e))
 
 
 class ProcessHelper(object):
