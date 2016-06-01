@@ -225,7 +225,7 @@ class DownloadHelper(object):
         :type start_time: float
         :return: None
         """
-        r = downloaded / download_total if download_total else 0.0
+        r = float(downloaded) / float(download_total) if download_total else 0.0
         t = time.time() - start_time
         if 0.0 < r < 1.0:
             h, rem = divmod(int(t / r - t), 3600)
