@@ -265,25 +265,28 @@ class DownloadHelper(object):
                     logger.info("The destination file '%s' exists, and the size is correct! Skipping download.",
                                  destination_path)
                     return
+            try:
+                with open(destination_path, 'wb') as local_file:
+                    logger.info('Downloading file from URL %s', url)
+                    download_start = time.time()
+                    downloaded = 0
 
-            with open(destination_path, 'wb') as local_file:
-                logger.info('Downloading file from URL %s', url)
-                download_start = time.time()
-                downloaded = 0
+                    # do the actual download
+                    while True:
+                        buffer = response.read(blocksize)
 
-                # do the actual download
-                while True:
-                    buffer = response.read(blocksize)
+                        # no more data to read
+                        if not buffer:
+                            break
 
-                    # no more data to read
-                    if not buffer:
-                        break
+                        downloaded += len(buffer)
+                        local_file.write(buffer)
 
-                    downloaded += len(buffer)
-                    local_file.write(buffer)
-
-                    # report progress
-                    DownloadHelper.progress(file_size, downloaded, download_start)
+                        # report progress
+                        DownloadHelper.progress(file_size, downloaded, download_start)
+            except KeyboardInterrupt as e:
+                os.remove(destination_path)
+                raise e
 
         except urllib.error.URLError as e:
             raise DownloadError(str(e))
