@@ -148,6 +148,24 @@ class TestConsoleHelper(BaseTest):
 class TestDownloadHelper(BaseTest):
     """ DownloadHelper tests """
 
+    def test_keyboard_interrupt_situation(self, monkeypatch):
+        """
+        Test that the local file is deleted in case KeyboardInterrupt is raised during the download
+        """
+        KNOWN_URL = 'https://ftp.isc.org/isc/bind9/9.10.4-P1/srcid'
+        LOCAL_FILE = os.path.basename(KNOWN_URL)
+
+        def interrupter(*args, **kwargs):
+            raise KeyboardInterrupt
+
+        # make sure that some function call inside tha actual download section raises the KeyboardInterrupt exception.
+        monkeypatch.setattr('time.time', interrupter)
+
+        with pytest.raises(KeyboardInterrupt):
+            DownloadHelper.download_file(KNOWN_URL, LOCAL_FILE)
+
+        assert not os.path.exists(LOCAL_FILE)
+
     def test_progress_integer(self, monkeypatch):
         """
         Test that progress of a download is shown correctly. Test the case when size parameters are passed as integers.
