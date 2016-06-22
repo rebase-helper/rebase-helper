@@ -620,8 +620,9 @@ class Application(object):
     def print_summary(self):
         output_tool.check_output_argument(self.conf.outputtool)
         output = output_tool.OutputTool(self.conf.outputtool)
-        output.print_information(path=self._get_rebase_helper_log())
-        logger.info('Report file from rebase-helper is available here: %s', self.report_log_file)
+        report_file = os.path.join(self.results_dir, self.conf.outputtool + settings.REBASE_HELPER_OUTPUT_SUFFIX)
+        output.print_information(path=report_file)
+        logger.info('Report file from rebase-helper is available here: %s', report_file)
 
     def print_koji_logs(self):
         logs = self.get_new_build_logs()['build_ref']

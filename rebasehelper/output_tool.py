@@ -23,6 +23,7 @@
 import sys
 import os
 import six
+import json
 
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.logger import LoggerHelper, logger, logger_report
@@ -173,6 +174,31 @@ class TextOutputTool(BaseOutputTool):
                             logger_report.info("Log is available here: %s\n", checker)
                         else:
                             logger_report.info("%s See for more details %s", output, checker)
+
+
+@register_output_tool
+class JSONOutputTool(BaseOutputTool):
+
+    """ JSON output tool. """
+
+    PRINT = "json"
+
+    @classmethod
+    def match(cls, cmd=None):
+        if cmd == cls.PRINT:
+            return True
+        else:
+            return False
+
+    @classmethod
+    def print_summary(cls, path):
+        """
+        Function is used for storing output dictionary into JSON structure
+        JSON output file is stored into path
+        :return:
+        """
+        with open(path, 'w') as outputfile:
+            json.dump(OutputLogger.get_all(), outputfile, indent=4, sort_keys=True)
 
 
 class OutputTool(object):
