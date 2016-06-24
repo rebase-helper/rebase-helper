@@ -440,8 +440,9 @@ class Application(object):
             build_dict['builds_nowait'] = self.conf.builds_nowait
             build_dict['build_tasks'] = self.conf.build_tasks
 
-            failed_before = False
-            while True:
+            files = {}
+            number_retries = 0
+            while self.conf.build_retries != number_retries:
                 try:
                     if self.conf.build_tasks is None:
                         build_dict.update(builder.build(spec, sources, patches, results_dir, **build_dict))
@@ -477,6 +478,7 @@ class Application(object):
                                     if status not in ['succeeded', 'skipped']:
                                         logger.info('Copr build {} did not complete successfully'.format(build_id))
                                         return False
+                    # Build finishes properly. Go out from while cycle
                     OutputLogger.set_build_data(version, build_dict)
                     break
 
@@ -508,7 +510,8 @@ class Application(object):
                     except BuildLogAnalyzerPatchError:
                         raise RebaseHelperError('%s during patching. Check log %s', msg, build_log_path)
                     except RuntimeError:
-                        raise RebaseHelperError('%s with unknown reason. Check log %s',msg, build_log_path)
+                        if self.conf.build_retries == number_retries:
+                            raise RebaseHelperError('%s with unknown reason. Check log %s', msg, build_log_path)
 
                     if 'missing' in files:
                         missing_files = '\n'.join(files['missing'])
@@ -517,24 +520,26 @@ class Application(object):
                         deleted_files = '\n'.join(files['deleted'])
                         logger.warning('Removed files packaged in SPEC file:\n%s', deleted_files)
                     else:
-                        raise RebaseHelperError("Build failed, but no issues were found in the build log %s" % build_log)
+                        if self.conf.build_retries == number_retries:
+                            raise RebaseHelperError("Build failed, but no issues were found in the build log %s", build_log)
                     self.rebase_spec_file.modify_spec_files_section(files)
 
                 if not self.conf.non_interactive:
-                    if failed_before:
                         msg = 'Do you want rebase-helper to try build the packages one more time'
                         if not ConsoleHelper.get_message(msg):
                             raise KeyboardInterrupt
                 else:
                     logger.warning('Some patches were not successfully applied')
-                    shutil.rmtree(os.path.join(results_dir, 'RPM'))
-                    shutil.rmtree(os.path.join(results_dir, 'SRPM'))
-                    return False
                 #  build just failed, otherwise we would break out of the while loop
-                failed_before = True
+                logger.debug('Number of retries is %s', self.conf.build_retries)
+                if os.path.exists(os.path.join(results_dir, 'RPM')):
+                    shutil.rmtree(os.path.join(results_dir, 'RPM'))
+                if os.path.exists(os.path.join(results_dir, 'SRPM')):
+                    shutil.rmtree(os.path.join(results_dir, 'SRPM'))
+                number_retries += 1
+            if self.conf.build_retries == number_retries:
+                raise RebaseHelperError('Building package failed with unknow reason. Check all available log files.')
 
-                shutil.rmtree(os.path.join(results_dir, 'RPM'))
-                shutil.rmtree(os.path.join(results_dir, 'SRPM'))
         return True
 
     def _execute_checkers(self, checker, dir_name):

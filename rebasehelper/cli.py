@@ -137,6 +137,12 @@ class CLI(object):
             "--results-dir",
             help="Specify results dir where you would like to stored rebase-helper stuff."
         )
+        self.parser.add_argument(
+            "--build-retries",
+            default=2,
+            help="Specify number of retries in case build fails.",
+            type=int
+        )
 
     def __getattr__(self, name):
         try:
