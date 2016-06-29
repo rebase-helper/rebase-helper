@@ -50,5 +50,10 @@ output is more verbose
 \fB\-w\fR, \fB\-\-keep\-workspace\fR
 select the choice if you want to keep workspace directory after finishing
 
+.TP
+\fB\-\-build\--retries\fR=\fIBUILD_RETRIES\fR
+specifies number of retries rebase-helper will do in case of failed build.
+If build fails, rebase-helper analyzes the build log, tries to fix the issue if possible and retries the build.
+
 .SH AUTHOR
 Written by Petr Hracek and Tomas Hozza

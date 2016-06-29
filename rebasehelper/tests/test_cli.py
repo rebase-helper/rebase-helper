@@ -45,12 +45,14 @@ class TestCLI(object):
                 'fedpkg_build_tasks': None,
                 'build_tasks': '123456,654321',
                 'builds_nowait': True,
+                'build_retries': 2,
                 'results_dir': '/tmp/rebase-helper'}
         arguments = ['--build-only', '--patch-only', 'test-1.0.3.tar.gz', '--verbose',
                      '--buildtool', 'rpmbuild', '--pkgcomparetool',
                      'rpmdiff', '--outputtool', 'xml', '--keep-workspace', '--not-download-sources', '--continue',
                      '--non-interactive', '--comparepkgs-only', 'test_dir',
                      '--builds-nowait', '--build-tasks', '123456,654321',
+                     '--build-retries', '2',
                      '--results-dir', '/tmp/rebase-helper']
         cli = CLI(arguments)
         for key, value in cli.args.__dict__.items():
