@@ -21,6 +21,7 @@
 #          Tomas Hozza <thozza@redhat.com>
 
 import os
+import json
 
 from .base_test import BaseTest
 from rebasehelper.output_tool import OutputTool
@@ -51,7 +52,7 @@ class TestOutputTool(BaseTest):
                 }
         return data
 
-    def get_expected_output(self):
+    def get_expected_text_output(self):
         expected_output = """
 Summary information about patches:
 Patch mytest2.patch [deleted]
@@ -84,6 +85,35 @@ Following files were moved
 See for more details pkgdiff"""
         return expected_output
 
+    def get_expected_json_output(self):
+        expected_output = {"build": {"new": {"logs": ["logfile3.log", "logfile4.log"],
+                                             "patches_full": {"0": ["mytest.patch", 0, "-p1"],
+                                                              "1": ["mytest2.patch", 1, "-p1"]
+                                                              },
+                                             "rpm": ["./test-1.2.2-1.x86_64.rpm", "./test-devel-1.2.2-1.x86_64.rpm"],
+                                             "srpm": "./test-1.2.2-1.src.rpm"
+                                             },
+                                     "old": {"logs": ["logfile1.log", "logfile2.log"],
+                                             "patches_full": {"0": ["mytest.patch", "-p1", 0],
+                                                              "1": ["mytest2.patch", "-p1", 1]
+                                                              },
+                                             "rpm": ["./test-1.2.0-1.x86_64.rpm", "./test-devel-1.2.0-1.x86_64.rpm"],
+                                             "srpm": "./test-1.2.0-1.src.rpm"
+                                             }
+                                     },
+                           "checker": {"Results from checker(s)": {"pkgdiff": "Following files were moved\n"
+                                                                              "/usr/sbin/test\n/usr/sbin/test2\n"
+                                                                   }
+                                       },
+                           "information": {"Information text": "some information text",
+                                           "Next Information": "some another information text"
+                                           },
+                           "patch": {"Patches:": {"deleted": ["mytest2.patch"]
+                                                  }
+                                     }
+                           }
+        return expected_output
+
     def test_text_output(self):
         output = OutputTool('text')
         data = self.get_data()
@@ -99,6 +129,19 @@ See for more details pkgdiff"""
 
         with open(logfile) as f:
             lines = [y.strip() for y in f.readlines()]
-            assert lines == self.get_expected_output().split('\n')
+            assert lines == self.get_expected_text_output().split('\n')
+
+        os.unlink(logfile)
+
+    def test_json_output(self):
+        output = OutputTool('json')
+        data = self.get_data()
+
+        logfile = os.path.join(self.TESTS_DIR, REBASE_HELPER_RESULTS_LOG)
+        output.print_information(logfile)
+
+        with open(logfile) as f:
+            json_dict = json.loads(f.read(), encoding='utf-8')
+            assert json_dict == self.get_expected_json_output()
 
         os.unlink(logfile)

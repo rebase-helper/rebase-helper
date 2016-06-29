@@ -50,3 +50,5 @@ CHECKER_TAGS = ['added', 'removed', 'changed', 'moved', 'renamed']
 
 ABIDIFF_ERROR = 1
 ABIDIFF_USAGE_ERROR = 2
+
+REBASE_HELPER_OUTPUT_SUFFIX = ".txt"
