@@ -35,7 +35,7 @@ from rebasehelper.utils import PathHelper, RpmHelper, ConsoleHelper, GitHelper, 
 from rebasehelper.checker import Checker
 from rebasehelper.build_helper import Builder, SourcePackageBuildError, BinaryPackageBuildError, koji_builder
 from rebasehelper.patch_helper import Patcher
-from rebasehelper.exceptions import RebaseHelperError
+from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
 from rebasehelper.build_log_analyzer import BuildLogAnalyzer, BuildLogAnalyzerMissingError
 from rebasehelper.base_output import OutputLogger
 from rebasehelper.build_log_analyzer import BuildLogAnalyzerMakeError, BuildLogAnalyzerPatchError
@@ -559,8 +559,11 @@ class Application(object):
         checker = Checker(os.path.dirname(__file__))
         if not self.conf.pkgcomparetool:
             for check in checker.get_supported_tools():
-                results = checker.run_check(dir_name, checker_name=check)
-                pkgdiff_results[check] = results
+                try:
+                    results = checker.run_check(dir_name, checker_name=check)
+                    pkgdiff_results[check] = results
+                except CheckerNotFoundError:
+                    logger.info("Rebase-helper did not find checker '%s'." % check)
         else:
             pkgdiff_results[self.conf.pkgcomparetool] = checker.run_check(dir_name, checker_name=self.conf.pkgcomparetool)
         if pkgdiff_results:

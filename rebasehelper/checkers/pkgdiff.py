@@ -28,7 +28,7 @@ from six import StringIO
 
 from rebasehelper.utils import ProcessHelper, RpmHelper
 from rebasehelper.logger import logger
-from rebasehelper.exceptions import RebaseHelperError
+from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
 from rebasehelper.base_output import OutputLogger
 from rebasehelper import settings
 from rebasehelper.checker import BaseChecker
@@ -216,7 +216,11 @@ class PkgDiffTool(BaseChecker):
         cmd.append(cls.results_dir)
         cmd.append('-report-path')
         cmd.append(cls.pkgdiff_results_full_path)
-        ret_code = ProcessHelper.run_subprocess(cmd, output=ProcessHelper.DEV_NULL)
+        try:
+            ret_code = ProcessHelper.run_subprocess(cmd, output=ProcessHelper.DEV_NULL)
+        except OSError:
+            raise CheckerNotFoundError("Checker '%s' was not found or installed." % cls.CMD)
+
         """
          From pkgdiff source code:
          ret_code 0 means unchanged

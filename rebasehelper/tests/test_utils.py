@@ -40,6 +40,7 @@ from rebasehelper.utils import PathHelper
 from rebasehelper.utils import TemporaryEnvironment
 from rebasehelper.utils import RpmHelper
 from rebasehelper.utils import MacroHelper
+from rebasehelper.utils import CommandHelper
 
 
 class TestConsoleHelper(BaseTest):
@@ -629,3 +630,9 @@ class TestMacroHelper(BaseTest):
         assert macros[0]['name'] == 'test_macro'
         assert macros[0]['value'] == 'test_macro value'
         assert macros[0]['level'] == -1
+
+
+class TestCommandHelper(BaseTest):
+    def test_short_command(self):
+        full_path = CommandHelper.check_command("ls")
+        assert full_path == "/usr/bin/ls" or full_path == "/bin/ls"

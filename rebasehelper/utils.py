@@ -499,6 +499,18 @@ class PathHelper(object):
         return files_list
 
     @staticmethod
+    def find_all_files_current_dir(top_path, pattern):
+        """
+        Finds all files that matches the given 'pattern' in the 'top_path' directory.
+        If found, returns fields of all files, otherwise returns None.
+        """
+        files_list = []
+        for files in os.listdir(top_path):
+            if fnmatch.fnmatch(files, pattern):
+                files_list.append(os.path.join(os.path.abspath(top_path), files))
+        return files_list
+
+    @staticmethod
     def get_temp_dir():
         """Returns a path to new temporary directory."""
         return tempfile.mkdtemp(prefix=settings.REBASE_HELPER_PREFIX)

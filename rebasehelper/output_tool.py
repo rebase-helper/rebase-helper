@@ -172,7 +172,10 @@ class TextOutputTool(BaseOutputTool):
                         if output is None:
                             logger_report.info("Log is available here: %s\n", checker)
                         else:
-                            logger_report.info("%s See for more details %s", output, checker)
+                            if isinstance(output, list):
+                                logger_report.info("%s See for more details %s", ','.join(output), checker)
+                            else:
+                                logger_report.info("%s See for more details %s", output, checker)
 
 
 class OutputTool(object):
