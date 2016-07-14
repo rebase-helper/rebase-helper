@@ -26,7 +26,7 @@ import re
 
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.logger import logger
-from rebasehelper.exceptions import RebaseHelperError
+from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
 from rebasehelper.base_output import OutputLogger
 from rebasehelper import settings
 from rebasehelper.checker import BaseChecker
@@ -108,7 +108,11 @@ class AbiCheckerTool(BaseChecker):
                 else:
                     package_name = package_name + '-' + cls.log_name
                 output = os.path.join(cls.results_dir, result_dir, package_name)
-                ret_code = ProcessHelper.run_subprocess(command, output=output)
+                try:
+                    ret_code = ProcessHelper.run_subprocess(command, output=output)
+                except OSError:
+                    raise CheckerNotFoundError("Checker '%s' was not found or installed." % cls.CMD)
+
                 if int(ret_code) & settings.ABIDIFF_ERROR and int(ret_code) & settings.ABIDIFF_USAGE_ERROR:
                     raise RebaseHelperError('Execution of %s failed.\nCommand line is: %s' % (cls.CMD, cmd))
                 if int(ret_code) == 0:

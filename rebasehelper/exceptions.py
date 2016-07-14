@@ -27,3 +27,10 @@ class RebaseHelperError(Exception):
     catching some expected and well known exception/error.
     """
     pass
+
+
+class CheckerNotFoundError(RuntimeError):
+    """
+    Error indicating failure unable to find checker binary.
+    """
+    pass

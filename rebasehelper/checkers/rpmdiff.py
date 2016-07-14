@@ -28,7 +28,7 @@ from six import StringIO
 
 from rebasehelper.utils import ProcessHelper, RpmHelper
 from rebasehelper.logger import logger
-from rebasehelper.exceptions import RebaseHelperError
+from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
 from rebasehelper.base_output import OutputLogger
 from rebasehelper import settings
 from rebasehelper.checker import BaseChecker
@@ -121,7 +121,10 @@ class RpmDiffTool(BaseChecker):
             # We would like to build correct old package against correct new packages
             cmd.append(new_pkgs[key])
             output = StringIO()
-            ProcessHelper.run_subprocess(cmd, output=output)
+            try:
+                ProcessHelper.run_subprocess(cmd, output=output)
+            except OSError:
+                raise CheckerNotFoundError("Checker '%s' was not found or installed." % cls.CMD)
             results_dict = cls._analyze_logs(output, results_dict)
 
         results_dict = cls.update_added_removed(results_dict)

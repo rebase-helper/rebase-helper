@@ -70,7 +70,7 @@ class CLI(object):
         self.parser.add_argument(
             "--pkgcomparetool",
             default=False,
-            help="Select the tool for comparing two packages [pkgdiff, rpmdiff, abipkgdiff]"
+            help="Select the tool for comparing two packages [pkgdiff, rpmdiff, abipkgdiff, csmock]"
         )
         self.parser.add_argument(
             "--outputtool",
