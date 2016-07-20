@@ -174,8 +174,12 @@ class SpecFile(object):
                     try:
                         DownloadHelper.download_file(src[0], abs_path)
                     except DownloadError as e:
-                        raise RebaseHelperError("Failed to download file from URL {}. Reason: '{}'".format(src[0],
-                                                                                                           str(e)))
+                        logger.debug("Failed to download file from URL {}. Reason: '{}'. "
+                                     "Trying to find it in absolute path {}".format(src[0], str(e), abs_path))
+                        logger.info("Failed to download file from URL trying to find it in absolute path")
+                        if not os.path.isfile(abs_path):
+                            raise RebaseHelperError("Failed to download file from URL {} and it's missing in "
+                                                    "absolute path {} ".format(src[0], abs_path))
                 tar_sources.append(abs_path)
         return sources, tar_sources
 
