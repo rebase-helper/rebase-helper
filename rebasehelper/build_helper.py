@@ -343,7 +343,6 @@ class MockBuildTool(BuildToolBase):
 
         if rpms is None:
             # We need to be inform what directory to analyze and what spec file failed
-            print(rpm_results_dir)
             cls.logs.extend([l for l in PathHelper.find_all_files(rpm_results_dir, '*.log')])
             raise BinaryPackageBuildError("Building RPMs failed!", rpm_results_dir, spec)
         else:

@@ -31,10 +31,6 @@ from rebasehelper.logger import logger
 from rebasehelper.exceptions import RebaseHelperError
 
 
-class EnableOptionFormatException(Exception):
-    pass
-
-
 class CLI(object):
     """ Class for processing data from commandline """
 
@@ -42,9 +38,6 @@ class CLI(object):
         """parse arguments"""
         self.parser = argparse.ArgumentParser(description=PROGRAM_DESCRIPTION)
         self.add_args()
-        if '--enable-option' in args:
-            raise EnableOptionFormatException("Wrong format of --enable-option. It must be in following form"
-                                              " --enable-option=\"--desired-option\". \n")
         self.args = self.parser.parse_args(args)
 
     def add_args(self):
@@ -151,8 +144,7 @@ class CLI(object):
             type=int
         )
         self.parser.add_argument(
-            "--enable-option",
-            dest="enable_option",
+            "--builder-option",
             default=None,
             help="Enable arbitrary local builder option. The option MUST be in "
                  "--enable-option=\"--builder-option\" format. "
@@ -177,9 +169,6 @@ class CliHelper(object):
             logger.info('\nInterrupted by user')
         except RebaseHelperError as e:
             logger.error('\n%s', six.text_type(e))
-            sys.exit(1)
-        except EnableOptionFormatException as e:
-            sys.stderr.write("{}".format(e))
             sys.exit(1)
 
         sys.exit(0)

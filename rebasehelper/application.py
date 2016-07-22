@@ -440,7 +440,7 @@ class Application(object):
             build_dict['builds_nowait'] = self.conf.builds_nowait
             build_dict['build_tasks'] = self.conf.build_tasks
             build_dict['enable_option'] = self.conf.enable_option
-            if self.conf.buildtool in ("copr", "fedpkg"):
+            if self.conf.buildtool in ("copr", "fedpkg") and self.conf.enable_option is not None:
                 logger.warning("We are not supporting option --enable-option for builder copr or fedpkg.")
 
             files = {}
