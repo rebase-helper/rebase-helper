@@ -170,12 +170,15 @@ class SpecFile(object):
             archive = [x for x in Archive.get_supported_archives() if src[0].endswith(x)]
             # if the source is a remote file, download it
             if archive:
-                if remote_files_re.search(src[0]) and self.download:
+                if remote_files_re.search(src[0]) and self.download and not os.path.isfile(abs_path):
+                    logger.debug("Tarball is not in absolute path {} "
+                                 "trying to download one from URL {}".format(abs_path, src[0]))
+                    logger.info("Tarball is not in absolute path. Trying to download it from URL")
                     try:
                         DownloadHelper.download_file(src[0], abs_path)
                     except DownloadError as e:
-                        raise RebaseHelperError("Failed to download file from URL {}. Reason: '{}'".format(src[0],
-                                                                                                           str(e)))
+                        raise RebaseHelperError("Failed to download file from URL {}. "
+                                                "Reason: '{}'. ".format(src[0], str(e)))
                 tar_sources.append(abs_path)
         return sources, tar_sources
 
