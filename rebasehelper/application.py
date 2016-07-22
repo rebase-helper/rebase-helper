@@ -410,7 +410,7 @@ class Application(object):
     def build_packages(self):
         """Function calls build class for building packages"""
         if self.conf.buildtool == 'fedpkg' and not koji_builder:
-            print ('Importing module koji failed. Switching to mockbuild.')
+            print('Importing module koji failed. Switching to mockbuild.')
             self.conf.buildtool = 'mock'
         try:
             builder = Builder(self.conf.buildtool)
@@ -439,6 +439,9 @@ class Application(object):
             results_dir = os.path.join(self.results_dir, version)
             build_dict['builds_nowait'] = self.conf.builds_nowait
             build_dict['build_tasks'] = self.conf.build_tasks
+            build_dict['enable_option'] = self.conf.enable_option
+            if self.conf.buildtool in ("copr", "fedpkg"):
+                logger.warning("We are not supporting option --enable-option for builder copr or fedpkg.")
 
             files = {}
             number_retries = 0
@@ -498,7 +501,7 @@ class Application(object):
                     build_log = 'build.log'
                     build_log_path = os.path.join(rpm_dir, build_log)
                     if version == 'old':
-                        raise RebaseHelperError('Building old RPM package failed. Check log %s', build_log_path)
+                        raise RebaseHelperError('Building old RPM package failed. Check log {}'.format(build_log_path))
                     logger.error('Building binary packages failed.')
                     msg = 'Building package failed'
                     try:
