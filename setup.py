@@ -38,7 +38,7 @@ setup(
     author_email='phracek@redhat.com',
     url='https://github.com/phracek/rebase-helper',
     license='GPLv2+',
-    packages=['rebasehelper'],
+    packages=['rebasehelper', 'rebasehelper.checkers'],
     include_package_data=True,
     entry_points={
         'console_scripts': [
