@@ -283,7 +283,7 @@ class MockBuildTool(BuildToolBase):
     logs = []
 
     @classmethod
-    def _build_rpm(cls, srpm, results_dir, root=None, arch=None):
+    def _build_rpm(cls, srpm, results_dir, root=None, arch=None, mock_plugin=None, **kwargs):
         """Build RPM using mock."""
         logger.info("Building RPMs")
         output = os.path.join(results_dir, "mock_output.log")
@@ -293,6 +293,8 @@ class MockBuildTool(BuildToolBase):
             cmd.extend(['--root', root])
         if arch is not None:
             cmd.extend(['--arch', arch])
+        if mock_plugin is not None:
+            cmd.extend(['--enable-plugin={}'.format(mock_plugin)])
 
         ret = ProcessHelper.run_subprocess(cmd, output=output)
 
@@ -327,12 +329,13 @@ class MockBuildTool(BuildToolBase):
         # build SRPM
         srpm, cls.logs = cls._build_srpm(spec, sources, patches, results_dir)
 
+
         # build RPMs
         rpm_results_dir = os.path.join(results_dir, "RPM")
         with MockTemporaryEnvironment(sources, patches, spec, rpm_results_dir) as tmp_env:
             env = tmp_env.env()
             tmp_results_dir = env.get(MockTemporaryEnvironment.TEMPDIR_RESULTS)
-            rpms = cls._build_rpm(srpm, tmp_results_dir)
+            rpms = cls._build_rpm(srpm, tmp_results_dir, **kwargs)
             # remove SRPM - side product of building RPM
             tmp_srpm = PathHelper.find_first_file(tmp_results_dir, "*.src.rpm")
             if tmp_srpm is not None:

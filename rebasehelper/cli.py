@@ -143,6 +143,14 @@ class CLI(object):
             help="Specify number of retries in case build fails.",
             type=int
         )
+        self.parser.add_argument(
+            "--enable-mock-plugin",
+            dest="mock_plugin",
+            choices=['tmpfs', 'root_cache', 'yum_cache', 'bind_mount', 'ccache', 'selinux', 'package_state',
+                     'chroot_scan', 'lvm_root', 'compress_logs', 'sign', 'pm_request'],
+            default=None,
+            help="Enable chosen mock plugin."
+        )
 
     def __getattr__(self, name):
         try:

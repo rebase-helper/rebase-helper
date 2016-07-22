@@ -425,6 +425,7 @@ class Application(object):
             if self.conf.build_tasks is None:
                 build_dict['name'] = spec_object.get_package_name()
                 build_dict['version'] = spec_object.get_version()
+                build_dict['mock_plugin'] = self.conf.mock_plugin
                 patches = [x.get_path() for x in spec_object.get_patches()]
                 spec = spec_object.get_path()
                 sources = spec_object.get_sources()
