@@ -128,7 +128,8 @@ class CLI(object):
             "--builds-nowait",
             default=False,
             action="store_true",
-            help="It starts koji or copr builds and does not care how they finish. Useful for fedpkg and copr build tools."
+            help="It starts koji or copr builds and does not care how they finish. "
+                 "Useful for fedpkg and copr build tools."
         )
         # deprecated argument, kept for backward compatibility
         self.parser.add_argument(
@@ -151,6 +152,13 @@ class CLI(object):
             help="Specify number of retries in case build fails.",
             type=int
         )
+        self.parser.add_argument(
+            "--builder-options",
+            default=None,
+            help="Enable arbitrary local builder option. The option MUST be in "
+                 "--builder-options=\"--some-builder-option\" format. If you want to add more option stay with the "
+                 "given format but divide builder options by whitespaces."
+        )
 
     def __getattr__(self, name):
         try:
@@ -163,10 +171,13 @@ class CliHelper(object):
 
     @staticmethod
     def run():
+        debug_log_file = None
         try:
-            debug_log_file = None
             # be verbose until debug_log_file is created
             handler = LoggerHelper.add_stream_handler(logger, logging.DEBUG)
+            if "--builder-options" in sys.argv[1:]:
+                raise RebaseHelperError("Wrong format of --builder-options. It must be in following form"
+                                        " --builder-options=\"--desired-builder-option\". \n")
             cli = CLI()
             execution_dir, debug_log_file, report_log_file = Application.setup(cli)
             if not cli.verbose:

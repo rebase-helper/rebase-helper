@@ -272,6 +272,13 @@ class BuildToolBase(object):
 
         return srpm, logs
 
+    @staticmethod
+    def get_builder_options(**kwargs):
+        builder_options = kwargs.get('builder_options', None)
+        if builder_options is not None:
+            return filter(None, kwargs['builder_options'].split(" "))
+        return None
+
 
 @register_build_tool
 class MockBuildTool(BuildToolBase):
@@ -283,7 +290,7 @@ class MockBuildTool(BuildToolBase):
     logs = []
 
     @classmethod
-    def _build_rpm(cls, srpm, results_dir, root=None, arch=None):
+    def _build_rpm(cls, srpm, results_dir, root=None, arch=None, builder_options=None):
         """Build RPM using mock."""
         logger.info("Building RPMs")
         output = os.path.join(results_dir, "mock_output.log")
@@ -293,6 +300,8 @@ class MockBuildTool(BuildToolBase):
             cmd.extend(['--root', root])
         if arch is not None:
             cmd.extend(['--arch', arch])
+        if builder_options is not None:
+            cmd.extend(builder_options)
 
         ret = ProcessHelper.run_subprocess(cmd, output=output)
 
@@ -332,7 +341,7 @@ class MockBuildTool(BuildToolBase):
         with MockTemporaryEnvironment(sources, patches, spec, rpm_results_dir) as tmp_env:
             env = tmp_env.env()
             tmp_results_dir = env.get(MockTemporaryEnvironment.TEMPDIR_RESULTS)
-            rpms = cls._build_rpm(srpm, tmp_results_dir)
+            rpms = cls._build_rpm(srpm, tmp_results_dir, builder_options=cls.get_builder_options(**kwargs))
             # remove SRPM - side product of building RPM
             tmp_srpm = PathHelper.find_first_file(tmp_results_dir, "*.src.rpm")
             if tmp_srpm is not None:
@@ -371,7 +380,7 @@ class RpmbuildBuildTool(BuildToolBase):
     logs = []
 
     @classmethod
-    def _build_rpm(cls, srpm, workdir, results_dir):
+    def _build_rpm(cls, srpm, workdir, results_dir, builder_options=None):
         """
         Build RPM using rpmbuild.
 
@@ -386,6 +395,8 @@ class RpmbuildBuildTool(BuildToolBase):
         output = os.path.join(results_dir, "build.log")
 
         cmd = [cls.CMD, '--rebuild', srpm]
+        if builder_options is not None:
+            cmd.extend(builder_options)
         ret = ProcessHelper.run_subprocess_cwd_env(cmd,
                                                    env={'HOME': workdir},
                                                    output=output)
@@ -425,7 +436,7 @@ class RpmbuildBuildTool(BuildToolBase):
             env = tmp_env.env()
             tmp_dir = tmp_env.path()
             tmp_results_dir = env.get(RpmbuildTemporaryEnvironment.TEMPDIR_RESULTS)
-            rpms = cls._build_rpm(srpm, tmp_dir, tmp_results_dir)
+            rpms = cls._build_rpm(srpm, tmp_dir, tmp_results_dir, builder_options=cls.get_builder_options(**kwargs))
 
         if rpms is None:
             cls.logs.extend([l for l in PathHelper.find_all_files(rpm_results_dir, '*.log')])
