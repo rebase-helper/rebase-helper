@@ -32,7 +32,7 @@ from rebasehelper.logger import logger, logger_report, LoggerHelper
 from rebasehelper import settings
 from rebasehelper import output_tool
 from rebasehelper.utils import PathHelper, RpmHelper, ConsoleHelper, GitHelper, KojiHelper, FileHelper, CoprHelper
-from rebasehelper.checker import CheckersRunner
+from rebasehelper.checker import checkers_runner
 from rebasehelper.build_helper import Builder, SourcePackageBuildError, BinaryPackageBuildError, koji_builder
 from rebasehelper.patch_helper import Patcher
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
@@ -199,7 +199,7 @@ class Application(object):
         self.new_rest_sources = [os.path.abspath(x) for x in self.new_rest_sources]
 
         # We want to inform user immediately if compare tool doesn't exist
-        supported_tools = CheckersRunner().get_supported_tools()
+        supported_tools = checkers_runner.get_supported_tools()
         if self.conf.pkgcomparetool and self.conf.pkgcomparetool not in supported_tools:
             raise RebaseHelperError('You have to specify one of these check tools %s' % supported_tools)
 
@@ -549,17 +549,16 @@ class Application(object):
         :return: 
         """
         pkgdiff_results = {}
-        checker = CheckersRunner()
         if not self.conf.pkgcomparetool:
             # no specific checker was given, just run all of them
-            for checker_name in checker.get_supported_tools():
+            for checker_name in checkers_runner.get_supported_tools():
                 try:
-                    results = checker.run_checker(dir_name, checker_name)
+                    results = checkers_runner.run_checker(dir_name, checker_name)
                     pkgdiff_results[checker_name] = results
                 except CheckerNotFoundError:
                     logger.info("Rebase-helper did not find checker '%s'." % checker_name)
         else:
-            pkgdiff_results[self.conf.pkgcomparetool] = checker.run_checker(dir_name, self.conf.pkgcomparetool)
+            pkgdiff_results[self.conf.pkgcomparetool] = checkers_runner.run_checker(dir_name, self.conf.pkgcomparetool)
         if pkgdiff_results:
             for diff_name, result in six.iteritems(pkgdiff_results):
                 OutputLogger.set_checker_output(diff_name, result)

@@ -128,3 +128,7 @@ class CheckersRunner(object):
     def get_supported_tools(self):
         """Return list of supported tools"""
         return self.plugin_classes.keys()
+
+
+# Global instance of CheckersRunner. It is enough to load it once per application run.
+checkers_runner = CheckersRunner()
