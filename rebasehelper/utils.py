@@ -1032,8 +1032,8 @@ class KojiHelper(object):
                                     if info['arch'] == 'x86_64' or info['arch'] == 'noarch':
                                         rh_tasks[info['id']] = state
                                 all_done = False
-                    except SSL.SysCallError as exc:
-                        logger.error('We have detected a exception %s', exc.message)
+                    except SSL.SysCallError as e:
+                        logger.error('Detected SSL error: %s', six.text_type(e))
                 if all_done:
                     cls.display_task_results(tasks)
                     break
