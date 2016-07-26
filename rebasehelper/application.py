@@ -32,7 +32,7 @@ from rebasehelper.logger import logger, logger_report, LoggerHelper
 from rebasehelper import settings
 from rebasehelper import output_tool
 from rebasehelper.utils import PathHelper, RpmHelper, ConsoleHelper, GitHelper, KojiHelper, FileHelper, CoprHelper
-from rebasehelper.checker import Checker
+from rebasehelper.checker import CheckersRunner
 from rebasehelper.build_helper import Builder, SourcePackageBuildError, BinaryPackageBuildError, koji_builder
 from rebasehelper.patch_helper import Patcher
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
@@ -199,7 +199,7 @@ class Application(object):
         self.new_rest_sources = [os.path.abspath(x) for x in self.new_rest_sources]
 
         # We want to inform user immediately if compare tool doesn't exist
-        supported_tools = Checker().get_supported_tools()
+        supported_tools = CheckersRunner().get_supported_tools()
         if self.conf.pkgcomparetool and self.conf.pkgcomparetool not in supported_tools:
             raise RebaseHelperError('You have to specify one of these check tools %s' % supported_tools)
 
@@ -549,7 +549,7 @@ class Application(object):
         :return: 
         """
         pkgdiff_results = {}
-        checker = Checker()
+        checker = CheckersRunner()
         if not self.conf.pkgcomparetool:
             for check in checker.get_supported_tools():
                 try:

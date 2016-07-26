@@ -50,9 +50,9 @@ class BaseChecker(object):
         raise NotImplementedError()
 
 
-class Checker(object):
+class CheckersRunner(object):
     """
-    Class representing a process of checking final packages.
+    Class representing the process of running various checkers on final packages.
     """
 
     def __init__(self, dir_name=os.path.join(os.path.dirname(__file__), 'checkers')):

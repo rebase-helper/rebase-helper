@@ -22,7 +22,7 @@
 
 import os
 from .base_test import BaseTest
-from rebasehelper.checker import Checker
+from rebasehelper.checker import CheckersRunner
 
 
 class TestPkgDiff(BaseTest):
@@ -54,7 +54,7 @@ class TestPkgDiff(BaseTest):
                                    '/usr/sbin/pkg-*/binary_test;/usr/sbin/pkg-*/binary_test (1%)'],
                          'renamed': ['/usr/lib/libtest3.so.3',
                                      '/usr/lib/libtest3.so']}
-        checker = Checker()
+        checker = CheckersRunner()
         checker.plugin_classes['pkgdiff'].results_dir = self.TEST_FILES_DIR
         checker.plugin_classes['pkgdiff'].fill_dictionary(self.TEST_FILES_DIR,
                                                           old_version='1.0.1',
@@ -73,7 +73,7 @@ class TestPkgDiff(BaseTest):
                                      '/usr/lib64/libtest2.so.1'],
                          'renamed': ['/usr/lib/libtest3.so.3',
                                      '/usr/lib/libtest3.so']}
-        checker = Checker()
+        checker = CheckersRunner()
         checker.plugin_classes['pkgdiff'].results_dir = self.TEST_FILES_DIR
         res_dict = checker.plugin_classes['pkgdiff'].process_xml_results(self.TEST_FILES_DIR,
                                                                          old_version='1.0.1',
