@@ -542,26 +542,28 @@ class Application(object):
 
         return True
 
-    def pkgdiff_packages(self, dir_name):
+    def run_package_checkers(self, results_dir):
         """
-        Function calls pkgdiff class for comparing packages
-        :param dir_name: specify a result dir
-        :return: 
+        Runs checkers on packages and stores results in a given directory.
+
+        :param results_dir: Path to directory in which to store the results.
+        :type results_dir: str
+        :return: None
         """
-        pkgdiff_results = {}
-        if not self.conf.pkgcomparetool:
+        results = dict()
+
+        if self.conf.pkgcomparetool:
+            results[self.conf.pkgcomparetool] = checkers_runner.run_checker(results_dir, self.conf.pkgcomparetool)
+        else:
             # no specific checker was given, just run all of them
             for checker_name in checkers_runner.get_supported_tools():
                 try:
-                    results = checkers_runner.run_checker(dir_name, checker_name)
-                    pkgdiff_results[checker_name] = results
+                    results[checker_name] = checkers_runner.run_checker(results_dir, checker_name)
                 except CheckerNotFoundError:
-                    logger.info("Rebase-helper did not find checker '%s'." % checker_name)
-        else:
-            pkgdiff_results[self.conf.pkgcomparetool] = checkers_runner.run_checker(dir_name, self.conf.pkgcomparetool)
-        if pkgdiff_results:
-            for diff_name, result in six.iteritems(pkgdiff_results):
-                OutputLogger.set_checker_output(diff_name, result)
+                    logger.error("Rebase-helper did not find checker '%s'." % checker_name)
+
+        for diff_name, result in six.iteritems(results):
+            OutputLogger.set_checker_output(diff_name, result)
 
     def get_all_log_files(self):
         """
@@ -649,6 +651,7 @@ class Application(object):
         return rh_stuff
 
     def run_download_compare(self, tasks_dict, dir_name):
+        # TODO: Add doc text with explanation
         self.set_upstream_monitoring()
         kh = KojiHelper()
         for version in ['old', 'new']:
@@ -662,7 +665,7 @@ class Application(object):
             rh_dict['name'] = package
             OutputLogger.set_build_data(version, rh_dict)
         if tasks_dict['status'] == 'CLOSED':
-            self.pkgdiff_packages(dir_name)
+            self.run_package_checkers(dir_name)
         self.print_summary()
         rh_stuff = self.get_rebasehelper_data()
         logger.info(rh_stuff)
@@ -712,7 +715,7 @@ class Application(object):
                 # We don't care dirname doesn't contain any RPM packages
                 # Therefore return 1
             if build:
-                self.pkgdiff_packages(self.results_dir)
+                self.run_package_checkers(self.results_dir)
             else:
                 if not self.upstream_monitoring:
                     logger.info('Rebase package to %s FAILED. See for more details', self.conf.sources)
