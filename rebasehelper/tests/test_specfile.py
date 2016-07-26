@@ -200,6 +200,9 @@ class TestSpecFile(BaseTest):
         name = 'http://www.thekelleys.org.uk/dnsmasq/%{?extrapath}%{name}-%{version}%{?extraversion}.tar.xz'
         assert SpecFile.extract_version_from_archive_name('dnsmasq-2.69rc1.tar.xz',
                                                           name) == ('2.69', 'rc1')
+        name = 'http://downloads.sourceforge.net/%{name}/%{name}-%{version}%{?prever:-%{prever}}.tar.xz'
+        assert SpecFile.extract_version_from_archive_name('log4cplus-1.1.3-rc3.tar.xz',
+                                                          name) == ('1.1.3', 'rc3')
 
     def test__split_sections(self):
         expected_sections = {

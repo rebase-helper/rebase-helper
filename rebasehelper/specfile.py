@@ -960,15 +960,17 @@ class SpecFile(object):
         :param source_string: Source string from SPEC file used to construct version extraction regex
         :return: tuple of strings with (extracted version, extra version) or (None, None) if extraction failed
         """
-        version_regex_str = '([.0-9]+\w*)'
-        fallback_regex_str = '^\w+-?_?v?{0}({1})'.format(version_regex_str,
-                                                         '|'.join(Archive.get_supported_archives()))
+        # https://regexper.com/#(%5B.0-9%5D%2B%5B-_%5D%3F%5Cw*)
+        version_regex_str = '([.0-9]+[-_]?\w*)'
+        fallback_regex_str = '^\w+[-_]?v?{0}({1})'.format(version_regex_str,
+                                                          '|'.join(Archive.get_supported_archives()))
         # match = re.search(regex, tarball_name)
         name = os.path.basename(archive_path)
         url_base = os.path.basename(source_string).strip()
 
         logger.debug("Extracting version from '%s' using '%s'", name, url_base)
-        regex_str = re.sub(r'%{version}', version_regex_str, url_base, flags=re.IGNORECASE)
+        # expect that the version macro can be followed by another macros
+        regex_str = re.sub(r'%{version}(%{.+})?', version_regex_str, url_base, flags=re.IGNORECASE)
 
         # if no substitution was made, use the fallback regex
         if regex_str == url_base:
