@@ -57,7 +57,14 @@ class Checker(object):
     Class representing a process of checking final packages.
     """
 
-    def __init__(self, dir_name):
+    def __init__(self, dir_name=os.path.join(os.path.dirname(__file__), 'checkers')):
+        """
+        Constructor of a Checker class.
+
+        :param dir_name: Path to directory witch contains various checkers. By default the it looks for checkers inside
+        'checkers' subdirectory in the project's installation location.
+        :type dir_name: str
+        """
         self._injector_type = 'BaseChecker'
         self.plugin_classes = self.load_checkers(dir_name)
 
@@ -72,9 +79,16 @@ class Checker(object):
                 injectors.append(attr)
         return injectors
 
-    def load_checkers(self, dir_name):
+    def load_checkers(self, plugins_dir):
+        """
+        Load checker implementations from the given location.
+
+        :param plugins_dir: Path to directory from which to load the checkers.
+        :type plugins_dir: str
+        :return: Dictionary with names of the checkers and the actual checker objects.
+        :rtype: dict
+        """
         plugin_checkers = {}
-        plugins_dir = os.path.join(dir_name, 'checkers')
         for plugin in os.listdir(plugins_dir):
             if not plugin.endswith('.py'):
                 continue

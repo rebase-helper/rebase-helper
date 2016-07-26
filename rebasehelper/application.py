@@ -199,7 +199,7 @@ class Application(object):
         self.new_rest_sources = [os.path.abspath(x) for x in self.new_rest_sources]
 
         # We want to inform user immediately if compare tool doesn't exist
-        supported_tools = Checker(os.path.dirname(__file__)).get_supported_tools()
+        supported_tools = Checker().get_supported_tools()
         if self.conf.pkgcomparetool and self.conf.pkgcomparetool not in supported_tools:
             raise RebaseHelperError('You have to specify one of these check tools %s' % supported_tools)
 
@@ -561,7 +561,7 @@ class Application(object):
         :return: 
         """
         pkgdiff_results = {}
-        checker = Checker(os.path.dirname(__file__))
+        checker = Checker()
         if not self.conf.pkgcomparetool:
             for check in checker.get_supported_tools():
                 try:
