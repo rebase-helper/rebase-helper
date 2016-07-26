@@ -937,7 +937,7 @@ class SpecFile(object):
         :param version_string: version string such as '1.1.1' or '1.2.3b1', ...
         :return: tuple of strings with (extracted version, extra version) or (None, None) if extraction failed
         """
-        version_split_regex_str = '([.0-9]+)(\w*)'
+        version_split_regex_str = '([0-9]+[.0-9]*)[_-]?(\w*)'
         version_split_regex = re.compile(version_split_regex_str)
         logger.debug("Splitting string '%s'", version_string)
         match = version_split_regex.search(version_string)

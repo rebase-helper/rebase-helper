@@ -178,6 +178,8 @@ class TestSpecFile(BaseTest):
         assert SpecFile.split_version_string('1.0.1') == ('1.0.1', '')
         assert SpecFile.split_version_string('1.0.1b1') == ('1.0.1', 'b1')
         assert SpecFile.split_version_string('1.0.1rc1') == ('1.0.1', 'rc1')
+        assert SpecFile.split_version_string('1.1.3-rc6') == ('1.1.3', 'rc6')
+        assert SpecFile.split_version_string('.1.1.1') == ('1.1.1', '')
 
     def test_extract_version_from_archive_name(self):
         # Basic tests
