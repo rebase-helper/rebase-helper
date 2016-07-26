@@ -542,18 +542,6 @@ class Application(object):
 
         return True
 
-    def _execute_checkers(self, checker, dir_name):
-        """
-        Function executes a checker based on command line arguments
-
-        :param checker: checker name based from command line
-        :return: Nothing
-        """
-        pkgchecker = Checker(checker)
-        logger.info('Comparing packages using %s...', checker)
-        text = pkgchecker.run_check(dir_name)
-        return text
-
     def pkgdiff_packages(self, dir_name):
         """
         Function calls pkgdiff class for comparing packages

@@ -27,8 +27,6 @@ import six
 
 from rebasehelper.logger import logger
 
-check_tools = {}
-
 
 class BaseChecker(object):
     """ Base class used for testing tool run on final pkgs. """
@@ -67,9 +65,6 @@ class Checker(object):
         """
         self._injector_type = 'BaseChecker'
         self.plugin_classes = self.load_checkers(dir_name)
-
-    def __str__(self):
-        return "<Checker tool_name='{_tool_name}' tool={_tool}>".format(**vars(self))
 
     def checker_find_injector(self, module):
         injectors = []
