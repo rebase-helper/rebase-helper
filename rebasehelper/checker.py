@@ -66,7 +66,7 @@ class Checker(object):
         self._injector_type = 'BaseChecker'
         self.plugin_classes = self.load_checkers(dir_name)
 
-    def checker_find_injector(self, module):
+    def _checker_find_injector(self, module):
         injectors = []
         for n in dir(module):
             attr = getattr(module, n)
@@ -93,7 +93,7 @@ class Checker(object):
                 f, filename, description = imp.find_module(modname, [fullpath])
                 m = imp.load_module(modname, open(filename, 'U'), filename, description)
                 try:
-                    injs = self.checker_find_injector(m)
+                    injs = self._checker_find_injector(m)
                     for i in injs:
                         obj = i()
                         plugin_checkers[obj.get_checker_name()] = obj
