@@ -551,14 +551,15 @@ class Application(object):
         pkgdiff_results = {}
         checker = CheckersRunner()
         if not self.conf.pkgcomparetool:
-            for check in checker.get_supported_tools():
+            # no specific checker was given, just run all of them
+            for checker_name in checker.get_supported_tools():
                 try:
-                    results = checker.run_check(dir_name, checker_name=check)
-                    pkgdiff_results[check] = results
+                    results = checker.run_checker(dir_name, checker_name)
+                    pkgdiff_results[checker_name] = results
                 except CheckerNotFoundError:
-                    logger.info("Rebase-helper did not find checker '%s'." % check)
+                    logger.info("Rebase-helper did not find checker '%s'." % checker_name)
         else:
-            pkgdiff_results[self.conf.pkgcomparetool] = checker.run_check(dir_name, checker_name=self.conf.pkgcomparetool)
+            pkgdiff_results[self.conf.pkgcomparetool] = checker.run_checker(dir_name, self.conf.pkgcomparetool)
         if pkgdiff_results:
             for diff_name, result in six.iteritems(pkgdiff_results):
                 OutputLogger.set_checker_output(diff_name, result)

@@ -101,17 +101,29 @@ class CheckersRunner(object):
                     print ("Module '%s' does not implement `register(context)`" % modname)
         return plugin_checkers
 
-    def run_check(self, results_dir, checker_name=None):
-        """Run the check"""
-        _tool = None
+    def run_checker(self, results_dir, checker_name):
+        """
+        Runs a particular checker and returns the results.
+
+        :param results_dir: Path to a directory in which the checker should store the results.
+        :type results_dir: str
+        :param checker_name: Name of the checker to run. Ideally this should be name of existing checker.
+        :type checker_name: str
+        :raises NotImplementedError: If checker with the given name does not exist.
+        :return: results from the checker
+        """
+        checker = None
         for check_tool in six.itervalues(self.plugin_classes):
             if check_tool.match(checker_name):
-                _tool = checker_name
+                # we found the checker we are looking for
+                checker = check_tool
+                break
 
-        if _tool is None:
-            raise NotImplementedError("Unsupported checking tool")
-        logger.info("Running tests on packages using '%s'", _tool)
-        return self.plugin_classes[_tool].run_check(results_dir)
+        if checker is None:
+            raise NotImplementedError("Unsupported checking tool '{}'".format(checker_name))
+
+        logger.info("Running tests on packages using '%s'", checker_name)
+        return checker.run_check(results_dir)
 
     def get_supported_tools(self):
         """Return list of supported tools"""
