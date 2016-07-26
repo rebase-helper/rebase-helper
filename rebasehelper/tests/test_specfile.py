@@ -352,7 +352,7 @@ class TestSpecFile(BaseTest):
         # the release number was changed
         assert self.SPEC_FILE_OBJECT.get_release_number() == '0.1'
         # the release string now contains the extra version
-        match = re.search(r'([0-9.]*[0-9]+)b1\w*', self.SPEC_FILE_OBJECT.get_release())
+        match = re.search(r'([0-9.]*[0-9]+)\.b1\w*', self.SPEC_FILE_OBJECT.get_release())
         assert match is not None
         assert match.group(1) == self.SPEC_FILE_OBJECT.get_release_number()
 
@@ -372,7 +372,7 @@ class TestSpecFile(BaseTest):
         with open(self.SPEC_FILE_OBJECT.get_path()) as f:
             while f.readline() != '#Release: 33%{?dist}\n':
                 pass
-            assert f.readline() == 'Release: 33' + macro + '%{?dist}\n'
+            assert f.readline() == 'Release: 33' + '.' + macro + '%{?dist}\n'
 
     def test_revert_redefine_release_with_macro(self):
         macro = '%{REBASE_VER}'

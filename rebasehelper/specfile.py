@@ -399,7 +399,8 @@ class SpecFile(object):
         :return: 
         """
         for line in self.spec_content:
-            match = re.search(r'^Release:\s*([0-9.]+).*%{\?dist}\s*', line)
+            # https://regexper.com/#%5ERelease%3A%5Cs*(%5B0-9%5D*%5C.%3F%5B0-9%5D%2B)(%5C..%2B)%3F%25%7B%5C%3Fdist%7D%5Cs*
+            match = re.search(r'^Release:\s*([0-9]*\.?[0-9]+)(\..+)?%{\?dist}\s*', line)
             if match:
                 return match.group(1)
 
@@ -707,7 +708,7 @@ class SpecFile(object):
         """
         for index, line in enumerate(self.spec_content):
             if line.startswith('Release:'):
-                new_release_line = re.sub(r'(Release:\s*[0-9.]*[0-9]+).*(%{\?dist}\s*)', r'\g<1>{0}\2'.format(macro),
+                new_release_line = re.sub(r'(Release:\s*[0-9.]*[0-9]+).*(%{\?dist}\s*)', r'\g<1>.{0}\2'.format(macro),
                                           line)
                 logger.debug("Commenting out original Release line '%s'", line.strip())
                 self.spec_content[index] = '#{0}'.format(line)
@@ -723,7 +724,7 @@ class SpecFile(object):
         :param macro: 
         :return: 
         """
-        search_re = re.compile('^Release:\s*[0-9.]*[0-9]+{0}%{{\?dist}}\s*'.format(macro))
+        search_re = re.compile('^Release:\s*[0-9.]*[0-9]+\.{0}%{{\?dist}}\s*'.format(macro))
 
         for index, line in enumerate(self.spec_content):
             match = search_re.search(line)
