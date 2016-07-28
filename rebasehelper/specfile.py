@@ -29,7 +29,6 @@ import rpm
 import argparse
 import shlex
 from datetime import date
-from difflib import SequenceMatcher
 
 from rebasehelper.utils import DownloadHelper, DownloadError, MacroHelper, defenc
 from rebasehelper.logger import logger
@@ -834,9 +833,11 @@ class SpecFile(object):
                 # insert the REBASE_VER and REBASE_EXTRA_VER definitions
                 self.spec_content.insert(0, rebase_extra_version_def)
                 self.spec_content.insert(0, new_extra_version_line)
+
                 # change Release to 0.1 and append the extra version macro
                 self.set_release_number('0.1')
                 self.redefine_release_with_macro(extra_version_macro)
+
                 # change the Source0 definition
                 source0_re = re.compile(r'^Source0?:.*')
                 for index, line in enumerate(self.spec_content):
@@ -844,24 +845,23 @@ class SpecFile(object):
                         # comment out the original Source0 line
                         logger.debug("Commenting out original Source0 line '%s'", line.strip())
                         self.spec_content[index] = '#{0}'.format(line)
-
-                        # construct new archive name with %{REBASE_VER}
-                        # replacing the version that will be used in Source0
-                        basename_raw = os.path.basename(line.strip())
+                        # construct new Source0 line. The idea is that we use the expanded archive name to create
+                        # new Source0. We used raw original Source0 before, but it didn't work reliably.
+                        source0_raw = line
                         basename_expanded = self.get_archive()
-                        match_blocks = list(SequenceMatcher(None, basename_raw, basename_expanded).get_matching_blocks())
-                        # since the version is usually in the end of the archive name, use the last start of different
-                        # section as the start of version macro
-                        mb_version_section_beginning = match_blocks[-3][0] + match_blocks[-3][2]
-                        mb_start_of_last_common_sect = match_blocks[-2][0]
-                        new_basename_with_macro = '{0}{1}{2}'.format(basename_raw[:mb_version_section_beginning],
-                                                                     '%{REBASE_VER}',
-                                                                     basename_raw[mb_start_of_last_common_sect:])
-                        logger.debug("New Source0 basename with macro '%s'", new_basename_with_macro)
+                        # construct the original version in archive name so that we can replace it
+                        original_version = '{0}{2}{1}'.format(*self.extract_version_from_archive_name(
+                            basename_expanded,
+                            source0_raw)
+                        )
+                        # replace the version with macro
+                        new_basename_with_macro = basename_expanded.replace(original_version, '%{REBASE_VER}')
+                        # replace the name with macro to be cool :)
+                        new_basename_with_macro = new_basename_with_macro.replace(self.get_package_name(), '%{name}')
                         # replace the archive name in old Source0 with new one
-                        new_source0_line = str.replace(line, basename_raw, new_basename_with_macro)
-                        logger.debug("Inserting new Source0 line '%s'", new_source0_line.strip())
-                        self.spec_content.insert(index + 1, new_source0_line)
+                        new_source0_line = source0_raw.replace(os.path.basename(source0_raw), new_basename_with_macro)
+                        logger.debug("Inserting new Source0 line '%s'", new_source0_line)
+                        self.spec_content.insert(index + 1, new_source0_line + '\n')
                         break
         else:
             # set the Release to 1 and revert the redefined Release with macro if needed
