@@ -27,8 +27,6 @@ import six
 
 from rebasehelper.logger import logger
 
-check_tools = {}
-
 
 class BaseChecker(object):
     """ Base class used for testing tool run on final pkgs. """
@@ -52,19 +50,23 @@ class BaseChecker(object):
         raise NotImplementedError()
 
 
-class Checker(object):
+class CheckersRunner(object):
     """
-    Class representing a process of checking final packages.
+    Class representing the process of running various checkers on final packages.
     """
 
-    def __init__(self, dir_name):
+    def __init__(self, dir_name=os.path.join(os.path.dirname(__file__), 'checkers')):
+        """
+        Constructor of a Checker class.
+
+        :param dir_name: Path to directory witch contains various checkers. By default the it looks for checkers inside
+        'checkers' subdirectory in the project's installation location.
+        :type dir_name: str
+        """
         self._injector_type = 'BaseChecker'
         self.plugin_classes = self.load_checkers(dir_name)
 
-    def __str__(self):
-        return "<Checker tool_name='{_tool_name}' tool={_tool}>".format(**vars(self))
-
-    def checker_find_injector(self, module):
+    def _checker_find_injector(self, module):
         injectors = []
         for n in dir(module):
             attr = getattr(module, n)
@@ -72,9 +74,16 @@ class Checker(object):
                 injectors.append(attr)
         return injectors
 
-    def load_checkers(self, dir_name):
+    def load_checkers(self, plugins_dir):
+        """
+        Load checker implementations from the given location.
+
+        :param plugins_dir: Path to directory from which to load the checkers.
+        :type plugins_dir: str
+        :return: Dictionary with names of the checkers and the actual checker objects.
+        :rtype: dict
+        """
         plugin_checkers = {}
-        plugins_dir = os.path.join(dir_name, 'checkers')
         for plugin in os.listdir(plugins_dir):
             if not plugin.endswith('.py'):
                 continue
@@ -84,7 +93,7 @@ class Checker(object):
                 f, filename, description = imp.find_module(modname, [fullpath])
                 m = imp.load_module(modname, open(filename, 'U'), filename, description)
                 try:
-                    injs = self.checker_find_injector(m)
+                    injs = self._checker_find_injector(m)
                     for i in injs:
                         obj = i()
                         plugin_checkers[obj.get_checker_name()] = obj
@@ -92,18 +101,34 @@ class Checker(object):
                     print ("Module '%s' does not implement `register(context)`" % modname)
         return plugin_checkers
 
-    def run_check(self, results_dir, checker_name=None):
-        """Run the check"""
-        _tool = None
+    def run_checker(self, results_dir, checker_name):
+        """
+        Runs a particular checker and returns the results.
+
+        :param results_dir: Path to a directory in which the checker should store the results.
+        :type results_dir: str
+        :param checker_name: Name of the checker to run. Ideally this should be name of existing checker.
+        :type checker_name: str
+        :raises NotImplementedError: If checker with the given name does not exist.
+        :return: results from the checker
+        """
+        checker = None
         for check_tool in six.itervalues(self.plugin_classes):
             if check_tool.match(checker_name):
-                _tool = checker_name
+                # we found the checker we are looking for
+                checker = check_tool
+                break
 
-        if _tool is None:
-            raise NotImplementedError("Unsupported checking tool")
-        logger.info("Running tests on packages using '%s'", _tool)
-        return self.plugin_classes[_tool].run_check(results_dir)
+        if checker is None:
+            raise NotImplementedError("Unsupported checking tool '{}'".format(checker_name))
+
+        logger.info("Running tests on packages using '%s'", checker_name)
+        return checker.run_check(results_dir)
 
     def get_supported_tools(self):
         """Return list of supported tools"""
         return self.plugin_classes.keys()
+
+
+# Global instance of CheckersRunner. It is enough to load it once per application run.
+checkers_runner = CheckersRunner()

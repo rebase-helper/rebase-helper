@@ -20,9 +20,8 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
-import os
 from .base_test import BaseTest
-from rebasehelper.checker import Checker
+from rebasehelper.checker import checkers_runner
 
 
 class TestPkgDiff(BaseTest):
@@ -54,12 +53,11 @@ class TestPkgDiff(BaseTest):
                                    '/usr/sbin/pkg-*/binary_test;/usr/sbin/pkg-*/binary_test (1%)'],
                          'renamed': ['/usr/lib/libtest3.so.3',
                                      '/usr/lib/libtest3.so']}
-        checker = Checker(os.path.join(os.path.dirname(__file__), '..'))
-        checker.plugin_classes['pkgdiff'].results_dir = self.TEST_FILES_DIR
-        checker.plugin_classes['pkgdiff'].fill_dictionary(self.TEST_FILES_DIR,
-                                                          old_version='1.0.1',
-                                                          new_version='1.0.2')
-        assert checker.plugin_classes['pkgdiff'].results_dict == expected_dict
+        checkers_runner.plugin_classes['pkgdiff'].results_dir = self.TEST_FILES_DIR
+        checkers_runner.plugin_classes['pkgdiff'].fill_dictionary(self.TEST_FILES_DIR,
+                                                                  old_version='1.0.1',
+                                                                  new_version='1.0.2')
+        assert checkers_runner.plugin_classes['pkgdiff'].results_dict == expected_dict
 
     def test_process_xml(self):
         expected_dict = {'added': ['/usr/sbin/test',
@@ -73,10 +71,9 @@ class TestPkgDiff(BaseTest):
                                      '/usr/lib64/libtest2.so.1'],
                          'renamed': ['/usr/lib/libtest3.so.3',
                                      '/usr/lib/libtest3.so']}
-        checker = Checker(os.path.join(os.path.dirname(__file__), '..'))
-        checker.plugin_classes['pkgdiff'].results_dir = self.TEST_FILES_DIR
-        res_dict = checker.plugin_classes['pkgdiff'].process_xml_results(self.TEST_FILES_DIR,
-                                                                         old_version='1.0.1',
-                                                                         new_version='1.0.2')
+        checkers_runner.plugin_classes['pkgdiff'].results_dir = self.TEST_FILES_DIR
+        res_dict = checkers_runner.plugin_classes['pkgdiff'].process_xml_results(self.TEST_FILES_DIR,
+                                                                                 old_version='1.0.1',
+                                                                                 new_version='1.0.2')
         assert res_dict == expected_dict
 
