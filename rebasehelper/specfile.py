@@ -831,7 +831,9 @@ class SpecFile(object):
             #  we need to create the extra version definition
             else:
                 # insert the REBASE_VER and REBASE_EXTRA_VER definitions
+                logger.debug("Adding new line to spec: %s", rebase_extra_version_def.strip())
                 self.spec_content.insert(0, rebase_extra_version_def)
+                logger.debug("Adding new line to spec: %s", new_extra_version_line.strip())
                 self.spec_content.insert(0, new_extra_version_line)
 
                 # change Release to 0.1 and append the extra version macro
