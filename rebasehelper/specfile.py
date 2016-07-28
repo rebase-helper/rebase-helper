@@ -127,6 +127,7 @@ class SpecFile(object):
         # Load rpm information
         self.spc = rpm.spec(self.path)
         self.patches = self._get_initial_patches_list()
+        self.set_extra_version_separator('')
         self._update_data()
 
     def _update_data(self):
@@ -149,8 +150,12 @@ class SpecFile(object):
         # determine the extra_version
         logger.debug("Updating the extra version")
         self.sources, self.tar_sources = self._get_initial_sources_list()
-        self.extra_version = SpecFile.extract_version_from_archive_name(self.get_archive(),
-                                                                        self._get_raw_source_string(0))[1]
+
+        _, self.extra_version, separator = SpecFile.extract_version_from_archive_name(
+            self.get_archive(),
+            self._get_raw_source_string(0))
+        self.set_extra_version_separator(separator)
+
         self.patches = self._get_initial_patches_list()
         self.macros = MacroHelper.dump()
 
@@ -806,7 +811,9 @@ class SpecFile(object):
         extra_version_macro = '%{?REBASE_EXTRA_VER}'
         extra_version_re = re.compile('^{0}.*$'.format(extra_version_def))
         extra_version_line_index = None
-        rebase_extra_version_def = '%global REBASE_VER %{version}%{REBASE_EXTRA_VER}\n'
+        rebase_extra_version_def = '%global REBASE_VER %{version}' + \
+                                   self.extra_version_separator + \
+                                   '%{REBASE_EXTRA_VER}\n'
         new_extra_version_line = '%global REBASE_EXTRA_VER {0}\n'.format(extra_version)
 
         logger.debug("Updating extra version in SPEC to '%s'", extra_version)
@@ -862,8 +869,17 @@ class SpecFile(object):
             self.revert_redefine_release_with_macro(extra_version_macro)
             # TODO: handle empty extra_version as removal of the definitions!
 
-        #  save changes
+        # save changes
         self.save()
+
+    def set_extra_version_separator(self, separator):
+        """
+        Set the string that separates the version and extra version
+
+        :param separator:
+        :return:
+        """
+        self.extra_version_separator = separator
 
     def set_version_using_archive(self, archive_path):
         """
@@ -873,14 +889,15 @@ class SpecFile(object):
         :param archive_path: 
         :return: 
         """
-        version, extra_version = SpecFile.extract_version_from_archive_name(archive_path,
-                                                                            self._get_raw_source_string(0))
+        version, extra_version, separator = SpecFile.extract_version_from_archive_name(archive_path,
+                                                                                       self._get_raw_source_string(0))
 
         if not version:
             # can't continue without version
             raise RebaseHelperError('Failed to extract version from archive name')
 
         self.set_version(version)
+        self.set_extra_version_separator(separator)
         self.set_extra_version(extra_version)
 
     def write_updated_patches(self, patches):
@@ -936,19 +953,24 @@ class SpecFile(object):
         Method splits version string into version and possibly extra string as 'rc1' or 'b1', ...
 
         :param version_string: version string such as '1.1.1' or '1.2.3b1', ...
-        :return: tuple of strings with (extracted version, extra version) or (None, None) if extraction failed
+        :return: tuple of strings with (extracted version, extra version, separator) or (None, None, None) if extraction
+        failed
         """
-        version_split_regex_str = '([0-9]+[.0-9]*)[_-]?(\w*)'
+        version_split_regex_str = '([0-9]+[.0-9]*)([_-]?)(\w*)'
         version_split_regex = re.compile(version_split_regex_str)
         logger.debug("Splitting string '%s'", version_string)
         match = version_split_regex.search(version_string)
         if match:
             version = match.group(1)
-            extra_version = match.group(2)
-            logger.debug("Divided version '%s' and extra string '%s'", version, extra_version)
-            return version, extra_version
+            separator = match.group(2)
+            extra_version = match.group(3)
+            logger.debug("Divided version '%s' and extra string '%s' separated by '%s'",
+                         version,
+                         extra_version,
+                         separator)
+            return version, extra_version, separator
         else:
-            return None, None
+            return None, None, None
 
     @staticmethod
     def extract_version_from_archive_name(archive_path, source_string=''):
