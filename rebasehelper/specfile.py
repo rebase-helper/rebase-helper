@@ -841,7 +841,7 @@ class SpecFile(object):
                 self.redefine_release_with_macro(extra_version_macro)
 
                 # change the Source0 definition
-                source0_re = re.compile(r'^Source0?:.*')
+                source0_re = re.compile(r'^Source0?:.+')
                 for index, line in enumerate(self.spec_content):
                     if source0_re.search(line):
                         # comment out the original Source0 line
