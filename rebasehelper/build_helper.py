@@ -272,11 +272,10 @@ class BuildToolBase(object):
 
         return srpm, logs
 
-    @classmethod
-    def get_builder_options(cls, **kwargs):
-        if 'builder_options' not in kwargs:
-            return None
-        if kwargs['builder_options'] is not None:
+    @staticmethod
+    def get_builder_options(**kwargs):
+        builder_options = kwargs.get('builder_options', None)
+        if builder_options is not None:
             return filter(None, kwargs['builder_options'].split(" "))
         return None
 
