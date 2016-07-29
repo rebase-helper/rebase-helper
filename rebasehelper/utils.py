@@ -258,11 +258,11 @@ class DownloadHelper(object):
             # file exists, check the size
             if os.path.exists(destination_path):
                 if file_size != os.path.getsize(destination_path):
-                    logger.info("The destination file '%s' exists, but sizes don't match! Removing it.",
+                    logger.debug("The destination file '%s' exists, but sizes don't match! Removing it.",
                                  destination_path)
                     os.remove(destination_path)
                 else:
-                    logger.info("The destination file '%s' exists, and the size is correct! Skipping download.",
+                    logger.debug("The destination file '%s' exists, and the size is correct! Skipping download.",
                                  destination_path)
                     return
             try:
@@ -1032,8 +1032,8 @@ class KojiHelper(object):
                                     if info['arch'] == 'x86_64' or info['arch'] == 'noarch':
                                         rh_tasks[info['id']] = state
                                 all_done = False
-                    except SSL.SysCallError as exc:
-                        logger.error('We have detected a exception %s', exc.message)
+                    except SSL.SysCallError as e:
+                        logger.error('Detected SSL error: %s', six.text_type(e))
                 if all_done:
                     cls.display_task_results(tasks)
                     break

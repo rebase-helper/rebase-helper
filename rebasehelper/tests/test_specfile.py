@@ -174,30 +174,43 @@ class TestSpecFile(BaseTest):
         assert len(expected_paths.intersection(set(paths))) == len(expected_paths)
 
     def test_split_version_string(self):
-        assert SpecFile.split_version_string() == (None, None)
-        assert SpecFile.split_version_string('1.0.1') == ('1.0.1', '')
-        assert SpecFile.split_version_string('1.0.1b1') == ('1.0.1', 'b1')
-        assert SpecFile.split_version_string('1.0.1rc1') == ('1.0.1', 'rc1')
+        assert SpecFile.split_version_string() == (None, None, None)
+        assert SpecFile.split_version_string('1.0.1') == ('1.0.1', '', '')
+        assert SpecFile.split_version_string('1.0.1b1') == ('1.0.1', 'b1', '')
+        assert SpecFile.split_version_string('1.0.1rc1') == ('1.0.1', 'rc1', '')
+        assert SpecFile.split_version_string('1.1.3-rc6') == ('1.1.3', 'rc6', '-')
+        assert SpecFile.split_version_string('1.1.3_rc6') == ('1.1.3', 'rc6', '_')
+        assert SpecFile.split_version_string('.1.1.1') == ('1.1.1', '', '')
 
     def test_extract_version_from_archive_name(self):
         # Basic tests
-        assert SpecFile.extract_version_from_archive_name('test-1.0.1.tar.gz') == ('1.0.1', '')
-        assert SpecFile.extract_version_from_archive_name('/home/user/test-1.0.1.tar.gz') == ('1.0.1', '')
+        assert SpecFile.extract_version_from_archive_name('test-1.0.1.tar.gz') == ('1.0.1', '', '')
+        assert SpecFile.extract_version_from_archive_name('/home/user/test-1.0.1.tar.gz') == ('1.0.1', '', '')
         assert SpecFile.extract_version_from_archive_name('test-1.0.1.tar.gz',
-                                                          'ftp://ftp.test.org/test-%{version}.tar.gz') == ('1.0.1', '')
+                                                          'ftp://ftp.test.org/test-%{version}.tar.gz') == ('1.0.1',
+                                                                                                           '',
+                                                                                                           '')
         assert SpecFile.extract_version_from_archive_name('/home/user/test-1.0.1.tar.gz',
-                                                          'ftp://ftp.test.org/test-%{version}.tar.gz') == ('1.0.1', '')
+                                                          'ftp://ftp.test.org/test-%{version}.tar.gz') == ('1.0.1',
+                                                                                                           '',
+                                                                                                           '')
         # Real world tests
         name = 'http://www.cups.org/software/%{version}/cups-%{version}-source.tar.bz2'
         assert SpecFile.extract_version_from_archive_name('cups-1.7.5-source.tar.bz2',
-                                                          name) == ('1.7.5', '')
+                                                          name) == ('1.7.5', '', '')
         # the 'rc1' can't be in the version number
         name = 'ftp://ftp.isc.org/isc/bind9/%{VERSION}/bind-%{VERSION}.tar.gz'
         assert SpecFile.extract_version_from_archive_name('bind-9.9.5rc2.tar.gz',
-                                                          name) == ('9.9.5', 'rc2')
+                                                          name) == ('9.9.5', 'rc2', '')
         name = 'http://www.thekelleys.org.uk/dnsmasq/%{?extrapath}%{name}-%{version}%{?extraversion}.tar.xz'
         assert SpecFile.extract_version_from_archive_name('dnsmasq-2.69rc1.tar.xz',
-                                                          name) == ('2.69', 'rc1')
+                                                          name) == ('2.69', 'rc1', '')
+        name = 'http://downloads.sourceforge.net/%{name}/%{name}-%{version}%{?prever:-%{prever}}.tar.xz'
+        assert SpecFile.extract_version_from_archive_name('log4cplus-1.1.3-rc3.tar.xz',
+                                                          name) == ('1.1.3', 'rc3', '-')
+        name = 'http://downloads.sourceforge.net/%{name}/%{name}-%{version}%{?prever:_%{prever}}.tar.xz'
+        assert SpecFile.extract_version_from_archive_name('log4cplus-1.1.3_rc3.tar.xz',
+                                                          name) == ('1.1.3', 'rc3', '_')
 
     def test__split_sections(self):
         expected_sections = {
@@ -350,7 +363,7 @@ class TestSpecFile(BaseTest):
         # the release number was changed
         assert self.SPEC_FILE_OBJECT.get_release_number() == '0.1'
         # the release string now contains the extra version
-        match = re.search(r'([0-9.]*[0-9]+)b1\w*', self.SPEC_FILE_OBJECT.get_release())
+        match = re.search(r'([0-9.]*[0-9]+)\.b1\w*', self.SPEC_FILE_OBJECT.get_release())
         assert match is not None
         assert match.group(1) == self.SPEC_FILE_OBJECT.get_release_number()
 
@@ -370,7 +383,7 @@ class TestSpecFile(BaseTest):
         with open(self.SPEC_FILE_OBJECT.get_path()) as f:
             while f.readline() != '#Release: 33%{?dist}\n':
                 pass
-            assert f.readline() == 'Release: 33' + macro + '%{?dist}\n'
+            assert f.readline() == 'Release: 33' + '.' + macro + '%{?dist}\n'
 
     def test_revert_redefine_release_with_macro(self):
         macro = '%{REBASE_VER}'
