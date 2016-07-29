@@ -48,12 +48,13 @@ class LoggerHelper(object):
 
         :param logger: logger object to add the handler to
         :param level: severity level
-        :return: None
+        :return: created handler object
         """
         console_handler = logging.StreamHandler()
         if level:
             console_handler.setLevel(level)
         logger.addHandler(console_handler)
+        return console_handler
 
     @staticmethod
     def add_file_handler(logger, path, formatter=None, level=None):
