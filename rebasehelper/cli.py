@@ -175,9 +175,9 @@ class CliHelper(object):
     @staticmethod
     def run():
         debug_log_file = None
-        # be verbose until debug_log_file is created
-        handler = LoggerHelper.add_stream_handler(logger, logging.DEBUG)
         try:
+            # be verbose until debug_log_file is created
+            handler = LoggerHelper.add_stream_handler(logger, logging.DEBUG)
             cli = CLI()
             execution_dir, debug_log_file, report_log_file = Application.setup(cli)
             if not cli.verbose:
