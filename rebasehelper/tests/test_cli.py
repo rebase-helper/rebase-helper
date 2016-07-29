@@ -47,7 +47,7 @@ class TestCLI(object):
                 'builds_nowait': True,
                 'build_retries': 2,
                 'results_dir': '/tmp/rebase-helper',
-                'enable_option': '\"-v\"'}
+                'builder_options': '\"-v\"'}
         arguments = ['--build-only', '--patch-only', 'test-1.0.3.tar.gz', '--verbose',
                      '--buildtool', 'rpmbuild', '--pkgcomparetool',
                      'rpmdiff', '--outputtool', 'xml', '--keep-workspace', '--not-download-sources', '--continue',
@@ -55,7 +55,7 @@ class TestCLI(object):
                      '--builds-nowait', '--build-tasks', '123456,654321',
                      '--build-retries', '2',
                      '--results-dir', '/tmp/rebase-helper',
-                     '--enable-option=\"-v\"']
+                     '--builder-options=\"-v\"']
         cli = CLI(arguments)
         for key, value in cli.args.__dict__.items():
             assert cli.args.__dict__[key] == conf[key]

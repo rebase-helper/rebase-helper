@@ -120,7 +120,8 @@ class CLI(object):
             "--builds-nowait",
             default=False,
             action="store_true",
-            help="It starts koji or copr builds and does not care how they finish. Useful for fedpkg and copr build tools."
+            help="It starts koji or copr builds and does not care how they finish. "
+                 "Useful for fedpkg and copr build tools."
         )
         # deprecated argument, kept for backward compatibility
         self.parser.add_argument(
@@ -144,10 +145,11 @@ class CLI(object):
             type=int
         )
         self.parser.add_argument(
-            "--builder-option",
+            "--builder-options",
             default=None,
             help="Enable arbitrary local builder option. The option MUST be in "
-                 "--enable-option=\"--builder-option\" format. "
+                 "--builder-options=\"--some-builder-option\" format. If you want to add more option stay with the "
+                 "given format but divide builder options by whitespaces."
         )
 
     def __getattr__(self, name):
@@ -164,6 +166,9 @@ class CliHelper(object):
         try:
             cli = CLI(sys.argv[1:])
             app = Application(cli)
+            if "--builder-options" in sys.argv[1:]:
+                raise RebaseHelperError("Wrong format of --builder-options. It must be in following form"
+                                        " --builder-options=\"--desired-builder-option\". \n")
             app.run()
         except KeyboardInterrupt:
             logger.info('\nInterrupted by user')
