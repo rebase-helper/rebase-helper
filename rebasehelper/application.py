@@ -407,6 +407,7 @@ class Application(object):
                 OutputLogger.set_patch_output('Unapplied patches:', self.rebased_patches['unapplied'])
         OutputLogger.set_patch_output('Patches:', self.rebased_patches)
 
+    @property
     def build_packages(self):
         """Function calls build class for building packages"""
         if self.conf.buildtool == 'fedpkg' and not koji_builder:
@@ -501,7 +502,12 @@ class Application(object):
                     build_log = 'build.log'
                     build_log_path = os.path.join(rpm_dir, build_log)
                     if version == 'old':
-                        raise RebaseHelperError('Building old RPM package failed. Check log {}'.format(build_log_path))
+                        error_message = 'Building old RPM package failed. Check log {}.\n'.format(build_log_path)
+                        if self.conf.enable_option is not None and self.conf.buildtool not in ('fedpkg', 'copr'):
+                            help_log = os.path.join(rpm_dir, "{}_output.log".format(self.conf.buildtool))
+                            error_message += "Possible problem with added option through --enable-plugin. " \
+                                             "See log {}".format(help_log)
+                        raise RebaseHelperError(error_message)
                     logger.error('Building binary packages failed.')
                     msg = 'Building package failed'
                     try:
@@ -711,7 +717,7 @@ class Application(object):
                     Application.check_build_requires(self.spec_file)
                 # Build packages
                 try:
-                    build = self.build_packages()
+                    build = self.build_packages
                     if self.conf.builds_nowait and not self.conf.build_tasks:
                         if self.conf.buildtool == 'fedpkg':
                             self.print_koji_logs()
