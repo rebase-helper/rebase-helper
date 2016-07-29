@@ -29,7 +29,6 @@ import rpm
 import argparse
 import shlex
 from datetime import date
-from difflib import SequenceMatcher
 
 from rebasehelper.utils import DownloadHelper, DownloadError, MacroHelper, defenc
 from rebasehelper.logger import logger
@@ -127,6 +126,7 @@ class SpecFile(object):
         # Load rpm information
         self.spc = rpm.spec(self.path)
         self.patches = self._get_initial_patches_list()
+        self.set_extra_version_separator('')
         self._update_data()
 
     def _update_data(self):
@@ -149,8 +149,12 @@ class SpecFile(object):
         # determine the extra_version
         logger.debug("Updating the extra version")
         self.sources, self.tar_sources = self._get_initial_sources_list()
-        self.extra_version = SpecFile.extract_version_from_archive_name(self.get_archive(),
-                                                                        self._get_raw_source_string(0))[1]
+
+        _, self.extra_version, separator = SpecFile.extract_version_from_archive_name(
+            self.get_archive(),
+            self._get_raw_source_string(0))
+        self.set_extra_version_separator(separator)
+
         self.patches = self._get_initial_patches_list()
         self.macros = MacroHelper.dump()
 
@@ -399,7 +403,8 @@ class SpecFile(object):
         :return: 
         """
         for line in self.spec_content:
-            match = re.search(r'^Release:\s*([0-9.]+).*%{\?dist}\s*', line)
+            # https://regexper.com/#%5ERelease%3A%5Cs*(%5B0-9%5D*%5C.%3F%5B0-9%5D%2B)(%5C..%2B)%3F%25%7B%5C%3Fdist%7D%5Cs*
+            match = re.search(r'^Release:\s*([0-9]*\.?[0-9]+)(\..+)?%{\?dist}\s*', line)
             if match:
                 return match.group(1)
 
@@ -707,7 +712,7 @@ class SpecFile(object):
         """
         for index, line in enumerate(self.spec_content):
             if line.startswith('Release:'):
-                new_release_line = re.sub(r'(Release:\s*[0-9.]*[0-9]+).*(%{\?dist}\s*)', r'\g<1>{0}\2'.format(macro),
+                new_release_line = re.sub(r'(Release:\s*[0-9.]*[0-9]+).*(%{\?dist}\s*)', r'\g<1>.{0}\2'.format(macro),
                                           line)
                 logger.debug("Commenting out original Release line '%s'", line.strip())
                 self.spec_content[index] = '#{0}'.format(line)
@@ -723,7 +728,7 @@ class SpecFile(object):
         :param macro: 
         :return: 
         """
-        search_re = re.compile('^Release:\s*[0-9.]*[0-9]+{0}%{{\?dist}}\s*'.format(macro))
+        search_re = re.compile('^Release:\s*[0-9.]*[0-9]+\.{0}%{{\?dist}}\s*'.format(macro))
 
         for index, line in enumerate(self.spec_content):
             match = search_re.search(line)
@@ -805,7 +810,9 @@ class SpecFile(object):
         extra_version_macro = '%{?REBASE_EXTRA_VER}'
         extra_version_re = re.compile('^{0}.*$'.format(extra_version_def))
         extra_version_line_index = None
-        rebase_extra_version_def = '%global REBASE_VER %{version}%{REBASE_EXTRA_VER}\n'
+        rebase_extra_version_def = '%global REBASE_VER %{version}' + \
+                                   self.extra_version_separator + \
+                                   '%{REBASE_EXTRA_VER}\n'
         new_extra_version_line = '%global REBASE_EXTRA_VER {0}\n'.format(extra_version)
 
         logger.debug("Updating extra version in SPEC to '%s'", extra_version)
@@ -824,36 +831,39 @@ class SpecFile(object):
             #  we need to create the extra version definition
             else:
                 # insert the REBASE_VER and REBASE_EXTRA_VER definitions
+                logger.debug("Adding new line to spec: %s", rebase_extra_version_def.strip())
                 self.spec_content.insert(0, rebase_extra_version_def)
+                logger.debug("Adding new line to spec: %s", new_extra_version_line.strip())
                 self.spec_content.insert(0, new_extra_version_line)
+
                 # change Release to 0.1 and append the extra version macro
                 self.set_release_number('0.1')
                 self.redefine_release_with_macro(extra_version_macro)
+
                 # change the Source0 definition
-                source0_re = re.compile(r'^Source0?:.*')
+                source0_re = re.compile(r'^Source0?:.+')
                 for index, line in enumerate(self.spec_content):
                     if source0_re.search(line):
                         # comment out the original Source0 line
                         logger.debug("Commenting out original Source0 line '%s'", line.strip())
                         self.spec_content[index] = '#{0}'.format(line)
-
-                        # construct new archive name with %{REBASE_VER}
-                        # replacing the version that will be used in Source0
-                        basename_raw = os.path.basename(line.strip())
+                        # construct new Source0 line. The idea is that we use the expanded archive name to create
+                        # new Source0. We used raw original Source0 before, but it didn't work reliably.
+                        source0_raw = line
                         basename_expanded = self.get_archive()
-                        match_blocks = list(SequenceMatcher(None, basename_raw, basename_expanded).get_matching_blocks())
-                        # since the version is usually in the end of the archive name, use the last start of different
-                        # section as the start of version macro
-                        mb_version_section_beginning = match_blocks[-3][0] + match_blocks[-3][2]
-                        mb_start_of_last_common_sect = match_blocks[-2][0]
-                        new_basename_with_macro = '{0}{1}{2}'.format(basename_raw[:mb_version_section_beginning],
-                                                                     '%{REBASE_VER}',
-                                                                     basename_raw[mb_start_of_last_common_sect:])
-                        logger.debug("New Source0 basename with macro '%s'", new_basename_with_macro)
+                        # construct the original version in archive name so that we can replace it
+                        original_version = '{0}{2}{1}'.format(*self.extract_version_from_archive_name(
+                            basename_expanded,
+                            source0_raw)
+                        )
+                        # replace the version with macro
+                        new_basename_with_macro = basename_expanded.replace(original_version, '%{REBASE_VER}')
+                        # replace the name with macro to be cool :)
+                        new_basename_with_macro = new_basename_with_macro.replace(self.get_package_name(), '%{name}')
                         # replace the archive name in old Source0 with new one
-                        new_source0_line = str.replace(line, basename_raw, new_basename_with_macro)
-                        logger.debug("Inserting new Source0 line '%s'", new_source0_line.strip())
-                        self.spec_content.insert(index + 1, new_source0_line)
+                        new_source0_line = source0_raw.replace(os.path.basename(source0_raw), new_basename_with_macro)
+                        logger.debug("Inserting new Source0 line '%s'", new_source0_line)
+                        self.spec_content.insert(index + 1, new_source0_line + '\n')
                         break
         else:
             # set the Release to 1 and revert the redefined Release with macro if needed
@@ -861,8 +871,17 @@ class SpecFile(object):
             self.revert_redefine_release_with_macro(extra_version_macro)
             # TODO: handle empty extra_version as removal of the definitions!
 
-        #  save changes
+        # save changes
         self.save()
+
+    def set_extra_version_separator(self, separator):
+        """
+        Set the string that separates the version and extra version
+
+        :param separator:
+        :return:
+        """
+        self.extra_version_separator = separator
 
     def set_version_using_archive(self, archive_path):
         """
@@ -872,14 +891,15 @@ class SpecFile(object):
         :param archive_path: 
         :return: 
         """
-        version, extra_version = SpecFile.extract_version_from_archive_name(archive_path,
-                                                                            self._get_raw_source_string(0))
+        version, extra_version, separator = SpecFile.extract_version_from_archive_name(archive_path,
+                                                                                       self._get_raw_source_string(0))
 
         if not version:
             # can't continue without version
             raise RebaseHelperError('Failed to extract version from archive name')
 
         self.set_version(version)
+        self.set_extra_version_separator(separator)
         self.set_extra_version(extra_version)
 
     def write_updated_patches(self, patches):
@@ -935,19 +955,24 @@ class SpecFile(object):
         Method splits version string into version and possibly extra string as 'rc1' or 'b1', ...
 
         :param version_string: version string such as '1.1.1' or '1.2.3b1', ...
-        :return: tuple of strings with (extracted version, extra version) or (None, None) if extraction failed
+        :return: tuple of strings with (extracted version, extra version, separator) or (None, None, None) if extraction
+        failed
         """
-        version_split_regex_str = '([.0-9]+)(\w*)'
+        version_split_regex_str = '([0-9]+[.0-9]*)([_-]?)(\w*)'
         version_split_regex = re.compile(version_split_regex_str)
         logger.debug("Splitting string '%s'", version_string)
         match = version_split_regex.search(version_string)
         if match:
             version = match.group(1)
-            extra_version = match.group(2)
-            logger.debug("Divided version '%s' and extra string '%s'", version, extra_version)
-            return version, extra_version
+            separator = match.group(2)
+            extra_version = match.group(3)
+            logger.debug("Divided version '%s' and extra string '%s' separated by '%s'",
+                         version,
+                         extra_version,
+                         separator)
+            return version, extra_version, separator
         else:
-            return None, None
+            return None, None, None
 
     @staticmethod
     def extract_version_from_archive_name(archive_path, source_string=''):
@@ -959,15 +984,17 @@ class SpecFile(object):
         :param source_string: Source string from SPEC file used to construct version extraction regex
         :return: tuple of strings with (extracted version, extra version) or (None, None) if extraction failed
         """
-        version_regex_str = '([.0-9]+\w*)'
-        fallback_regex_str = '^\w+-?_?v?{0}({1})'.format(version_regex_str,
-                                                         '|'.join(Archive.get_supported_archives()))
+        # https://regexper.com/#(%5B.0-9%5D%2B%5B-_%5D%3F%5Cw*)
+        version_regex_str = '([.0-9]+[-_]?\w*)'
+        fallback_regex_str = '^\w+[-_]?v?{0}({1})'.format(version_regex_str,
+                                                          '|'.join(Archive.get_supported_archives()))
         # match = re.search(regex, tarball_name)
         name = os.path.basename(archive_path)
         url_base = os.path.basename(source_string).strip()
 
         logger.debug("Extracting version from '%s' using '%s'", name, url_base)
-        regex_str = re.sub(r'%{version}', version_regex_str, url_base, flags=re.IGNORECASE)
+        # expect that the version macro can be followed by another macros
+        regex_str = re.sub(r'%{version}(%{.+})?', version_regex_str, url_base, flags=re.IGNORECASE)
 
         # if no substitution was made, use the fallback regex
         if regex_str == url_base:

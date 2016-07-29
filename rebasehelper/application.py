@@ -32,7 +32,7 @@ from rebasehelper.logger import logger, logger_report, LoggerHelper
 from rebasehelper import settings
 from rebasehelper import output_tool
 from rebasehelper.utils import PathHelper, RpmHelper, ConsoleHelper, GitHelper, KojiHelper, FileHelper, CoprHelper
-from rebasehelper.checker import Checker
+from rebasehelper.checker import checkers_runner
 from rebasehelper.build_helper import Builder, SourcePackageBuildError, BinaryPackageBuildError, koji_builder
 from rebasehelper.patch_helper import Patcher
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
@@ -59,7 +59,7 @@ class Application(object):
     rebased_patches = {}
     upstream_monitoring = False
 
-    def __init__(self, cli_conf=None):
+    def __init__(self, cli_conf, execution_dir, debug_log_file, report_log_file):
         """
         Initialize the application
 
@@ -69,17 +69,10 @@ class Application(object):
         OutputLogger.clear()
 
         self.conf = cli_conf
+        self.execution_dir = execution_dir
 
-        if self.conf.verbose:
-            LoggerHelper.add_stream_handler(logger, logging.DEBUG)
-        else:
-            LoggerHelper.add_stream_handler(logger, logging.INFO)
-
-        # The directory in which rebase-helper was executed
-        if self.conf.results_dir is None:
-            self.execution_dir = os.getcwd()
-        else:
-            self.execution_dir = self.conf.results_dir
+        self.debug_log_file = debug_log_file
+        self.report_log_file = report_log_file
 
         # Temporary workspace for Builder, checks, ...
         self.kwargs['workspace_dir'] = self.workspace_dir = os.path.join(self.execution_dir,
@@ -89,18 +82,9 @@ class Application(object):
                                                                      settings.REBASE_HELPER_RESULTS_DIR)
 
         self.kwargs['non_interactive'] = self.conf.non_interactive
-        # if not continuing, check the results dir
-        if not self.conf.cont and not self.conf.build_only and not self.conf.comparepkgs:
-            self._check_results_dir()
-        # This is used if user executes rebase-helper with --continue
-        # parameter even when directory does not exist
-        if not os.path.exists(self.results_dir):
-            os.makedirs(self.results_dir)
-            os.makedirs(os.path.join(self.results_dir, settings.REBASE_HELPER_LOGS))
 
-        self._add_debug_log_file()
-        self._add_report_log_file()
         logger.debug("Rebase-helper version: %s" % version.VERSION)
+
         if self.conf.build_tasks is None:
             self._get_spec_file()
             self._prepare_spec_objects()
@@ -116,13 +100,34 @@ class Application(object):
         if self.conf.cont or self.conf.build_only:
             self._delete_old_builds()
 
-    def _add_debug_log_file(self):
+    @staticmethod
+    def setup(cli_conf):
+        execution_dir = cli_conf.results_dir if cli_conf.results_dir else os.getcwd()
+        results_dir = os.path.join(execution_dir, settings.REBASE_HELPER_RESULTS_DIR)
+
+        # if not continuing, check the results dir
+        if not cli_conf.cont and not cli_conf.build_only and not cli_conf.comparepkgs:
+            Application._check_results_dir(results_dir)
+
+        # This is used if user executes rebase-helper with --continue
+        # parameter even when directory does not exist
+        if not os.path.exists(results_dir):
+            os.makedirs(results_dir)
+            os.makedirs(os.path.join(results_dir, settings.REBASE_HELPER_LOGS))
+
+        debug_log_file = Application._add_debug_log_file(results_dir)
+        report_log_file = Application._add_report_log_file(results_dir)
+
+        return execution_dir, debug_log_file, report_log_file
+
+    @staticmethod
+    def _add_debug_log_file(results_dir):
         """
         Add the application wide debug log file
 
-        :return: 
+        :return: log file path
         """
-        debug_log_file = os.path.join(self.results_dir, settings.REBASE_HELPER_DEBUG_LOG)
+        debug_log_file = os.path.join(results_dir, settings.REBASE_HELPER_DEBUG_LOG)
         try:
             LoggerHelper.add_file_handler(logger,
                                           debug_log_file,
@@ -132,15 +137,16 @@ class Application(object):
         except (IOError, OSError):
             logger.warning("Can not create debug log '%s'", debug_log_file)
         else:
-            self.debug_log_file = debug_log_file
+            return debug_log_file
 
-    def _add_report_log_file(self):
+    @staticmethod
+    def _add_report_log_file(results_dir):
         """
         Add the application report log file
 
-        :return: 
+        :return: log file path
         """
-        report_log_file = os.path.join(self.results_dir, settings.REBASE_HELPER_REPORT_LOG)
+        report_log_file = os.path.join(results_dir, settings.REBASE_HELPER_REPORT_LOG)
         try:
             LoggerHelper.add_file_handler(logger_report,
                                           report_log_file,
@@ -149,7 +155,7 @@ class Application(object):
         except (IOError, OSError):
             logger.warning("Can not create report log '%s'", report_log_file)
         else:
-            self.report_log_file = report_log_file
+            return report_log_file
 
     def _prepare_spec_objects(self):
         """
@@ -174,8 +180,9 @@ class Application(object):
             self.rebase_spec_file.set_version_using_archive(self.conf.sources)
         else:
             logger.debug("argument passed as a new source is a version")
-            version, extra_version = SpecFile.split_version_string(self.conf.sources)
+            version, extra_version, separator = SpecFile.split_version_string(self.conf.sources)
             self.rebase_spec_file.set_version(version)
+            self.rebase_spec_file.set_extra_version_separator(separator)
             self.rebase_spec_file.set_extra_version(extra_version)
 
     def _initialize_data(self):
@@ -199,7 +206,7 @@ class Application(object):
         self.new_rest_sources = [os.path.abspath(x) for x in self.new_rest_sources]
 
         # We want to inform user immediately if compare tool doesn't exist
-        supported_tools = Checker(os.path.dirname(__file__)).get_supported_tools()
+        supported_tools = checkers_runner.get_supported_tools()
         if self.conf.pkgcomparetool and self.conf.pkgcomparetool not in supported_tools:
             raise RebaseHelperError('You have to specify one of these check tools %s' % supported_tools)
 
@@ -285,20 +292,21 @@ class Application(object):
             self._delete_workspace_dir()
         os.makedirs(self.workspace_dir)
 
-    def _check_results_dir(self):
+    @staticmethod
+    def _check_results_dir(results_dir):
         """
         Check if  results dir exists, and removes it if yes.
 
         :return: 
         """
         # TODO: We may not want to delete the directory in the future
-        if os.path.exists(self.results_dir):
-            logger.warning("Results directory '%s' exists, removing it", os.path.basename(self.results_dir))
-            shutil.rmtree(self.results_dir)
-        os.makedirs(self.results_dir)
-        os.makedirs(os.path.join(self.results_dir, settings.REBASE_HELPER_LOGS))
-        os.makedirs(os.path.join(self.results_dir, 'old'))
-        os.makedirs(os.path.join(self.results_dir, 'new'))
+        if os.path.exists(results_dir):
+            logger.warning("Results directory '%s' exists, removing it", os.path.basename(results_dir))
+            shutil.rmtree(results_dir)
+        os.makedirs(results_dir)
+        os.makedirs(os.path.join(results_dir, settings.REBASE_HELPER_LOGS))
+        os.makedirs(os.path.join(results_dir, 'old'))
+        os.makedirs(os.path.join(results_dir, 'new'))
 
     @staticmethod
     def extract_archive(archive_path, destination):
@@ -552,38 +560,28 @@ class Application(object):
 
         return True
 
-    def _execute_checkers(self, checker, dir_name):
+    def run_package_checkers(self, results_dir):
         """
-        Function executes a checker based on command line arguments
+        Runs checkers on packages and stores results in a given directory.
 
-        :param checker: checker name based from command line
-        :return: Nothing
+        :param results_dir: Path to directory in which to store the results.
+        :type results_dir: str
+        :return: None
         """
-        pkgchecker = Checker(checker)
-        logger.info('Comparing packages using %s...', checker)
-        text = pkgchecker.run_check(dir_name)
-        return text
+        results = dict()
 
-    def pkgdiff_packages(self, dir_name):
-        """
-        Function calls pkgdiff class for comparing packages
-        :param dir_name: specify a result dir
-        :return: 
-        """
-        pkgdiff_results = {}
-        checker = Checker(os.path.dirname(__file__))
-        if not self.conf.pkgcomparetool:
-            for check in checker.get_supported_tools():
-                try:
-                    results = checker.run_check(dir_name, checker_name=check)
-                    pkgdiff_results[check] = results
-                except CheckerNotFoundError:
-                    logger.info("Rebase-helper did not find checker '%s'." % check)
+        if self.conf.pkgcomparetool:
+            results[self.conf.pkgcomparetool] = checkers_runner.run_checker(results_dir, self.conf.pkgcomparetool)
         else:
-            pkgdiff_results[self.conf.pkgcomparetool] = checker.run_check(dir_name, checker_name=self.conf.pkgcomparetool)
-        if pkgdiff_results:
-            for diff_name, result in six.iteritems(pkgdiff_results):
-                OutputLogger.set_checker_output(diff_name, result)
+            # no specific checker was given, just run all of them
+            for checker_name in checkers_runner.get_supported_tools():
+                try:
+                    results[checker_name] = checkers_runner.run_checker(results_dir, checker_name)
+                except CheckerNotFoundError:
+                    logger.error("Rebase-helper did not find checker '%s'." % checker_name)
+
+        for diff_name, result in six.iteritems(results):
+            OutputLogger.set_checker_output(diff_name, result)
 
     def get_all_log_files(self):
         """
@@ -671,6 +669,7 @@ class Application(object):
         return rh_stuff
 
     def run_download_compare(self, tasks_dict, dir_name):
+        # TODO: Add doc text with explanation
         self.set_upstream_monitoring()
         kh = KojiHelper()
         for version in ['old', 'new']:
@@ -684,7 +683,7 @@ class Application(object):
             rh_dict['name'] = package
             OutputLogger.set_build_data(version, rh_dict)
         if tasks_dict['status'] == 'CLOSED':
-            self.pkgdiff_packages(dir_name)
+            self.run_package_checkers(dir_name)
         self.print_summary()
         rh_stuff = self.get_rebasehelper_data()
         logger.info(rh_stuff)
@@ -734,7 +733,7 @@ class Application(object):
                 # We don't care dirname doesn't contain any RPM packages
                 # Therefore return 1
             if build:
-                self.pkgdiff_packages(self.results_dir)
+                self.run_package_checkers(self.results_dir)
             else:
                 if not self.upstream_monitoring:
                     logger.info('Rebase package to %s FAILED. See for more details', self.conf.sources)
@@ -751,5 +750,5 @@ class Application(object):
         return 0
 
 if __name__ == '__main__':
-    a = Application(None)
+    a = Application(None, None, None, None)
     a.run()
