@@ -418,7 +418,7 @@ class Application(object):
     def build_packages(self):
         """Function calls build class for building packages"""
         if self.conf.buildtool == 'fedpkg' and not koji_builder:
-            print ('Importing module koji failed. Switching to mockbuild.')
+            logger.info('Importing module koji failed. Switching to mockbuild.')
             self.conf.buildtool = 'mock'
         try:
             builder = Builder(self.conf.buildtool)
@@ -447,6 +447,9 @@ class Application(object):
             results_dir = os.path.join(self.results_dir, version)
             build_dict['builds_nowait'] = self.conf.builds_nowait
             build_dict['build_tasks'] = self.conf.build_tasks
+            build_dict['builder_options'] = self.conf.builder_options
+            if self.conf.buildtool in ("copr", "fedpkg") and self.conf.builder_options is not None:
+                logger.warning("We are not supporting option --builder-options for builder copr or fedpkg.")
 
             files = {}
             number_retries = 0
@@ -506,7 +509,14 @@ class Application(object):
                     build_log = 'build.log'
                     build_log_path = os.path.join(rpm_dir, build_log)
                     if version == 'old':
-                        raise RebaseHelperError('Building old RPM package failed. Check log %s', build_log_path)
+                        error_message = 'Building old RPM package failed. Check log {} '.format(build_log_path)
+                        # When user passes wrong builder option for mock rebase-helper ends with message that
+                        # in given build_log_path there is build.log for more intel. But there is not. So for mock
+                        # it needs to be here this extending option.
+                        if self.conf.builder_options is not None and self.conf.buildtool == 'mock':
+                            help_log = os.path.join(rpm_dir, "{}_output.log".format(self.conf.buildtool))
+                            error_message += "or {}".format(help_log)
+                        raise RebaseHelperError(error_message)
                     logger.error('Building binary packages failed.')
                     msg = 'Building package failed'
                     try:
