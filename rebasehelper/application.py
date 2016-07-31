@@ -554,7 +554,7 @@ class Application(object):
                     shutil.rmtree(os.path.join(results_dir, 'SRPM'))
                 number_retries += 1
             if self.conf.build_retries == number_retries:
-                raise RebaseHelperError('Building package failed with unknow reason. Check all available log files.')
+                raise RebaseHelperError('Building package failed with unknown reason. Check all available log files.')
 
         return True
 
@@ -689,13 +689,16 @@ class Application(object):
 
     def run(self):
         if self.conf.fedpkg_build_tasks:
+            # TODO: Move this check to CliHelper
             logger.warning("Option --fedpkg-build-tasks is deprecated, use --build-tasks instead.")
             if not self.conf.build_tasks:
                 self.conf.build_tasks = self.conf.fedpkg_build_tasks
 
         if self.conf.build_tasks and not self.conf.builds_nowait:
             if self.conf.buildtool in [KojiBuildTool.CMD, CoprBuildTool.CMD]:
+                # TODO: The check as described does not make sense - add explanation or remove
                 logger.error("--builds-nowait has to be specified with --build-tasks.")
+                # TODO: exception should be raised instead of returning a value - it is never checked!
                 return 1
             else:
                 logger.warning("Options are allowed only for koji or copr build tools. Suppress them.")
@@ -721,9 +724,10 @@ class Application(object):
                             self.print_koji_logs()
                         elif self.conf.buildtool == CoprBuildTool.CMD:
                             self.print_copr_logs()
-                        return 0
+                        return
                 except RuntimeError:
                     logger.error('Unknown error caused by build log analysis')
+                    # TODO: exception should be raised instead of returning a value - it is never checked!
                     return 1
                 # Perform checks
             else:
@@ -734,7 +738,9 @@ class Application(object):
                 self.run_package_checkers(self.results_dir)
             else:
                 if not self.upstream_monitoring:
+                    # TODO: This should be an ERROR
                     logger.info('Rebase package to %s FAILED. See for more details', self.conf.sources)
+                # TODO: exception should be raised instead of returning a value - it is never checked!
                 return 1
             self.print_summary()
 
@@ -746,6 +752,7 @@ class Application(object):
         if not self.upstream_monitoring and not self.conf.patch_only:
             logger.info('Rebase package to %s was SUCCESSFUL.\n', self.conf.sources)
         return 0
+
 
 if __name__ == '__main__':
     a = Application(None, None, None, None)
