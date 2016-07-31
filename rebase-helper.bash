@@ -21,7 +21,7 @@
 _local_archives()
 {
     # supported archive extensions
-    extensions=".tar.gz .tgz .tar.xz .tar.bz2 .zip"
+    extensions=".tar.gz .tgz .tar.xz .tar.bz2 .zip .gem"
     LOCAL_ARCHIVES=()
     for ext in $extensions; do
         LOCAL_ARCHIVES=("${LOCAL_ARCHIVES[@]}" $( ls | grep $ext\$ ))
@@ -31,10 +31,9 @@ _local_archives()
 # fill --*tool arguments into ARGUMENTS variable
 _complete_tool_arguments()
 {
-    buildtools="mock rpmbuild"
-    difftools="meld"
-    pkgcomparetools="pkgdiff"
-    outputtools="text"
+    buildtools="mock rpmbuild koji copr"
+    pkgcomparetools="pkgdiff rpmdiff abipkgdiff csmock"
+    outputtools="text json"
 
     if [ $# != 1 ]; then
         ARGUMENTS=()
@@ -58,12 +57,18 @@ _rebase-helper()
           -p --patch-only \
           -b --build-only \
           --buildtool \
-          --difftool \
           --pkgcomparetool \
           --outputtool \
           -w --keep-workspace \
           --not-download-sources \
-          -c --continue"
+          -c --continue \
+          --non-interactive \
+          --comparepkgs-only \
+          --builds-nowait \
+          --build-tasks \
+          --results-dir \
+          --build-retries \
+          --builder-options"
 
     # complete arguments of some commands
     case "${prev}" in

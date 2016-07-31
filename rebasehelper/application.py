@@ -33,7 +33,8 @@ from rebasehelper import settings
 from rebasehelper import output_tool
 from rebasehelper.utils import PathHelper, RpmHelper, ConsoleHelper, GitHelper, KojiHelper, FileHelper, CoprHelper
 from rebasehelper.checker import checkers_runner
-from rebasehelper.build_helper import Builder, SourcePackageBuildError, BinaryPackageBuildError, koji_builder
+from rebasehelper.build_helper import Builder, SourcePackageBuildError, BinaryPackageBuildError, koji_builder, \
+    KojiBuildTool, CoprBuildTool, MockBuildTool, RpmbuildBuildTool
 from rebasehelper.patch_helper import Patcher
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
 from rebasehelper.build_log_analyzer import BuildLogAnalyzer, BuildLogAnalyzerMissingError
@@ -417,9 +418,9 @@ class Application(object):
 
     def build_packages(self):
         """Function calls build class for building packages"""
-        if self.conf.buildtool == 'fedpkg' and not koji_builder:
+        if self.conf.buildtool == KojiBuildTool.CMD and not koji_builder:
             logger.info('Importing module koji failed. Switching to mock builder.')
-            self.conf.buildtool = 'mock'
+            self.conf.buildtool = MockBuildTool.CMD
         try:
             builder = Builder(self.conf.buildtool)
         except NotImplementedError as ni_e:
@@ -459,7 +460,7 @@ class Application(object):
                     if self.conf.build_tasks is None:
                         build_dict.update(builder.build(spec, sources, patches, results_dir, **build_dict))
                     if not self.conf.builds_nowait:
-                        if self.conf.buildtool == 'fedpkg':
+                        if self.conf.buildtool == KojiBuildTool.CMD:
                             while True:
                                 kh = KojiHelper()
                                 build_dict['rpm'], build_dict['logs'] = kh.get_koji_tasks(build_dict['koji_task_id'], results_dir)
@@ -467,7 +468,7 @@ class Application(object):
                                     break
                     else:
                         if self.conf.build_tasks:
-                            if self.conf.buildtool == 'fedpkg':
+                            if self.conf.buildtool == KojiBuildTool.CMD:
                                 kh = KojiHelper()
                                 try:
                                     build_dict['rpm'], build_dict['logs'] = kh.get_koji_tasks(task_id, results_dir)
@@ -477,7 +478,7 @@ class Application(object):
                                 except TypeError:
                                     logger.info('Koji tasks are not finished yet. Try again later')
                                     return False
-                            elif self.conf.buildtool == 'copr':
+                            elif self.conf.buildtool == CoprBuildTool.CMD:
                                 copr_helper = CoprHelper()
                                 client = copr_helper.get_client()
                                 build_id = int(task_id)
@@ -693,11 +694,11 @@ class Application(object):
                 self.conf.build_tasks = self.conf.fedpkg_build_tasks
 
         if self.conf.build_tasks and not self.conf.builds_nowait:
-            if self.conf.buildtool in ['fedpkg', 'copr']:
+            if self.conf.buildtool in [KojiBuildTool.CMD, CoprBuildTool.CMD]:
                 logger.error("--builds-nowait has to be specified with --build-tasks.")
                 return 1
             else:
-                logger.warning("Options are allowed only for fedpkg or copr build tools. Suppress them.")
+                logger.warning("Options are allowed only for koji or copr build tools. Suppress them.")
                 self.conf.build_tasks = self.conf.builds_nowait = False
 
         sources = None
@@ -710,15 +711,15 @@ class Application(object):
         if not self.conf.patch_only:
             if not self.conf.comparepkgs:
                 # check build dependencies for rpmbuild
-                if self.conf.buildtool == 'rpmbuild':
+                if self.conf.buildtool == RpmbuildBuildTool.CMD:
                     Application.check_build_requires(self.spec_file)
                 # Build packages
                 try:
                     build = self.build_packages()
                     if self.conf.builds_nowait and not self.conf.build_tasks:
-                        if self.conf.buildtool == 'fedpkg':
+                        if self.conf.buildtool == KojiBuildTool.CMD:
                             self.print_koji_logs()
-                        elif self.conf.buildtool == 'copr':
+                        elif self.conf.buildtool == CoprBuildTool.CMD:
                             self.print_copr_logs()
                         return 0
                 except RuntimeError:

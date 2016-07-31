@@ -23,7 +23,7 @@ Patch the new sources and run a koji scratch build
 
    from rebasehelper.application import Application
 
-   cli = CLI(['--non-interactive', '--builds-nowait', '--buildtool', 'fedpkg', 'upstream_version'])
+   cli = CLI(['--non-interactive', '--builds-nowait', '--buildtool', 'koji', 'upstream_version'])
    rh = Application(cli)
    rh.set_upstream_monitoring() # Switches the rebase-helper to an upstream release monitoring mode.
    rh.run()
@@ -31,18 +31,18 @@ Patch the new sources and run a koji scratch build
 
 - **Bash usage**
 
-  rebase-helper --non-interactive --builds-nowait --buildtool fedpkg upstream_version
+  rebase-helper --non-interactive --builds-nowait --buildtool koji upstream_version
 
 Download logs and RPMs for comparing with checkers
 --------------------------------------------------
 
 - **Python API usage**
 
-  cli = CLI(['--non-interactive', '--builds-nowait', '--buildtool', 'fedpkg', '--build-tasks', 'old_id,new-id'])
+  cli = CLI(['--non-interactive', '--builds-nowait', '--buildtool', 'koji', '--build-tasks', 'old_id,new-id'])
   rh.run() # Downloads RPMs, logs and runs checkers and provides logs.
   rh.get_rebasehelper_data() # Gets all the information about the results
 
 - **Bash usage**
 
-   rebase-helper --non-interactive --builds-nowait --buildtool fedpkg --build-tasks old_id,new-id
+   rebase-helper --non-interactive --builds-nowait --buildtool koji --build-tasks old_id,new-id
 

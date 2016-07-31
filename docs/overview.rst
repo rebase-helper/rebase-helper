@@ -30,7 +30,7 @@ Requirements
 - rpm-build
 - pkgdiff at least 1.6.3
 - python-six
-- fedpkg
+- koji
 - pyrpkg
 - libabigail
 
