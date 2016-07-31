@@ -176,8 +176,8 @@ class CliHelper(object):
             # be verbose until debug_log_file is created
             handler = LoggerHelper.add_stream_handler(logger, logging.DEBUG)
             if "--builder-options" in sys.argv[1:]:
-                raise RebaseHelperError("Wrong format of --builder-options. It must be in following form"
-                                        " --builder-options=\"--desired-builder-option\". \n")
+                raise RebaseHelperError('Wrong format of --builder-options. It must be in the following form:'
+                                        ' --builder-options="--desired-builder-option".')
             cli = CLI()
             execution_dir, debug_log_file, report_log_file = Application.setup(cli)
             if not cli.verbose:
