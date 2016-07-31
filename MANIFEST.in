@@ -1,6 +1,9 @@
 include MANIFEST.in
 include Makefile
 include LICENSE
-recursive-include rebase-helper *.py rebase-helper
+include ChangeLog
 include man/*
-recursive-include test * rebase-helper
+include *requirements.txt
+include rebase-helper.bash
+include tox.ini pylintrc .coveragerc
+recursive-include rebase-helper

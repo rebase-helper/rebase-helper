@@ -36,5 +36,5 @@ html:
 	make -f Makefile.docs html
 
 
-#test:
-#	cd tests; ./run_tests.py
+test:
+	tox --recreate
