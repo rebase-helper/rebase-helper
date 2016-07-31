@@ -73,17 +73,19 @@ class CLI(object):
         self.parser.add_argument(
             "--buildtool",
             default="mock",
-            help="Select the build tool [mock(default)|rpmbuild|koji|copr]"
+            help="Select the build tool [mock, rpmbuild, koji, copr]. 'mock' is used by default."
         )
         self.parser.add_argument(
             "--pkgcomparetool",
             default=False,
-            help="Select the tool for comparing two packages [pkgdiff, rpmdiff, abipkgdiff, csmock]"
+            help="Select the tool for comparing two packages [pkgdiff, rpmdiff, abipkgdiff, csmock]. All compare tools"
+                 " are run by default."
         )
         self.parser.add_argument(
             "--outputtool",
             default="text",
-            help="Select the tool for showing information from rebase-helper process [text, json]"
+            help="Select the tool for showing information from rebase-helper process [text, json]. 'text' is used by"
+                 " default."
         )
         self.parser.add_argument(
             "-w",
