@@ -18,9 +18,6 @@ What is currently missing:
 - PatchHelper class - abstract class with at least one Patch Helper (mostly patch command)
 - DiffHelper class - abstract class with at least one Diff Helper (like vimdiff, Meld)
     - Each DiffHelper class can have different syntax
-- BuildHelper class - the class should implemented several method how to build up a package
-    - It can be done via mock, fedpkg local or brew.
-    - Be careful about dependecies in case of fedpkg local
 - RPMDiff class - use the class for getting information what was changed against previous version
 - Report class - it can be used for reporting things discovered during rebasing.
     - like what patches were changed.

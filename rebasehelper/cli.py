@@ -73,7 +73,7 @@ class CLI(object):
         self.parser.add_argument(
             "--buildtool",
             default="mock",
-            help="Select the build tool [mock(default)|rpmbuild|fedpkg|copr]"
+            help="Select the build tool [mock(default)|rpmbuild|koji|copr]"
         )
         self.parser.add_argument(
             "--pkgcomparetool",
@@ -129,7 +129,7 @@ class CLI(object):
             default=False,
             action="store_true",
             help="It starts koji or copr builds and does not care how they finish. "
-                 "Useful for fedpkg and copr build tools."
+                 "Useful for koji and copr build tools."
         )
         # deprecated argument, kept for backward compatibility
         self.parser.add_argument(

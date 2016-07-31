@@ -462,12 +462,12 @@ class RpmbuildBuildTool(BuildToolBase):
 
 
 @register_build_tool
-class FedpkgBuildTool(BuildToolBase):
+class KojiBuildTool(BuildToolBase):
     """
-    Class representing rpmbuild build tool.
+    Class representing Koji build tool.
     """
 
-    CMD = "fedpkg"
+    CMD = "koji"
     logs = []
     koji_helper = None
 
@@ -524,7 +524,7 @@ class FedpkgBuildTool(BuildToolBase):
     def build(cls, spec, sources, patches, results_dir, **kwargs):
         """
         Builds the SRPM using rpmbuild
-        Builds the RPMs using fedpkg
+        Builds the RPMs using koji
 
         :param spec: absolute path to the SPEC file.
         :param sources: list with absolute paths to SOURCES
