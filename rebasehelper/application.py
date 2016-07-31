@@ -439,7 +439,7 @@ class Application(object):
                 sources = spec_object.get_sources()
                 logger.info('Building packages for %s version %s',
                             spec_object.get_package_name(),
-                            spec_object.get_version())
+                            spec_object.get_full_version())
             else:
                 if version == 'old':
                     task_id = self.conf.build_tasks.split(',')[0]

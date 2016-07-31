@@ -424,6 +424,25 @@ class SpecFile(object):
         """
         return self.extra_version
 
+    def get_extra_version_separator(self):
+        """
+        Returns the separator between version and extra version as used by upstream. If there is not separator or
+        extra version, it returns an empty string.
+
+        :return: String with the separator between version as extra version as used by upstream.
+        :rtype: str
+        """
+        return self.extra_version_separator
+
+    def get_full_version(self):
+        """
+        Returns the full version string, which is a combination of version, separator and extra version.
+
+        :return: String with full version, including the extra version part.
+        :rtype: str
+        """
+        return '{0}{1}{2}'.format(self.get_version(), self.get_extra_version_separator(), self.get_extra_version())
+
     def get_package_name(self):
         """
         Function returns a package name
