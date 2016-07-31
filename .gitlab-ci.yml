@@ -10,13 +10,13 @@ stages:
     #- pip install tox setuptools
     - tox --recreate
 
-test:f22:
-  <<: *test_definition
-  image: fedora:22
-
 test:f23:
   <<: *test_definition
   image: fedora:23
+
+test:f24:
+  <<: *test_definition
+  image: fedora:24
 
 test:rawhide:
   <<: *test_definition
