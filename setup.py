@@ -36,7 +36,7 @@ setup(
     keywords='packages,easy,quick',
     author='Petr Hracek',
     author_email='phracek@redhat.com',
-    url='https://github.com/phracek/rebase-helper',
+    url='https://github.com/rebase-helper/rebase-helper',
     license='GPLv2+',
     packages=['rebasehelper', 'rebasehelper.checkers'],
     include_package_data=True,

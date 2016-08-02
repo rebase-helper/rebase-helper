@@ -12,7 +12,7 @@ Install a rebase-helper package
 
 - or from GitHub:
 
-  git clone https://github.com/phracek/rebase-helper
+  git clone https://github.com/rebase-helper/rebase-helper
 
 Nowadays only koji build systems are used as a support for upstream monitoring systems.
 
