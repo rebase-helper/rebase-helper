@@ -403,8 +403,8 @@ class SpecFile(object):
         :return: 
         """
         for line in self.spec_content:
-            # https://regexper.com/#%5ERelease%3A%5Cs*(%5B0-9%5D*%5C.%3F%5B0-9%5D%2B)(%5C..%2B)%3F%25%7B%5C%3Fdist%7D%5Cs*
-            match = re.search(r'^Release:\s*([0-9]*\.?[0-9]+)(\..+)?%{\?dist}\s*', line)
+            # https://regexper.com/#%5ERelease%3A%5Cs*(%5B0-9%5D*%5C.%3F%5B0-9%5D%2B)(.%2B)%3F%25%7B%5C%3Fdist%7D%5Cs*
+            match = re.search(r'^Release:\s*([0-9]*\.?[0-9]+)(.+)?%{\?dist}\s*', line)
             if match:
                 return match.group(1)
 
