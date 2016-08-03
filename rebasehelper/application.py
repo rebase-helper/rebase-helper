@@ -656,6 +656,7 @@ class Application(object):
             logger.info(message % (data['version'], build_url))
 
     def set_upstream_monitoring(self):
+        # This function is used by the-new-hotness, do not remove it!
         self.upstream_monitoring = True
 
     def get_rebasehelper_data(self):
