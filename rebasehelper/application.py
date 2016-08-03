@@ -724,7 +724,7 @@ class Application(object):
                             self.print_koji_logs()
                         elif self.conf.buildtool == CoprBuildTool.CMD:
                             self.print_copr_logs()
-                        return 0
+                        return
                 except RuntimeError:
                     logger.error('Unknown error caused by build log analysis')
                     # TODO: exception should be raised instead of returning a value - it is never checked!
