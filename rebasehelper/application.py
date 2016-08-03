@@ -449,9 +449,6 @@ class Application(object):
             build_dict['builds_nowait'] = self.conf.builds_nowait
             build_dict['build_tasks'] = self.conf.build_tasks
             build_dict['builder_options'] = self.conf.builder_options
-            if self.conf.buildtool in ("copr", "fedpkg") and self.conf.builder_options is not None:
-                logger.warning("Use of '--builder-options' is not supported with 'copr' or 'fedpkg' build tools! The "
-                               "option will be ignored.")
 
             files = {}
             number_retries = 0
@@ -689,21 +686,35 @@ class Application(object):
         return rh_stuff
 
     def run(self):
+        # TODO: Move this check to CliHelper OR possibly to a private method validating the configuration.
         if self.conf.fedpkg_build_tasks:
-            # TODO: Move this check to CliHelper
             logger.warning("Option --fedpkg-build-tasks is deprecated, use --build-tasks instead.")
             if not self.conf.build_tasks:
                 self.conf.build_tasks = self.conf.fedpkg_build_tasks
 
-        if self.conf.build_tasks and not self.conf.builds_nowait:
-            if self.conf.buildtool in [KojiBuildTool.CMD, CoprBuildTool.CMD]:
-                # TODO: The check as described does not make sense - add explanation or remove
-                logger.error("--builds-nowait has to be specified with --build-tasks.")
-                # TODO: exception should be raised instead of returning a value - it is never checked!
-                return 1
-            else:
-                logger.warning("Options are allowed only for koji or copr build tools. Suppress them.")
-                self.conf.build_tasks = self.conf.builds_nowait = False
+        # Certain options can be used only with specific build tools
+        # here are checks for remote build tools
+        if self.conf.buildtool not in [KojiBuildTool.CMD, CoprBuildTool.CMD]:
+            options_used = []
+            if self.conf.build_tasks is not None:
+                options_used.append('--build-tasks')
+            if self.conf.builds_nowait is True:
+                options_used.append('--builds-nowait')
+            if options_used:
+                raise RebaseHelperError("%s can be used only with the following build tools: %s",
+                                        ' and '.join(options_used),
+                                        ', '.join([KojiBuildTool.CMD, CoprBuildTool.CMD])
+                                        )
+        # here are checks for local builders
+        elif self.conf.buildtool not in [RpmbuildBuildTool.CMD, MockBuildTool.CMD]:
+            options_used = []
+            if self.conf.builder_options is not None:
+                options_used.append('--builder-options')
+            if options_used:
+                raise RebaseHelperError("%s can be used only with the following build tools: %s",
+                                        ' and '.join(options_used),
+                                        ', '.join([RpmbuildBuildTool.CMD, MockBuildTool.CMD])
+                                        )
 
         sources = None
         if self.conf.build_tasks is None:
