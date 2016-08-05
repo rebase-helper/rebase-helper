@@ -25,13 +25,12 @@ import json
 
 from .base_test import BaseTest
 from rebasehelper.output_tool import OutputTool
-from rebasehelper.settings import REBASE_HELPER_RESULTS_LOG
 from rebasehelper.results_store import ResultsStore
 
 
 class TestOutputTool(BaseTest):
     """
-    Class is used for testing OutputTool
+    Class is used for testing OutputTool and other BaseOutputTool based classes
     """
 
     def setup(self):
@@ -62,6 +61,8 @@ class TestOutputTool(BaseTest):
         self.results_store.set_checker_output('Results from checker(s)', test_output)
         self.results_store.set_info_text('Information text', 'some information text')
         self.results_store.set_info_text('Next Information', 'some another information text')
+
+        self.results_file_path = os.path.join(self.WORKING_DIR, 'output_file')
 
     def get_expected_text_output(self):
         expected_output = """
@@ -96,7 +97,8 @@ Following files were moved
 See for more details pkgdiff"""
         return expected_output
 
-    def get_expected_json_output(self):
+    @staticmethod
+    def get_expected_json_output():
         expected_output = {
             ResultsStore.RESULTS_BUILDS: {
                 "new": {
@@ -133,27 +135,19 @@ See for more details pkgdiff"""
         }
         return expected_output
 
-    def test_text_output(self):
+    def test_text_output_tool(self):
         output = OutputTool('text')
+        output.print_information(self.results_file_path, self.results_store)
 
-        logfile = os.path.join(self.TESTS_DIR, REBASE_HELPER_RESULTS_LOG)
-        output.print_information(logfile, self.results_store)
-
-        with open(logfile) as f:
+        with open(self.results_file_path) as f:
             lines = [y.strip() for y in f.readlines()]
             assert lines == self.get_expected_text_output().split('\n')
 
-        os.unlink(logfile)
-
-    def test_json_output(self):
+    def test_json_output_tool(self):
         output = OutputTool('json')
+        output.print_information(self.results_file_path, self.results_store)
 
-        logfile = os.path.join(self.TESTS_DIR, REBASE_HELPER_RESULTS_LOG)
-        output.print_information(logfile, self.results_store)
-
-        with open(logfile) as f:
-            json_dict = json.loads(f.read(), encoding='utf-8')
+        with open(self.results_file_path) as f:
+            json_dict = json.load(f, encoding='utf-8')
             # in Python2 strings in json decoded dict are Unicode, which would make the test fail
             assert json_dict == json.loads(json.dumps(self.get_expected_json_output()))
-
-        os.unlink(logfile)
