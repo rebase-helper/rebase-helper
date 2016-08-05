@@ -27,7 +27,7 @@ from six import StringIO
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.utils import PathHelper
 from rebasehelper.exceptions import CheckerNotFoundError
-from rebasehelper.base_output import OutputLogger
+from rebasehelper.results_store import results_store
 from rebasehelper.checker import BaseChecker
 
 
@@ -51,8 +51,8 @@ class CsmockTool(BaseChecker):
         """Compares old and new RPMs using pkgdiff"""
         csmock_report = {}
 
-        old_pkgs = OutputLogger.get_old_build().get('srpm', None)
-        new_pkgs = OutputLogger.get_new_build().get('srpm', None)
+        old_pkgs = results_store.get_old_build().get('srpm', None)
+        new_pkgs = results_store.get_new_build().get('srpm', None)
         csmock_dir = os.path.join(results_dir, cls.CMD)
         os.makedirs(csmock_dir)
         arguments = ['--force', '-a', '-r', 'fedora-rawhide-x86_64', '--base-srpm']

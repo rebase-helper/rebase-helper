@@ -27,7 +27,7 @@ import re
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.logger import logger
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
-from rebasehelper.base_output import OutputLogger
+from rebasehelper.results_store import results_store
 from rebasehelper import settings
 from rebasehelper.checker import BaseChecker
 
@@ -67,8 +67,8 @@ class AbiCheckerTool(BaseChecker):
     @classmethod
     def run_check(cls, result_dir):
         """Compares old and new RPMs using pkgdiff"""
-        debug_old, rest_pkgs_old = cls._get_packages_for_abipkgdiff(OutputLogger.get_build('old'))
-        debug_new, rest_pkgs_new = cls._get_packages_for_abipkgdiff(OutputLogger.get_build('new'))
+        debug_old, rest_pkgs_old = cls._get_packages_for_abipkgdiff(results_store.get_build('old'))
+        debug_new, rest_pkgs_new = cls._get_packages_for_abipkgdiff(results_store.get_build('new'))
         cmd = [cls.CMD]
         if debug_old is None:
             logger.warning("Package doesn't contain any debug package")

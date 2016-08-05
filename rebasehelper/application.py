@@ -38,7 +38,7 @@ from rebasehelper.build_helper import Builder, SourcePackageBuildError, BinaryPa
 from rebasehelper.patch_helper import Patcher
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
 from rebasehelper.build_log_analyzer import BuildLogAnalyzer, BuildLogAnalyzerMissingError
-from rebasehelper.base_output import OutputLogger
+from rebasehelper.results_store import results_store
 from rebasehelper.build_log_analyzer import BuildLogAnalyzerMakeError, BuildLogAnalyzerPatchError
 from rebasehelper import version
 
@@ -67,7 +67,7 @@ class Application(object):
         :param cli_conf: CLI object with configuration gathered from commandline
         :return: 
         """
-        OutputLogger.clear()
+        results_store.clear()
 
         self.conf = cli_conf
         self.execution_dir = execution_dir
@@ -171,7 +171,7 @@ class Application(object):
                                   download=not self.conf.not_download_sources)
         # Check whether test suite is enabled at build time
         if not self.spec_file.is_test_suite_enabled():
-            OutputLogger.set_info_text('WARNING', 'Test suite is not enabled at build time.')
+            results_store.set_info_text('WARNING', 'Test suite is not enabled at build time.')
         #  create an object representing the rebased SPEC file
         self.rebase_spec_file = self.spec_file.copy(self.rebase_spec_file_path)
 
@@ -234,7 +234,7 @@ class Application(object):
             if not data['rpm']:
                 logger.error('Your path %s%s/RPM does not contain any RPM packages', dirname, version)
                 found = False
-            OutputLogger.set_build_data(version, data)
+            results_store.set_build_data(version, data)
         if not found:
             return False
         return True
@@ -411,10 +411,7 @@ class Application(object):
         except RuntimeError:
             raise RebaseHelperError('Patching failed')
         self.rebase_spec_file.write_updated_patches(self.rebased_patches)
-        if self.conf.non_interactive:
-            if 'unapplied' in self.rebased_patches:
-                OutputLogger.set_patch_output('Unapplied patches:', self.rebased_patches['unapplied'])
-        OutputLogger.set_patch_output('Patches:', self.rebased_patches)
+        results_store.set_patches_results(self.rebased_patches)
 
     def build_packages(self):
         """Function calls build class for building packages"""
@@ -469,7 +466,7 @@ class Application(object):
                                 kh = KojiHelper()
                                 try:
                                     build_dict['rpm'], build_dict['logs'] = kh.get_koji_tasks(task_id, results_dir)
-                                    OutputLogger.set_build_data(version, build_dict)
+                                    results_store.set_build_data(version, build_dict)
                                     if not build_dict['rpm']:
                                         return False
                                 except TypeError:
@@ -489,7 +486,7 @@ class Application(object):
                                         logger.info('Copr build {} did not complete successfully'.format(build_id))
                                         return False
                     # Build finishes properly. Go out from while cycle
-                    OutputLogger.set_build_data(version, build_dict)
+                    results_store.set_build_data(version, build_dict)
                     break
 
                 except SourcePackageBuildError:
@@ -504,7 +501,7 @@ class Application(object):
                     #  always fail for original version
                     rpm_dir = os.path.join(results_dir, 'RPM')
                     build_dict.update(builder.get_logs())
-                    OutputLogger.set_build_data(version, build_dict)
+                    results_store.set_build_data(version, build_dict)
                     build_log = 'build.log'
                     build_log_path = os.path.join(rpm_dir, build_log)
                     if version == 'old':
@@ -576,7 +573,7 @@ class Application(object):
                     logger.error("Rebase-helper did not find checker '%s'." % checker_name)
 
         for diff_name, result in six.iteritems(results):
-            OutputLogger.set_checker_output(diff_name, result)
+            results_store.set_checker_output(diff_name, result)
 
     def get_all_log_files(self):
         """
@@ -596,13 +593,13 @@ class Application(object):
         result = {}
         result['build_ref'] = {}
         for version in ['old', 'new']:
-            result['build_ref'][version] = OutputLogger.get_build(version)
+            result['build_ref'][version] = results_store.get_build(version)
         return result
 
     def get_checker_outputs(self):
         checkers = {}
-        if OutputLogger.get_checkers():
-            for check, data in six.iteritems(OutputLogger.get_checkers()):
+        if results_store.get_checkers():
+            for check, data in six.iteritems(results_store.get_checkers()):
                 if data:
                     for log in six.iterkeys(data):
                         if FileHelper.file_available(log):
@@ -619,8 +616,8 @@ class Application(object):
         """
         patches = False
         output_patch_string = []
-        if OutputLogger.get_patches():
-            for key, val in six.iteritems(OutputLogger.get_patches()):
+        if results_store.get_patches():
+            for key, val in six.iteritems(results_store.get_patches()):
                 if key:
                     output_patch_string.append('Following patches have been %s:\n%s' % (key, val))
                     patches = True
@@ -677,7 +674,7 @@ class Application(object):
             rh_dict['rpm'], rh_dict['logs'] = kh.get_koji_tasks([task], compare_dirname)
             rh_dict['version'] = upstream_version
             rh_dict['name'] = package
-            OutputLogger.set_build_data(version, rh_dict)
+            results_store.set_build_data(version, rh_dict)
         if tasks_dict['status'] == 'CLOSED':
             self.run_package_checkers(dir_name)
         self.print_summary()

@@ -20,13 +20,12 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
-import six
-from rebasehelper.base_output import OutputLogger
+from rebasehelper.results_store import ResultsStore
 
 
-class TestBaseOutput(object):
+class TestResultsStore(object):
     """
-    Class is used for testing OutputTool
+    tests of ResultsStore class
     """
     old_rpm_data = {'rpm': ['rpm-0.1.0.x86_64.rpm', ' rpm-devel-0.1.0.x86_64.rpm'],
                 'srpm': 'rpm-0.1.0.src.rpm',
@@ -40,22 +39,12 @@ class TestBaseOutput(object):
     info_data2 = {'Next Information': 'some another information text'}
 
     def setup(self):
-        OutputLogger.set_info_text('Information text', 'some information text')
-        OutputLogger.set_info_text('Next Information', 'some another information text')
-        OutputLogger.set_patch_output('Patches:', self.patches_data)
-        OutputLogger.set_build_data('old', self.old_rpm_data)
-        OutputLogger.set_build_data('new', self.new_rpm_data)
-
-    def test_base_output_global(self):
-        expect_dict = self.info_data
-        expect_dict.update(self.info_data2)
-        build_dict = {'old': self.old_rpm_data,
-                      'new': self.new_rpm_data}
-        expected_result = {'build': build_dict,
-                           'patch': self.patches_data,
-                           'information': expect_dict}
-        for key, value in six.iteritems(expected_result):
-            assert value == expected_result[key]
+        self.results_store = ResultsStore()
+        self.results_store.set_info_text('Information text', 'some information text')
+        self.results_store.set_info_text('Next Information', 'some another information text')
+        self.results_store.set_patches_results(self.patches_data)
+        self.results_store.set_build_data('old', self.old_rpm_data)
+        self.results_store.set_build_data('new', self.new_rpm_data)
 
     def test_base_output_info(self):
         """
@@ -63,7 +52,7 @@ class TestBaseOutput(object):
 
         :return: 
         """
-        info_results = OutputLogger.get_summary_info()
+        info_results = self.results_store.get_summary_info()
         expect_dict = self.info_data
         expect_dict.update(self.info_data2)
         assert info_results == expect_dict
@@ -74,7 +63,7 @@ class TestBaseOutput(object):
 
         :return: 
         """
-        patch_results = OutputLogger.get_patches()
+        patch_results = self.results_store.get_patches()
         expected_patches = self.patches_data
         assert patch_results == expected_patches
 
@@ -84,7 +73,7 @@ class TestBaseOutput(object):
 
         :return: 
         """
-        build_results = OutputLogger.get_build('old')
+        build_results = self.results_store.get_build('old')
         assert build_results == self.old_rpm_data
 
     def test_base_output_builds_new(self):
@@ -93,5 +82,5 @@ class TestBaseOutput(object):
 
         :return: 
         """
-        build_results = OutputLogger.get_build('new')
+        build_results = self.results_store.get_build('new')
         assert build_results == self.new_rpm_data
