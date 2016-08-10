@@ -25,16 +25,17 @@ import json
 
 from .base_test import BaseTest
 from rebasehelper.output_tool import OutputTool
-from rebasehelper.settings import REBASE_HELPER_RESULTS_LOG
-from rebasehelper.base_output import OutputLogger
+from rebasehelper.results_store import ResultsStore
 
 
 class TestOutputTool(BaseTest):
     """
-    Class is used for testing OutputTool
+    Class is used for testing OutputTool and other BaseOutputTool based classes
     """
 
-    def get_data(self):
+    def setup(self):
+        super(TestOutputTool, self).setup()
+
         data = {'old': {'patches_full': {0: ['mytest.patch', '-p1', 0],
                                          1: ['mytest2.patch', '-p1', 1]},
                         'srpm': './test-1.2.0-1.src.rpm',
@@ -50,7 +51,18 @@ class TestOutputTool(BaseTest):
                 'results_dir': self.WORKING_DIR,
                 'moved': ['/usr/sbin/test', '/usr/sbin/test2'],
                 }
-        return data
+
+        self.results_store = ResultsStore()
+        self.results_store.set_build_data('old', data['old'])
+        self.results_store.set_build_data('new', data['new'])
+        self.results_store.set_patches_results(data['patches'])
+        message = 'Following files were moved\n%s\n' % '\n'.join(data['moved'])
+        test_output = {'pkgdiff': message}
+        self.results_store.set_checker_output('Results from checker(s)', test_output)
+        self.results_store.set_info_text('Information text', 'some information text')
+        self.results_store.set_info_text('Next Information', 'some another information text')
+
+        self.results_file_path = os.path.join(self.WORKING_DIR, 'output_file')
 
     def get_expected_text_output(self):
         expected_output = """
@@ -85,63 +97,57 @@ Following files were moved
 See for more details pkgdiff"""
         return expected_output
 
-    def get_expected_json_output(self):
-        expected_output = {"build": {"new": {"logs": ["logfile3.log", "logfile4.log"],
-                                             "patches_full": {"0": ["mytest.patch", 0, "-p1"],
-                                                              "1": ["mytest2.patch", 1, "-p1"]
-                                                              },
-                                             "rpm": ["./test-1.2.2-1.x86_64.rpm", "./test-devel-1.2.2-1.x86_64.rpm"],
-                                             "srpm": "./test-1.2.2-1.src.rpm"
-                                             },
-                                     "old": {"logs": ["logfile1.log", "logfile2.log"],
-                                             "patches_full": {"0": ["mytest.patch", "-p1", 0],
-                                                              "1": ["mytest2.patch", "-p1", 1]
-                                                              },
-                                             "rpm": ["./test-1.2.0-1.x86_64.rpm", "./test-devel-1.2.0-1.x86_64.rpm"],
-                                             "srpm": "./test-1.2.0-1.src.rpm"
-                                             }
-                                     },
-                           "checker": {"Results from checker(s)": {"pkgdiff": "Following files were moved\n"
-                                                                              "/usr/sbin/test\n/usr/sbin/test2\n"
-                                                                   }
-                                       },
-                           "information": {"Information text": "some information text",
-                                           "Next Information": "some another information text"
-                                           },
-                           "patch": {"Patches:": {"deleted": ["mytest2.patch"]
-                                                  }
-                                     }
-                           }
+    @staticmethod
+    def get_expected_json_output():
+        expected_output = {
+            ResultsStore.RESULTS_BUILDS: {
+                "new": {
+                    "logs": ["logfile3.log", "logfile4.log"],
+                    "patches_full": {
+                        "0": ["mytest.patch", 0, "-p1"],
+                        "1": ["mytest2.patch", 1, "-p1"]
+                    },
+                    "rpm": ["./test-1.2.2-1.x86_64.rpm", "./test-devel-1.2.2-1.x86_64.rpm"],
+                    "srpm": "./test-1.2.2-1.src.rpm"
+                },
+                "old": {
+                    "logs": ["logfile1.log", "logfile2.log"],
+                    "patches_full": {
+                        "0": ["mytest.patch", "-p1", 0],
+                        "1": ["mytest2.patch", "-p1", 1]
+                    },
+                    "rpm": ["./test-1.2.0-1.x86_64.rpm", "./test-devel-1.2.0-1.x86_64.rpm"],
+                    "srpm": "./test-1.2.0-1.src.rpm"
+                }
+            },
+            ResultsStore.RESULTS_CHECKERS: {
+                "Results from checker(s)": {
+                    "pkgdiff": "Following files were moved\n/usr/sbin/test\n/usr/sbin/test2\n"
+                }
+            },
+            ResultsStore.RESULTS_INFORMATION: {
+                "Information text": "some information text",
+                "Next Information": "some another information text"
+            },
+            ResultsStore.RESULTS_PATCHES: {
+                "deleted": ["mytest2.patch"]
+            }
+        }
         return expected_output
 
-    def test_text_output(self):
+    def test_text_output_tool(self):
         output = OutputTool('text')
-        data = self.get_data()
-        OutputLogger.set_build_data('old', data['old'])
-        OutputLogger.set_build_data('new', data['new'])
-        OutputLogger.set_patch_output('Patches:', data['patches'])
-        message = 'Following files were moved\n%s\n' % '\n'.join(data['moved'])
-        test_output = {'pkgdiff': message}
-        OutputLogger.set_checker_output('Results from checker(s)', test_output)
+        output.print_information(self.results_file_path, self.results_store)
 
-        logfile = os.path.join(self.TESTS_DIR, REBASE_HELPER_RESULTS_LOG)
-        output.print_information(logfile)
-
-        with open(logfile) as f:
+        with open(self.results_file_path) as f:
             lines = [y.strip() for y in f.readlines()]
             assert lines == self.get_expected_text_output().split('\n')
 
-        os.unlink(logfile)
-
-    def test_json_output(self):
+    def test_json_output_tool(self):
         output = OutputTool('json')
-        data = self.get_data()
+        output.print_information(self.results_file_path, self.results_store)
 
-        logfile = os.path.join(self.TESTS_DIR, REBASE_HELPER_RESULTS_LOG)
-        output.print_information(logfile)
-
-        with open(logfile) as f:
-            json_dict = json.loads(f.read(), encoding='utf-8')
-            assert json_dict == self.get_expected_json_output()
-
-        os.unlink(logfile)
+        with open(self.results_file_path) as f:
+            json_dict = json.load(f, encoding='utf-8')
+            # in Python2 strings in json decoded dict are Unicode, which would make the test fail
+            assert json_dict == json.loads(json.dumps(self.get_expected_json_output()))

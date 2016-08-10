@@ -1,0 +1,95 @@
+# -*- coding: utf-8 -*-
+#
+# This tool helps you to rebase package to the latest version
+# Copyright (C) 2013-2014 Red Hat, Inc.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# he Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Authors: Petr Hracek <phracek@redhat.com>
+#          Tomas Hozza <thozza@redhat.com>
+
+import copy
+
+
+class ResultsStore(object):
+    """Class for storing information about results from rebase-helper actions."""
+
+    RESULTS_INFORMATION = 'information'
+    RESULTS_CHECKERS = 'checkers'
+    RESULTS_BUILDS = 'builds'
+    RESULTS_PATCHES = 'patches'
+
+    def __init__(self):
+        self._data_store = dict()
+
+    def clear(self):
+        self._data_store.clear()
+
+    def set_results(self, results_type, data_dict):
+        if results_type not in (
+                self.RESULTS_INFORMATION,
+                self.RESULTS_CHECKERS,
+                self.RESULTS_BUILDS,
+                self.RESULTS_PATCHES
+        ):
+            raise ValueError('Trying to set unsupported type of results: %s!', results_type)
+
+        try:
+            dict_to_update = self._data_store[results_type]
+        except KeyError:
+            dict_to_update = dict()
+            self._data_store[results_type] = dict_to_update
+        dict_to_update.update(data_dict)
+
+    def set_info_text(self, text, data):
+        self.set_results(self.RESULTS_INFORMATION, {text: data})
+
+    def set_patches_results(self, results_dict):
+        self.set_results(self.RESULTS_PATCHES, results_dict)
+
+    def set_checker_output(self, text, data):
+        self.set_results(self.RESULTS_CHECKERS, {text: data})
+
+    def set_build_data(self, version, data):
+        self.set_results(self.RESULTS_BUILDS, {version: data})
+
+    def get_all(self):
+        return copy.deepcopy(self._data_store)
+
+    def get_build(self, version):
+        builds_results = self._data_store.get(self.RESULTS_BUILDS, None)
+        if builds_results is not None:
+            return builds_results.get(version, None)
+        else:
+            return None
+
+    def get_old_build(self):
+        return self.get_build('old')
+
+    def get_new_build(self):
+        return self.get_build('new')
+
+    def get_patches(self):
+        return self._data_store.get(self.RESULTS_PATCHES, None)
+
+    def get_checkers(self):
+        return self._data_store.get(self.RESULTS_CHECKERS, None)
+
+    def get_summary_info(self):
+        return self._data_store.get(self.RESULTS_INFORMATION, None)
+
+
+# global results store
+results_store = ResultsStore()

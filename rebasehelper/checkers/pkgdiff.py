@@ -23,13 +23,11 @@
 from __future__ import print_function
 import os
 import six
-import re
-from six import StringIO
 
 from rebasehelper.utils import ProcessHelper, RpmHelper
 from rebasehelper.logger import logger
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
-from rebasehelper.base_output import OutputLogger
+from rebasehelper.results_store import results_store
 from rebasehelper import settings
 from rebasehelper.checker import BaseChecker
 from xml.etree import ElementTree
@@ -111,13 +109,13 @@ class PkgDiffTool(BaseChecker):
         """
         XML_FILES = ['files.xml', 'symbols.xml']
         if old_version is None:
-            old_version = OutputLogger.get_old_build().get('version')
+            old_version = results_store.get_old_build().get('version')
             if old_version is '':
-                old_version = cls._get_rpm_info('version', OutputLogger.get_old_build()['rpm'])
+                old_version = cls._get_rpm_info('version', results_store.get_old_build()['rpm'])
         if new_version is None:
-            new_version = OutputLogger.get_new_build().get('version')
+            new_version = results_store.get_new_build().get('version')
             if new_version is '':
-                new_version = cls._get_rpm_info('version', OutputLogger.get_new_build()['rpm'])
+                new_version = cls._get_rpm_info('version', results_store.get_new_build()['rpm'])
 
         for tag in settings.CHECKER_TAGS:
             cls.results_dict[tag] = []
@@ -208,7 +206,7 @@ class PkgDiffTool(BaseChecker):
         cmd = [cls.CMD]
         cmd.append('-hide-unchanged')
         for version in ['old', 'new']:
-            old = OutputLogger.get_build(version)
+            old = results_store.get_build(version)
             if old:
                 file_name = cls._create_xml(version, input_structure=old)
                 cmd.append(file_name)

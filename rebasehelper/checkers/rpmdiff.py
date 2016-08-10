@@ -29,7 +29,7 @@ from six import StringIO
 from rebasehelper.utils import ProcessHelper, RpmHelper
 from rebasehelper.logger import logger
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
-from rebasehelper.base_output import OutputLogger
+from rebasehelper.results_store import results_store
 from rebasehelper import settings
 from rebasehelper.checker import BaseChecker
 
@@ -110,8 +110,8 @@ class RpmDiffTool(BaseChecker):
 
         # Only S (size), M(mode) and 5 (checksum) are now important
         not_catched_flags = ['T', 'F', 'G', 'U', 'V', 'L', 'D', 'N']
-        old_pkgs = cls._get_rpms(OutputLogger.get_old_build().get('rpm', None))
-        new_pkgs = cls._get_rpms(OutputLogger.get_new_build().get('rpm', None))
+        old_pkgs = cls._get_rpms(results_store.get_old_build().get('rpm', None))
+        new_pkgs = cls._get_rpms(results_store.get_new_build().get('rpm', None))
         for key, value in six.iteritems(old_pkgs):
             cmd = [cls.CMD]
             # TODO modify to online command

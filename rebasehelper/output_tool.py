@@ -27,7 +27,7 @@ import json
 
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.logger import LoggerHelper, logger, logger_report
-from rebasehelper.base_output import OutputLogger
+from rebasehelper.results_store import results_store
 
 output_tools = {}
 
@@ -56,7 +56,7 @@ class BaseOutputTool(object):
         """Checks if tool name matches the desired one."""
         raise NotImplementedError()
 
-    def print_summary(self, path, **kwargs):
+    def print_summary(self, path, results, **kwargs):
         """
         Return list of files which has been changed against old version
         This will be used by checkers
@@ -136,14 +136,14 @@ class TextOutputTool(BaseOutputTool):
             logger_report.info('- %s', logs)
 
     @classmethod
-    def print_summary(cls, path):
+    def print_summary(cls, path, results=results_store):
         """
         Function is used for printing summary informations
 
         :return: 
         """
-        if OutputLogger.get_summary_info():
-            for key, value in six.iteritems(OutputLogger.get_summary_info()):
+        if results.get_summary_info():
+            for key, value in six.iteritems(results.get_summary_info()):
                 logger.info("%s %s\n", key, value)
 
         try:
@@ -152,21 +152,21 @@ class TextOutputTool(BaseOutputTool):
             raise RebaseHelperError("Can not create results file '%s'" % path)
 
         type_pkgs = ['old', 'new']
-        if OutputLogger.get_patches():
-            cls.print_patches(OutputLogger.get_patches(), '\nSummary information about patches:')
+        if results.get_patches():
+            cls.print_patches(results.get_patches(), '\nSummary information about patches:')
         for pkg in type_pkgs:
-            type_pkg = OutputLogger.get_build(pkg)
+            type_pkg = results.get_build(pkg)
             if type_pkg:
                 cls.print_rpms(type_pkg, pkg.capitalize())
                 cls.print_build_logs(type_pkg, pkg.capitalize())
 
-        cls.print_pkgdiff_tool()
+        cls.print_pkgdiff_tool(results.get_checkers())
 
     @classmethod
-    def print_pkgdiff_tool(cls):
+    def print_pkgdiff_tool(cls, checkers_results):
         """Function prints a summary information about pkgcomparetool"""
-        if OutputLogger.get_checkers():
-            for check, data in six.iteritems(OutputLogger.get_checkers()):
+        if checkers_results:
+            for check, data in six.iteritems(checkers_results):
                 logger_report.info("=== Checker %s results ===", check)
                 if data:
                     for checker, output in six.iteritems(data):
@@ -194,14 +194,14 @@ class JSONOutputTool(BaseOutputTool):
             return False
 
     @classmethod
-    def print_summary(cls, path):
+    def print_summary(cls, path, results=results_store):
         """
         Function is used for storing output dictionary into JSON structure
         JSON output file is stored into path
         :return:
         """
         with open(path, 'w') as outputfile:
-            json.dump(OutputLogger.get_all(), outputfile, indent=4, sort_keys=True)
+            json.dump(results.get_all(), outputfile, indent=4, sort_keys=True)
 
 
 class OutputTool(object):
@@ -221,7 +221,7 @@ class OutputTool(object):
         if self._tool is None:
             raise NotImplementedError("Unsupported output tool")
 
-    def print_information(self, path):
+    def print_information(self, path, results=results_store):
         """Build sources."""
         logger.debug("Printing information using '%s'", self._output_tool_name)
-        return self._tool.print_summary(path)
+        return self._tool.print_summary(path, results)
