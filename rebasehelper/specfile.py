@@ -166,6 +166,15 @@ class SpecFile(object):
         sources_list = [x for x in self.spc.sources if x[2] == 1]
         remote_files_re = re.compile(r'(http:|https:|ftp:)//.*')
 
+        # Perform predefined URL transformations
+        def _transform_url(url):
+            for trans in settings.SOURCES_URL_TRANSFORMATIONS:
+                url = re.sub(trans[0], trans[1], url)
+            return url
+        # Do the transformation on the first element of each tuple in
+        # sources_list, leaving the rest of the tuple as is
+        sources_list = [(_transform_url(x[0]),) + x[1:] for x in sources_list]
+
         for index, src in enumerate(sorted(sources_list, key=lambda source: source[1])):
             # src is type of (SOURCE, Index of source, Type of source (PAtch, Source)
             # We need to download all archives and only the one
