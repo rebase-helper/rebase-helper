@@ -30,7 +30,8 @@ import argparse
 import shlex
 from datetime import date
 
-from rebasehelper.utils import DownloadHelper, DownloadError, MacroHelper, defenc
+from rebasehelper.utils import DownloadHelper, DownloadError, MacroHelper
+from rebasehelper.utils import LookasideCacheHelper, LookasideCacheError, defenc
 from rebasehelper.logger import logger
 from rebasehelper import settings
 from rebasehelper.archive import Archive
@@ -143,6 +144,13 @@ class SpecFile(object):
         self.prep_section = self.spc.prep
         # HEADER of SPEC file
         self.hdr = self.spc.sourceHeader
+
+        try:
+            # try to download old sources from Fedora lookaside cache
+            LookasideCacheHelper.download('fedpkg', os.path.dirname(self.path), self.get_package_name())
+        except LookasideCacheError as e:
+            logger.debug("Downloading old sources from lookaside cache failed. "
+                         "Reason: '{}'.".format(str(e)))
 
         # All source file mentioned in SPEC file Source[0-9]*
         self.rpm_sections = self._split_sections()
