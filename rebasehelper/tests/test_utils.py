@@ -40,6 +40,7 @@ from rebasehelper.utils import PathHelper
 from rebasehelper.utils import TemporaryEnvironment
 from rebasehelper.utils import RpmHelper
 from rebasehelper.utils import MacroHelper
+from rebasehelper.utils import LookasideCacheHelper
 
 
 class TestConsoleHelper(BaseTest):
@@ -629,3 +630,38 @@ class TestMacroHelper(BaseTest):
         assert macros[0]['name'] == 'test_macro'
         assert macros[0]['value'] == 'test_macro value'
         assert macros[0]['level'] == -1
+
+
+class TestLookasideCacheHelper(BaseTest):
+
+    SETUPS = [
+        {
+            'tool': 'fedpkg',
+            'package': 'vim-go',
+            'filename': 'v1.6.tar.gz',
+            'hashtype': 'md5',
+            'hash': '847d3e3577982a9515ad0aec6d5111b2',
+            'url': 'http://pkgs.fedoraproject.org/repo/pkgs',
+        },
+        {
+            'tool': 'fedpkg',
+            'package': 'rebase-helper',
+            'filename': '0.8.0.tar.gz',
+            'hashtype': 'md5',
+            'hash': '91de540caef64cb8aa7fd250f2627a93',
+            'url': 'http://pkgs.fedoraproject.org/repo/pkgs',
+        },
+    ]
+
+    @pytest.mark.parametrize('setup', SETUPS)
+    def test_download(self, setup):
+        target = os.path.basename(setup['filename'])
+        LookasideCacheHelper._download_source(setup['tool'],
+                                              setup['url'],
+                                              setup['package'],
+                                              setup['filename'],
+                                              setup['hashtype'],
+                                              setup['hash'],
+                                              target)
+        assert os.path.isfile(target)
+        assert LookasideCacheHelper._hash(target, setup['hashtype']) == setup['hash']
