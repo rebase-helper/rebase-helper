@@ -20,5 +20,5 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
-PROGRAM_DESCRIPTION = "OS package rebase-helper"
+PROGRAM_DESCRIPTION = "Tool to help package maintainers rebase their packages to the latest upstream version"
 NEW_ISSUE_LINK = 'https://github.com/rebase-helper/rebase-helper/issues/new'

@@ -32,7 +32,39 @@ from rebasehelper.logger import logger, LoggerHelper
 from rebasehelper.exceptions import RebaseHelperError
 
 
-class ArgumentParser(argparse.ArgumentParser):
+class CustomHelpFormatter(argparse.HelpFormatter):
+
+    def _format_actions_usage(self, actions, groups):
+        text = super(CustomHelpFormatter, self)._format_actions_usage(actions, groups)
+        return text.replace(' BUILDER_OPTIONS', '=BUILDER_OPTIONS')
+
+    def _format_action_invocation(self, action):
+        text = super(CustomHelpFormatter, self)._format_action_invocation(action)
+        return text.replace(' BUILDER_OPTIONS', '=BUILDER_OPTIONS')
+
+    def _expand_help(self, action):
+        if isinstance(action.default, list):
+            default_str = ','.join([str(c) for c in action.default])
+            action.default = default_str
+        return super(CustomHelpFormatter, self)._expand_help(action)
+
+
+class CustomArgumentParser(argparse.ArgumentParser):
+
+    def _check_value(self, action, value):
+        if isinstance(value, list):
+            # converted value must be subset of the choices (if specified)
+            if action.choices is not None and not set(value).issubset(action.choices):
+                invalid = set(value).difference(action.choices)
+                if len(invalid) == 1:
+                    tup = repr(invalid.pop()), ', '.join(map(repr, action.choices))
+                    msg = 'invalid choice: %s (choose from %s)' % tup
+                else:
+                    tup = ', '.join(map(repr, invalid)), ', '.join(map(repr, action.choices))
+                    msg = 'invalid choices: %s (choose from %s)' % tup
+                raise argparse.ArgumentError(action, msg)
+        else:
+            super(CustomArgumentParser, self)._check_value(action, value)
 
     def error(self, message):
         self.print_usage(sys.stderr)
@@ -44,7 +76,8 @@ class CLI(object):
 
     def __init__(self, args=None):
         """parse arguments"""
-        self.parser = ArgumentParser(description=PROGRAM_DESCRIPTION)
+        self.parser = CustomArgumentParser(description=PROGRAM_DESCRIPTION,
+                                           formatter_class=CustomHelpFormatter)
         self.add_args()
         self.args = self.parser.parse_args(args)
 
@@ -54,51 +87,56 @@ class CLI(object):
             "--verbose",
             default=False,
             action="store_true",
-            help="Output is more verbose (recommended)"
+            help="be more verbose (recommended)"
         )
         self.parser.add_argument(
             "-p",
             "--patch-only",
             default=False,
             action="store_true",
-            help="Only apply patches"
+            help="only apply patches"
         )
         self.parser.add_argument(
             "-b",
             "--build-only",
             default=False,
             action="store_true",
-            help="Only build SRPM and RPMs"
+            help="only build SRPM and RPMs"
         )
         self.parser.add_argument(
             "--buildtool",
+            # FIXME: set of choices could be obtained dynamically
+            choices=["mock", "rpmbuild", "koji", "copr"],
             default="mock",
-            help="Select the build tool [mock, rpmbuild, koji, copr]. 'mock' is used by default."
+            help="build tool to use, defaults to %(default)s"
         )
         self.parser.add_argument(
             "--pkgcomparetool",
-            default=False,
-            help="Select the tool for comparing two packages [pkgdiff, rpmdiff, abipkgdiff, csmock]. All compare tools"
-                 " are run by default."
+            # FIXME: set of choices could be obtained dynamically
+            choices=["pkgdiff", "rpmdiff", "abipkgdiff", "csmock"],
+            default=["pkgdiff", "rpmdiff", "abipkgdiff"],
+            type=lambda s: s.split(','),
+            help="set of tools to use for package comparison, defaults to %(default)s"
         )
         self.parser.add_argument(
             "--outputtool",
+            # FIXME: set of choices could be obtained dynamically
+            choices=["text", "json"],
             default="text",
-            help="Select the tool for showing information from rebase-helper process [text, json]. 'text' is used by"
-                 " default."
+            help="tool to use for formatting rebase output, defaults to %(default)s"
         )
         self.parser.add_argument(
             "-w",
             "--keep-workspace",
             default=False,
             action="store_true",
-            help="Use if you want rebase-helper to keep the workspace directory after finishing"
+            help="do not remove workspace directory after finishing"
         )
         self.parser.add_argument(
             "--not-download-sources",
             default=False,
             action="store_true",
-            help="Suppress to download sources from web"
+            help="do not download sources"
         )
         self.parser.add_argument(
             "-c",
@@ -106,60 +144,64 @@ class CLI(object):
             default=False,
             action="store_true",
             dest='cont',
-            help="Use if you want to continue with rebase previously interrupted"
+            help="continue previously interrupted rebase"
         )
         self.parser.add_argument(
             "sources",
             metavar='SOURCES',
-            help="Specify new upstream sources"
+            help="new upstream sources"
         )
         self.parser.add_argument(
             "--non-interactive",
             default=False,
             action="store_true",
             dest='non_interactive',
-            help="Use if you do not want a user interaction"
+            help="do not interact with user"
         )
         self.parser.add_argument(
             "--comparepkgs-only",
             default=False,
             dest="comparepkgs",
-            help="Specify dir with old and new RPM packages. Dir structure has to be like <dir_name>/{old,new}/RPM"
+            metavar="COMPAREPKGS_DIR",
+            help="compare already built packages, %(metavar)s must be a directory "
+                 "with the following structure: <dir_name>/{old,new}/RPM"
         )
         self.parser.add_argument(
             "--builds-nowait",
             default=False,
             action="store_true",
-            help="It starts koji or copr builds and does not care how they finish. "
-                 "Useful for koji and copr build tools."
+            help="do not wait for koji or copr builds to finish"
         )
         # deprecated argument, kept for backward compatibility
         self.parser.add_argument(
             "--fedpkg-build-tasks",
             dest="fedpkg_build_tasks",
+            type=lambda s: s.split(','),
             help=argparse.SUPPRESS
         )
         self.parser.add_argument(
             "--build-tasks",
             dest="build_tasks",
-            help="Specify comma-separated task ids, old task first."
+            metavar="OLD_TASK,NEW_TASK",
+            type=lambda s: s.split(','),
+            help="comma-separated koji or copr task ids"
         )
         self.parser.add_argument(
             "--results-dir",
-            help="Specify results dir where you would like to stored rebase-helper stuff."
+            help="directory where rebase-helper output will be stored"
         )
         self.parser.add_argument(
             "--build-retries",
             default=2,
-            help="Specify number of retries in case build fails.",
+            help="number of retries of a failed build, defaults to %(default)d",
             type=int
         )
         self.parser.add_argument(
             "--builder-options",
             default=None,
-            help="Enable arbitrary local builder option. The option MUST be in "
-                 "--builder-options=\"--some-builder-option\" format. If you want to add more option stay with the "
-                 "given format but divide builder options by whitespaces."
+            metavar="BUILDER_OPTIONS",
+            help="enable arbitrary local builder option(s), enclose %(metavar)s in quotes "
+                 "and note that = before it is mandatory"
         )
 
     def __getattr__(self, name):

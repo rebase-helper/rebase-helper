@@ -37,13 +37,6 @@ def register_output_tool(output_tool):
     return output_tool
 
 
-def check_output_argument(output_tool):
-    """Function checks whether output_tool argument is allowed"""
-    if output_tool not in output_tools.keys():
-        logger.error('You have to specify one of these printing output tools %s', output_tools.keys())
-        sys.exit(0)
-
-
 class BaseOutputTool(object):
 
     """

@@ -206,11 +206,6 @@ class Application(object):
         self.new_rest_sources = self.rebase_spec_file.get_sources()[1:]
         self.new_rest_sources = [os.path.abspath(x) for x in self.new_rest_sources]
 
-        # We want to inform user immediately if compare tool doesn't exist
-        supported_tools = checkers_runner.get_supported_tools()
-        if self.conf.pkgcomparetool and self.conf.pkgcomparetool not in supported_tools:
-            raise RebaseHelperError('You have to specify one of these check tools %s' % supported_tools)
-
     def _get_rebase_helper_log(self):
         return os.path.join(self.results_dir, settings.REBASE_HELPER_RESULTS_LOG)
 
@@ -439,9 +434,9 @@ class Application(object):
                             spec_object.get_full_version())
             else:
                 if version == 'old':
-                    task_id = self.conf.build_tasks.split(',')[0]
+                    task_id = self.conf.build_tasks[0]
                 else:
-                    task_id = self.conf.build_tasks.split(',')[1]
+                    task_id = self.conf.build_tasks[1]
             results_dir = os.path.join(self.results_dir, version)
             build_dict['builds_nowait'] = self.conf.builds_nowait
             build_dict['build_tasks'] = self.conf.build_tasks
@@ -562,15 +557,11 @@ class Application(object):
         """
         results = dict()
 
-        if self.conf.pkgcomparetool:
-            results[self.conf.pkgcomparetool] = checkers_runner.run_checker(results_dir, self.conf.pkgcomparetool)
-        else:
-            # no specific checker was given, just run all of them
-            for checker_name in checkers_runner.get_supported_tools():
-                try:
-                    results[checker_name] = checkers_runner.run_checker(results_dir, checker_name)
-                except CheckerNotFoundError:
-                    logger.error("Rebase-helper did not find checker '%s'." % checker_name)
+        for checker_name in self.conf.pkgcomparetool:
+            try:
+                results[checker_name] = checkers_runner.run_checker(results_dir, checker_name)
+            except CheckerNotFoundError:
+                logger.error("Rebase-helper did not find checker '%s'." % checker_name)
 
         for diff_name, result in six.iteritems(results):
             results_store.set_checker_output(diff_name, result)
@@ -626,7 +617,6 @@ class Application(object):
         return output_patch_string
 
     def print_summary(self):
-        output_tool.check_output_argument(self.conf.outputtool)
         output = output_tool.OutputTool(self.conf.outputtool)
         report_file = os.path.join(self.results_dir, self.conf.outputtool + settings.REBASE_HELPER_OUTPUT_SUFFIX)
         output.print_information(path=report_file)
