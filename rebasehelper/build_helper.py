@@ -47,7 +47,7 @@ build_tools = {}
 
 def register_build_tool(build_tool):
     build_tools[build_tool.CMD] = build_tool
-    return build_tool    
+    return build_tool
 
 
 class SourcePackageBuildError(RuntimeError):
@@ -175,6 +175,8 @@ class BuildToolBase(object):
     Base class for various build tools
     """
 
+    DEFAULT = False
+
     @classmethod
     def match(cls, cmd=None, *args, **kwargs):
         """Checks if tool name matches the desired one."""
@@ -287,6 +289,7 @@ class MockBuildTool(BuildToolBase):
     """
 
     CMD = "mock"
+    DEFAULT = True
     logs = []
 
     @classmethod
@@ -671,3 +674,9 @@ class Builder(object):
         :return: list of supported build tools
         """
         return build_tools.keys()
+
+    @classmethod
+    def get_default_tool(cls):
+        """Returns default build tool"""
+        default = [k for k, v in six.iteritems(build_tools) if v.DEFAULT]
+        return default[0] if default else None

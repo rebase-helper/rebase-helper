@@ -35,6 +35,7 @@ from rebasehelper.checker import BaseChecker
 class AbiCheckerTool(BaseChecker):
     """ Pkgdiff compare tool. """
     CMD = "abipkgdiff"
+    DEFAULT = True
     results_dir = ''
     log_name = 'abipkgdiff.log'
 

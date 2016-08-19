@@ -36,6 +36,7 @@ from xml.etree import ElementTree
 class PkgDiffTool(BaseChecker):
     """ Pkgdiff compare tool. """
     CMD = "pkgdiff"
+    DEFAULT = True
     pkgdiff_results_filename = 'pkgdiff_reports.html'
     files_xml = "files.xml"
     results_dir = ''

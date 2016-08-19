@@ -44,6 +44,8 @@ class BaseOutputTool(object):
     Each method should overwrite method like run_check
     """
 
+    DEFAULT = False
+
     @classmethod
     def match(cls, cmd=None, *args, **kwargs):
         """Checks if tool name matches the desired one."""
@@ -63,6 +65,7 @@ class TextOutputTool(BaseOutputTool):
     """ Text output tool. """
 
     PRINT = "text"
+    DEFAULT = True
 
     @classmethod
     def match(cls, cmd=None):
@@ -218,3 +221,14 @@ class OutputTool(object):
         """Build sources."""
         logger.debug("Printing information using '%s'", self._output_tool_name)
         return self._tool.print_summary(path, results)
+
+    @classmethod
+    def get_supported_tools(cls):
+        """Returns list of supported output tools"""
+        return output_tools.keys()
+
+    @classmethod
+    def get_default_tool(cls):
+        """Returns default output tool"""
+        default = [k for k, v in six.iteritems(output_tools) if v.DEFAULT]
+        return default[0] if default else None

@@ -30,6 +30,9 @@ from rebasehelper.constants import PROGRAM_DESCRIPTION, NEW_ISSUE_LINK
 from rebasehelper.application import Application
 from rebasehelper.logger import logger, LoggerHelper
 from rebasehelper.exceptions import RebaseHelperError
+from rebasehelper.build_helper import Builder
+from rebasehelper.checker import checkers_runner
+from rebasehelper.output_tool import OutputTool
 
 
 class CustomHelpFormatter(argparse.HelpFormatter):
@@ -105,24 +108,21 @@ class CLI(object):
         )
         self.parser.add_argument(
             "--buildtool",
-            # FIXME: set of choices could be obtained dynamically
-            choices=["mock", "rpmbuild", "koji", "copr"],
-            default="mock",
+            choices=Builder.get_supported_tools(),
+            default=Builder.get_default_tool(),
             help="build tool to use, defaults to %(default)s"
         )
         self.parser.add_argument(
             "--pkgcomparetool",
-            # FIXME: set of choices could be obtained dynamically
-            choices=["pkgdiff", "rpmdiff", "abipkgdiff", "csmock"],
-            default=["pkgdiff", "rpmdiff", "abipkgdiff"],
+            choices=checkers_runner.get_supported_tools(),
+            default=checkers_runner.get_default_tools(),
             type=lambda s: s.split(','),
             help="set of tools to use for package comparison, defaults to %(default)s"
         )
         self.parser.add_argument(
             "--outputtool",
-            # FIXME: set of choices could be obtained dynamically
-            choices=["text", "json"],
-            default="text",
+            choices=OutputTool.get_supported_tools(),
+            default=OutputTool.get_default_tool(),
             help="tool to use for formatting rebase output, defaults to %(default)s"
         )
         self.parser.add_argument(
