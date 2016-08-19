@@ -36,11 +36,13 @@ import string
 import gzip
 import copr
 import pyquery
+import hashlib
 
 import six
 from six import StringIO
 from six.moves import input
 from six.moves import urllib
+from six.moves import configparser
 from distutils.util import strtobool
 
 from rebasehelper.exceptions import RebaseHelperError
@@ -1245,3 +1247,76 @@ class FileHelper(object):
             return True
         else:
             return False
+
+
+class LookasideCacheError(Exception):
+
+    """Exception indicating a problem accessing lookaside cache"""
+
+    pass
+
+
+class LookasideCacheHelper(object):
+
+    """Class for downloading files from Fedora/RHEL lookaside cache"""
+
+    rpkg_config_dir = '/etc/rpkg'
+
+    @classmethod
+    def _read_config(cls, tool):
+        config = configparser.ConfigParser()
+        config.read(os.path.join(cls.rpkg_config_dir, '{}.conf'.format(tool)))
+        return dict(config.items(tool, raw=True))
+
+    @classmethod
+    def _read_sources(cls, basepath):
+        sources = []
+        path = os.path.join(basepath, 'sources')
+        if os.path.exists(path):
+            with open(path, 'r') as f:
+                for line in f.readlines():
+                    sources.append(line.split())
+        return sources
+
+    @classmethod
+    def _hash(cls, filename, hashtype):
+        try:
+            sum = hashlib.new(hashtype)
+        except ValueError:
+            raise LookasideCacheError('Unsupported hash type \'{}\''.format(hashtype))
+        with open(filename, 'rb') as f:
+            chunk = f.read(8192)
+            while chunk:
+                sum.update(chunk)
+                chunk = f.read(8192)
+        return sum.hexdigest()
+
+    @classmethod
+    def _download_source(cls, tool, url, package, filename, hashtype, hash, target=None):
+        if target is None:
+            target = os.path.basename(filename)
+        if os.path.exists(target):
+            if cls._hash(target, hashtype) == hash:
+                # nothing to do
+                return
+            else:
+                os.unlink(target)
+        if tool == 'fedpkg':
+            url = '{}/{}/{}/{}/{}/{}'.format(url, package, filename, hashtype, hash, filename)
+        else:
+            url = '{}/{}/{}/{}/{}'.format(url, package, filename, hash, filename)
+        try:
+            DownloadHelper.download_file(url, target)
+        except DownloadError as e:
+            raise LookasideCacheError(str(e))
+
+    @classmethod
+    def download(cls, tool, basepath, package):
+        try:
+            config = cls._read_config(tool)
+            url = config['lookaside']
+            hashtype = config['lookasidehash']
+        except (configparser.Error, KeyError):
+            raise LookasideCacheError('Failed to read rpkg configuration')
+        for source in cls._read_sources(basepath):
+            cls._download_source(tool, url, package, source[1], hashtype, source[0])
