@@ -31,6 +31,8 @@ from rebasehelper.logger import logger
 class BaseChecker(object):
     """ Base class used for testing tool run on final pkgs. """
 
+    DEFAULT = False
+
     @classmethod
     def match(cls, cmd):
         """
@@ -128,6 +130,10 @@ class CheckersRunner(object):
     def get_supported_tools(self):
         """Return list of supported tools"""
         return self.plugin_classes.keys()
+
+    def get_default_tools(self):
+        """Return list of default tools"""
+        return [k for k, v in six.iteritems(self.plugin_classes) if v.DEFAULT]
 
 
 # Global instance of CheckersRunner. It is enough to load it once per application run.

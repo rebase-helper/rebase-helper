@@ -37,6 +37,7 @@ from rebasehelper.checker import BaseChecker
 class RpmDiffTool(BaseChecker):
     """ RpmDiff compare tool."""
     CMD = "rpmdiff"
+    DEFAULT = True
 
     @classmethod
     def match(cls, cmd=None):
