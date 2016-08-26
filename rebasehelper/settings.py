@@ -35,6 +35,10 @@ NEW_SOURCES = 'new_sources'
 OLD_SOURCES_DIR = os.path.join(REBASE_HELPER_WORKSPACE_DIR, OLD_SOURCES)
 NEW_SOURCES_DIR = os.path.join(REBASE_HELPER_WORKSPACE_DIR, NEW_SOURCES)
 
+SOURCES_URL_TRANSFORMATIONS = [
+        ('^https?://pypi.python.org/', 'https://files.pythonhosted.org/'),
+        ]
+
 # The variable for access to full information about patches
 FULL_PATCHES = 'patches_full'
 
