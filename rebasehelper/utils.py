@@ -144,8 +144,8 @@ class ConsoleHelper(object):
         stdout_data = None
         stderr_data = None
 
-        stdout = sys.__stdout__.fileno()
-        stderr = sys.__stderr__.fileno()
+        stdout = sys.__stdout__.fileno()  # pylint:disable=no-member
+        stderr = sys.__stderr__.fileno()  # pylint:disable=no-member
 
         stdout_tmp = tempfile.TemporaryFile(
             mode='w+b') if capture_stdout else None
