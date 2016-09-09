@@ -946,8 +946,7 @@ class SpecFile(object):
                 else:
                     patch_removed = None
                 if check_not_applied or patch_removed:
-                    comment = '#'
-                    self.spec_content[index] = comment + ' '.join(fields[:-1]) + ' ' + os.path.basename(patch_name) + '\n'
+                    self.spec_content[index] = '#{0} {1}\n'.format(' '.join(fields[:-1]), os.path.basename(patch_name))
                     if patch_removed:
                         removed_patches.append(patch_num)
                 if 'modified' in patches:
