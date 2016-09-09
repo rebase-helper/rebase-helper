@@ -652,7 +652,7 @@ class MacroHelper(object):
         :return: list of macros
         """
         macro_re = re.compile(
-            '''
+            r'''
             ^\s*
             (?P<level>-?\d+)
             (?P<used>=|:)

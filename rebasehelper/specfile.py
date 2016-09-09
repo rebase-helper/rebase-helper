@@ -601,7 +601,7 @@ class SpecFile(object):
                 if settings.BEGIN_COMMENT in sec_content:
                     # We need only files which are not included yet.
                     upd_files = [f for f in missing if f not in sec_content]
-                    regex = re.compile('(' + settings.BEGIN_COMMENT + '\s*)')
+                    regex = re.compile(r'(' + settings.BEGIN_COMMENT + r'\s*)')
                     sec_content = regex.sub('\\1' + '\n'.join(upd_files) + sep,
                                             sec_content)
                 else:
@@ -750,7 +750,7 @@ class SpecFile(object):
         :param macro: 
         :return: 
         """
-        search_re = re.compile('^Release:\s*[0-9.]*[0-9]+\.{0}%{{\?dist}}\s*'.format(macro))
+        search_re = re.compile(r'^Release:\s*[0-9.]*[0-9]+\.{0}%{{\?dist}}\s*'.format(macro))
 
         for index, line in enumerate(self.spec_content):
             match = search_re.search(line)
@@ -775,7 +775,7 @@ class SpecFile(object):
         :param macro: macro name
         :param value: macro value
         """
-        macro_re = re.compile('(%global|%define)\s+(\w+)(\(.+?\))?\s+(.+)')
+        macro_re = re.compile(r'(%global|%define)\s+(\w+)(\(.+?\))?\s+(.+)')
         defined = False
 
         for index, line in enumerate(self.spec_content):
@@ -802,7 +802,7 @@ class SpecFile(object):
         :param version: string with new version
         :return: None
         """
-        version_re = re.compile('^Version:\s*(.+)')
+        version_re = re.compile(r'^Version:\s*(.+)')
         for index, line in enumerate(self.spec_content):
             match = version_re.search(line)
             if match:
@@ -980,7 +980,7 @@ class SpecFile(object):
         :return: tuple of strings with (extracted version, extra version, separator) or (None, None, None) if extraction
         failed
         """
-        version_split_regex_str = '([0-9]+[.0-9]*)([_-]?)(\w*)'
+        version_split_regex_str = r'([0-9]+[.0-9]*)([_-]?)(\w*)'
         version_split_regex = re.compile(version_split_regex_str)
         logger.debug("Splitting string '%s'", version_string)
         match = version_split_regex.search(version_string)
@@ -1007,8 +1007,8 @@ class SpecFile(object):
         :return: tuple of strings with (extracted version, extra version) or (None, None) if extraction failed
         """
         # https://regexper.com/#(%5B.0-9%5D%2B%5B-_%5D%3F%5Cw*)
-        version_regex_str = '([.0-9]+[-_]?\w*)'
-        fallback_regex_str = '^\w+[-_]?v?{0}({1})'.format(version_regex_str,
+        version_regex_str = r'([.0-9]+[-_]?\w*)'
+        fallback_regex_str = r'^\w+[-_]?v?{0}({1})'.format(version_regex_str,
                                                           '|'.join(Archive.get_supported_archives()))
         # match = re.search(regex, tarball_name)
         name = os.path.basename(archive_path)
