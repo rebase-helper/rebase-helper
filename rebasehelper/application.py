@@ -201,10 +201,8 @@ class Application(object):
         else:
             self.new_sources = os.path.abspath(self.conf.sources)
         # Contains all source except the Source0
-        self.old_rest_sources = self.spec_file.get_sources()[1:]
-        self.old_rest_sources = [os.path.abspath(x) for x in self.old_rest_sources]
-        self.new_rest_sources = self.rebase_spec_file.get_sources()[1:]
-        self.new_rest_sources = [os.path.abspath(x) for x in self.new_rest_sources]
+        self.old_rest_sources = [os.path.abspath(x) for x in self.spec_file.get_sources()[1:]]
+        self.new_rest_sources = [os.path.abspath(x) for x in self.rebase_spec_file.get_sources()[1:]]
 
     def _get_rebase_helper_log(self):
         return os.path.join(self.results_dir, settings.REBASE_HELPER_RESULTS_LOG)

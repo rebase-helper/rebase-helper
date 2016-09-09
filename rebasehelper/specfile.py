@@ -29,6 +29,8 @@ import rpm
 import argparse
 import shlex
 from datetime import date
+from operator import itemgetter
+from six.moves import urllib
 
 from rebasehelper.utils import DownloadHelper, DownloadError, MacroHelper
 from rebasehelper.utils import LookasideCacheHelper, LookasideCacheError, defenc
@@ -103,7 +105,6 @@ class SpecFile(object):
     hdr = None
     extra_version = None
     sources = None
-    tar_sources = None
     patches = None
     rpm_sections = {}
     prep_section = []
@@ -125,10 +126,34 @@ class SpecFile(object):
         rpm.addMacro("_sourcedir", self.sources_location)
         self._read_spec_content()
         # Load rpm information
-        self.spc = rpm.spec(self.path)
-        self.patches = self._get_initial_patches_list()
         self.set_extra_version_separator('')
         self._update_data()
+
+    def download_remote_sources(self):
+        """
+        Method that iterates over all sources and downloads ones, which contain URL instead of just a file.
+
+        :return: None
+        """
+        try:
+            # try to download old sources from Fedora lookaside cache
+            LookasideCacheHelper.download('fedpkg', os.path.dirname(self.path), self.get_package_name())
+        except LookasideCacheError as e:
+            logger.debug("Downloading sources from lookaside cache failed. "
+                         "Reason: '{}'.".format(str(e)))
+
+        # filter out only sources with URL
+        remote_files = [source for source in self.sources if bool(urllib.parse.urlparse(source).scheme)]
+        # download any sources that are not yet downloaded
+        for remote_file in remote_files:
+            local_file = os.path.join(self.sources_location, os.path.basename(remote_file))
+            if not os.path.isfile(local_file):
+                logger.debug("File '%s' doesn't exist locally, downloading it.", local_file)
+                try:
+                    DownloadHelper.download_file(remote_file, local_file)
+                except DownloadError as e:
+                    raise RebaseHelperError("Failed to download file from URL {}. "
+                                            "Reason: '{}'. ".format(remote_file, str(e)))
 
     def _update_data(self):
         """
@@ -141,23 +166,13 @@ class SpecFile(object):
             self.spc = rpm.spec(self.path)
         except ValueError:
             raise RebaseHelperError("Problem with parsing SPEC file '%s'" % self.path)
+        self.sources = self._get_spec_sources_list(self.spc)
         self.prep_section = self.spc.prep
         # HEADER of SPEC file
         self.hdr = self.spc.sourceHeader
-
-        try:
-            # try to download old sources from Fedora lookaside cache
-            LookasideCacheHelper.download('fedpkg', os.path.dirname(self.path), self.get_package_name())
-        except LookasideCacheError as e:
-            logger.debug("Downloading old sources from lookaside cache failed. "
-                         "Reason: '{}'.".format(str(e)))
-
-        # All source file mentioned in SPEC file Source[0-9]*
         self.rpm_sections = self._split_sections()
         # determine the extra_version
         logger.debug("Updating the extra version")
-        self.sources, self.tar_sources = self._get_initial_sources_list()
-
         _, self.extra_version, separator = SpecFile.extract_version_from_archive_name(
             self.get_archive(),
             self._get_raw_source_string(0))
@@ -166,33 +181,27 @@ class SpecFile(object):
         self.patches = self._get_initial_patches_list()
         self.macros = MacroHelper.dump()
 
-    def _get_initial_sources_list(self):
-        """Function returns all sources mentioned in SPEC file"""
-        # get all regular sources
-        sources = []
-        tar_sources = []
-        sources_list = [x for x in self.spc.sources if x[2] == 1]
-        remote_files_re = re.compile(r'(http:|https:|ftp:)//.*')
+        # TODO: don't call this at all in SPEC file methods
+        if self.download:
+            self.download_remote_sources()
 
-        for index, src in enumerate(sorted(sources_list, key=lambda source: source[1])):
-            # src is type of (SOURCE, Index of source, Type of source (PAtch, Source)
-            # We need to download all archives and only the one
-            abs_path = os.path.join(self.sources_location, os.path.basename(src[0]).strip())
-            sources.append(abs_path)
-            archive = [x for x in Archive.get_supported_archives() if src[0].endswith(x)]
-            # if the source is a remote file, download it
-            if archive:
-                if remote_files_re.search(src[0]) and self.download and not os.path.isfile(abs_path):
-                    logger.debug("Tarball is not in absolute path {} "
-                                 "trying to download one from URL {}".format(abs_path, src[0]))
-                    logger.info("Tarball is not in absolute path. Trying to download it from URL")
-                    try:
-                        DownloadHelper.download_file(src[0], abs_path)
-                    except DownloadError as e:
-                        raise RebaseHelperError("Failed to download file from URL {}. "
-                                                "Reason: '{}'. ".format(src[0], str(e)))
-                tar_sources.append(abs_path)
-        return sources, tar_sources
+    @staticmethod
+    def _get_spec_sources_list(spec_object):
+        """
+        Method uses RPM API to get list of Sources from the SPEC file and returns the list of sources. If the Source
+        contains URL, the URL will be included in the list. This means no modifications of Sources are done at this
+        point.
+
+        :param spec_object: instance of rpm.spec object
+        :type spec_object: rpm.spec
+        :return: list of Sources in SPEC file in the exact order as they are listed in SPEC file.
+        :rtype: list
+        """
+        # the sources list returned by RPM API contains list of items (path, index, source_type).
+        # source type "1" is a regular source
+        regular_sources = [source[:2] for source in spec_object.sources if source[2] == 1]
+        regular_sources = [source[0] for source in sorted(regular_sources, key=itemgetter(1))]
+        return regular_sources
 
     def _get_initial_patches_list(self):
         """Method returns a list of patches from a spec file"""
@@ -467,22 +476,6 @@ class SpecFile(object):
         """
         return [r.decode(defenc) if six.PY3 else r for r in self.hdr[rpm.RPMTAG_REQUIRES]]
 
-    def is_patch_git_generated(self, full_patch_name):
-        """
-        Return:
-          True if patch is generated by git ('git diff' or 'git format-patch')
-          False means patch is generated by gendiff or somehow else.
-        """
-        #  TODO: move this method to patch_helper?
-        with open(full_patch_name) as inputfile:
-            for line in inputfile:
-                if line.startswith("diff "):
-                    if line.startswith("diff --git"):
-                        return True
-                    else:
-                        return False
-        return False
-
     def get_patches(self):
         """
         Method returns list of all applied and not applied patches
@@ -509,19 +502,21 @@ class SpecFile(object):
 
     def get_sources(self):
         """
-        Method returns dictionary with sources list.
+        Method returns dictionary with local sources list.
 
-        :return: 
+        :return: list of Sources with absolute path
+        :rtype: list of str
         """
-        return self.sources
+        return [os.path.join(self.sources_location, os.path.basename(source)) for source in self.sources]
 
     def get_archive(self):
-        """Function returns the first archive name [0] from SPEC file"""
-        return self.get_archives()[0]
+        """
+        Method returns the basename of first Source in SPEC file a.k.a. Source0
 
-    def get_archives(self):
-        """Function returns the archives name from SPEC file"""
-        return [os.path.basename(x).strip() for x in self.tar_sources]
+        :return: basename of first Source in SPEC file
+        :rtype: str
+        """
+        return os.path.basename(self.get_sources()[0])
 
     def get_prep_section(self, complete=False):
         """Function returns whole prep section"""
