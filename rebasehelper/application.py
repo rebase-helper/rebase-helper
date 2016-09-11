@@ -450,7 +450,10 @@ class Application(object):
                         if self.conf.buildtool == KojiBuildTool.CMD:
                             while True:
                                 kh = KojiHelper()
-                                build_dict['rpm'], build_dict['logs'] = kh.get_koji_tasks(build_dict['koji_task_id'], results_dir)
+                                build_dict['rpm'], build_dict['logs'] = kh.get_koji_tasks(
+                                    build_dict['koji_task_id'],
+                                    results_dir
+                                )
                                 if build_dict['rpm']:
                                     break
                     else:
@@ -474,7 +477,11 @@ class Application(object):
                                     logger.info('Copr build is not finished yet. Try again later')
                                     return False
                                 else:
-                                    build_dict['rpm'], build_dict['logs'] = copr_helper.download_build(client, build_id, results_dir)
+                                    build_dict['rpm'], build_dict['logs'] = copr_helper.download_build(
+                                        client,
+                                        build_id,
+                                        results_dir
+                                    )
                                     if status not in ['succeeded', 'skipped']:
                                         logger.info('Copr build {} did not complete successfully'.format(build_id))
                                         return False
@@ -524,7 +531,8 @@ class Application(object):
                         logger.warning('Removed files packaged in SPEC file:\n%s', deleted_files)
                     else:
                         if self.conf.build_retries == number_retries:
-                            raise RebaseHelperError("Build failed, but no issues were found in the build log %s", build_log)
+                            raise RebaseHelperError("Build failed, but no issues were found in the build log %s",
+                                                    build_log)
                     self.rebase_spec_file.modify_spec_files_section(files)
 
                 if not self.conf.non_interactive:

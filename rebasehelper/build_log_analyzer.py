@@ -84,19 +84,19 @@ class BuildLogAnalyzer(object):
 
         # Test for finding files which exists in sources
         # but are not mentioned in spec file
-        missing_reg = 'error:\s+Installed\s+'
-        missing_source_reg = 'RPM build errors:'
+        missing_re = r'error:\s+Installed\s+'
+        missing_source_re = r'RPM build errors:'
         e_reg = 'EXCEPTION:'
         if cls._find_patch_error(lines):
             raise BuildLogAnalyzerPatchError('Patching failed during building. '
                                              'Look at the build log %s', log_name)
-        section = cls._find_section(lines, missing_reg, e_reg)
+        section = cls._find_section(lines, missing_re, e_reg)
         if section:
             section = section.replace('File not found by glob:', '').replace('File not found:', '')
             logger.debug('Found missing files which are not in SPEC file: %s', section)
             files['missing'] = cls._get_files_from_string(section)
         else:
-            section = cls._find_section(lines, missing_source_reg, e_reg)
+            section = cls._find_section(lines, missing_source_re, e_reg)
             if section:
                 if cls._find_make_error(lines):
                     raise BuildLogAnalyzerMakeError('Look at the build log %s', log_name)
