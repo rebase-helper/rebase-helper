@@ -7,6 +7,7 @@ Contents:
    :maxdepth: 3
 
    overview
+   usage
    clsoverview
    upstreammonitoring
 
