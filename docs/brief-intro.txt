@@ -1,1 +1,0 @@
-Rebase-helper is tools has aim to help you with rebasing your packages.
