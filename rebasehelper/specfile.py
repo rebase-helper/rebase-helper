@@ -185,6 +185,10 @@ class SpecFile(object):
         if self.download:
             self.download_remote_sources()
 
+    ###########################
+    # SOURCES RELATED METHODS #
+    ###########################
+
     @staticmethod
     def _get_spec_sources_list(spec_object):
         """
@@ -202,6 +206,43 @@ class SpecFile(object):
         regular_sources = [source[:2] for source in spec_object.sources if source[2] == 1]
         regular_sources = [source[0] for source in sorted(regular_sources, key=itemgetter(1))]
         return regular_sources
+
+    def get_sources(self):
+        """
+        Method returns dictionary with local sources list.
+
+        :return: list of Sources with absolute path
+        :rtype: list of str
+        """
+        return [os.path.join(self.sources_location, os.path.basename(source)) for source in self.sources]
+
+    def get_archive(self):
+        """
+        Method returns the basename of first Source in SPEC file a.k.a. Source0
+
+        :return: basename of first Source in SPEC file
+        :rtype: str
+        """
+        return os.path.basename(self.get_sources()[0])
+
+    def _get_raw_source_string(self, source_num):
+        """
+        Method returns raw string, possibly with RPM macros, of a Source with passed number.
+
+        :param source_num: number of the source of which to get the raw string
+        :return: string of the source or None if there is no such source
+        """
+        source_re_str = '^Source0?:[ \t]*(.*?)$' if source_num == 0 else '^Source{0}:[ \t]*(.*?)$'.format(source_num)
+        source_re = re.compile(source_re_str)
+
+        for line in self.spec_content:
+            match = source_re.search(line)
+            if match:
+                return match.group(1)
+
+    ###########################
+    # PATCHES RELATED METHODS #
+    ###########################
 
     def _get_initial_patches_list(self):
         """Method returns a list of patches from a spec file"""
@@ -227,24 +268,11 @@ class SpecFile(object):
         patches_applied = sorted(patches_applied, key=lambda x: x.get_index())
         return {"applied": patches_applied, "not_applied": patches_not_used}
 
-    def copy(self, new_path=None):
-        """
-        Create a copy of the current object and copy the SPEC file the new object
-        represents to a new location.
-
-        :param new_path: new path to which to copy the SPEC file
-        :return: copy of the current object
-        """
-        if new_path:
-            shutil.copy(self.path, new_path)
-        new_object = SpecFile(new_path, self.sources_location, self.download)
-        return new_object
-
     def get_patch_option(self, line):
         """
         Function returns a patch options
 
-        :param line: 
+        :param line:
         :return: patch options like -p1
         """
         spl = line.strip().split()
@@ -252,6 +280,478 @@ class SpecFile(object):
             return spl[0], ''
         else:
             return spl[0], spl[1]
+
+    def _get_patch_number(self, fields):
+        """
+        Function returns patch number
+
+        :param line:
+        :return: patch_num
+        """
+        patch_num = fields[0].replace('Patch', '')[:-1]
+        return patch_num
+
+    def _get_patches_flags(self):
+        """For all patches: get flags passed to %patch macro and index of application"""
+        patch_flags = {}
+        patches = [x for x in self.spec_content if x.startswith(PATCH_PREFIX)]
+        if not patches:
+            return None
+        for index, line in enumerate(patches):
+            num, option = self.get_patch_option(line)
+            num = num.replace(PATCH_PREFIX, '')
+            try:
+                patch_flags[int(num)] = (index, option)
+            except ValueError:
+                patch_flags[0] = (index, option)
+        # {num: index of application}
+        return patch_flags
+
+    def get_patches(self):
+        """
+        Method returns list of all applied and not applied patches
+
+        :return: list of PatchObject
+        """
+        return self.get_applied_patches() + self.get_not_used_patches()
+
+    def get_applied_patches(self):
+        """
+        Method returns list of all applied patches.
+
+        :return: list of PatchObject
+        """
+        return self.patches['applied']
+
+    def get_not_used_patches(self):
+        """
+        Method returns list of all unpplied patches.
+
+        :return: list of PatchObject
+        """
+        return self.patches['not_applied']
+
+    def _comment_out_patches(self, patch_num):
+        """
+        Comment out patches from SPEC file
+
+        :var patch_num: list with patch numbers to comment out
+        """
+        for index, line in enumerate(self.spec_content):
+            #  if patch is applied on the line, try to check if it should be commented out
+            if line.startswith('%patch'):
+                #  check patch numbers
+                for num in patch_num:
+                    #  if the line should be commented out
+                    if line.startswith('%patch{0}'.format(num)):
+                        self.spec_content[index] = '#%' + line
+                        #  remove the patch number from list
+                        patch_num.remove(num)
+                        break
+
+    def _correct_rebased_patches(self, patch_num):
+        """
+        Comment out patches from SPEC file
+
+        :var patch_num: list with patch numbers to update
+        """
+        for index, line in enumerate(self.spec_content):
+            #  if patch is applied on the line, try to check if it should be commented out
+            if line.startswith('%patch'):
+                #  check patch numbers
+                for num in patch_num:
+                    #  if the line should be commented out
+                    if line.startswith('%patch{0}'.format(num)):
+                        patch_fields = line.strip().split()
+                        patch_fields = [x for x in patch_fields if not x.startswith('-p')]
+                        self.spec_content[index] = '{begin}\n#{line}{new_line}\n{end}\n'.format(
+                            begin=settings.BEGIN_COMMENT,
+                            line=line,
+                            new_line=' '.join(patch_fields) + ' -p1',
+                            end=settings.END_COMMENT,
+                        )
+                        #  remove the patch number from list
+                        patch_num.remove(num)
+                        break
+
+    def write_updated_patches(self, patches):
+        """Function writes the patches to -rebase.spec file"""
+        #  TODO: this method should not take whole kwargs as argument, take only what it needs.
+        if not patches:
+            return None
+        # If some patches are not applied then commented out
+        removed_patches = []
+        modified_patches = []
+
+        for index, line in enumerate(self.spec_content):
+            if line.startswith('Patch'):
+                fields = line.strip().split()
+                patch_name = fields[1]
+                patch_num = self._get_patch_number(fields)
+                # We check if patch is mentioned in SPEC file but not used.
+                # We are comment out the patch
+                check_not_applied = [x for x in self.get_not_used_patches() if
+                                     int(x.get_index()) == int(patch_num)]
+                if 'deleted' in patches:
+                    patch_removed = [x for x in patches['deleted'] if patch_name in x]
+                else:
+                    patch_removed = None
+                if check_not_applied or patch_removed:
+                    self.spec_content[index] = '#{0} {1}\n'.format(' '.join(fields[:-1]),
+                                                                   os.path.basename(patch_name))
+                    if patch_removed:
+                        removed_patches.append(patch_num)
+                if 'modified' in patches:
+                    patch = [x for x in patches['modified'] if patch_name in x]
+                else:
+                    patch = None
+                if patch:
+                    fields[1] = os.path.join(settings.REBASE_HELPER_RESULTS_DIR, patch_name)
+                    self.spec_content[index] = ' '.join(fields) + '\n'
+                    modified_patches.append(patch_num)
+
+        self._comment_out_patches(removed_patches)
+        self._correct_rebased_patches(modified_patches)
+        #  save changes
+        self.save()
+
+    ###################################
+    # PACKAGE VERSION RELATED METHODS #
+    ###################################
+
+    def get_epoch_number(self):
+        """
+        Method for getting epoch of the package
+
+        :return:
+        """
+        return self.hdr[rpm.RPMTAG_EPOCHNUM]
+
+    def get_release(self):
+        """
+        Method for getting full release string of the package
+
+        :return:
+        """
+        return self.hdr[rpm.RPMTAG_RELEASE].decode(defenc) if six.PY3 else self.hdr[rpm.RPMTAG_RELEASE]
+
+    def get_release_number(self):
+        """
+        Method for getting the release of the package
+
+        :return:
+        """
+        for line in self.spec_content:
+            # https://regexper.com/#%5ERelease%3A%5Cs*(%5B0-9%5D*%5C.%3F%5B0-9%5D%2B)(.%2B)%3F%25%7B%5C%3Fdist%7D%5Cs*
+            match = re.search(r'^Release:\s*([0-9]*\.?[0-9]+)(.+)?%{\?dist}\s*', line)
+            if match:
+                return match.group(1)
+
+    def get_version(self):
+        """
+        Method returns the version
+
+        :return:
+        """
+        return self.hdr[rpm.RPMTAG_VERSION].decode(defenc) if six.PY3 else self.hdr[rpm.RPMTAG_VERSION]
+
+    def get_extra_version(self):
+        """
+        Returns an extra version of the package - like b1, rc2, ...
+
+        :return: String
+        """
+        return self.extra_version
+
+    def get_extra_version_separator(self):
+        """
+        Returns the separator between version and extra version as used by upstream. If there is not separator or
+        extra version, it returns an empty string.
+
+        :return: String with the separator between version as extra version as used by upstream.
+        :rtype: str
+        """
+        return self.extra_version_separator
+
+    def get_full_version(self):
+        """
+        Returns the full version string, which is a combination of version, separator and extra version.
+
+        :return: String with full version, including the extra version part.
+        :rtype: str
+        """
+        return '{0}{1}{2}'.format(self.get_version(), self.get_extra_version_separator(), self.get_extra_version())
+
+    def set_release_number(self, release):
+        """
+        Method to set release number
+
+        :param release:
+        :return:
+        """
+        for index, line in enumerate(self.spec_content):
+            if line.startswith('Release:'):
+                new_release_line = re.sub(r'(Release:\s*)[0-9.]+(.*%{\?dist}\s*)', r'\g<1>{0}\2'.format(release),
+                                          line)
+                logger.debug("Changing release line to '%s'", new_release_line.strip())
+                self.spec_content[index] = new_release_line
+                self.save()
+                break
+
+    def redefine_release_with_macro(self, macro):
+        """
+        Method redefines the Release: line to include passed macro and comments out the old line
+
+        :param macro:
+        :return:
+        """
+        for index, line in enumerate(self.spec_content):
+            if line.startswith('Release:'):
+                new_release_line = re.sub(r'(Release:\s*[0-9.]*[0-9]+).*(%{\?dist}\s*)', r'\g<1>.{0}\2'.format(macro),
+                                          line)
+                logger.debug("Commenting out original Release line '%s'", line.strip())
+                self.spec_content[index] = '#{0}'.format(line)
+                logger.debug("Inserting new Release line '%s'", new_release_line.strip())
+                self.spec_content.insert(index + 1, new_release_line)
+                self.save()
+                break
+
+    def revert_redefine_release_with_macro(self, macro):
+        """
+        Method removes the redefined the Release: line with given macro and uncomments the old Release line.
+
+        :param macro:
+        :return:
+        """
+        search_re = re.compile(r'^Release:\s*[0-9.]*[0-9]+\.{0}%{{\?dist}}\s*'.format(macro))
+
+        for index, line in enumerate(self.spec_content):
+            match = search_re.search(line)
+            if match:
+                # We will uncomment old line, so sanity check first
+                if not self.spec_content[index - 1].startswith('#Release:'):
+                    raise RebaseHelperError("Redefined Release line in SPEC is not 'commented out' "
+                                            "old line: '{0}'".format(self.spec_content[index - 1].strip()))
+                logger.debug("Uncommenting original Release line "
+                             "'%s'", self.spec_content[index - 1].strip())
+                self.spec_content[index - 1] = self.spec_content[index - 1].lstrip('#')
+                logger.debug("Removing redefined Release line '%s'", line.strip())
+                self.spec_content.pop(index)
+                self.save()
+                break
+
+    def set_extra_version(self, extra_version):
+        """
+        Method to update the extra version in the SPEC file. Redefined Source0 if needed and also changes
+        Release accordingly.
+
+        :param extra_version: the extra version string, if any (e.g. 'b1', 'rc2', ...)
+        :return: None
+        """
+        extra_version_def = '%global REBASE_EXTRA_VER'
+        extra_version_macro = '%{?REBASE_EXTRA_VER}'
+        extra_version_re = re.compile('^{0}.*$'.format(extra_version_def))
+        extra_version_line_index = None
+        rebase_extra_version_def = '%global REBASE_VER %{version}' + \
+                                   self.extra_version_separator + \
+                                   '%{REBASE_EXTRA_VER}\n'
+        new_extra_version_line = '%global REBASE_EXTRA_VER {0}\n'.format(extra_version)
+
+        logger.debug("Updating extra version in SPEC to '%s'", extra_version)
+
+        #  try to find existing extra version definition
+        for index, line in enumerate(self.spec_content):
+            match = extra_version_re.search(line)
+            if match:
+                extra_version_line_index = index
+                break
+
+        if extra_version:
+            #  just update the existing extra version
+            if extra_version_line_index is not None:
+                self.spec_content[extra_version_line_index] = new_extra_version_line
+            # we need to create the extra version definition
+            else:
+                # insert the REBASE_VER and REBASE_EXTRA_VER definitions
+                logger.debug("Adding new line to spec: %s", rebase_extra_version_def.strip())
+                self.spec_content.insert(0, rebase_extra_version_def)
+                logger.debug("Adding new line to spec: %s", new_extra_version_line.strip())
+                self.spec_content.insert(0, new_extra_version_line)
+
+                # change Release to 0.1 and append the extra version macro
+                self.set_release_number('0.1')
+                self.redefine_release_with_macro(extra_version_macro)
+
+                # change the Source0 definition
+                source0_re = re.compile(r'^Source0?:.+')
+                for index, line in enumerate(self.spec_content):
+                    if source0_re.search(line):
+                        # comment out the original Source0 line
+                        logger.debug("Commenting out original Source0 line '%s'", line.strip())
+                        self.spec_content[index] = '#{0}'.format(line)
+                        # construct new Source0 line. The idea is that we use the expanded archive name to create
+                        # new Source0. We used raw original Source0 before, but it didn't work reliably.
+                        source0_raw = line
+                        basename_expanded = self.get_archive()
+                        # construct the original version in archive name so that we can replace it
+                        original_version = '{0}{2}{1}'.format(*self.extract_version_from_archive_name(
+                            basename_expanded,
+                            source0_raw)
+                                                              )
+                        # replace the version with macro
+                        new_basename_with_macro = basename_expanded.replace(original_version, '%{REBASE_VER}')
+                        # replace the name with macro to be cool :)
+                        new_basename_with_macro = new_basename_with_macro.replace(self.get_package_name(),
+                                                                                  '%{name}')
+                        # replace the archive name in old Source0 with new one
+                        new_source0_line = source0_raw.replace(os.path.basename(source0_raw),
+                                                               new_basename_with_macro)
+                        logger.debug("Inserting new Source0 line '%s'", new_source0_line)
+                        self.spec_content.insert(index + 1, new_source0_line + '\n')
+                        break
+        else:
+            # set the Release to 1 and revert the redefined Release with macro if needed
+            self.set_release_number('1')
+            self.revert_redefine_release_with_macro(extra_version_macro)
+            # TODO: handle empty extra_version as removal of the definitions!
+
+        # save changes
+        self.save()
+
+    def set_extra_version_separator(self, separator):
+        """
+        Set the string that separates the version and extra version
+
+        :param separator:
+        :return:
+        """
+        self.extra_version_separator = separator
+
+    def set_version_using_archive(self, archive_path):
+        """
+        Method to update the version in the SPEC file using a archive path. The version
+        is extracted from the archive name.
+
+        :param archive_path:
+        :return:
+        """
+        version, extra_version, separator = SpecFile.extract_version_from_archive_name(archive_path,
+                                                                                       self._get_raw_source_string(
+                                                                                           0))
+
+        if not version:
+            # can't continue without version
+            raise RebaseHelperError('Failed to extract version from archive name')
+
+        self.set_version(version)
+        self.set_extra_version_separator(separator)
+        self.set_extra_version(extra_version)
+
+    def set_version(self, version):
+        """
+        Method to update the version in the SPEC file
+
+        :param version: string with new version
+        :return: None
+        """
+        version_re = re.compile(r'^Version:\s*(.+)')
+        for index, line in enumerate(self.spec_content):
+            match = version_re.search(line)
+            if match:
+                logger.debug("Updating version in SPEC from '%s' with '%s'", self.get_version(), version)
+
+                # search for used macros in spec file scope
+                for m in MacroHelper.filter(self.macros, level=-1, used=True):
+                    if m['name'] in match.group(1):
+                        # redefine the macro, don't touch Version tag
+                        self._set_macro(m['name'], version)
+                        return
+
+                self.spec_content[index] = line.replace(match.group(1), version)
+                break
+        #  save changes to the disc
+        self.save()
+
+    @staticmethod
+    def split_version_string(version_string=''):
+        """
+        Method splits version string into version and possibly extra string as 'rc1' or 'b1', ...
+
+        :param version_string: version string such as '1.1.1' or '1.2.3b1', ...
+        :return: tuple of strings with (extracted version, extra version, separator) or (None, None, None) if extraction
+        failed
+        """
+        version_split_regex_str = r'([0-9]+[.0-9]*)([_-]?)(\w*)'
+        version_split_regex = re.compile(version_split_regex_str)
+        logger.debug("Splitting string '%s'", version_string)
+        match = version_split_regex.search(version_string)
+        if match:
+            version = match.group(1)
+            separator = match.group(2)
+            extra_version = match.group(3)
+            logger.debug("Divided version '%s' and extra string '%s' separated by '%s'",
+                         version,
+                         extra_version,
+                         separator)
+            return version, extra_version, separator
+        else:
+            return None, None, None
+
+    @staticmethod
+    def extract_version_from_archive_name(archive_path, source_string=''):
+        """
+        Method extracts the version from archive name based on the source string from SPEC file.
+        It extracts also an extra version such as 'b1', 'rc1', ...
+
+        :param archive_path: archive name or path with archive name from which to extract the version
+        :param source_string: Source string from SPEC file used to construct version extraction regex
+        :return: tuple of strings with (extracted version, extra version) or (None, None) if extraction failed
+        """
+        # https://regexper.com/#(%5B.0-9%5D%2B%5B-_%5D%3F%5Cw*)
+        version_regex_str = r'([.0-9]+[-_]?\w*)'
+        fallback_regex_str = r'^\w+[-_]?v?{0}({1})'.format(version_regex_str,
+                                                          '|'.join(Archive.get_supported_archives()))
+        # match = re.search(regex, tarball_name)
+        name = os.path.basename(archive_path)
+        url_base = os.path.basename(source_string).strip()
+
+        logger.debug("Extracting version from '%s' using '%s'", name, url_base)
+        # expect that the version macro can be followed by another macros
+        regex_str = re.sub(r'%{version}(%{.+})?', version_regex_str, url_base, flags=re.IGNORECASE)
+
+        # if no substitution was made, use the fallback regex
+        if regex_str == url_base:
+            logger.debug('Using fallback regex to extract version from archive name.')
+            regex_str = fallback_regex_str
+        else:
+            regex_str = rpm.expandMacro(regex_str)
+
+        logger.debug("Extracting version using regex '%s'", regex_str)
+        regex = re.compile(regex_str)
+        match = regex.search(name)
+        if match:
+            version = match.group(1)
+            logger.debug("Extracted version '%s'", version)
+            return SpecFile.split_version_string(version)
+        else:
+            logger.debug('Failed to extract version from archive name!')
+            #  TODO: look at this if it could be rewritten in a better way!
+            #  try fallback regex if not used this time
+            if regex_str != fallback_regex_str:
+                logger.debug("Trying to extracting version using fallback regex '%s'", fallback_regex_str)
+                regex = re.compile(fallback_regex_str)
+                match = regex.search(name)
+                if match:
+                    version = match.group(1)
+                    logger.debug("Extracted version '%s'", version)
+                    return SpecFile.split_version_string(version)
+                else:
+                    logger.debug('Failed to extract version from archive name using fallback regex!')
+            return SpecFile.split_version_string('')
+
+    #################################
+    # SPEC SECTIONS RELATED METHODS #
+    #################################
 
     def _create_spec_from_sections(self):
         """
@@ -336,6 +836,68 @@ class SpecFile(object):
                 else:
                     self.rpm_sections[key] = (section_name, new_section)
 
+    def get_prep_section(self, complete=False):
+        """Function returns whole prep section"""
+        prep_section = []
+        start_prep_section = complete
+        for line in self.prep_section.split('\n'):
+            if start_prep_section:
+                prep_section.append(line)
+                continue
+            if line.startswith('/usr/bin/chmod -Rf a+rX') and not complete:
+                start_prep_section = True
+                continue
+
+        return prep_section
+
+    #############################################
+    # SPEC CONTENT MANIPULATION RELATED METHODS #
+    #############################################
+
+    def _read_spec_content(self):
+        """Method reads the content SPEC file and updates internal variables."""
+        try:
+            with open(self.path) as f:
+                lines = f.readlines()
+        except IOError:
+            raise RebaseHelperError("Unable to open and read SPEC file '%s'", self.path)
+        #  Complete SPEC file content
+        self.spec_content = lines
+
+    def _write_spec_file_to_disc(self):
+        """Write the current SPEC file to the disc"""
+        logger.debug("Writing SPEC file '%s' to the disc", self.path)
+        try:
+            with open(self.path, "w") as f:
+                f.writelines(self.spec_content)
+        except IOError:
+            raise RebaseHelperError("Unable to write updated data to SPEC file '%s'", self.path)
+
+    def copy(self, new_path=None):
+        """
+        Create a copy of the current object and copy the SPEC file the new object
+        represents to a new location.
+
+        :param new_path: new path to which to copy the SPEC file
+        :return: copy of the current object
+        """
+        if new_path:
+            shutil.copy(self.path, new_path)
+        new_object = SpecFile(new_path, self.sources_location, self.download)
+        return new_object
+
+    def save(self):
+        """Save changes made to the spec_content to the disc and update internal variables"""
+        # TODO: Create a decorator from this method
+        #  Write changes to the disc
+        self._write_spec_file_to_disc()
+        #  Update internal variables
+        self._update_data()
+
+    ####################
+    # UNSORTED METHODS #
+    ####################
+
     def get_path(self):
         """
         Return only spec file path
@@ -361,105 +923,6 @@ class SpecFile(object):
         else:
             return False
 
-    def _get_patch_number(self, fields):
-        """
-        Function returns patch number
-
-        :param line: 
-        :return: patch_num
-        """
-        patch_num = fields[0].replace('Patch', '')[:-1]
-        return patch_num
-
-    def _read_spec_content(self):
-        """Method reads the content SPEC file and updates internal variables."""
-        try:
-            with open(self.path) as f:
-                lines = f.readlines()
-        except IOError:
-            raise RebaseHelperError("Unable to open and read SPEC file '%s'", self.path)
-        #  Complete SPEC file content
-        self.spec_content = lines
-
-    def _get_patches_flags(self):
-        """For all patches: get flags passed to %patch macro and index of application"""
-        patch_flags = {}
-        patches = [x for x in self.spec_content if x.startswith(PATCH_PREFIX)]
-        if not patches:
-            return None
-        for index, line in enumerate(patches):
-            num, option = self.get_patch_option(line)
-            num = num.replace(PATCH_PREFIX, '')
-            try:
-                patch_flags[int(num)] = (index, option)
-            except ValueError:
-                patch_flags[0] = (index, option)
-        # {num: index of application}
-        return patch_flags
-
-    def get_epoch_number(self):
-        """
-        Method for getting epoch of the package
-
-        :return: 
-        """
-        return self.hdr[rpm.RPMTAG_EPOCHNUM]
-
-    def get_release(self):
-        """
-        Method for getting full release string of the package
-
-        :return: 
-        """
-        return self.hdr[rpm.RPMTAG_RELEASE].decode(defenc) if six.PY3 else self.hdr[rpm.RPMTAG_RELEASE]
-
-    def get_release_number(self):
-        """
-        Method for getting the release of the package
-
-        :return: 
-        """
-        for line in self.spec_content:
-            # https://regexper.com/#%5ERelease%3A%5Cs*(%5B0-9%5D*%5C.%3F%5B0-9%5D%2B)(.%2B)%3F%25%7B%5C%3Fdist%7D%5Cs*
-            match = re.search(r'^Release:\s*([0-9]*\.?[0-9]+)(.+)?%{\?dist}\s*', line)
-            if match:
-                return match.group(1)
-
-    def get_version(self):
-        """
-        Method returns the version
-
-        :return: 
-        """
-        return self.hdr[rpm.RPMTAG_VERSION].decode(defenc) if six.PY3 else self.hdr[rpm.RPMTAG_VERSION]
-
-    def get_extra_version(self):
-        """
-        Returns an extra version of the package - like b1, rc2, ...
-
-        :return: String
-        """
-        return self.extra_version
-
-    def get_extra_version_separator(self):
-        """
-        Returns the separator between version and extra version as used by upstream. If there is not separator or
-        extra version, it returns an empty string.
-
-        :return: String with the separator between version as extra version as used by upstream.
-        :rtype: str
-        """
-        return self.extra_version_separator
-
-    def get_full_version(self):
-        """
-        Returns the full version string, which is a combination of version, separator and extra version.
-
-        :return: String with full version, including the extra version part.
-        :rtype: str
-        """
-        return '{0}{1}{2}'.format(self.get_version(), self.get_extra_version_separator(), self.get_extra_version())
-
     def get_package_name(self):
         """
         Function returns a package name
@@ -476,77 +939,6 @@ class SpecFile(object):
         """
         return [r.decode(defenc) if six.PY3 else r for r in self.hdr[rpm.RPMTAG_REQUIRES]]
 
-    def get_patches(self):
-        """
-        Method returns list of all applied and not applied patches
-
-        :return: list of PatchObject
-        """
-        return self.get_applied_patches() + self.get_not_used_patches()
-
-    def get_applied_patches(self):
-        """
-        Method returns list of all applied patches.
-
-        :return: list of PatchObject
-        """
-        return self.patches['applied']
-
-    def get_not_used_patches(self):
-        """
-        Method returns list of all unpplied patches.
-
-        :return: list of PatchObject
-        """
-        return self.patches['not_applied']
-
-    def get_sources(self):
-        """
-        Method returns dictionary with local sources list.
-
-        :return: list of Sources with absolute path
-        :rtype: list of str
-        """
-        return [os.path.join(self.sources_location, os.path.basename(source)) for source in self.sources]
-
-    def get_archive(self):
-        """
-        Method returns the basename of first Source in SPEC file a.k.a. Source0
-
-        :return: basename of first Source in SPEC file
-        :rtype: str
-        """
-        return os.path.basename(self.get_sources()[0])
-
-    def get_prep_section(self, complete=False):
-        """Function returns whole prep section"""
-        prep_section = []
-        start_prep_section = complete
-        for line in self.prep_section.split('\n'):
-            if start_prep_section:
-                prep_section.append(line)
-                continue
-            if line.startswith('/usr/bin/chmod -Rf a+rX') and not complete:
-                start_prep_section = True
-                continue
-
-        return prep_section
-
-    def _get_raw_source_string(self, source_num):
-        """
-        Method returns raw string, possibly with RPM macros, of a Source with passed number.
-
-        :param source_num: number of the source of which to get the raw string
-        :return: string of the source or None if there is no such source
-        """
-        source_re_str = '^Source0?:[ \t]*(.*?)$' if source_num == 0 else '^Source{0}:[ \t]*(.*?)$'.format(source_num)
-        source_re = re.compile(source_re_str)
-
-        for line in self.spec_content:
-            match = source_re.search(line)
-            if match:
-                return match.group(1)
-
     @staticmethod
     def get_paths_with_rpm_macros(files):
         """
@@ -555,6 +947,7 @@ class SpecFile(object):
         :param files: list of absolute paths
         :return: modified list of paths with RPM macros
         """
+        # TODO: move this to RpmHelper?
         macro_mapping = {'/usr/lib64': '%{_libdir}',
                          '/usr/libexec': '%{_libexecdir}',
                          '/usr/lib/systemd/system': '%{_unitdir}',
@@ -657,116 +1050,6 @@ class SpecFile(object):
         self.spec_content = self._create_spec_from_sections()
         self.save()
 
-    def _write_spec_file_to_disc(self):
-        """Write the current SPEC file to the disc"""
-        logger.debug("Writing SPEC file '%s' to the disc", self.path)
-        try:
-            with open(self.path, "w") as f:
-                f.writelines(self.spec_content)
-        except IOError:
-            raise RebaseHelperError("Unable to write updated data to SPEC file '%s'", self.path)
-
-    def _comment_out_patches(self, patch_num):
-        """
-        Comment out patches from SPEC file
-
-        :var patch_num: list with patch numbers to comment out
-        """
-        for index, line in enumerate(self.spec_content):
-            #  if patch is applied on the line, try to check if it should be commented out
-            if line.startswith('%patch'):
-                #  check patch numbers
-                for num in patch_num:
-                    #  if the line should be commented out
-                    if line.startswith('%patch{0}'.format(num)):
-                        self.spec_content[index] = '#%' + line
-                        #  remove the patch number from list
-                        patch_num.remove(num)
-                        break
-
-    def _correct_rebased_patches(self, patch_num):
-        """
-        Comment out patches from SPEC file
-
-        :var patch_num: list with patch numbers to update
-        """
-        for index, line in enumerate(self.spec_content):
-            #  if patch is applied on the line, try to check if it should be commented out
-            if line.startswith('%patch'):
-                #  check patch numbers
-                for num in patch_num:
-                    #  if the line should be commented out
-                    if line.startswith('%patch{0}'.format(num)):
-                        patch_fields = line.strip().split()
-                        patch_fields = [x for x in patch_fields if not x.startswith('-p')]
-                        self.spec_content[index] = '{begin}\n#{line}{new_line}\n{end}\n'.format(
-                            begin=settings.BEGIN_COMMENT,
-                            line=line,
-                            new_line=' '.join(patch_fields) + ' -p1',
-                            end=settings.END_COMMENT,
-                        )
-                        #  remove the patch number from list
-                        patch_num.remove(num)
-                        break
-
-    def set_release_number(self, release):
-        """
-        Method to set release number
-
-        :param release: 
-        :return: 
-        """
-        for index, line in enumerate(self.spec_content):
-            if line.startswith('Release:'):
-                new_release_line = re.sub(r'(Release:\s*)[0-9.]+(.*%{\?dist}\s*)', r'\g<1>{0}\2'.format(release),
-                                          line)
-                logger.debug("Changing release line to '%s'", new_release_line.strip())
-                self.spec_content[index] = new_release_line
-                self.save()
-                break
-
-    def redefine_release_with_macro(self, macro):
-        """
-        Method redefines the Release: line to include passed macro and comments out the old line
-
-        :param macro: 
-        :return: 
-        """
-        for index, line in enumerate(self.spec_content):
-            if line.startswith('Release:'):
-                new_release_line = re.sub(r'(Release:\s*[0-9.]*[0-9]+).*(%{\?dist}\s*)', r'\g<1>.{0}\2'.format(macro),
-                                          line)
-                logger.debug("Commenting out original Release line '%s'", line.strip())
-                self.spec_content[index] = '#{0}'.format(line)
-                logger.debug("Inserting new Release line '%s'", new_release_line.strip())
-                self.spec_content.insert(index + 1, new_release_line)
-                self.save()
-                break
-
-    def revert_redefine_release_with_macro(self, macro):
-        """
-        Method removes the redefined the Release: line with given macro and uncomments the old Release line.
-
-        :param macro: 
-        :return: 
-        """
-        search_re = re.compile(r'^Release:\s*[0-9.]*[0-9]+\.{0}%{{\?dist}}\s*'.format(macro))
-
-        for index, line in enumerate(self.spec_content):
-            match = search_re.search(line)
-            if match:
-                # We will uncomment old line, so sanity check first
-                if not self.spec_content[index - 1].startswith('#Release:'):
-                    raise RebaseHelperError("Redefined Release line in SPEC is not 'commented out' "
-                                            "old line: '{0}'".format(self.spec_content[index - 1].strip()))
-                logger.debug("Uncommenting original Release line "
-                             "'%s'", self.spec_content[index - 1].strip())
-                self.spec_content[index - 1] = self.spec_content[index - 1].lstrip('#')
-                logger.debug("Removing redefined Release line '%s'", line.strip())
-                self.spec_content.pop(index)
-                self.save()
-                break
-
     def _set_macro(self, macro, value):
 
         """
@@ -794,258 +1077,6 @@ class SpecFile(object):
             self.spec_content.insert(0, '%global {} {}'.format(macro, value))
 
         self.save()
-
-    def set_version(self, version):
-        """
-        Method to update the version in the SPEC file
-
-        :param version: string with new version
-        :return: None
-        """
-        version_re = re.compile(r'^Version:\s*(.+)')
-        for index, line in enumerate(self.spec_content):
-            match = version_re.search(line)
-            if match:
-                logger.debug("Updating version in SPEC from '%s' with '%s'", self.get_version(), version)
-
-                # search for used macros in spec file scope
-                for m in MacroHelper.filter(self.macros, level=-1, used=True):
-                    if m['name'] in match.group(1):
-                        # redefine the macro, don't touch Version tag
-                        self._set_macro(m['name'], version)
-                        return
-
-                self.spec_content[index] = line.replace(match.group(1), version)
-                break
-        #  save changes to the disc
-        self.save()
-
-    def set_extra_version(self, extra_version):
-        """
-        Method to update the extra version in the SPEC file. Redefined Source0 if needed and also changes
-        Release accordingly.
-
-        :param extra_version: the extra version string, if any (e.g. 'b1', 'rc2', ...)
-        :return: None
-        """
-        extra_version_def = '%global REBASE_EXTRA_VER'
-        extra_version_macro = '%{?REBASE_EXTRA_VER}'
-        extra_version_re = re.compile('^{0}.*$'.format(extra_version_def))
-        extra_version_line_index = None
-        rebase_extra_version_def = '%global REBASE_VER %{version}' + \
-                                   self.extra_version_separator + \
-                                   '%{REBASE_EXTRA_VER}\n'
-        new_extra_version_line = '%global REBASE_EXTRA_VER {0}\n'.format(extra_version)
-
-        logger.debug("Updating extra version in SPEC to '%s'", extra_version)
-
-        #  try to find existing extra version definition
-        for index, line in enumerate(self.spec_content):
-            match = extra_version_re.search(line)
-            if match:
-                extra_version_line_index = index
-                break
-
-        if extra_version:
-            #  just update the existing extra version
-            if extra_version_line_index is not None:
-                self.spec_content[extra_version_line_index] = new_extra_version_line
-            #  we need to create the extra version definition
-            else:
-                # insert the REBASE_VER and REBASE_EXTRA_VER definitions
-                logger.debug("Adding new line to spec: %s", rebase_extra_version_def.strip())
-                self.spec_content.insert(0, rebase_extra_version_def)
-                logger.debug("Adding new line to spec: %s", new_extra_version_line.strip())
-                self.spec_content.insert(0, new_extra_version_line)
-
-                # change Release to 0.1 and append the extra version macro
-                self.set_release_number('0.1')
-                self.redefine_release_with_macro(extra_version_macro)
-
-                # change the Source0 definition
-                source0_re = re.compile(r'^Source0?:.+')
-                for index, line in enumerate(self.spec_content):
-                    if source0_re.search(line):
-                        # comment out the original Source0 line
-                        logger.debug("Commenting out original Source0 line '%s'", line.strip())
-                        self.spec_content[index] = '#{0}'.format(line)
-                        # construct new Source0 line. The idea is that we use the expanded archive name to create
-                        # new Source0. We used raw original Source0 before, but it didn't work reliably.
-                        source0_raw = line
-                        basename_expanded = self.get_archive()
-                        # construct the original version in archive name so that we can replace it
-                        original_version = '{0}{2}{1}'.format(*self.extract_version_from_archive_name(
-                            basename_expanded,
-                            source0_raw)
-                        )
-                        # replace the version with macro
-                        new_basename_with_macro = basename_expanded.replace(original_version, '%{REBASE_VER}')
-                        # replace the name with macro to be cool :)
-                        new_basename_with_macro = new_basename_with_macro.replace(self.get_package_name(), '%{name}')
-                        # replace the archive name in old Source0 with new one
-                        new_source0_line = source0_raw.replace(os.path.basename(source0_raw), new_basename_with_macro)
-                        logger.debug("Inserting new Source0 line '%s'", new_source0_line)
-                        self.spec_content.insert(index + 1, new_source0_line + '\n')
-                        break
-        else:
-            # set the Release to 1 and revert the redefined Release with macro if needed
-            self.set_release_number('1')
-            self.revert_redefine_release_with_macro(extra_version_macro)
-            # TODO: handle empty extra_version as removal of the definitions!
-
-        # save changes
-        self.save()
-
-    def set_extra_version_separator(self, separator):
-        """
-        Set the string that separates the version and extra version
-
-        :param separator:
-        :return:
-        """
-        self.extra_version_separator = separator
-
-    def set_version_using_archive(self, archive_path):
-        """
-        Method to update the version in the SPEC file using a archive path. The version
-        is extracted from the archive name.
-
-        :param archive_path: 
-        :return: 
-        """
-        version, extra_version, separator = SpecFile.extract_version_from_archive_name(archive_path,
-                                                                                       self._get_raw_source_string(0))
-
-        if not version:
-            # can't continue without version
-            raise RebaseHelperError('Failed to extract version from archive name')
-
-        self.set_version(version)
-        self.set_extra_version_separator(separator)
-        self.set_extra_version(extra_version)
-
-    def write_updated_patches(self, patches):
-        """Function writes the patches to -rebase.spec file"""
-        #  TODO: this method should not take whole kwargs as argument, take only what it needs.
-        if not patches:
-            return None
-        # If some patches are not applied then commented out
-        removed_patches = []
-        modified_patches = []
-
-        for index, line in enumerate(self.spec_content):
-            if line.startswith('Patch'):
-                fields = line.strip().split()
-                patch_name = fields[1]
-                patch_num = self._get_patch_number(fields)
-                # We check if patch is mentioned in SPEC file but not used.
-                # We are comment out the patch
-                check_not_applied = [x for x in self.get_not_used_patches() if int(x.get_index()) == int(patch_num)]
-                if 'deleted' in patches:
-                    patch_removed = [x for x in patches['deleted'] if patch_name in x]
-                else:
-                    patch_removed = None
-                if check_not_applied or patch_removed:
-                    self.spec_content[index] = '#{0} {1}\n'.format(' '.join(fields[:-1]), os.path.basename(patch_name))
-                    if patch_removed:
-                        removed_patches.append(patch_num)
-                if 'modified' in patches:
-                    patch = [x for x in patches['modified'] if patch_name in x]
-                else:
-                    patch = None
-                if patch:
-                    fields[1] = os.path.join(settings.REBASE_HELPER_RESULTS_DIR, patch_name)
-                    self.spec_content[index] = ' '.join(fields) + '\n'
-                    modified_patches.append(patch_num)
-
-        self._comment_out_patches(removed_patches)
-        self._correct_rebased_patches(modified_patches)
-        #  save changes
-        self.save()
-
-    def save(self):
-        """Save changes made to the spec_content to the disc and update internal variables"""
-        #  Write changes to the disc
-        self._write_spec_file_to_disc()
-        #  Update internal variables
-        self._update_data()
-
-    @staticmethod
-    def split_version_string(version_string=''):
-        """
-        Method splits version string into version and possibly extra string as 'rc1' or 'b1', ...
-
-        :param version_string: version string such as '1.1.1' or '1.2.3b1', ...
-        :return: tuple of strings with (extracted version, extra version, separator) or (None, None, None) if extraction
-        failed
-        """
-        version_split_regex_str = r'([0-9]+[.0-9]*)([_-]?)(\w*)'
-        version_split_regex = re.compile(version_split_regex_str)
-        logger.debug("Splitting string '%s'", version_string)
-        match = version_split_regex.search(version_string)
-        if match:
-            version = match.group(1)
-            separator = match.group(2)
-            extra_version = match.group(3)
-            logger.debug("Divided version '%s' and extra string '%s' separated by '%s'",
-                         version,
-                         extra_version,
-                         separator)
-            return version, extra_version, separator
-        else:
-            return None, None, None
-
-    @staticmethod
-    def extract_version_from_archive_name(archive_path, source_string=''):
-        """
-        Method extracts the version from archive name based on the source string from SPEC file.
-        It extracts also an extra version such as 'b1', 'rc1', ...
-
-        :param archive_path: archive name or path with archive name from which to extract the version
-        :param source_string: Source string from SPEC file used to construct version extraction regex
-        :return: tuple of strings with (extracted version, extra version) or (None, None) if extraction failed
-        """
-        # https://regexper.com/#(%5B.0-9%5D%2B%5B-_%5D%3F%5Cw*)
-        version_regex_str = r'([.0-9]+[-_]?\w*)'
-        fallback_regex_str = r'^\w+[-_]?v?{0}({1})'.format(version_regex_str,
-                                                          '|'.join(Archive.get_supported_archives()))
-        # match = re.search(regex, tarball_name)
-        name = os.path.basename(archive_path)
-        url_base = os.path.basename(source_string).strip()
-
-        logger.debug("Extracting version from '%s' using '%s'", name, url_base)
-        # expect that the version macro can be followed by another macros
-        regex_str = re.sub(r'%{version}(%{.+})?', version_regex_str, url_base, flags=re.IGNORECASE)
-
-        # if no substitution was made, use the fallback regex
-        if regex_str == url_base:
-            logger.debug('Using fallback regex to extract version from archive name.')
-            regex_str = fallback_regex_str
-        else:
-            regex_str = rpm.expandMacro(regex_str)
-
-        logger.debug("Extracting version using regex '%s'", regex_str)
-        regex = re.compile(regex_str)
-        match = regex.search(name)
-        if match:
-            version = match.group(1)
-            logger.debug("Extracted version '%s'", version)
-            return SpecFile.split_version_string(version)
-        else:
-            logger.debug('Failed to extract version from archive name!')
-            #  TODO: look at this if it could be rewritten in a better way!
-            #  try fallback regex if not used this time
-            if regex_str != fallback_regex_str:
-                logger.debug("Trying to extracting version using fallback regex '%s'", fallback_regex_str)
-                regex = re.compile(fallback_regex_str)
-                match = regex.search(name)
-                if match:
-                    version = match.group(1)
-                    logger.debug("Extracted version '%s'", version)
-                    return SpecFile.split_version_string(version)
-                else:
-                    logger.debug('Failed to extract version from archive name using fallback regex!')
-            return SpecFile.split_version_string('')
 
     def get_new_log(self, git_helper):
         new_record = []
