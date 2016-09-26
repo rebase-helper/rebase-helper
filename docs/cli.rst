@@ -1,5 +1,5 @@
 CLI module
-===================
+==========
 
 .. automodule:: rebasehelper.cli
    :members:

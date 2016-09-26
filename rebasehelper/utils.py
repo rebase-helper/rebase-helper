@@ -222,8 +222,8 @@ class DownloadHelper(object):
         :type download_total: int or float
         :param downloaded: already downloaded size of the file
         :type downloaded: int or float
-        :param start_time: time in seconds since the epoch from the point when the download started. This is used to
-        calculate the remaining time of the download.
+        :param start_time: time in seconds since the epoch from the point when the download started.
+                           This is used to calculate the remaining time of the download.
         :type start_time: float
         :return: None
         """

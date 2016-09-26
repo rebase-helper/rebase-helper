@@ -1,13 +1,14 @@
-Module Overview
+Module overview
 ===============
+
 .. toctree::
    :maxdepth: 2
 
+   cli
    application
    patchhelper
    utils
    archive
-   baseoutput
    buildhelper
    buildloganalyzer
    exceptions

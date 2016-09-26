@@ -77,68 +77,64 @@ class CustomArgumentParser(argparse.ArgumentParser):
 class CLI(object):
     """ Class for processing data from commandline """
 
-    def __init__(self, args=None):
-        """parse arguments"""
-        self.parser = CustomArgumentParser(description=PROGRAM_DESCRIPTION,
-                                           formatter_class=CustomHelpFormatter)
-        self.add_args()
-        self.args = self.parser.parse_args(args)
-
-    def add_args(self):
-        self.parser.add_argument(
+    @staticmethod
+    def build_parser():
+        parser = CustomArgumentParser(description=PROGRAM_DESCRIPTION,
+                                      formatter_class=CustomHelpFormatter)
+        parser.add_argument(
             "-v",
             "--verbose",
             default=False,
             action="store_true",
             help="be more verbose (recommended)"
         )
-        self.parser.add_argument(
+        parser.add_argument(
             "-p",
             "--patch-only",
             default=False,
             action="store_true",
             help="only apply patches"
         )
-        self.parser.add_argument(
+        parser.add_argument(
             "-b",
             "--build-only",
             default=False,
             action="store_true",
             help="only build SRPM and RPMs"
         )
-        self.parser.add_argument(
+        parser.add_argument(
             "--buildtool",
             choices=Builder.get_supported_tools(),
             default=Builder.get_default_tool(),
             help="build tool to use, defaults to %(default)s"
         )
-        self.parser.add_argument(
+        parser.add_argument(
             "--pkgcomparetool",
             choices=checkers_runner.get_supported_tools(),
             default=checkers_runner.get_default_tools(),
             type=lambda s: s.split(','),
             help="set of tools to use for package comparison, defaults to %(default)s"
         )
-        self.parser.add_argument(
+        parser.add_argument(
             "--outputtool",
             choices=OutputTool.get_supported_tools(),
             default=OutputTool.get_default_tool(),
             help="tool to use for formatting rebase output, defaults to %(default)s"
         )
-        self.parser.add_argument(
+        parser.add_argument(
             "-w",
             "--keep-workspace",
             default=False,
             action="store_true",
             help="do not remove workspace directory after finishing"
         )
-        self.parser.add_argument(
+        parser.add_argument(
             "--not-download-sources",
             default=False,
             action="store_true",
             help="do not download sources"
         )
-        self.parser.add_argument(
+        parser.add_argument(
             "-c",
             "--continue",
             default=False,
@@ -146,19 +142,19 @@ class CLI(object):
             dest='cont',
             help="continue previously interrupted rebase"
         )
-        self.parser.add_argument(
+        parser.add_argument(
             "sources",
             metavar='SOURCES',
             help="new upstream sources"
         )
-        self.parser.add_argument(
+        parser.add_argument(
             "--non-interactive",
             default=False,
             action="store_true",
             dest='non_interactive',
             help="do not interact with user"
         )
-        self.parser.add_argument(
+        parser.add_argument(
             "--comparepkgs-only",
             default=False,
             dest="comparepkgs",
@@ -166,43 +162,49 @@ class CLI(object):
             help="compare already built packages, %(metavar)s must be a directory "
                  "with the following structure: <dir_name>/{old,new}/RPM"
         )
-        self.parser.add_argument(
+        parser.add_argument(
             "--builds-nowait",
             default=False,
             action="store_true",
             help="do not wait for koji or copr builds to finish"
         )
         # deprecated argument, kept for backward compatibility
-        self.parser.add_argument(
+        parser.add_argument(
             "--fedpkg-build-tasks",
             dest="fedpkg_build_tasks",
             type=lambda s: s.split(','),
             help=argparse.SUPPRESS
         )
-        self.parser.add_argument(
+        parser.add_argument(
             "--build-tasks",
             dest="build_tasks",
             metavar="OLD_TASK,NEW_TASK",
             type=lambda s: s.split(','),
             help="comma-separated koji or copr task ids"
         )
-        self.parser.add_argument(
+        parser.add_argument(
             "--results-dir",
             help="directory where rebase-helper output will be stored"
         )
-        self.parser.add_argument(
+        parser.add_argument(
             "--build-retries",
             default=2,
             help="number of retries of a failed build, defaults to %(default)d",
             type=int
         )
-        self.parser.add_argument(
+        parser.add_argument(
             "--builder-options",
             default=None,
             metavar="BUILDER_OPTIONS",
             help="enable arbitrary local builder option(s), enclose %(metavar)s in quotes "
                  "and note that = before it is mandatory"
         )
+        return parser
+
+    def __init__(self, args=None):
+        """parse arguments"""
+        self.parser = CLI.build_parser()
+        self.args = self.parser.parse_args(args)
 
     def __getattr__(self, name):
         try:

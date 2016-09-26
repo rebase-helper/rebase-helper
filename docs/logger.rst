@@ -1,5 +1,5 @@
 Logger module
-===================
+=============
 
 .. automodule:: rebasehelper.logger
    :members:

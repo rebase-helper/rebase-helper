@@ -1,6 +1,6 @@
 Exception module
-===================
+================
 
-.. automodule:: rebasehelper.exception
+.. automodule:: rebasehelper.exceptions
    :members:
    :undoc-members:
