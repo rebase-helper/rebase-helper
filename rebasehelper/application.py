@@ -335,15 +335,18 @@ class Application(object):
         """Function extracts a given Archive and returns a full dirname to sources"""
         Application.extract_archive(archive_path, destination)
 
-        try:
-            sources_dir = os.listdir(destination)[0]
-        except IndexError:
-            raise RebaseHelperError('Extraction of sources failed!')
+        files = os.listdir(destination)
 
-        if os.path.isdir(os.path.join(destination, sources_dir)):
-            return os.path.join(destination, sources_dir)
-        else:
-            return destination
+        if not files:
+            raise RebaseHelperError('Extraction of sources failed!')
+        # if there is only one directory, we can assume it's top-level directory
+        elif len(files) == 1:
+            sources_dir = os.path.join(destination, files[0])
+            if os.path.isdir(sources_dir):
+                return sources_dir
+
+        # archive without top-level directory
+        return destination
 
     def prepare_sources(self):
         """
