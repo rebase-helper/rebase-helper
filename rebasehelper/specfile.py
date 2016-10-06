@@ -1148,7 +1148,7 @@ class SpecFile(object):
                     args.append(new_dirname)
 
                     self.spec_content[index] = '#{0}'.format(line)
-                    self.spec_content.insert(index + 1, ' '.join(args))
+                    self.spec_content.insert(index + 1, ' '.join(args) + '\n')
                     self.save()
 
     def find_archive_target_in_prep(self, archive):
