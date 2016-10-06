@@ -1103,31 +1103,64 @@ class SpecFile(object):
         self.spec_content = self._create_spec_from_sections()
         self.save()
 
+    def _get_setup_parser(self):
+        """
+        Construct ArgumentParser for parsing %(auto)setup macro arguments
+
+        :return: constructed ArgumentParser
+        """
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-n', default=rpm.expandMacro('%{name}-%{version}'))
+        parser.add_argument('-a', type=int, default=-1)
+        parser.add_argument('-b', type=int, default=-1)
+        parser.add_argument('-T', action='store_true')
+        return parser
+
+    def get_setup_dirname(self):
+        """
+        Get dirname from %setup or %autosetup macro arguments
+
+        :return: dirname
+        """
+        parser = self._get_setup_parser()
+
+        for index, line in enumerate(self.spec_content):
+            if line.startswith('%setup') or line.startswith('%autosetup'):
+                line = rpm.expandMacro(line)
+
+                # parse macro arguments
+                ns, _ = parser.parse_known_args(shlex.split(line)[1:])
+
+                # check if this macro instance is extracting Source0
+                if not ns.T or ns.a == 0 or ns.b == 0:
+                    return ns.n
+
+        return None
+
     def update_setup_dirname(self, dirname):
         """
         Update %setup or %autosetup dirname argument if needed
 
-        :param dirname: required dirname
+        :param dirname: new dirname to be used
         """
+        parser = self._get_setup_parser()
+
         for index, line in enumerate(self.spec_content):
             if line.startswith('%setup') or line.startswith('%autosetup'):
-                args = line.split()
+                line = rpm.expandMacro(line)
+
+                args = shlex.split(line)
                 macro = args[0]
 
-                # parse macro arguments, care only about -T and -n
-                parser = argparse.ArgumentParser()
-                parser.add_argument('-T', action='store_true')
-                parser.add_argument('-n', default='%{name}-%{version}')
+                # parse macro arguments
+                ns, unknown = parser.parse_known_args(args[1:])
 
-                namespace, unknown = parser.parse_known_args(args[1:])
-
-                if namespace.T:
-                    # -T means not to extract Source0, so this macro instance
-                    # can be ignored
+                # check if this macro instance is extracting Source0
+                if ns.T and ns.a != 0 and ns.b != 0:
                     continue
 
-                # test if modification is really necessary
-                if dirname != rpm.expandMacro(namespace.n):
+                # check if modification is really necessary
+                if dirname != ns.n:
                     new_dirname = dirname
 
                     # get %{name} and %{version} macros
@@ -1143,9 +1176,14 @@ class SpecFile(object):
                             new_dirname = new_dirname.replace(m['value'], '%{{{}}}'.format(m['name']))
 
                     args = [macro]
+                    args.extend(['-n', new_dirname])
+                    if ns.a != -1:
+                        args.extend(['-a', str(ns.a)])
+                    if ns.b != -1:
+                        args.extend(['-b', str(ns.b)])
+                    if ns.T:
+                        args.append('-T')
                     args.extend(unknown)
-                    args.append('-n')
-                    args.append(new_dirname)
 
                     self.spec_content[index] = '#{0}'.format(line)
                     self.spec_content.insert(index + 1, ' '.join(args) + '\n')

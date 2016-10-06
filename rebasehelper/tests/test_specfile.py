@@ -435,11 +435,13 @@ class TestSpecFile(BaseTest):
 
         self.SPEC_FILE_OBJECT.update_setup_dirname('test-1.0.2rc1')
         prep = self.SPEC_FILE_OBJECT.get_spec_section('%prep')
-        assert '%setup -q -a 5 -n %{name}-%{REBASE_VER}' in prep
+        setup = [l for l in prep if l.startswith('%setup')][0]
+        assert '-n %{name}-%{REBASE_VER}' in setup
 
         self.SPEC_FILE_OBJECT.update_setup_dirname('test-1.0.2-rc1')
         prep = self.SPEC_FILE_OBJECT.get_spec_section('%prep')
-        assert '%setup -q -a 5 -n %{name}-%{version}-%{REBASE_EXTRA_VER}' in prep
+        setup = [l for l in prep if l.startswith('%setup')][0]
+        assert '-n %{name}-%{version}-%{REBASE_EXTRA_VER}' in setup
 
     def test_find_archive_target_in_prep(self):
         target = self.SPEC_FILE_OBJECT.find_archive_target_in_prep('documentation.tar.xz')

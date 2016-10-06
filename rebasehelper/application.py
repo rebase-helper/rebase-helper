@@ -354,17 +354,29 @@ class Application(object):
 
         :return: 
         """
-        old_dir = Application.extract_sources(self.old_sources,
-                                              os.path.join(self.execution_dir, settings.OLD_SOURCES_DIR))
-        new_dir = Application.extract_sources(self.new_sources,
-                                              os.path.join(self.execution_dir, settings.NEW_SOURCES_DIR))
 
-        # determine top-level directory in new_sources archive
-        toplevel_dir = os.path.relpath(new_dir,
-                                       os.path.join(self.execution_dir, settings.NEW_SOURCES_DIR))
+        old_sources_dir = os.path.join(self.execution_dir, settings.OLD_SOURCES_DIR)
+        new_sources_dir = os.path.join(self.execution_dir, settings.NEW_SOURCES_DIR)
 
-        if toplevel_dir != '.':
-            self.rebase_spec_file.update_setup_dirname(toplevel_dir)
+        old_dir = Application.extract_sources(self.old_sources, old_sources_dir)
+        new_dir = Application.extract_sources(self.new_sources, new_sources_dir)
+
+        old_tld = os.path.relpath(old_dir, old_sources_dir)
+        new_tld = os.path.relpath(new_dir, new_sources_dir)
+
+        dirname = self.spec_file.get_setup_dirname()
+
+        if dirname and os.sep in dirname:
+            dirs = os.path.split(dirname)
+            if old_tld == dirs[0]:
+                old_dir = os.path.join(old_dir, *dirs[1:])
+            if new_tld == dirs[0]:
+                new_dir = os.path.join(new_dir, *dirs[1:])
+
+        new_dirname = os.path.relpath(new_dir, new_sources_dir)
+
+        if new_dirname != '.':
+            self.rebase_spec_file.update_setup_dirname(new_dirname)
 
         # extract rest of source archives to correct paths
         rest_sources = [self.old_rest_sources, self.new_rest_sources]
