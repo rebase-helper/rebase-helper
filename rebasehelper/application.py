@@ -60,7 +60,7 @@ class Application(object):
     rebased_patches = {}
     upstream_monitoring = False
 
-    def __init__(self, cli_conf, execution_dir, debug_log_file, report_log_file):
+    def __init__(self, cli_conf, execution_dir, results_dir, debug_log_file, report_log_file):
         """
         Initialize the application
 
@@ -79,8 +79,7 @@ class Application(object):
         self.kwargs['workspace_dir'] = self.workspace_dir = os.path.join(self.execution_dir,
                                                                          settings.REBASE_HELPER_WORKSPACE_DIR)
         # Directory where results should be put
-        self.kwargs['results_dir'] = self.results_dir = os.path.join(self.execution_dir,
-                                                                     settings.REBASE_HELPER_RESULTS_DIR)
+        self.kwargs['results_dir'] = self.results_dir = results_dir
 
         self.kwargs['non_interactive'] = self.conf.non_interactive
 
@@ -103,8 +102,9 @@ class Application(object):
 
     @staticmethod
     def setup(cli_conf):
-        execution_dir = cli_conf.results_dir if cli_conf.results_dir else os.getcwd()
-        results_dir = os.path.join(execution_dir, settings.REBASE_HELPER_RESULTS_DIR)
+        execution_dir = os.getcwd()
+        results_dir = cli_conf.results_dir if cli_conf.results_dir else execution_dir
+        results_dir = os.path.join(results_dir, settings.REBASE_HELPER_RESULTS_DIR)
 
         # if not continuing, check the results dir
         if not cli_conf.cont and not cli_conf.build_only and not cli_conf.comparepkgs:
@@ -119,7 +119,7 @@ class Application(object):
         debug_log_file = Application._add_debug_log_file(results_dir)
         report_log_file = Application._add_report_log_file(results_dir)
 
-        return execution_dir, debug_log_file, report_log_file
+        return execution_dir, results_dir, debug_log_file, report_log_file
 
     @staticmethod
     def _add_debug_log_file(results_dir):
