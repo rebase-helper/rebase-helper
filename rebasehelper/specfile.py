@@ -42,16 +42,16 @@ from rebasehelper.exceptions import RebaseHelperError
 PATCH_PREFIX = '%patch'
 
 
-def get_rebase_name(name):
+def get_rebase_name(dir_name, name):
     """
     Function returns a name in results directory
 
-    :param name: 
+    :param dir_name:
+    :param name:
     :return: full path to results dir with name
     """
-    dir_name = os.path.dirname(name)
     file_name = os.path.basename(name)
-    return os.path.join(dir_name, settings.REBASE_HELPER_RESULTS_DIR, file_name)
+    return os.path.join(dir_name, file_name)
 
 
 class PatchList(list):
