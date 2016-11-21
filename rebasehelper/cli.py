@@ -225,10 +225,10 @@ class CliHelper(object):
                 raise RebaseHelperError('Wrong format of --builder-options. It must be in the following form:'
                                         ' --builder-options="--desired-builder-option".')
             cli = CLI()
-            execution_dir, debug_log_file, report_log_file = Application.setup(cli)
+            execution_dir, results_dir, debug_log_file, report_log_file = Application.setup(cli)
             if not cli.verbose:
                 handler.setLevel(logging.INFO)
-            app = Application(cli, execution_dir, debug_log_file, report_log_file)
+            app = Application(cli, execution_dir, results_dir, debug_log_file, report_log_file)
             app.run()
         except KeyboardInterrupt:
             logger.info('\nInterrupted by user')
