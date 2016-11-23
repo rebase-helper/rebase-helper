@@ -175,7 +175,7 @@ class TestDownloadHelper(BaseTest):
         monkeypatch.setattr('sys.stdout', buffer)
         monkeypatch.setattr('time.time', lambda: 10.0)
         DownloadHelper.progress(100, 25, 0.0)
-        assert buffer.getvalue() == ' 25% (00:00:30 remaining)\r'
+        assert buffer.getvalue() == '\r 25%[=======>                      ]    25.00   eta 00:00:30 '
 
     def test_progress_float(self, monkeypatch):
         """
@@ -185,7 +185,7 @@ class TestDownloadHelper(BaseTest):
         monkeypatch.setattr('sys.stdout', buffer)
         monkeypatch.setattr('time.time', lambda: 10.0)
         DownloadHelper.progress(100.0, 25.0, 0.0)
-        assert buffer.getvalue() == ' 25% (00:00:30 remaining)\r'
+        assert buffer.getvalue() == '\r 25%[=======>                      ]    25.00   eta 00:00:30 '
 
     def test_download_existing_file_HTTP(self):
         """
