@@ -189,7 +189,7 @@ class TestDownloadHelper(BaseTest):
 
     def test_download_existing_file_HTTP(self):
         """
-        Test downloading exiting file via HTTP.
+        Test downloading existing file via HTTP.
         """
         KNOWN_URL = 'http://fedoraproject.org/static/hotspot.txt'
         LOCAL_FILE = os.path.basename(KNOWN_URL)
@@ -202,7 +202,7 @@ class TestDownloadHelper(BaseTest):
 
     def test_download_existing_file_HTTPS(self):
         """
-        Test downloading exiting file via HTTPS.
+        Test downloading existing file via HTTPS.
         """
         KNOWN_URL = 'https://ftp.isc.org/isc/bind9/9.10.4-P1/srcid'
         LOCAL_FILE = os.path.basename(KNOWN_URL)
@@ -215,7 +215,7 @@ class TestDownloadHelper(BaseTest):
 
     def test_download_existing_file_FTP(self):
         """
-        Test downloading exiting file via FTP
+        Test downloading existing file via FTP
         """
         KNOWN_URL = 'ftp://ftp.isc.org/isc/bind9/9.10.4-P1/srcid'
         LOCAL_FILE = os.path.basename(KNOWN_URL)
@@ -228,7 +228,7 @@ class TestDownloadHelper(BaseTest):
 
     def test_download_non_existing_file_HTTPS(self):
         """
-        Test downloading NON exiting file via HTTPS
+        Test downloading NON existing file via HTTPS
         :return:
         """
         KNOWN_URL = 'https://ftp.isc.org/isc/bind9/9.10.3-P5/srcid'
@@ -241,7 +241,7 @@ class TestDownloadHelper(BaseTest):
 
     def test_download_non_existing_file_FTP(self):
         """
-        Test downloading NON exiting file via FTP
+        Test downloading NON existing file via FTP
         :return:
         """
         KNOWN_URL = 'ftp://ftp.isc.org/isc/bind9/9.10.3-P5/srcid'
