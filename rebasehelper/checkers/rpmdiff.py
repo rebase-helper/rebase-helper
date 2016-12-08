@@ -130,14 +130,18 @@ class RpmDiffTool(BaseChecker):
 
         results_dict = cls.update_added_removed(results_dict)
         results_dict = dict((k, v) for k, v in six.iteritems(results_dict) if v)
-        text = []
+        lines = []
         for key, val in six.iteritems(results_dict):
-            text.append('Following files were %s:\n%s' % (key, '\n'.join(val)))
+            if val:
+                if lines:
+                    lines.append('')
+                lines.append('Following files were %s:' % key)
+                lines.extend(val)
 
         rpmdiff_report = os.path.join(cls.results_dir, 'report-' + cls.CMD + '.log')
         try:
             with open(rpmdiff_report, "w") as f:
-                f.writelines(text)
+                f.write('\n'.join(lines))
         except IOError:
             raise RebaseHelperError("Unable to write result from %s to '%s'" % (cls.CMD, rpmdiff_report))
 
