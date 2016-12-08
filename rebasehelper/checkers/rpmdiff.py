@@ -102,7 +102,7 @@ class RpmDiffTool(BaseChecker):
 
     @classmethod
     def run_check(cls, results_dir):
-        """Compares old and new RPMs using pkgdiff"""
+        """Compares old and new RPMs using rpmdiff"""
         results_dict = {}
 
         for tag in settings.CHECKER_TAGS:
@@ -134,11 +134,11 @@ class RpmDiffTool(BaseChecker):
         for key, val in six.iteritems(results_dict):
             text.append('Following files were %s:\n%s' % (key, '\n'.join(val)))
 
-        pkgdiff_report = os.path.join(cls.results_dir, 'report-' + cls.CMD + '.log')
+        rpmdiff_report = os.path.join(cls.results_dir, 'report-' + cls.CMD + '.log')
         try:
-            with open(pkgdiff_report, "w") as f:
+            with open(rpmdiff_report, "w") as f:
                 f.writelines(text)
         except IOError:
-            raise RebaseHelperError("Unable to write result from %s to '%s'" % (cls.CMD, pkgdiff_report))
+            raise RebaseHelperError("Unable to write result from %s to '%s'" % (cls.CMD, rpmdiff_report))
 
-        return {pkgdiff_report: None}
+        return {rpmdiff_report: None}
