@@ -227,16 +227,41 @@ class DownloadHelper(object):
         :type start_time: float
         :return: None
         """
-        r = float(downloaded) / float(download_total) if download_total else 0.0
-        t = time.time() - start_time
-        if 0.0 < r < 1.0:
-            h, rem = divmod(int(t / r - t), 3600)
+        bar_width = 32
+        infinite_step = 256 * 1024  # move every 256 kilobytes
+
+        delta = time.time() - start_time
+
+        def format_time(t):
+            h, rem = divmod(int(t), 3600)
             m, s = divmod(rem, 60)
-            est = '({:0>2d}:{:0>2d}:{:0>2d} remaining)'.format(h, m, s)
+            return '{:0>2d}:{:0>2d}:{:0>2d}'.format(h, m, s)
+
+        def format_size(s):
+            units = [' ', 'K', 'M', 'G', 'T']
+            i = 0
+            while s >= 1024.0 and i < len(units) - 1:
+                s /= 1024.0
+                i += 1
+            return '{:>7.2F}{}'.format(s, units[i])
+
+        if download_total < 0:
+            # infinite progress bar
+            pct = ' ' * 4
+            pos = int(downloaded / infinite_step) % (bar_width - 5)
+            bar = '[{}<=>{}]'.format(' ' * pos, ' ' * (bar_width - 5 - pos))
+            ts = ' in {}'.format(format_time(delta))
         else:
-            est = '                    '
+            r = float(downloaded) / float(download_total) if download_total else 0.0
+            pct = '{:>3d}%'.format(int(r * 100))
+            pos = int(r * (bar_width - 3))
+            bar = '[{}>{}]'.format('=' * pos, ' ' * (bar_width - 3 - pos))
+            ts = 'eta {}'.format(format_time(delta / r - delta) if r > 0.0 else ' ' * 7 + '?')
+
+        size = format_size(downloaded)
+
         # no point to log progress, write directly to stdout
-        sys.stdout.write('{:>3d}% {}\r'.format(int(r * 100), est))
+        sys.stdout.write('\r{}{}  {}  {} '.format(pct, bar, size, ts))
         sys.stdout.flush()
 
     @staticmethod
@@ -252,14 +277,11 @@ class DownloadHelper(object):
         """
         try:
             response = urllib.request.urlopen(url, timeout=timeout)
-            file_size = int(response.info().get('Content-Length', 0))
-
-            if not file_size:
-                raise DownloadError('The file has zero size')
+            file_size = int(response.info().get('Content-Length', -1))
 
             # file exists, check the size
             if os.path.exists(destination_path):
-                if file_size != os.path.getsize(destination_path):
+                if file_size < 0 or file_size != os.path.getsize(destination_path):
                     logger.debug("The destination file '%s' exists, but sizes don't match! Removing it.",
                                  destination_path)
                     os.remove(destination_path)
@@ -272,6 +294,9 @@ class DownloadHelper(object):
                     logger.info('Downloading file from URL %s', url)
                     download_start = time.time()
                     downloaded = 0
+
+                    # report progress
+                    DownloadHelper.progress(file_size, downloaded, download_start)
 
                     # do the actual download
                     while True:
@@ -286,6 +311,9 @@ class DownloadHelper(object):
 
                         # report progress
                         DownloadHelper.progress(file_size, downloaded, download_start)
+
+                    sys.stdout.write('\n')
+                    sys.stdout.flush()
             except KeyboardInterrupt as e:
                 os.remove(destination_path)
                 raise e

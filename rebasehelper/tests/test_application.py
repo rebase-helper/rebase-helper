@@ -102,8 +102,8 @@ class TestApplication(BaseTest):
 
         try:
             cli = CLI(self.cmd_line_args)
-            execution_dir, debug_log_file, report_log_file = Application.setup(cli)
-            app = Application(cli, execution_dir, debug_log_file, report_log_file)
+            execution_dir, results_dir, debug_log_file, report_log_file = Application.setup(cli)
+            app = Application(cli, execution_dir, results_dir, debug_log_file, report_log_file)
             app.prepare_sources()
             for key, val in app.kwargs.items():
                 if key in expected_dict:

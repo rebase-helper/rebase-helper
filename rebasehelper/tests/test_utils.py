@@ -175,7 +175,7 @@ class TestDownloadHelper(BaseTest):
         monkeypatch.setattr('sys.stdout', buffer)
         monkeypatch.setattr('time.time', lambda: 10.0)
         DownloadHelper.progress(100, 25, 0.0)
-        assert buffer.getvalue() == ' 25% (00:00:30 remaining)\r'
+        assert buffer.getvalue() == '\r 25%[=======>                      ]    25.00   eta 00:00:30 '
 
     def test_progress_float(self, monkeypatch):
         """
@@ -185,11 +185,21 @@ class TestDownloadHelper(BaseTest):
         monkeypatch.setattr('sys.stdout', buffer)
         monkeypatch.setattr('time.time', lambda: 10.0)
         DownloadHelper.progress(100.0, 25.0, 0.0)
-        assert buffer.getvalue() == ' 25% (00:00:30 remaining)\r'
+        assert buffer.getvalue() == '\r 25%[=======>                      ]    25.00   eta 00:00:30 '
+
+    def test_progress_unknown_total_size(self, monkeypatch):
+        """
+        Test that progress of a download is shown correctly. Test the case when total download size is not known.
+        """
+        buffer = StringIO()
+        monkeypatch.setattr('sys.stdout', buffer)
+        monkeypatch.setattr('time.time', lambda: 10.0)
+        DownloadHelper.progress(-1, 1024 * 1024, 0.0)
+        assert buffer.getvalue() == '\r    [    <=>                       ]     1.00M   in 00:00:10 '
 
     def test_download_existing_file_HTTP(self):
         """
-        Test downloading exiting file via HTTP.
+        Test downloading existing file via HTTP.
         """
         KNOWN_URL = 'http://fedoraproject.org/static/hotspot.txt'
         LOCAL_FILE = os.path.basename(KNOWN_URL)
@@ -202,7 +212,7 @@ class TestDownloadHelper(BaseTest):
 
     def test_download_existing_file_HTTPS(self):
         """
-        Test downloading exiting file via HTTPS.
+        Test downloading existing file via HTTPS.
         """
         KNOWN_URL = 'https://ftp.isc.org/isc/bind9/9.10.4-P1/srcid'
         LOCAL_FILE = os.path.basename(KNOWN_URL)
@@ -215,7 +225,7 @@ class TestDownloadHelper(BaseTest):
 
     def test_download_existing_file_FTP(self):
         """
-        Test downloading exiting file via FTP
+        Test downloading existing file via FTP
         """
         KNOWN_URL = 'ftp://ftp.isc.org/isc/bind9/9.10.4-P1/srcid'
         LOCAL_FILE = os.path.basename(KNOWN_URL)
@@ -226,9 +236,38 @@ class TestDownloadHelper(BaseTest):
         with open(LOCAL_FILE) as f:
             assert f.read().strip() == KNOWN_URL_CONTENT
 
+    def test_download_existing_file_of_unknown_length_HTTPS(self):
+        """
+        Test downloading existing file of unknown length via HTTPS
+        :return:
+        """
+        COMMIT = 'cf5ae2989a32c391d7769933e0267e6fbfae8e14'
+        KNOWN_URL = 'https://git.kernel.org/cgit/linux/kernel/git/stable/linux-stable.git/patch/?id={}'.format(COMMIT)
+        LOCAL_FILE = '{}.patch'.format(COMMIT)
+        KNOWN_URL_CONTENT = 'From {} Mon Sep 17 00:00:00 2001'.format(COMMIT)
+
+        DownloadHelper.download_file(KNOWN_URL, LOCAL_FILE)
+        assert os.path.isfile(LOCAL_FILE)
+        with open(LOCAL_FILE) as f:
+            assert f.readline().strip() == KNOWN_URL_CONTENT
+
+    def test_download_existing_file_of_unknown_length_FTP(self):
+        """
+        Test downloading existing file of unknown length via FTP
+        :return:
+        """
+        KNOWN_URL = 'ftp://ftp.gnupg.org/README'
+        LOCAL_FILE = os.path.basename(KNOWN_URL)
+        KNOWN_URL_CONTENT = 'Welcome hacker!'
+
+        DownloadHelper.download_file(KNOWN_URL, LOCAL_FILE)
+        assert os.path.isfile(LOCAL_FILE)
+        with open(LOCAL_FILE) as f:
+            assert f.readline().strip() == KNOWN_URL_CONTENT
+
     def test_download_non_existing_file_HTTPS(self):
         """
-        Test downloading NON exiting file via HTTPS
+        Test downloading NON existing file via HTTPS
         :return:
         """
         KNOWN_URL = 'https://ftp.isc.org/isc/bind9/9.10.3-P5/srcid'
@@ -241,7 +280,7 @@ class TestDownloadHelper(BaseTest):
 
     def test_download_non_existing_file_FTP(self):
         """
-        Test downloading NON exiting file via FTP
+        Test downloading NON existing file via FTP
         :return:
         """
         KNOWN_URL = 'ftp://ftp.isc.org/isc/bind9/9.10.3-P5/srcid'
