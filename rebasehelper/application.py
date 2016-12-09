@@ -490,6 +490,8 @@ class Application(object):
                     break
 
                 except SourcePackageBuildError:
+                    build_dict.update(builder.get_logs())
+                    results_store.set_build_data(version, build_dict)
                     #  always fail for original version
                     if version == 'old':
                         raise RebaseHelperError('Creating old SRPM package failed.')
