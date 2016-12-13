@@ -229,16 +229,19 @@ class PkgDiffTool(BaseChecker):
         if int(ret_code) != 0 and int(ret_code) != 1:
             raise RebaseHelperError('Execution of %s failed.\nCommand line is: %s' % (cls.CMD, cmd))
         results_dict = cls.process_xml_results(cls.results_dir)
-        text = []
+        lines = []
 
         for key, val in six.iteritems(results_dict):
             if val:
-                text.append('Following files were %s:\n%s' % (key, '\n'.join(val)))
+                if lines:
+                    lines.append('')
+                lines.append('Following files were %s:' % key)
+                lines.extend(val)
 
         pkgdiff_report = os.path.join(cls.results_dir, 'report-' + cls.pkgdiff_results_filename + '.log')
         try:
             with open(pkgdiff_report, "w") as f:
-                f.writelines(text)
+                f.write('\n'.join(lines))
         except IOError:
             raise RebaseHelperError("Unable to write result from %s to '%s'" % (cls.CMD, pkgdiff_report))
 
