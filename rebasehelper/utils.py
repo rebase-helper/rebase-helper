@@ -1298,12 +1298,22 @@ class LookasideCacheHelper(object):
 
     @classmethod
     def _read_sources(cls, basepath):
+        line_re = re.compile(r'^(?P<hashtype>[^ ]+?) \((?P<file>[^ )]+?)\) = (?P<hash>[^ ]+?)$')
         sources = []
         path = os.path.join(basepath, 'sources')
         if os.path.exists(path):
             with open(path, 'r') as f:
                 for line in f.readlines():
-                    sources.append(line.split())
+                    line = line.strip()
+                    m = line_re.match(line)
+                    if m is not None:
+                        d = m.groupdict()
+                    else:
+                        # fall back to old format of sources file
+                        hash, file = line.split()
+                        d = dict(hash=hash, file=file, hashtype='md5')
+                    d['hashtype'] = d['hashtype'].lower()
+                    sources.append(d)
         return sources
 
     @classmethod
@@ -1343,8 +1353,7 @@ class LookasideCacheHelper(object):
         try:
             config = cls._read_config(tool)
             url = config['lookaside']
-            hashtype = config['lookasidehash']
         except (configparser.Error, KeyError):
             raise LookasideCacheError('Failed to read rpkg configuration')
         for source in cls._read_sources(basepath):
-            cls._download_source(tool, url, package, source[1], hashtype, source[0])
+            cls._download_source(tool, url, package, source['file'], source['hashtype'], source['hash'])
