@@ -1,3 +1,14 @@
+News in version 0.9.0:
+- Fixed regexp for getting release number from SPEC
+- Old sources are now downloaded from Fedora lookaside cache
+- Auto-generated and improved CLI documentation and man page
+- SpecFile class preparation for pre-download hooks
+- Code cleanup and refactorization
+- Fixed functionality of '--results-dir' option
+- Added support for downloading files of unknown size
+- Several upstream monitoring fixes
+- Fixed issues caused by Fedora Flag Day
+
 News in version 0.8.0:
 - Added support for JSON output format
 - Added support for COPR build tool
