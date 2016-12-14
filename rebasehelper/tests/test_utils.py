@@ -680,7 +680,7 @@ class TestLookasideCacheHelper(BaseTest):
             'filename': 'v1.6.tar.gz',
             'hashtype': 'md5',
             'hash': '847d3e3577982a9515ad0aec6d5111b2',
-            'url': 'http://pkgs.fedoraproject.org/repo/pkgs',
+            'url': 'https://src.fedoraproject.org/repo/pkgs',
         },
         {
             'tool': 'fedpkg',
@@ -688,7 +688,16 @@ class TestLookasideCacheHelper(BaseTest):
             'filename': '0.8.0.tar.gz',
             'hashtype': 'md5',
             'hash': '91de540caef64cb8aa7fd250f2627a93',
-            'url': 'http://pkgs.fedoraproject.org/repo/pkgs',
+            'url': 'https://src.fedoraproject.org/repo/pkgs',
+        },
+        {
+            'tool': 'fedpkg',
+            'package': 'man-pages',
+            'filename': 'man-pages-posix-2013-a.tar.xz',
+            'hashtype': 'sha512',
+            'hash': 'e6ec8eb57269fadf368aeaac31b5a98b9c71723d4d5cc189f9c4642d6e865c88'
+                    'e44f77481dccbdb72e31526488eb531f624d455016361687a834ccfcac19fa14',
+            'url': 'https://src.fedoraproject.org/repo/pkgs',
         },
     ]
 
