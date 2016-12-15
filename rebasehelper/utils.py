@@ -730,6 +730,8 @@ class GitHelper(object):
     """Class which operates with git repositories"""
 
     GIT = 'git'
+    GIT_USER_NAME = 'rebase-helper'
+    GIT_USER_EMAIL = 'rebase-helper@localhost.local'
     output_data = []
 
     def __init__(self, git_directory):
@@ -746,6 +748,8 @@ class GitHelper(object):
         """
         cmd = []
         cmd.append(self.GIT)
+        cmd.extend(['-c', 'user.name={}'.format(self.GIT_USER_NAME)])
+        cmd.extend(['-c', 'user.email={}'.format(self.GIT_USER_EMAIL)])
         cmd.extend(command)
         self.output_data = []
         if not output_file:
