@@ -1076,8 +1076,7 @@ class KojiHelper(object):
         return rh_tasks
 
     @classmethod
-    def download_scratch_build(cls, task_list, dir_name):
-        session = cls.session_maker()
+    def download_scratch_build(cls, session, task_list, dir_name):
         rpms = []
         logs = []
         for task_id in task_list:
@@ -1096,7 +1095,6 @@ class KojiHelper(object):
                         rpms.append(downloaded_file)
                     if filename.endswith('.log'):
                         logs.append(downloaded_file)
-        session.logout()
         return rpms, logs
 
     @classmethod
