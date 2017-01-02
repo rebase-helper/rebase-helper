@@ -510,7 +510,9 @@ class KojiBuildTool(BuildToolBase):
             if task_dict[key] == koji.TASK_STATES['FAILED']:
                 package_failed = True
             task_list.append(key)
-        rpms, logs = cls.koji_helper.download_scratch_build(task_list, os.path.dirname(source).replace('SRPM', 'RPM'))
+        rpms, logs = cls.koji_helper.download_scratch_build(session,
+                                                            task_list,
+                                                            os.path.dirname(source).replace('SRPM', 'RPM'))
         if package_failed:
             weburl = '%s/taskinfo?taskID=%i' % (cls.weburl, task_list[0])
             logger.info('RPM build failed %s', weburl)

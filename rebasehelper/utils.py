@@ -970,7 +970,6 @@ class KojiHelper(object):
     server = "https://%s/kojihub" % koji_web
     scratch_url = "http://%s/work/" % koji_web
     baseurl = 'http://kojipkgs.fedoraproject.org/work/'
-    server_http = "http://%s/kojihub" % koji_web
 
     @classmethod
     def _unique_path(cls, prefix):
@@ -984,7 +983,11 @@ class KojiHelper(object):
         else:
             koji_session = koji.ClientSession(baseurl)
             return koji_session
-        koji_session.ssl_login(cls.cert, cls.ca_cert, cls.ca_cert)
+        try:
+            koji_session.krb_login()
+        except koji.krbV.Krb5Error:
+            # fall back to login using certificate
+            koji_session.ssl_login(cls.cert, cls.ca_cert, cls.ca_cert)
         return koji_session
 
     @classmethod
@@ -1076,8 +1079,7 @@ class KojiHelper(object):
         return rh_tasks
 
     @classmethod
-    def download_scratch_build(cls, task_list, dir_name):
-        session = cls.session_maker()
+    def download_scratch_build(cls, session, task_list, dir_name):
         rpms = []
         logs = []
         for task_id in task_list:
@@ -1096,12 +1098,11 @@ class KojiHelper(object):
                         rpms.append(downloaded_file)
                     if filename.endswith('.log'):
                         logs.append(downloaded_file)
-        session.logout()
         return rpms, logs
 
     @classmethod
     def get_koji_tasks(cls, task_id, dir_name):
-        session = cls.session_maker(baseurl=cls.server_http)
+        session = cls.session_maker(baseurl=cls.server)
         task_id = int(task_id)
         rpm_list = []
         log_list = []
