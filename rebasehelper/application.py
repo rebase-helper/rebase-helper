@@ -449,14 +449,12 @@ class Application(object):
                         build_dict.update(builder.build(spec, sources, patches, results_dir, **build_dict))
                     if not self.conf.builds_nowait:
                         if self.conf.buildtool == KojiBuildTool.CMD:
-                            while True:
+                            while not build_dict['rpm']:
                                 kh = KojiHelper()
                                 build_dict['rpm'], build_dict['logs'] = kh.get_koji_tasks(
                                     build_dict['koji_task_id'],
                                     results_dir
                                 )
-                                if build_dict['rpm']:
-                                    break
                     else:
                         if self.conf.build_tasks:
                             if self.conf.buildtool == KojiBuildTool.CMD:

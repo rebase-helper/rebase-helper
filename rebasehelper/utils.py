@@ -730,6 +730,8 @@ class GitHelper(object):
     """Class which operates with git repositories"""
 
     GIT = 'git'
+    GIT_USER_NAME = 'rebase-helper'
+    GIT_USER_EMAIL = 'rebase-helper@localhost.local'
     output_data = []
 
     def __init__(self, git_directory):
@@ -746,6 +748,8 @@ class GitHelper(object):
         """
         cmd = []
         cmd.append(self.GIT)
+        cmd.extend(['-c', 'user.name={}'.format(self.GIT_USER_NAME)])
+        cmd.extend(['-c', 'user.email={}'.format(self.GIT_USER_EMAIL)])
         cmd.extend(command)
         self.output_data = []
         if not output_file:
@@ -970,7 +974,6 @@ class KojiHelper(object):
     server = "https://%s/kojihub" % koji_web
     scratch_url = "http://%s/work/" % koji_web
     baseurl = 'http://kojipkgs.fedoraproject.org/work/'
-    server_http = "http://%s/kojihub" % koji_web
 
     @classmethod
     def _unique_path(cls, prefix):
@@ -984,7 +987,11 @@ class KojiHelper(object):
         else:
             koji_session = koji.ClientSession(baseurl)
             return koji_session
-        koji_session.ssl_login(cls.cert, cls.ca_cert, cls.ca_cert)
+        try:
+            koji_session.krb_login()
+        except koji.krbV.Krb5Error:
+            # fall back to login using certificate
+            koji_session.ssl_login(cls.cert, cls.ca_cert, cls.ca_cert)
         return koji_session
 
     @classmethod
@@ -1076,8 +1083,7 @@ class KojiHelper(object):
         return rh_tasks
 
     @classmethod
-    def download_scratch_build(cls, task_list, dir_name):
-        session = cls.session_maker()
+    def download_scratch_build(cls, session, task_list, dir_name):
         rpms = []
         logs = []
         for task_id in task_list:
@@ -1096,12 +1102,11 @@ class KojiHelper(object):
                         rpms.append(downloaded_file)
                     if filename.endswith('.log'):
                         logs.append(downloaded_file)
-        session.logout()
         return rpms, logs
 
     @classmethod
     def get_koji_tasks(cls, task_id, dir_name):
-        session = cls.session_maker(baseurl=cls.server_http)
+        session = cls.session_maker(baseurl=cls.server)
         task_id = int(task_id)
         rpm_list = []
         log_list = []
@@ -1298,12 +1303,22 @@ class LookasideCacheHelper(object):
 
     @classmethod
     def _read_sources(cls, basepath):
+        line_re = re.compile(r'^(?P<hashtype>[^ ]+?) \((?P<file>[^ )]+?)\) = (?P<hash>[^ ]+?)$')
         sources = []
         path = os.path.join(basepath, 'sources')
         if os.path.exists(path):
             with open(path, 'r') as f:
                 for line in f.readlines():
-                    sources.append(line.split())
+                    line = line.strip()
+                    m = line_re.match(line)
+                    if m is not None:
+                        d = m.groupdict()
+                    else:
+                        # fall back to old format of sources file
+                        hash, file = line.split()
+                        d = dict(hash=hash, file=file, hashtype='md5')
+                    d['hashtype'] = d['hashtype'].lower()
+                    sources.append(d)
         return sources
 
     @classmethod
@@ -1343,8 +1358,7 @@ class LookasideCacheHelper(object):
         try:
             config = cls._read_config(tool)
             url = config['lookaside']
-            hashtype = config['lookasidehash']
         except (configparser.Error, KeyError):
             raise LookasideCacheError('Failed to read rpkg configuration')
         for source in cls._read_sources(basepath):
-            cls._download_source(tool, url, package, source[1], hashtype, source[0])
+            cls._download_source(tool, url, package, source['file'], source['hashtype'], source['hash'])
