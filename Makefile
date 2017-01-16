@@ -36,5 +36,9 @@ html:
 	make -f Makefile.docs html
 
 
+man:
+	make -f Makefile.docs man
+
+
 test:
 	tox --recreate

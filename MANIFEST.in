@@ -2,7 +2,6 @@ include MANIFEST.in
 include Makefile
 include LICENSE
 include ChangeLog
-include man/*
 include *requirements.txt
 include rebase-helper.bash
 include tox.ini pylintrc .coveragerc
