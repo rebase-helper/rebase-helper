@@ -730,12 +730,37 @@ class GitHelper(object):
     """Class which operates with git repositories"""
 
     GIT = 'git'
+    # provide fallback values if system is not configured
     GIT_USER_NAME = 'rebase-helper'
     GIT_USER_EMAIL = 'rebase-helper@localhost.local'
     output_data = []
 
     def __init__(self, git_directory):
         self.git_directory = git_directory
+        # use user-configured values if possible
+        try:
+            self.GIT_USER_NAME = self._get_git_config_val('user.name')
+        except KeyError:
+            pass
+        try:
+            self.GIT_USER_EMAIL = self._get_git_config_val('user.email')
+        except KeyError:
+            pass
+
+    @classmethod
+    def _get_git_config_val(cls, name):
+        """
+        :param name: config key name, e.g. user.name
+        :return: configured value from git config --get
+                 or KeyError if the key is not configured
+        """
+        cmd = [cls.GIT, 'config', '--get', name]
+        output = StringIO()
+        ret_code = ProcessHelper.run_subprocess_cwd(cmd, output=output)
+        if ret_code:
+            raise KeyError(
+                    'git config --get {} did not return value'.format(name))
+        return output.getvalue().strip()
 
     def _call_git_command(self, command, input_file=None, output_file=None):
         """
