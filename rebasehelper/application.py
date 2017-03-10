@@ -27,7 +27,7 @@ import logging
 import six
 
 from rebasehelper.archive import Archive
-from rebasehelper.specfile import SpecFile, get_rebase_name
+from rebasehelper.specfile import SpecFile, get_rebase_name, spec_hook_runner
 from rebasehelper.logger import logger, logger_report, LoggerHelper
 from rebasehelper import settings
 from rebasehelper import output_tool
@@ -185,6 +185,7 @@ class Application(object):
             self.rebase_spec_file.set_version(version)
             self.rebase_spec_file.set_extra_version_separator(separator)
             self.rebase_spec_file.set_extra_version(extra_version)
+        self.run_spec_hooks()
 
     def _initialize_data(self):
         """Function fill dictionary with default data"""
@@ -552,6 +553,17 @@ class Application(object):
                 raise RebaseHelperError('Building package failed with unknown reason. Check all available log files.')
 
         return True
+
+    def run_spec_hooks(self):
+        """
+        Runs spec hooks on spec files.
+        :return: None
+        """
+        for spec_hook_name in spec_hook_runner.get_supported_tools():
+            try:
+                spec_hook_runner.run_spec_hooks(spec_hook_name, self.rebase_spec_file_path)
+            except CheckerNotFoundError:
+                logger.error("Rebase-helper did not find spec_hook '%s'." % spec_hook_name)
 
     def run_package_checkers(self, results_dir):
         """

@@ -61,3 +61,16 @@ to *rebase-helper* directly, e.g.:
 or you can let *rebase-helper* determine it from the new version tarball, e.g.:
 
 `rebase-helper joe-4.2.tar.gz`
+
+
+## How to use rebase-helper in Docker
+
+Build docker image with command
+ 
+`docker build --build-arg=RH_VERSION=<your_version> --build-arg=RH_PACKAGE=<your_package_name> -t rebasehelper:0.2 . `
+
+Run docker image with command
+
+`docker run -ti -e RH_PACKAGE=<your_package_name> -e RH_VERSION=<new_version> -v /home/phracek/work/programming/docker-rebase-helper/docker_export:/package_name rebasehelper:0.2`
+
+The rebase-helper results should be in directory *./docker_export*.
