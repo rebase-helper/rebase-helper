@@ -33,6 +33,7 @@ from rebasehelper.checker import BaseChecker
 
 class CsmockTool(BaseChecker):
     """ Csmock compare tool."""
+
     CMD = "csmock"
 
     @classmethod
@@ -45,6 +46,10 @@ class CsmockTool(BaseChecker):
     @classmethod
     def get_checker_name(cls):
         return cls.CMD
+
+    @classmethod
+    def is_default(cls):
+        return cls.DEFAULT
 
     @classmethod
     def run_check(cls, results_dir):

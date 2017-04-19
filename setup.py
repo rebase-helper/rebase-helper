@@ -33,16 +33,26 @@ setup(
     name='rebasehelper',
     version=VERSION,
     description='RebaseHelper helps you to rebase your packages.',
-    keywords='packages,easy,quick',
+    keywords='packages, easy, quick',
     author='Petr Hracek',
     author_email='phracek@redhat.com',
     url='https://github.com/rebase-helper/rebase-helper',
     license='GPLv2+',
-    packages=['rebasehelper', 'rebasehelper.checkers'],
+    packages=[
+        'rebasehelper',
+        'rebasehelper.checkers',
+        'rebasehelper.tests',
+    ],
     include_package_data=True,
     entry_points={
         'console_scripts': [
-            'rebase-helper=rebasehelper.cli:CliHelper.run'
+            'rebase-helper = rebasehelper.cli:CliHelper.run',
+        ],
+        'rebasehelper.checkers': [
+            'rpmdiff = rebasehelper.checkers.rpmdiff_tool:RpmDiffTool',
+            'pkgdiff = rebasehelper.checkers.pkgdiff_tool:PkgDiffTool',
+            'abipkgdiff = rebasehelper.checkers.abipkgdiff_tool:AbiCheckerTool',
+            'csmock = rebasehelper.checkers.csmock_tool:CsmockTool',
         ]
     },
     setup_requires=[],

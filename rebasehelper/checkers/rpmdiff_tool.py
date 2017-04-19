@@ -36,6 +36,7 @@ from rebasehelper.checker import BaseChecker
 
 class RpmDiffTool(BaseChecker):
     """ RpmDiff compare tool."""
+
     CMD = "rpmdiff"
     DEFAULT = True
 
@@ -49,6 +50,10 @@ class RpmDiffTool(BaseChecker):
     @classmethod
     def get_checker_name(cls):
         return cls.CMD
+
+    @classmethod
+    def is_default(cls):
+        return cls.DEFAULT
 
     @classmethod
     def _get_rpms(cls, rpm_list):
