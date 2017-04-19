@@ -20,10 +20,8 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
-from __future__ import print_function
-import os
-import imp
 import six
+import pkg_resources
 
 from rebasehelper.logger import logger
 
@@ -47,6 +45,11 @@ class BaseChecker(object):
         raise NotImplementedError()
 
     @classmethod
+    def is_default(cls):
+        """Checks if the tool is the default checker."""
+        raise NotImplementedError()
+
+    @classmethod
     def run_check(cls, results_dir):
         """Perform the check itself and return results."""
         raise NotImplementedError()
@@ -57,51 +60,22 @@ class CheckersRunner(object):
     Class representing the process of running various checkers on final packages.
     """
 
-    def __init__(self, dir_name=os.path.join(os.path.dirname(__file__), 'checkers')):
+    def __init__(self):
         """
-        Constructor of a Checker class.
-
-        :param dir_name: Path to directory witch contains various checkers. By default the it looks for checkers inside
-        'checkers' subdirectory in the project's installation location.
-        :type dir_name: str
+        Constructor of a CheckersRunner class.
         """
-        self._injector_type = 'BaseChecker'
-        self.plugin_classes = self.load_checkers(dir_name)
-
-    def _checker_find_injector(self, module):
-        injectors = []
-        for n in dir(module):
-            attr = getattr(module, n)
-            if hasattr(attr, '__base__') and attr.__base__.__name__ == self._injector_type:
-                injectors.append(attr)
-        return injectors
-
-    def load_checkers(self, plugins_dir):
-        """
-        Load checker implementations from the given location.
-
-        :param plugins_dir: Path to directory from which to load the checkers.
-        :type plugins_dir: str
-        :return: Dictionary with names of the checkers and the actual checker objects.
-        :rtype: dict
-        """
-        plugin_checkers = {}
-        for plugin in os.listdir(plugins_dir):
-            if not plugin.endswith('.py'):
+        self.plugin_classes = {}
+        for entrypoint in pkg_resources.iter_entry_points('rebasehelper.checkers'):
+            try:
+                checker = entrypoint.load()
+            except ImportError:
+                # silently skip broken plugin
                 continue
-            modname, suffix = plugin.rsplit('.', 1)
-            if suffix == 'py':
-                fullpath = os.path.abspath(plugins_dir)
-                f, filename, description = imp.find_module(modname, [fullpath])
-                m = imp.load_module(modname, open(filename, 'U'), filename, description)
-                try:
-                    injs = self._checker_find_injector(m)
-                    for i in injs:
-                        obj = i()
-                        plugin_checkers[obj.get_checker_name()] = obj
-                except AttributeError:
-                    print ("Module '%s' does not implement `register(context)`" % modname)
-        return plugin_checkers
+            try:
+                self.plugin_classes[checker.get_checker_name()] = checker
+            except (AttributeError, NotImplementedError):
+                # silently skip broken plugin
+                continue
 
     def run_checker(self, results_dir, checker_name):
         """
@@ -133,7 +107,7 @@ class CheckersRunner(object):
 
     def get_default_tools(self):
         """Return list of default tools"""
-        return [k for k, v in six.iteritems(self.plugin_classes) if v.DEFAULT]
+        return [k for k, v in six.iteritems(self.plugin_classes) if v.is_default()]
 
 
 # Global instance of CheckersRunner. It is enough to load it once per application run.

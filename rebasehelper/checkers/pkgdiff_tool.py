@@ -35,6 +35,7 @@ from xml.etree import ElementTree
 
 class PkgDiffTool(BaseChecker):
     """ Pkgdiff compare tool. """
+
     CMD = "pkgdiff"
     DEFAULT = True
     pkgdiff_results_filename = 'pkgdiff_reports.html'
@@ -52,6 +53,10 @@ class PkgDiffTool(BaseChecker):
     @classmethod
     def get_checker_name(cls):
         return cls.CMD
+
+    @classmethod
+    def is_default(cls):
+        return cls.DEFAULT
 
     @classmethod
     def _get_rpm_info(cls, name, packages):

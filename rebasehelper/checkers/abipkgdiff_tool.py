@@ -34,6 +34,7 @@ from rebasehelper.checker import BaseChecker
 
 class AbiCheckerTool(BaseChecker):
     """ Pkgdiff compare tool. """
+
     CMD = "abipkgdiff"
     DEFAULT = True
     results_dir = ''
@@ -53,6 +54,10 @@ class AbiCheckerTool(BaseChecker):
     @classmethod
     def get_checker_name(cls):
         return cls.CMD
+
+    @classmethod
+    def is_default(cls):
+        return cls.DEFAULT
 
     @classmethod
     def _get_packages_for_abipkgdiff(cls, input_structure=None):
