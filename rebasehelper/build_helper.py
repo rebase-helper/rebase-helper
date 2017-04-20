@@ -20,34 +20,15 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
-from __future__ import print_function
 import shutil
 import os
 import six
+import pkg_resources
 
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.utils import PathHelper
-from rebasehelper.utils import KojiHelper
-from rebasehelper.utils import CoprHelper
 from rebasehelper.utils import TemporaryEnvironment
 from rebasehelper.logger import logger
-
-
-koji_builder = True
-try:
-    import koji
-    from pyrpkg.cli import TaskWatcher
-    from OpenSSL import SSL
-except ImportError:
-    koji_builder = False
-
-
-build_tools = {}
-
-
-def register_build_tool(build_tool):
-    build_tools[build_tool.CMD] = build_tool
-    return build_tool
 
 
 class SourcePackageBuildError(RuntimeError):
@@ -85,7 +66,7 @@ class BuildTemporaryEnvironment(TemporaryEnvironment):
         obj = super(BuildTemporaryEnvironment, self).__enter__()
         log_message = "Copying '%s' to '%s'"
         # create the directory structure
-        self._create_directory_sctructure()
+        self._create_directory_structure()
         # copy sources
         for source in self.sources:
             logger.debug(log_message, source, self._env[self.TEMPDIR_SOURCES])
@@ -102,7 +83,7 @@ class BuildTemporaryEnvironment(TemporaryEnvironment):
 
         return obj
 
-    def _create_directory_sctructure(self):
+    def _create_directory_structure(self):
         """Function creating the directory structure in the TemporaryEnvironment."""
         raise NotImplementedError('The create directory function has to be implemented in child class!')
 
@@ -137,7 +118,7 @@ class RpmbuildTemporaryEnvironment(BuildTemporaryEnvironment):
     TEMPDIR_RPMS = TemporaryEnvironment.TEMPDIR + '_RPMS'
     TEMPDIR_SRPMS = TemporaryEnvironment.TEMPDIR + '_SRPMS'
 
-    def _create_directory_sctructure(self):
+    def _create_directory_structure(self):
         # create rpmbuild directory structure
         for dir_name in ['RESULTS', 'rpmbuild']:
             self._env[self.TEMPDIR + '_' + dir_name.upper()] = os.path.join(
@@ -155,21 +136,6 @@ class RpmbuildTemporaryEnvironment(BuildTemporaryEnvironment):
             os.makedirs(self._env[self.TEMPDIR + '_' + dir_name])
 
 
-class MockTemporaryEnvironment(BuildTemporaryEnvironment):
-    """
-    Class representing temporary environment for MockBuildTool.
-    """
-
-    def _create_directory_sctructure(self):
-        # create directory structure
-        for dir_name in ['SOURCES', 'SPECS', 'RESULTS']:
-            self._env[self.TEMPDIR + '_' + dir_name] = os.path.join(
-                self._env[self.TEMPDIR], dir_name)
-            logger.debug("Creating '%s'",
-                         self._env[self.TEMPDIR + '_' + dir_name])
-            os.makedirs(self._env[self.TEMPDIR + '_' + dir_name])
-
-
 class BuildToolBase(object):
     """
     Base class for various build tools
@@ -181,6 +147,36 @@ class BuildToolBase(object):
     def match(cls, cmd=None, *args, **kwargs):
         """Checks if tool name matches the desired one."""
         raise NotImplementedError()
+
+    @classmethod
+    def get_build_tool_name(cls):
+        """Returns the name of the build tool."""
+        raise NotImplementedError()
+
+    @classmethod
+    def is_default(cls):
+        """Checks if the tool is the default build tool."""
+        raise NotImplementedError()
+
+    @classmethod
+    def accepts_options(cls):
+        """Checks if the tool accepts additional command line options."""
+        raise NotImplementedError()
+
+    @classmethod
+    def creates_tasks(cls):
+        """Checks if the tool creates build tasks."""
+        raise NotImplementedError()
+
+    @classmethod
+    def prepare(cls, spec):
+        """
+        Prepare for building.
+        
+        :param spec: spec file object
+        """
+        # do nothing by default
+        pass
 
     @classmethod
     def build(cls, *args, **kwargs):
@@ -208,6 +204,43 @@ class BuildToolBase(object):
         Returns:
         dict with
         'logs' -> list of absolute paths to logs
+        """
+        raise NotImplementedError()
+
+    @classmethod
+    def wait_for_task(cls, build_dict, results_dir):
+        """
+        Waits until specified task is finished
+        
+        :param build_dict: build data
+        :param results_dir: path to DIR where results should be stored
+        :return: tuple with:
+            list of absolute paths to RPMs
+            list of absolute paths to logs
+        """
+        # do nothing by default
+        return build_dict.get('rpm'), build_dict.get('logs')
+
+    @classmethod
+    def get_task_info(cls, build_dict):
+        """
+        Gets information about detached remote task
+        
+        :param build_dict: build data
+        :return: task info
+        """
+        raise NotImplementedError()
+
+    @classmethod
+    def get_detached_task(cls, task_id, results_dir):
+        """
+        Gets packages and logs for specified task
+        
+        :param task_id: detached task id
+        :param results_dir: path to DIR where results should be stored
+        :return: tuple with:
+            list of absolute paths to RPMs
+            list of absolute paths to logs
         """
         raise NotImplementedError()
 
@@ -283,365 +316,27 @@ class BuildToolBase(object):
         return None
 
 
-@register_build_tool
-class MockBuildTool(BuildToolBase):
-    """
-    Class representing Mock build tool.
-    """
-
-    CMD = "mock"
-    DEFAULT = True
-    logs = []
-
-    @classmethod
-    def _build_rpm(cls, srpm, results_dir, root=None, arch=None, builder_options=None):
-        """Build RPM using mock."""
-        logger.info("Building RPMs")
-        output = os.path.join(results_dir, "mock_output.log")
-
-        cmd = [cls.CMD, '--rebuild', srpm, '--resultdir', results_dir]
-        if root is not None:
-            cmd.extend(['--root', root])
-        if arch is not None:
-            cmd.extend(['--arch', arch])
-        if builder_options is not None:
-            cmd.extend(builder_options)
-
-        ret = ProcessHelper.run_subprocess(cmd, output=output)
-
-        if ret != 0:
-            return None
-        else:
-            return [f for f in PathHelper.find_all_files(results_dir, '*.rpm') if not f.endswith('.src.rpm')]
-
-    @classmethod
-    def match(cls, cmd=None):
-        if cmd == cls.CMD:
-            return True
-        else:
-            return False
-
-    @classmethod
-    def build(cls, spec, sources, patches, results_dir, root=None, arch=None, **kwargs):
-        """
-        Builds the SRPM and RPM using mock
-
-        :param spec: absolute path to a SPEC file
-        :param sources: list with absolute paths to SOURCES
-        :param patches: list with absolute paths to PATCHES
-        :param results_dir: absolute path to directory where results will be stored
-        :param root: mock root used for building
-        :param arch: architecture to build the RPM for
-        :return: dict with:
-                 'srpm' -> absolute path to SRPM
-                 'rpm' -> list with absolute paths to RPMs
-                 'logs' -> list with absolute paths to logs
-        """
-        # build SRPM
-        srpm, cls.logs = cls._build_srpm(spec, sources, patches, results_dir)
-
-        # build RPMs
-        rpm_results_dir = os.path.join(results_dir, "RPM")
-        with MockTemporaryEnvironment(sources, patches, spec, rpm_results_dir) as tmp_env:
-            env = tmp_env.env()
-            tmp_results_dir = env.get(MockTemporaryEnvironment.TEMPDIR_RESULTS)
-            rpms = cls._build_rpm(srpm, tmp_results_dir, builder_options=cls.get_builder_options(**kwargs))
-            # remove SRPM - side product of building RPM
-            tmp_srpm = PathHelper.find_first_file(tmp_results_dir, "*.src.rpm")
-            if tmp_srpm is not None:
-                os.unlink(tmp_srpm)
-
-        if rpms is None:
-            # We need to be inform what directory to analyze and what spec file failed
-            cls.logs.extend([l for l in PathHelper.find_all_files(rpm_results_dir, '*.log')])
-            raise BinaryPackageBuildError("Building RPMs failed!", rpm_results_dir, spec)
-        else:
-            logger.info("Building RPMs finished successfully")
-
-        rpms = [os.path.join(rpm_results_dir, os.path.basename(f)) for f in rpms]
-        logger.debug("Successfully built RPMs: '%s'", str(rpms))
-
-        # gather logs
-        cls.logs.extend([l for l in PathHelper.find_all_files(rpm_results_dir, '*.log')])
-        logger.debug("logs: '%s'", str(cls.logs))
-
-        return {'srpm': srpm,
-                'rpm': rpms,
-                'logs': cls.logs}
-
-    @classmethod
-    def get_logs(cls):
-        return {'logs': cls.logs}
-
-
-@register_build_tool
-class RpmbuildBuildTool(BuildToolBase):
-    """
-    Class representing rpmbuild build tool.
-    """
-
-    CMD = "rpmbuild"
-    logs = []
-
-    @classmethod
-    def _build_rpm(cls, srpm, workdir, results_dir, builder_options=None):
-        """
-        Build RPM using rpmbuild.
-
-        :param srpm: abs path to SRPM
-        :param workdir: abs path to working directory with rpmbuild directory
-                        structure, which will be used as HOME dir.
-        :param results_dir: abs path to dir where the log should be placed.
-        :return: If build process ends successfully returns list of abs paths
-                 to built RPMs, otherwise 'None'.
-        """
-        logger.info("Building RPMs")
-        output = os.path.join(results_dir, "build.log")
-
-        cmd = [cls.CMD, '--rebuild', srpm]
-        if builder_options is not None:
-            cmd.extend(builder_options)
-        ret = ProcessHelper.run_subprocess_cwd_env(cmd,
-                                                   env={'HOME': workdir},
-                                                   output=output)
-
-        if ret != 0:
-            return None
-        else:
-            return [f for f in PathHelper.find_all_files(workdir, '*.rpm') if not f.endswith('.src.rpm')]
-
-    @classmethod
-    def match(cls, cmd=None):
-        if cmd == cls.CMD:
-            return True
-        else:
-            return False
-
-    @classmethod
-    def build(cls, spec, sources, patches, results_dir, **kwargs):
-        """
-        Builds the SRPM and RPMs using rpmbuild
-
-        :param spec: absolute path to the SPEC file.
-        :param sources: list with absolute paths to SOURCES
-        :param patches: list with absolute paths to PATCHES
-        :param results_dir: absolute path to DIR where results should be stored
-        :return: dict with:
-                 'srpm' -> absolute path to SRPM
-                 'rpm' -> list with absolute paths to RPMs
-                 'logs' -> list with absolute paths to build_logs
-        """
-        # build SRPM
-        srpm, cls.logs = cls._build_srpm(spec, sources, patches, results_dir)
-
-        # build RPMs
-        rpm_results_dir = os.path.join(results_dir, "RPM")
-        with RpmbuildTemporaryEnvironment(sources, patches, spec, rpm_results_dir) as tmp_env:
-            env = tmp_env.env()
-            tmp_dir = tmp_env.path()
-            tmp_results_dir = env.get(RpmbuildTemporaryEnvironment.TEMPDIR_RESULTS)
-            rpms = cls._build_rpm(srpm, tmp_dir, tmp_results_dir, builder_options=cls.get_builder_options(**kwargs))
-
-        if rpms is None:
-            cls.logs.extend([l for l in PathHelper.find_all_files(rpm_results_dir, '*.log')])
-            raise BinaryPackageBuildError("Building RPMs failed!")
-        else:
-            logger.info("Building RPMs finished successfully")
-
-        # RPMs paths in results_dir
-        rpms = [os.path.join(rpm_results_dir, os.path.basename(f)) for f in rpms]
-        logger.debug("Successfully built RPMs: '%s'", str(rpms))
-
-        # gather logs
-        cls.logs.extend([l for l in PathHelper.find_all_files(rpm_results_dir, '*.log')])
-        logger.debug("logs: '%s'", str(cls.logs))
-
-        return {'srpm': srpm,
-                'rpm': rpms,
-                'logs': cls.logs}
-
-    @classmethod
-    def get_logs(cls):
-        return {'logs': cls.logs}
-
-
-@register_build_tool
-class KojiBuildTool(BuildToolBase):
-    """
-    Class representing Koji build tool.
-    """
-
-    CMD = "koji"
-    logs = []
-    koji_helper = None
-
-    # Taken from https://github.com/fedora-infra/the-new-hotness/blob/develop/fedmsg.d/hotness-example.py
-    koji_web = "koji.fedoraproject.org"
-    server = "https://%s/kojihub" % koji_web
-    weburl = "http://%s/koji" % koji_web
-    git_url = 'http://pkgs.fedoraproject.org/cgit/{package}.git'
-    opts = {'scratch': True}
-    target_tag = 'rawhide'
-    priority = 30
-
-    # Taken from  https://github.com/fedora-infra/the-new-hotness/blob/develop/hotness/buildsys.py#L78-L123
-
-    @classmethod
-    def match(cls, cmd=None):
-        if cmd == cls.CMD:
-            return True
-        else:
-            return False
-
-    @classmethod
-    def _scratch_build(cls, source, **kwargs):
-        session = cls.koji_helper.session_maker()
-        remote = cls.koji_helper.upload_srpm(session, source)
-        task_id = session.build(remote, cls.target_tag, cls.opts, priority=cls.priority)
-        if kwargs['builds_nowait']:
-            return None, None, task_id
-        weburl = cls.weburl + '/taskinfo?taskID=%i' % task_id
-        logger.info('Koji task_id is here:\n' + weburl)
-        session.logout()
-        task_dict = cls.koji_helper.watch_koji_tasks(session, [task_id])
-        task_list = []
-        package_failed = False
-        for key in six.iterkeys(task_dict):
-            if task_dict[key] == koji.TASK_STATES['FAILED']:
-                package_failed = True
-            task_list.append(key)
-        rpms, logs = cls.koji_helper.download_scratch_build(session,
-                                                            task_list,
-                                                            os.path.dirname(source).replace('SRPM', 'RPM'))
-        if package_failed:
-            weburl = '%s/taskinfo?taskID=%i' % (cls.weburl, task_list[0])
-            logger.info('RPM build failed %s', weburl)
-            logs.append(weburl)
-            cls.logs.append(weburl)
-            raise BinaryPackageBuildError
-        logs.append(weburl)
-        return rpms, logs, task_id
-
-    @classmethod
-    def get_logs(cls):
-        return {'logs': cls.logs}
-
-    @classmethod
-    def build(cls, spec, sources, patches, results_dir, **kwargs):
-        """
-        Builds the SRPM using rpmbuild
-        Builds the RPMs using koji
-
-        :param spec: absolute path to the SPEC file.
-        :param sources: list with absolute paths to SOURCES
-        :param patches: list with absolute paths to PATCHES
-        :param results_dir: absolute path to DIR where results should be stored
-        :param upstream_monitoring: specify if build is handled by upstream monitoring
-        :return: dict with:
-                 'srpm' -> absolute path to SRPM
-                 'rpm' -> list with absolute paths to RPMs
-                 'logs' -> list with absolute paths to build_logs
-        """
-        # build SRPM
-        srpm, cls.logs = cls._build_srpm(spec, sources, patches, results_dir)
-        # build RPMs
-        rpm_results_dir = os.path.join(results_dir, "RPM")
-        os.makedirs(rpm_results_dir)
-        cls.koji_helper = KojiHelper()
-        rpms, rpm_logs, koji_task_id = cls._scratch_build(srpm, **kwargs)
-        if rpm_logs:
-            cls.logs.extend(rpm_logs)
-        return {'srpm': srpm,
-                'rpm': rpms,
-                'logs': cls.logs,
-                'koji_task_id': koji_task_id}
-
-
-@register_build_tool
-class CoprBuildTool(BuildToolBase):
-    """
-    Class representing Copr build tool.
-    """
-
-    CMD = "copr"
-    logs = []
-    copr_helper = None
-
-    prefix = 'rebase-helper-'
-    chroot = 'fedora-rawhide-x86_64'
-    description = 'Repository containing rebase-helper builds.'
-    instructions = '''You can use this repository to test functionality
-                      of rebased packages.'''
-
-    @classmethod
-    def match(cls, cmd=None):
-        if cmd == cls.CMD:
-            return True
-        else:
-            return False
-
-    @classmethod
-    def _build_rpms(cls, srpm, name, **kwargs):
-        project = cls.prefix + name
-        client = cls.copr_helper.get_client()
-        cls.copr_helper.create_project(client, project, cls.chroot,
-                                       cls.description, cls.instructions)
-        build_id = cls.copr_helper.build(client, project, srpm)
-        if kwargs['builds_nowait']:
-            return None, None, build_id
-        build_url = cls.copr_helper.get_build_url(client, build_id)
-        logger.info('Copr build is here:\n' + build_url)
-        failed = not cls.copr_helper.watch_build(client, build_id)
-        destination = os.path.dirname(srpm).replace('SRPM', 'RPM')
-        rpms, logs = cls.copr_helper.download_build(client,
-                                                    build_id,
-                                                    destination)
-        if failed:
-            logger.info('Copr build failed {}'.format(build_url))
-            logs.append(build_url)
-            cls.logs.append(build_url)
-            raise BinaryPackageBuildError
-        logs.append(build_url)
-        return rpms, logs, build_id
-
-    @classmethod
-    def build(cls, spec, sources, patches, results_dir, **kwargs):
-        """
-        Builds the SRPM using rpmbuild
-        Builds the RPMs using copr
-
-        :param spec: absolute path to the SPEC file.
-        :param sources: list with absolute paths to SOURCES
-        :param patches: list with absolute paths to PATCHES
-        :param results_dir: absolute path to DIR where results should be stored
-        :return: dict with:
-                 'srpm' -> absolute path to SRPM
-                 'rpm' -> list with absolute paths to RPMs
-                 'logs' -> list with absolute paths to build_logs
-        """
-        # build SRPM
-        srpm, cls.logs = cls._build_srpm(spec, sources, patches, results_dir)
-        # build RPMs
-        rpm_results_dir = os.path.join(results_dir, "RPM")
-        os.makedirs(rpm_results_dir)
-        cls.copr_helper = CoprHelper()
-        rpms, rpm_logs, build_id = cls._build_rpms(srpm, **kwargs)
-        if rpm_logs:
-            cls.logs.extend(rpm_logs)
-        return {'srpm': srpm,
-                'rpm': rpms,
-                'logs': cls.logs,
-                'copr_build_id': build_id}
-
-    @classmethod
-    def get_logs(cls):
-        return {'logs': cls.logs}
-
-
 class Builder(object):
     """
     Class representing a process of building binaries from sources.
     """
+
+    build_tools = {}
+
+    @classmethod
+    def load_build_tools(cls):
+        cls.build_tools = {}
+        for entrypoint in pkg_resources.iter_entry_points('rebasehelper.build_tools'):
+            try:
+                build_tool = entrypoint.load()
+            except ImportError:
+                # silently skip broken plugin
+                continue
+            try:
+                cls.build_tools[build_tool.get_build_tool_name()] = build_tool
+            except (AttributeError, NotImplementedError):
+                # silently skip broken plugin
+                continue
 
     def __init__(self, tool=None):
         if tool is None:
@@ -649,7 +344,7 @@ class Builder(object):
         self._tool_name = tool
         self._tool = None
 
-        for build_tool in build_tools.values():
+        for build_tool in self.build_tools.values():
             if build_tool.match(self._tool_name):
                 self._tool = build_tool
 
@@ -658,6 +353,17 @@ class Builder(object):
 
     def __str__(self):
         return "<Builder tool_name='{_tool_name}' tool='{_tool}'>".format(**vars(self))
+
+    def accepts_options(self):
+        return self._tool.accepts_options()
+
+    def creates_tasks(self):
+        return self._tool.creates_tasks()
+
+    def prepare(self, spec):
+        """Prepare for build"""
+        logger.debug("Preparing for build using '%s'", self._tool_name)
+        self._tool.prepare(spec)
 
     def build(self, *args, **kwargs):
         """Build sources."""
@@ -669,6 +375,21 @@ class Builder(object):
         logger.debug("Getting logs '%s'", self._tool_name)
         return self._tool.get_logs()
 
+    def wait_for_task(self, build_dict, results_dir):
+        """Wait for task"""
+        logger.debug("Waiting for task using '%s'", self._tool_name)
+        return self._tool.wait_for_task(build_dict, results_dir)
+
+    def get_task_info(self, build_dict):
+        """Get task info"""
+        logger.debug("Getting task info using '%s'", self._tool_name)
+        return self._tool.get_task_info(build_dict)
+
+    def get_detached_task(self, task_id, results_dir):
+        """Get detached task"""
+        logger.debug("Getting detached task using '%s'", self._tool_name)
+        return self._tool.get_detached_task(task_id, results_dir)
+
     @classmethod
     def get_supported_tools(cls):
         """
@@ -676,10 +397,13 @@ class Builder(object):
 
         :return: list of supported build tools
         """
-        return build_tools.keys()
+        return cls.build_tools.keys()
 
     @classmethod
     def get_default_tool(cls):
         """Returns default build tool"""
-        default = [k for k, v in six.iteritems(build_tools) if v.DEFAULT]
+        default = [k for k, v in six.iteritems(cls.build_tools) if v.is_default()]
         return default[0] if default else None
+
+
+Builder.load_build_tools()
