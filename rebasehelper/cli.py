@@ -166,7 +166,7 @@ class CLI(object):
             "--builds-nowait",
             default=False,
             action="store_true",
-            help="do not wait for koji or copr builds to finish"
+            help="do not wait for remote builds to finish"
         )
         # deprecated argument, kept for backward compatibility
         parser.add_argument(
@@ -180,7 +180,7 @@ class CLI(object):
             dest="build_tasks",
             metavar="OLD_TASK,NEW_TASK",
             type=lambda s: s.split(','),
-            help="comma-separated koji or copr task ids"
+            help="comma-separated remote build task ids"
         )
         parser.add_argument(
             "--results-dir",

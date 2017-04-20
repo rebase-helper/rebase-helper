@@ -40,6 +40,7 @@ setup(
     license='GPLv2+',
     packages=[
         'rebasehelper',
+        'rebasehelper.build_tools',
         'rebasehelper.checkers',
         'rebasehelper.spec_hooks',
         'rebasehelper.tests',
@@ -48,6 +49,12 @@ setup(
     entry_points={
         'console_scripts': [
             'rebase-helper = rebasehelper.cli:CliHelper.run',
+        ],
+        'rebasehelper.build_tools': [
+            'rpmbuild = rebasehelper.build_tools.rpmbuild_tool:RpmbuildBuildTool',
+            'mock = rebasehelper.build_tools.mock_tool:MockBuildTool',
+            'koji = rebasehelper.build_tools.koji_tool:KojiBuildTool',
+            'copr = rebasehelper.build_tools.copr_tool:CoprBuildTool',
         ],
         'rebasehelper.checkers': [
             'rpmdiff = rebasehelper.checkers.rpmdiff_tool:RpmDiffTool',

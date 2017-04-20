@@ -31,10 +31,9 @@ from rebasehelper.specfile import SpecFile, get_rebase_name, spec_hooks_runner
 from rebasehelper.logger import logger, logger_report, LoggerHelper
 from rebasehelper import settings
 from rebasehelper import output_tool
-from rebasehelper.utils import PathHelper, RpmHelper, ConsoleHelper, GitHelper, KojiHelper, FileHelper, CoprHelper
+from rebasehelper.utils import PathHelper, ConsoleHelper, GitHelper, KojiHelper, FileHelper
 from rebasehelper.checker import checkers_runner
-from rebasehelper.build_helper import Builder, SourcePackageBuildError, BinaryPackageBuildError, koji_builder, \
-    KojiBuildTool, CoprBuildTool, MockBuildTool, RpmbuildBuildTool
+from rebasehelper.build_helper import Builder, SourcePackageBuildError, BinaryPackageBuildError
 from rebasehelper.patch_helper import Patcher
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
 from rebasehelper.build_log_analyzer import BuildLogAnalyzer, BuildLogAnalyzerMissingError
@@ -342,21 +341,6 @@ class Application(object):
         else:
             return destination
 
-    @staticmethod
-    def check_build_requires(spec):
-        """
-        Check if all build dependencies are installed. If not, asks user they should be installed.
-        If yes, it installs build dependencies using PolicyKit.
-
-        :param spec: SpecFile object
-        :return: 
-        """
-        req_pkgs = spec.get_requires()
-        if not RpmHelper.all_packages_installed(req_pkgs):
-            if ConsoleHelper.get_message('\nSome build dependencies are missing. Do you want to install them now'):
-                if RpmHelper.install_build_dependencies(spec.get_path()) != 0:
-                    raise RebaseHelperError('Failed to install build dependencies')
-
     def prepare_sources(self):
         """
         Function prepares a sources.
@@ -411,9 +395,6 @@ class Application(object):
 
     def build_packages(self):
         """Function calls build class for building packages"""
-        if self.conf.buildtool == KojiBuildTool.CMD and not koji_builder:
-            logger.info('Importing module koji failed. Switching to mock builder.')
-            self.conf.buildtool = MockBuildTool.CMD
         try:
             builder = Builder(self.conf.buildtool)
         except NotImplementedError as ni_e:
@@ -424,6 +405,10 @@ class Application(object):
             spec_object = self.spec_file if version == 'old' else self.rebase_spec_file
             build_dict = {}
             task_id = None
+
+            # prepare for building
+            builder.prepare(spec_object)
+
             if self.conf.build_tasks is None:
                 build_dict['name'] = spec_object.get_package_name()
                 build_dict['version'] = spec_object.get_version()
@@ -449,43 +434,13 @@ class Application(object):
                 try:
                     if self.conf.build_tasks is None:
                         build_dict.update(builder.build(spec, sources, patches, results_dir, **build_dict))
-                    if not self.conf.builds_nowait:
-                        if self.conf.buildtool == KojiBuildTool.CMD:
-                            while not build_dict['rpm']:
-                                kh = KojiHelper()
-                                build_dict['rpm'], build_dict['logs'] = kh.get_koji_tasks(
-                                    build_dict['koji_task_id'],
-                                    results_dir
-                                )
-                    else:
-                        if self.conf.build_tasks:
-                            if self.conf.buildtool == KojiBuildTool.CMD:
-                                kh = KojiHelper()
-                                try:
-                                    build_dict['rpm'], build_dict['logs'] = kh.get_koji_tasks(task_id, results_dir)
-                                    results_store.set_build_data(version, build_dict)
-                                    if not build_dict['rpm']:
-                                        return False
-                                except TypeError:
-                                    logger.info('Koji tasks are not finished yet. Try again later')
-                                    return False
-                            elif self.conf.buildtool == CoprBuildTool.CMD:
-                                copr_helper = CoprHelper()
-                                client = copr_helper.get_client()
-                                build_id = int(task_id)
-                                status = copr_helper.get_build_status(client, build_id)
-                                if status in ['importing', 'pending', 'starting', 'running']:
-                                    logger.info('Copr build is not finished yet. Try again later')
-                                    return False
-                                else:
-                                    build_dict['rpm'], build_dict['logs'] = copr_helper.download_build(
-                                        client,
-                                        build_id,
-                                        results_dir
-                                    )
-                                    if status not in ['succeeded', 'skipped']:
-                                        logger.info('Copr build {} did not complete successfully'.format(build_id))
-                                        return False
+                    if builder.creates_tasks():
+                        if not self.conf.builds_nowait:
+                            build_dict['rpm'], build_dict['logs'] = builder.wait_for_task(build_dict, results_dir)
+                        elif self.conf.build_tasks:
+                            build_dict['rpm'], build_dict['logs'] = builder.get_detached_task(task_id, results_dir)
+                        if build_dict['rpm'] is None:
+                            return False
                     # Build finishes properly. Go out from while cycle
                     results_store.set_build_data(version, build_dict)
                     break
@@ -553,6 +508,10 @@ class Application(object):
                 number_retries += 1
             if self.conf.build_retries == number_retries:
                 raise RebaseHelperError('Building package failed with unknown reason. Check all available log files.')
+
+        if self.conf.builds_nowait and not self.conf.build_tasks:
+            if builder.creates_tasks():
+                self.print_task_info(builder)
 
         return True
 
@@ -631,22 +590,10 @@ class Application(object):
         output.print_information(path=report_file)
         logger.info('Report file from rebase-helper is available here: %s', report_file)
 
-    def print_koji_logs(self):
+    def print_task_info(self, builder):
         logs = self.get_new_build_logs()['build_ref']
-        message = "Scratch build for '%s' version is: http://koji.fedoraproject.org/koji/taskinfo?taskID=%s"
         for version in ['old', 'new']:
-            data = logs[version]
-            logger.info(message % (data['version'], data['koji_task_id']))
-
-    def print_copr_logs(self):
-        logs = self.get_new_build_logs()['build_ref']
-        copr_helper = CoprHelper()
-        client = copr_helper.get_client()
-        message = "Copr build for '%s' version is: %s"
-        for version in ['old', 'new']:
-            data = logs[version]
-            build_url = copr_helper.get_build_url(client, data['copr_build_id'])
-            logger.info(message % (data['version'], build_url))
+            logger.info(builder.get_task_info(logs[version]))
 
     def set_upstream_monitoring(self):
         # This function is used by the-new-hotness, do not remove it!
@@ -689,8 +636,8 @@ class Application(object):
                 self.conf.build_tasks = self.conf.fedpkg_build_tasks
 
         # Certain options can be used only with specific build tools
-        # here are checks for remote build tools
-        if self.conf.buildtool not in [KojiBuildTool.CMD, CoprBuildTool.CMD]:
+        tools_creating_tasks = [k for k, v in six.iteritems(Builder.build_tools) if v.creates_tasks()]
+        if self.conf.buildtool not in tools_creating_tasks:
             options_used = []
             if self.conf.build_tasks is not None:
                 options_used.append('--build-tasks')
@@ -699,17 +646,18 @@ class Application(object):
             if options_used:
                 raise RebaseHelperError("%s can be used only with the following build tools: %s",
                                         ' and '.join(options_used),
-                                        ', '.join([KojiBuildTool.CMD, CoprBuildTool.CMD])
+                                        ', '.join(tools_creating_tasks)
                                         )
-        # here are checks for local builders
-        elif self.conf.buildtool not in [RpmbuildBuildTool.CMD, MockBuildTool.CMD]:
+
+        tools_accepting_options = [k for k, v in six.iteritems(Builder.build_tools) if v.accepts_options()]
+        if self.conf.buildtool not in tools_accepting_options:
             options_used = []
             if self.conf.builder_options is not None:
                 options_used.append('--builder-options')
             if options_used:
                 raise RebaseHelperError("%s can be used only with the following build tools: %s",
                                         ' and '.join(options_used),
-                                        ', '.join([RpmbuildBuildTool.CMD, MockBuildTool.CMD])
+                                        ', '.join(tools_accepting_options)
                                         )
 
         sources = None
@@ -721,17 +669,10 @@ class Application(object):
         build = False
         if not self.conf.patch_only:
             if not self.conf.comparepkgs:
-                # check build dependencies for rpmbuild
-                if self.conf.buildtool == RpmbuildBuildTool.CMD:
-                    Application.check_build_requires(self.spec_file)
                 # Build packages
                 try:
                     build = self.build_packages()
                     if self.conf.builds_nowait and not self.conf.build_tasks:
-                        if self.conf.buildtool == KojiBuildTool.CMD:
-                            self.print_koji_logs()
-                        elif self.conf.buildtool == CoprBuildTool.CMD:
-                            self.print_copr_logs()
                         return
                 except RuntimeError:
                     logger.error('Unknown error caused by build log analysis')
