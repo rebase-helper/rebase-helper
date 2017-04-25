@@ -1217,8 +1217,8 @@ class CoprHelper(object):
     def build(cls, client, project, srpm):
         try:
             result = client.create_new_build(projectname=project, pkgs=[srpm])
-        except copr.client.exceptions.CoprRequestException:
-            raise RebaseHelperError('Failed to start copr build')
+        except copr.client.exceptions.CoprRequestException as e:
+            raise RebaseHelperError('Failed to start copr build: {}'.format(str(e)))
         else:
             return result.builds_list[0].build_id
 
@@ -1226,9 +1226,9 @@ class CoprHelper(object):
     def get_build_url(cls, client, build_id):
         try:
             result = client.get_build_details(build_id)
-        except copr.client.exceptions.CoprRequestException:
+        except copr.client.exceptions.CoprRequestException as e:
             raise RebaseHelperError(
-                'Failed to get copr build details for id {}'.format(build_id))
+                'Failed to get copr build details for id {}: {}'.format(build_id, str(e)))
         else:
             return '{}/coprs/{}/{}/build/{}/'.format(client.copr_url,
                                                      client.username,
@@ -1239,9 +1239,9 @@ class CoprHelper(object):
     def get_build_status(cls, client, build_id):
         try:
             result = client.get_build_details(build_id)
-        except copr.client.exceptions.CoprRequestException:
+        except copr.client.exceptions.CoprRequestException as e:
             raise RebaseHelperError(
-                'Failed to get copr build details for id {}'.format(build_id))
+                'Failed to get copr build details for id {}: {}'.format(build_id, str(e)))
         else:
             return result.status
 
@@ -1266,9 +1266,9 @@ class CoprHelper(object):
         logger.info('Downloading packages and logs for build %d', build_id)
         try:
             result = client.get_build_details(build_id)
-        except copr.client.exceptions.CoprRequestException:
+        except copr.client.exceptions.CoprRequestException as e:
             raise RebaseHelperError(
-                'Failed to get copr build details for {}'.format(build_id))
+                'Failed to get copr build details for {}: {}'.format(build_id, str(e)))
         rpms = []
         logs = []
         for _, url in six.iteritems(result.data['results_by_chroot']):
