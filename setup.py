@@ -41,6 +41,7 @@ setup(
     packages=[
         'rebasehelper',
         'rebasehelper.checkers',
+        'rebasehelper.spec_hooks',
         'rebasehelper.tests',
     ],
     include_package_data=True,
@@ -53,6 +54,9 @@ setup(
             'pkgdiff = rebasehelper.checkers.pkgdiff_tool:PkgDiffTool',
             'abipkgdiff = rebasehelper.checkers.abipkgdiff_tool:AbiCheckerTool',
             'csmock = rebasehelper.checkers.csmock_tool:CsmockTool',
+        ],
+        'rebasehelper.spec_hooks': [
+            'typo_fix = rebasehelper.spec_hooks.typo_fix:TypoFixHook',
         ]
     },
     setup_requires=[],

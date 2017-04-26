@@ -28,6 +28,7 @@ import six
 import rpm
 import argparse
 import shlex
+import pkg_resources
 from datetime import date
 from operator import itemgetter
 from six.moves import urllib
@@ -1192,3 +1193,60 @@ class SpecFile(object):
                 basedir = os.path.relpath(basedir, builddir)
                 return os.path.normpath(os.path.join(basedir, ns.target))
         return None
+
+
+class BaseSpecHook(object):
+    """Base class for a spec hook"""
+
+    @classmethod
+    def get_name(cls):
+        """Returns the name of a spec hook"""
+        raise NotImplementedError()
+
+    @classmethod
+    def run(cls, spec_file, rebase_spec_file):
+        """
+        Runs a spec hook.
+
+        :param spec_file: Original spec file object
+        :param rebase_spec_file: Rebased spec file object
+        """
+        raise NotImplementedError()
+
+
+class SpecHooksRunner(object):
+    """
+    Class representing the process of running various spec file hooks.
+    """
+
+    def __init__(self):
+        """
+        Constructor of SpecHooksRunner class.
+        """
+        self.spec_hooks = {}
+        for entrypoint in pkg_resources.iter_entry_points('rebasehelper.spec_hooks'):
+            try:
+                spec_hook = entrypoint.load()
+            except ImportError:
+                # silently skip broken plugin
+                continue
+            try:
+                self.spec_hooks[spec_hook.get_name()] = spec_hook
+            except (AttributeError, NotImplementedError):
+                # silently skip broken plugin
+                continue
+
+    def run_spec_hooks(self, spec_file, rebase_spec_file):
+        """
+        Runs all spec hooks.
+
+        :param spec_file: Original spec file object
+        :param rebase_spec_file: Rebased spec file object
+        """
+        for name, spec_hook in six.iteritems(self.spec_hooks):
+            logger.info("Running '%s' spec hook", name)
+            spec_hook.run(spec_file, rebase_spec_file)
+
+
+# Global instance of SpecHooksRunner. It is enough to load it once per application run.
+spec_hooks_runner = SpecHooksRunner()
