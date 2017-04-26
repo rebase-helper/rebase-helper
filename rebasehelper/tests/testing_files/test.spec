@@ -1,7 +1,7 @@
 Summary: A testing spec file
 Name: test
 Version: 1.0.2
-Release: 33%{?dist}
+Release: 34%{?dist}
 License: GPL2+
 Group: System Environment
 URL: http://testing.org
@@ -63,6 +63,9 @@ make check
 %{_libdir}/my_test.so
 
 %changelog
+* Wed Apr 26 2017 Nikola Forró <nforro@redhat.com> - 1.0.2-34
+- This is chnagelog entry with some indentional typos
+
 * Wed Nov 12 2014 Tomas Hozza <thozza@redhat.com> 1.0.0-33
 - Bump the release for testing purposes
 

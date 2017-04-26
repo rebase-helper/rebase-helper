@@ -26,8 +26,9 @@ import six
 import re
 
 from .base_test import BaseTest
-from rebasehelper.specfile import SpecFile
+from rebasehelper.specfile import SpecFile, spec_hooks_runner
 from rebasehelper.build_log_analyzer import BuildLogAnalyzer
+from rebasehelper.spec_hooks.typo_fix import TypoFixHook
 
 
 class TestSpecFile(BaseTest):
@@ -69,7 +70,7 @@ class TestSpecFile(BaseTest):
         assert match.group(1) == self.SPEC_FILE_OBJECT.get_release_number()
 
     def test_get_release_number(self):
-        assert self.SPEC_FILE_OBJECT.get_release_number() == '33'
+        assert self.SPEC_FILE_OBJECT.get_release_number() == '34'
 
     def test_set_release_number(self):
         self.SPEC_FILE_OBJECT.set_release_number(0.1)
@@ -215,7 +216,7 @@ class TestSpecFile(BaseTest):
             0: ['%header', ['Summary: A testing spec file\n',
                             'Name: test\n',
                             'Version: 1.0.2\n',
-                            'Release: 33%{?dist}\n',
+                            'Release: 34%{?dist}\n',
                             'License: GPL2+\n',
                             'Group: System Environment\n',
                             'URL: http://testing.org\n',
@@ -267,7 +268,10 @@ class TestSpecFile(BaseTest):
             9: ['%files devel', ['%{_bindir}/test_example\n',
                                  '%{_libdir}/my_test.so\n',
                                  '\n']],
-            10: ['%changelog', ['* Wed Nov 12 2014 Tomas Hozza <thozza@redhat.com> 1.0.0-33\n',
+            10: ['%changelog', ['* Wed Apr 26 2017 Nikola Forró <nforro@redhat.com> - 1.0.2-34\n',
+                                '- This is chnagelog entry with some indentional typos\n',
+                                '\n',
+                                '* Wed Nov 12 2014 Tomas Hozza <thozza@redhat.com> 1.0.0-33\n',
                                 '- Bump the release for testing purposes\n',
                                 '\n',
                                 '* Tue Sep 24 2013 Petr Hracek <phracek@redhat.com> 1.0.0-1\n',
@@ -379,9 +383,9 @@ class TestSpecFile(BaseTest):
         macro = '%{REBASE_VER}'
         self.SPEC_FILE_OBJECT.redefine_release_with_macro(macro)
         with open(self.SPEC_FILE_OBJECT.get_path()) as f:
-            while f.readline() != '#Release: 33%{?dist}\n':
+            while f.readline() != '#Release: 34%{?dist}\n':
                 pass
-            assert f.readline() == 'Release: 33' + '.' + macro + '%{?dist}\n'
+            assert f.readline() == 'Release: 34' + '.' + macro + '%{?dist}\n'
 
     def test_revert_redefine_release_with_macro(self):
         macro = '%{REBASE_VER}'
@@ -390,7 +394,7 @@ class TestSpecFile(BaseTest):
         with open(self.SPEC_FILE_OBJECT.get_path()) as f:
             for line in f.readlines():
                 if line.startswith('Release:'):
-                    assert line == 'Release: 33%{?dist}\n'
+                    assert line == 'Release: 34%{?dist}\n'
                     return
         # the line has to be found, fail if not!
         assert False
@@ -438,3 +442,9 @@ class TestSpecFile(BaseTest):
         assert target == 'test-1.0.2'
         target = self.SPEC_FILE_OBJECT.find_archive_target_in_prep('misc.zip')
         assert target == 'test-1.0.2/misc'
+
+    def test_typo_fix_spec_hook(self):
+        assert TypoFixHook.get_name() in spec_hooks_runner.spec_hooks
+        assert '- This is chnagelog entry with some indentional typos\n' in self.SPEC_FILE_OBJECT.spec_content
+        spec_hooks_runner.run_spec_hooks(None, self.SPEC_FILE_OBJECT)
+        assert '- This is changelog entry with some intentional typos\n' in self.SPEC_FILE_OBJECT.spec_content
