@@ -4,3 +4,5 @@ pytest-cov
 pytest
 pytest-pylint
 pylint>=1.4.5
+# use fixed version of astroid, see: https://github.com/PyCQA/astroid/pull/422
+git+https://github.com/PyCQA/astroid.git@6329346e5836e553ab8f96f9d540e907a5d5efdb#egg=astroid
