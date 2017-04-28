@@ -14,6 +14,7 @@
 
 import sys
 import os
+import pkg_resources
 
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
@@ -21,6 +22,11 @@ import os
 sys.path.insert(0, os.path.abspath('.'))
 rebase_helper_dir = os.path.abspath('..')
 sys.path.insert(0, rebase_helper_dir)
+
+# Make entry points accessible in case rebasehelper package is not installed,
+import rebasehelper
+parent_dir = os.path.dirname(os.path.dirname(rebasehelper.__file__))
+pkg_resources.working_set.add_entry(parent_dir)
 
 from rebasehelper import version as rh_version
 
