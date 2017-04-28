@@ -33,10 +33,6 @@ parent_dir = os.path.dirname(os.path.dirname(rebasehelper.__file__))
 pkg_resources.working_set.add_entry(parent_dir)
 
 
-skip_on_travis = pytest.mark.skipif(os.getenv('TRAVIS') == 'true',
-                                    reason='redundant on Travis CI')
-
-
 class BaseTest(object):
     """
     Base class for tests. Will setup temporary environment in tmp for each test and destroy
