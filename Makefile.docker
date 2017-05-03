@@ -1,0 +1,22 @@
+DOCKER_IMAGE ?= fedora:24 fedora:latest fedora:rawhide
+
+DOCKER := docker
+
+# sudo is needed in case user is not member of docker group
+ifeq (,$(findstring docker,$(shell groups)))
+	DOCKER := sudo docker
+endif
+
+# escaping colon is broken in older versions of make,
+# so rather replace it with placeholder
+TEST_IMAGE := $(subst :,_COLON_,$(DOCKER_IMAGE))
+
+.PHONY: test $(TEST_IMAGE)
+
+test: $(TEST_IMAGE)
+
+$(TEST_IMAGE):
+	$(eval IMAGE := $(subst _COLON_,:,$@))
+	$(DOCKER) pull $(IMAGE)
+	git archive HEAD | $(DOCKER) run --rm -i -v /build -w /build -e PY_COLORS=1 $(IMAGE) \
+		/bin/sh -c 'dnf -y install tar && tar -x && dnf -y install $$(cat test-deps-fedora.txt) && tox --recreate'
