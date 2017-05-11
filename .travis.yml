@@ -1,5 +1,9 @@
-sudo: true
+sudo: required
 language: python
-before_install: ./install-rpm.sh
-install: pip install tox
-script: tox -e travis,travis-py3 --recreate
+services: docker
+env:
+    - DOCKER_IMAGE=fedora:24
+    - DOCKER_IMAGE=fedora:25
+    - DOCKER_IMAGE=fedora:rawhide
+install: docker pull $DOCKER_IMAGE
+script: docker run --rm -v $TRAVIS_BUILD_DIR:/build $DOCKER_IMAGE /bin/sh -c "cd /build && dnf -y install \$(cat test-deps-fedora.txt) && tox --recreate"
