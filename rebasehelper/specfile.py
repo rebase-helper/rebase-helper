@@ -28,6 +28,7 @@ import six
 import rpm
 import argparse
 import shlex
+import imp
 from datetime import date
 from operator import itemgetter
 from six.moves import urllib
@@ -1192,3 +1193,115 @@ class SpecFile(object):
                 basedir = os.path.relpath(basedir, builddir)
                 return os.path.normpath(os.path.join(basedir, ns.target))
         return None
+
+
+class BaseSpecHooks(object):
+    """ Base class used for hooks around SPEC files. """
+
+    DEFAULT = False
+
+    @classmethod
+    def match(cls, cmd):
+        """
+        Checks if the tool name match the class implementation. If yes, returns
+        True, otherwise returns False.
+        """
+        raise NotImplementedError()
+
+    @classmethod
+    def get_spec_hook_name(cls):
+        """Returns a name of the spec hook"""
+        raise NotImplementedError()
+
+    @classmethod
+    def run_spec_hook(cls, results_dir):
+        """Perform the spec hook itself and return results."""
+        raise NotImplementedError()
+
+
+class SpecHooksRunner(object):
+    """
+    Class representing the process of running various SPEC files hooks.
+    """
+
+    def __init__(self, dir_name=os.path.join(os.path.dirname(__file__), 'spec_hooks')):
+        """
+        Constructor of a Spec Hook class.
+
+        :param dir_name: Path to directory witch contains various spec hooks. By default the it looks for SPEC hooks inside
+        'spec_hooks' subdirectory in the project's installation location.
+        :type dir_name: str
+        """
+        self._injector_type = 'BaseSpecHooks'
+        self.plugin_classes = self.load_spec_hooks(dir_name)
+
+    def _spec_hook_find_injector(self, module):
+        injectors = []
+        for n in dir(module):
+            attr = getattr(module, n)
+            if hasattr(attr, '__base__') and attr.__base__.__name__ == self._injector_type:
+                injectors.append(attr)
+        return injectors
+
+    def load_spec_hooks(self, plugins_dir):
+        """
+        Load checker implementations from the given location.
+
+        :param plugins_dir: Path to directory from which to load the SPEC hooks.
+        :type plugins_dir: str
+        :return: Dictionary with names of the SPEC hooks and the actual spec_hooks objects.
+        :rtype: dict
+        """
+        plugin_spec_hooks = {}
+        for plugin in os.listdir(plugins_dir):
+            if not plugin.endswith('.py'):
+                continue
+            modname, suffix = plugin.rsplit('.', 1)
+            if suffix == 'py':
+                fullpath = os.path.abspath(plugins_dir)
+                f, filename, description = imp.find_module(modname, [fullpath])
+                m = imp.load_module(modname, open(filename, 'U'), filename, description)
+                try:
+                    injs = self._spec_hook_find_injector(m)
+                    for i in injs:
+                        obj = i()
+                        plugin_spec_hooks[obj.obj.get_spec_hook_name()] = obj
+                except AttributeError:
+                    print ("Module '%s' does not implement `register(context)`" % modname)
+        return plugin_spec_hooks
+
+    def run_spec_hooks(self, spec_hook_name, spec_file_path):
+        """
+        Runs a particular spec_hooks.
+
+        :param spec_hook_name: Name of the checker to run. Ideally this should be name of existing checker.
+        :type spec_hook_name: str
+        :param spec_file_path: Path to Spec file.
+        :type spec_file_path: str
+        :raises NotImplementedError: If checker with the given name does not exist.
+        :return: results from the spec_hooks
+        """
+        spec_hook = None
+        for hook_tool in six.itervalues(self.plugin_classes):
+            if hook_tool.match(spec_hook_name):
+                # we found the checker we are looking for
+                spec_hook = hook_tool
+                break
+
+        if spec_hook is None:
+            raise NotImplementedError("Unsupported checking tool '{}'".format(spec_hook_name))
+
+        logger.info("Running spec hook on SPEC file using '%s'", spec_hook_name)
+        return spec_hook.run_spec_hook(spec_file_path)
+
+    def get_supported_tools(self):
+        """Return list of supported tools"""
+        return self.plugin_classes.keys()
+
+    def get_default_tools(self):
+        """Return list of default tools"""
+        return [k for k, v in six.iteritems(self.plugin_classes) if v.DEFAULT]
+
+
+# Global instance of CheckersRunner. It is enough to load it once per application run.
+spec_hook_runner = SpecHooksRunner()
