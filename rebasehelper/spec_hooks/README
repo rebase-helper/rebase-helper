@@ -1,0 +1,3 @@
+The directory contains the spec hooks which are used before
+building packages. The spec hooks can modify spec files
+in order to translate URL to the newer one etc.
