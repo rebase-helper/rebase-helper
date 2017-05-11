@@ -27,7 +27,7 @@ import logging
 import six
 
 from rebasehelper.archive import Archive
-from rebasehelper.specfile import SpecFile, get_rebase_name
+from rebasehelper.specfile import SpecFile, get_rebase_name, spec_hooks_runner
 from rebasehelper.logger import logger, logger_report, LoggerHelper
 from rebasehelper import settings
 from rebasehelper import output_tool
@@ -185,6 +185,9 @@ class Application(object):
             self.rebase_spec_file.set_version(version)
             self.rebase_spec_file.set_extra_version_separator(separator)
             self.rebase_spec_file.set_extra_version(extra_version)
+
+        # run spec hooks
+        spec_hooks_runner.run_spec_hooks(self.spec_file, self.rebase_spec_file)
 
     def _initialize_data(self):
         """Function fill dictionary with default data"""
