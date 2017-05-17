@@ -55,8 +55,8 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.ifconfig',
     'sphinx.ext.viewcode',
-    'autoargs',
-    'custom_man_builder',
+    'ext.autoargs',
+    'ext.custom_man_builder',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -73,7 +73,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'rebase-helper'
-copyright = u'2014-2016, Red Hat'
+copyright = u'2014-2017, Red Hat'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -247,7 +247,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('manpage', 'rebase-helper',
+    ('man/rebase-helper', 'rebase-helper',
      u'helps you to rebase package to the latest upstream version',
      [u'Petr Hracek', u'Tomas Hozza'], 1),
 ]

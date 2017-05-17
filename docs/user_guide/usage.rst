@@ -8,8 +8,7 @@ Usage
    :synopsis_max_width: 72
 
    DESCRIPTION : @replace
-      .. include:: description.rst
+      .. include:: ../description.rst
 
    OPTION : -h : @replace
       show help message and exit
-
