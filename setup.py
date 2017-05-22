@@ -57,6 +57,7 @@ setup(
         ],
         'rebasehelper.spec_hooks': [
             'typo_fix = rebasehelper.spec_hooks.typo_fix:TypoFixHook',
+            'pypi_url_fix = rebasehelper.spec_hooks.pypi_url_fix:PypiUrlFixHook',
         ]
     },
     setup_requires=[],

@@ -182,10 +182,6 @@ class SpecFile(object):
         self.patches = self._get_initial_patches_list()
         self.macros = MacroHelper.dump()
 
-        # TODO: don't call this at all in SPEC file methods
-        if self.download:
-            self.download_remote_sources()
-
     ###########################
     # SOURCES RELATED METHODS #
     ###########################
