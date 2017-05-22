@@ -185,9 +185,12 @@ class Application(object):
             self.rebase_spec_file.set_version(version)
             self.rebase_spec_file.set_extra_version_separator(separator)
             self.rebase_spec_file.set_extra_version(extra_version)
-
         # run spec hooks
         spec_hooks_runner.run_spec_hooks(self.spec_file, self.rebase_spec_file)
+
+        # spec file object has been sanitized downloading can proceed
+        if self.spec_file.download:
+            self.spec_file.download_remote_sources()
 
     def _initialize_data(self):
         """Function fill dictionary with default data"""
