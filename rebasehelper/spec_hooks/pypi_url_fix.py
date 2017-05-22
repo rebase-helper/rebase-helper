@@ -49,9 +49,11 @@ class PypiUrlFixHook(BaseSpecHook):
         sources = rebase_spec_file.sources
         old_sources = list(rebase_spec_file.sources)
 
+	# find and transform the appropriate sources
         for index, source in enumerate(sources):
             sources[index] = cls._transform_url(source)
 
+	# save changes to the new spec_file
         for index, line in enumerate(rebase_spec_file.spec_content):
             for srcind, new_sources in enumerate(rebase_spec_file.sources):
                 line = re.sub(old_sources[srcind], new_sources, line)
