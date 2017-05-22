@@ -6,8 +6,7 @@ stages:
   # don't start any services (mainly not the default ones)
   services:
   script:
-    - dnf -y install python2 python2-devel python3 python3-devel rpm-python rpm-python3 python-tox python3-tox python-pip python3-pip python-setuptools python3-setuptools gcc redhat-rpm-config libxml2-devel libxslt-devel xz-devel git
-    #- pip install tox setuptools
+    - dnf -y install $(cat test-deps-fedora.txt)
     - tox --recreate
 
 test:f24:
@@ -21,4 +20,3 @@ test:f25:
 test:rawhide:
   <<: *test_definition
   image: fedora:rawhide
-
