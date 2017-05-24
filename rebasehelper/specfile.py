@@ -1199,7 +1199,7 @@ class SpecFile(object):
         :return: Target path relative to builddir or None if not determined
         """
         cd_parser = argparse.ArgumentParser()
-        cd_parser.add_argument('dir', default='')
+        cd_parser.add_argument('dir', default=os.environ.get('HOME', ''))
         tar_parser = argparse.ArgumentParser()
         tar_parser.add_argument('-C', default='.', dest='target')
         unzip_parser = argparse.ArgumentParser()
@@ -1209,21 +1209,22 @@ class SpecFile(object):
         builddir = rpm.expandMacro('%{_builddir}')
         basedir = builddir
         for line in prep:
-            if line.strip().startswith('#'):
-                # skip comments
+            tokens = shlex.split(line, comments=True)
+            if not tokens:
                 continue
-            if 'cd' in line:
+            cmd, args = os.path.basename(tokens[0]), tokens[1:]
+            if cmd == 'cd':
                 # keep track of current directory
-                ns, _ = cd_parser.parse_known_args(shlex.split(line)[1:])
+                ns, _ = cd_parser.parse_known_args(args)
                 basedir = ns.dir if os.path.isabs(ns.dir) else os.path.join(basedir, ns.dir)
             if archive in line:
-                if 'tar' in line:
+                if cmd == 'tar':
                     parser = tar_parser
-                elif 'unzip' in line:
+                elif cmd == 'unzip':
                     parser = unzip_parser
                 else:
                     continue
-                ns, _ = parser.parse_known_args(shlex.split(line)[1:])
+                ns, _ = parser.parse_known_args(args)
                 basedir = os.path.relpath(basedir, builddir)
                 return os.path.normpath(os.path.join(basedir, ns.target))
         return None
