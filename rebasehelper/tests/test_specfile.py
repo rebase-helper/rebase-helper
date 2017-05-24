@@ -29,6 +29,7 @@ from .base_test import BaseTest
 from rebasehelper.specfile import SpecFile, spec_hooks_runner
 from rebasehelper.build_log_analyzer import BuildLogAnalyzer
 from rebasehelper.spec_hooks.typo_fix import TypoFixHook
+from rebasehelper.spec_hooks.pypi_url_fix import PyPIURLFixHook
 
 
 class TestSpecFile(BaseTest):
@@ -43,6 +44,7 @@ class TestSpecFile(BaseTest):
     SOURCE_4 = 'file.txt.bz2'
     SOURCE_5 = 'documentation.tar.xz'
     SOURCE_6 = 'misc.zip'
+    SOURCE_7 = 'positional-1.1.0.tar.gz'
     PATCH_1 = 'test-testing.patch'
     PATCH_2 = 'test-testing2.patch'
     PATCH_3 = 'test-testing3.patch'
@@ -117,9 +119,10 @@ class TestSpecFile(BaseTest):
         assert self.SPEC_FILE_OBJECT.get_archive() == self.OLD_ARCHIVE
 
     def test_get_sources(self):
-        sources = [self.SOURCE_0, self.SOURCE_1, self.SOURCE_4, self.SOURCE_5, self.SOURCE_6, self.OLD_ARCHIVE]
+        sources = [self.SOURCE_0, self.SOURCE_1, self.SOURCE_4, self.SOURCE_5,
+                   self.SOURCE_6, self.SOURCE_7, self.OLD_ARCHIVE]
         sources = [os.path.join(self.WORKING_DIR, f) for f in sources]
-        assert len(set(sources).intersection(set(self.SPEC_FILE_OBJECT.get_sources()))) == 6
+        assert len(set(sources).intersection(set(self.SPEC_FILE_OBJECT.get_sources()))) == 7
         # The Source0 has to be always in the beginning
         assert self.SPEC_FILE_OBJECT.get_archive() == 'test-1.0.2.tar.xz'
 
@@ -230,6 +233,7 @@ class TestSpecFile(BaseTest):
                             'Source4: file.txt.bz2\n',
                             'Source5: documentation.tar.xz\n',
                             'Source6: misc.zip\n',
+                            'Source7: https://pypi.python.org/packages/source/p/positional/positional-1.1.0.tar.gz\n',
                             'Patch1: test-testing.patch\n',
                             'Patch2: test-testing2.patch\n',
                             'Patch3: test-testing3.patch\n',
@@ -448,3 +452,9 @@ class TestSpecFile(BaseTest):
         assert '- This is chnagelog entry with some indentional typos\n' in self.SPEC_FILE_OBJECT.spec_content
         spec_hooks_runner.run_spec_hooks(None, self.SPEC_FILE_OBJECT)
         assert '- This is changelog entry with some intentional typos\n' in self.SPEC_FILE_OBJECT.spec_content
+
+    def test_pypi_to_python_hosted_url_trans(self):
+        assert PyPIURLFixHook.get_name() in spec_hooks_runner.spec_hooks
+        assert 'https://pypi.python.org/' in self.SPEC_FILE_OBJECT._get_raw_source_string(7)
+        spec_hooks_runner.run_spec_hooks(None, self.SPEC_FILE_OBJECT)
+        assert 'https://files.pythonhosted.org/' in self.SPEC_FILE_OBJECT._get_raw_source_string(7)

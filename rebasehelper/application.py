@@ -64,7 +64,7 @@ class Application(object):
         Initialize the application
 
         :param cli_conf: CLI object with configuration gathered from commandline
-        :return: 
+        :return:
         """
         results_store.clear()
 
@@ -187,6 +187,10 @@ class Application(object):
 
         # run spec hooks
         spec_hooks_runner.run_spec_hooks(self.spec_file, self.rebase_spec_file)
+
+        # spec file object has been sanitized downloading can proceed
+        if self.spec_file.download:
+            self.rebase_spec_file.download_remote_sources()
 
     def _initialize_data(self):
         """Function fill dictionary with default data"""
