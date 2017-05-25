@@ -10,7 +10,7 @@ rebase-helper man page
    :ignore_option_groups:
 
    DESCRIPTION : @replace
-      .. include:: description.rst
+      .. include:: ../description.rst
 
    OPTION : -h : @replace
       show help message and exit

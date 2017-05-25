@@ -1,19 +1,9 @@
-Welcome to rebase-helper's documentation!
-=========================================
-
-Contents:
+.. mdinclude:: ../README.md
 
 .. toctree::
-   :maxdepth: 3
+   :hidden:
 
-   overview
-   usage
-   clsoverview
-   upstreammonitoring
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   Home <self>
+   User Guide <user_guide/index>
+   API <api/index>
+   Change Log <changelog>

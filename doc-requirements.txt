@@ -4,3 +4,6 @@ backports.lzma
 copr
 pyquery
 six
+sphinx_rtd_theme
+# use fixed version of m2r, see: https://github.com/miyakogi/m2r/pull/3
+git+https://github.com/nforro/m2r.git@d649fc4dd4e20234404884a59a556e5a3793505b#egg=m2r
