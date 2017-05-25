@@ -11,14 +11,17 @@ help:
 	@echo " build                   build program"
 	@echo " log                     prepare changelog for spec file"
 	@echo " source                  create source tarball"
-	@echo " test                    run tests/run_tests.py"
 	@echo " html                    create HTML documentation"
+	@echo " man                     generate manual page"
+	@echo " test                    run test suite"
+	@echo " test-docker             run test suite inside Docker containers for several Fedora releases"
 
 
 clean:
 	@python setup.py clean
 	rm -f MANIFEST
 	rm -rf build/html
+	rm -rf build/man
 	find . -\( -name "*.pyc" -o -name '*.pyo' -o -name "*~" -\) -delete
 
 
@@ -48,3 +51,7 @@ man: build
 
 test:
 	tox --recreate
+
+
+test-docker:
+	make -f Makefile.docker test

@@ -3,7 +3,7 @@ language: python
 services: docker
 env:
     - DOCKER_IMAGE=fedora:24
-    - DOCKER_IMAGE=fedora:25
+    - DOCKER_IMAGE=fedora:latest
     - DOCKER_IMAGE=fedora:rawhide
-install: docker pull $DOCKER_IMAGE
-script: docker run --rm -v $TRAVIS_BUILD_DIR:/build $DOCKER_IMAGE /bin/sh -c "cd /build && dnf -y install \$(cat test-deps-fedora.txt) && tox --recreate"
+install: true
+script: make test-docker
