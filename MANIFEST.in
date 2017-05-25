@@ -5,4 +5,3 @@ include ChangeLog
 include *requirements.txt
 include rebase-helper.bash
 include tox.ini pylintrc .coveragerc
-recursive-include rebase-helper

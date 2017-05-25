@@ -77,20 +77,12 @@ class TestGitHelper(BaseTest):
         self._init_git_repo(self.old_git_path)
 
     def test_git_log(self):
-        # Try catch is workaround for Travis CI.
-        try:
-            commit_message = self._parse_commit_log()
-        except TypeError:
-            commit_message = ['Initial Commit']
+        commit_message = self._parse_commit_log()
         assert commit_message == ['Initial Commit']
 
     def test_git_apply(self):
         patch_object = PatchObject(os.path.join(self.WORKING_DIR, self.PATCH_1), 1, None)
         GitPatchTool.apply_patch(self.git_helper, patch_object)
         GitPatchTool.commit_patch(self.git_helper, os.path.join(self.WORKING_DIR, self.PATCH_1))
-        # Try catch is workaroung for Travis CI
-        try:
-            commit_message = self._parse_commit_log()
-        except TypeError:
-            commit_message = ['Patch: project-ChangeLog.patch', 'Initial Commit']
+        commit_message = self._parse_commit_log()
         assert commit_message == ['Patch: project-ChangeLog.patch', 'Initial Commit']
