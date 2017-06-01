@@ -21,12 +21,13 @@
 #          Tomas Hozza <thozza@redhat.com>
 
 import os
-from .base_test import BaseTest
+
+import pytest
+
 from rebasehelper.archive import Archive
 
 
-class TestArchive(BaseTest):
-    """ Archive Test """
+class TestArchive(object):
     TAR_GZ = 'archive.tar.gz'
     TGZ = 'archive.tgz'
     TAR_XZ = 'archive.tar.xz'
@@ -47,42 +48,34 @@ class TestArchive(BaseTest):
         ZIP
     ]
 
-    def extraction_test(self, archive):
-        """Generic test for extraction of all types of archives"""
-        EXTRACT_DIR = os.path.join(os.getcwd(), 'dir')
-        EXTRACTED_FILE = os.path.join(EXTRACT_DIR, self.ARCHIVED_FILE)
+    @pytest.fixture
+    def extracted_archive(self, archive, workdir):
+        a = Archive(archive)
+        d = os.path.join(workdir, 'dir')
+        a.extract_archive(d)
+        return d
 
-        archive = Archive(archive)
-        archive.extract_archive(EXTRACT_DIR)
-
+    @pytest.mark.parametrize('archive', [
+        TAR_GZ,
+        TGZ,
+        TAR_XZ,
+        TAR_BZ2,
+        BZ2,
+        ZIP,
+    ], ids=[
+        'tar.gz',
+        'tgz',
+        'tar.xz',
+        'tar.bz2',
+        'bz2',
+        'zip',
+    ])
+    def test_archive(self, extracted_archive):
+        extracted_file = os.path.join(extracted_archive, self.ARCHIVED_FILE)
         #  check if the dir was created
-        assert os.path.isdir(EXTRACT_DIR)
+        assert os.path.isdir(extracted_archive)
         #  check if the file was extracted
-        assert os.path.isfile(EXTRACTED_FILE)
+        assert os.path.isfile(extracted_file)
         #  check the content
-        with open(EXTRACTED_FILE) as f:
+        with open(extracted_file) as f:
             assert f.read().strip() == self.ARCHIVED_FILE_CONTENT
-
-    def test_tar_bz2_archive(self):
-        """Test .tar.bz2 archive extraction."""
-        self.extraction_test(self.TAR_BZ2)
-
-    def test_tar_gz_archive(self):
-        """Test .tar.gz archive extraction."""
-        self.extraction_test(self.TAR_GZ)
-
-    def test_tgz_archive(self):
-        """Test .tgz archive extraction."""
-        self.extraction_test(self.TGZ)
-
-    def test_tar_xz_archive(self):
-        """Test .tar.xz archive extraction."""
-        self.extraction_test(self.TAR_XZ)
-
-    def test_bz2_archive(self):
-        """Test .bz2 archive extraction."""
-        self.extraction_test(self.BZ2)
-
-    def test_zip_archive(self):
-        """Test .zip archive extraction."""
-        self.extraction_test(self.ZIP)

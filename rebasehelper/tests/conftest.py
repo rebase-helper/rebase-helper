@@ -20,38 +20,21 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
+import os
 import shutil
 
 import pytest
 
-from rebasehelper.build_log_analyzer import BuildLogAnalyzer, BuildLogAnalyzerMakeError
-from rebasehelper.build_log_analyzer import BuildLogAnalyzerPatchError
+
+TESTS_DIR = os.path.dirname(__file__)
+TEST_FILES_DIR = os.path.join(TESTS_DIR, 'testing_files')
 
 
-class TestBuildLogAnalyzer(object):
-    BUILD_FAILED_BUILDING = "build-failed-building.log"
-    BUILD_FAILED_PATCH = "build-failed-patch.log"
-
-    TEST_FILES = [
-        BUILD_FAILED_BUILDING,
-        BUILD_FAILED_PATCH,
-    ]
-
-    BUILD_LOG = "build.log"
-
-    @pytest.fixture
-    def analyzer(self, log):
-        ba = BuildLogAnalyzer()
-        shutil.copy(log, self.BUILD_LOG)
-        return ba
-
-    @pytest.mark.parametrize('log, exception', [
-        (BUILD_FAILED_BUILDING, BuildLogAnalyzerMakeError),
-        (BUILD_FAILED_PATCH, BuildLogAnalyzerPatchError),
-    ], ids=[
-        'failed_build',
-        'failed_patch',
-    ])
-    def test_build_log_analyzer(self, exception, workdir, analyzer):
-        with pytest.raises(exception):
-            analyzer.parse_log(workdir, self.BUILD_LOG)
+@pytest.yield_fixture(autouse=True)
+def workdir(request, tmpdir_factory):
+    with tmpdir_factory.mktemp('workdir').as_cwd():
+        wd = os.getcwd()
+        # copy testing files into workdir
+        for file_name in getattr(request.cls, 'TEST_FILES', []):
+            shutil.copy(os.path.join(TEST_FILES_DIR, file_name), wd)
+        yield wd

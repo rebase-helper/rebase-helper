@@ -20,13 +20,12 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
+import pytest
+
 from rebasehelper.results_store import ResultsStore
 
 
 class TestResultsStore(object):
-    """
-    tests of ResultsStore class
-    """
     old_rpm_data = {'rpm': ['rpm-0.1.0.x86_64.rpm', ' rpm-devel-0.1.0.x86_64.rpm'],
                 'srpm': 'rpm-0.1.0.src.rpm',
                 'logs': ['logfile1.log', 'logfile2.log']}
@@ -38,49 +37,51 @@ class TestResultsStore(object):
     info_data = {'Information text': 'some information text'}
     info_data2 = {'Next Information': 'some another information text'}
 
-    def setup(self):
-        self.results_store = ResultsStore()
-        self.results_store.set_info_text('Information text', 'some information text')
-        self.results_store.set_info_text('Next Information', 'some another information text')
-        self.results_store.set_patches_results(self.patches_data)
-        self.results_store.set_build_data('old', self.old_rpm_data)
-        self.results_store.set_build_data('new', self.new_rpm_data)
+    @pytest.fixture
+    def results_store(self):
+        rs = ResultsStore()
+        rs.set_info_text('Information text', 'some information text')
+        rs.set_info_text('Next Information', 'some another information text')
+        rs.set_patches_results(self.patches_data)
+        rs.set_build_data('old', self.old_rpm_data)
+        rs.set_build_data('new', self.new_rpm_data)
+        return rs
 
-    def test_base_output_info(self):
+    def test_base_output_info(self, results_store):
         """
         Test Output logger info
 
         :return: 
         """
-        info_results = self.results_store.get_summary_info()
+        info_results = results_store.get_summary_info()
         expect_dict = self.info_data
         expect_dict.update(self.info_data2)
         assert info_results == expect_dict
 
-    def test_base_output_patches(self):
+    def test_base_output_patches(self, results_store):
         """
         Test Output logger patches
 
         :return: 
         """
-        patch_results = self.results_store.get_patches()
+        patch_results = results_store.get_patches()
         expected_patches = self.patches_data
         assert patch_results == expected_patches
 
-    def test_base_output_builds_old(self):
+    def test_base_output_builds_old(self, results_store):
         """
         Test Output logger old builds
 
         :return: 
         """
-        build_results = self.results_store.get_build('old')
+        build_results = results_store.get_build('old')
         assert build_results == self.old_rpm_data
 
-    def test_base_output_builds_new(self):
+    def test_base_output_builds_new(self, results_store):
         """
         Test Output logger new builds
 
         :return: 
         """
-        build_results = self.results_store.get_build('new')
+        build_results = results_store.get_build('new')
         assert build_results == self.new_rpm_data

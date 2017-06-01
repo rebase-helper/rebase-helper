@@ -24,9 +24,6 @@ from rebasehelper.cli import CLI
 
 
 class TestCLI(object):
-    """
-    The test suite is used for testing CLI class
-    """
     def test_cli_unit(self):
         """Function tests cli class with all arguments"""
         conf = {'build_only': True,
