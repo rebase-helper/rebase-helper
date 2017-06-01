@@ -19,3 +19,11 @@
 #
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
+
+import os
+import pkg_resources
+
+
+# make entry points accessible in case this package is not installed
+parent_dir = os.path.dirname(os.path.dirname(__file__))
+pkg_resources.working_set.add_entry(parent_dir)

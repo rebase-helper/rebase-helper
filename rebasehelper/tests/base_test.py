@@ -24,13 +24,6 @@ import os
 import shutil
 import tempfile
 import pytest
-import pkg_resources
-import rebasehelper
-
-
-# make entry points accessible in case rebasehelper package is not installed
-parent_dir = os.path.dirname(os.path.dirname(rebasehelper.__file__))
-pkg_resources.working_set.add_entry(parent_dir)
 
 
 class BaseTest(object):
