@@ -238,6 +238,7 @@ class TestSpecFile(BaseTest):
                             'Patch2: test-testing2.patch\n',
                             'Patch3: test-testing3.patch\n',
                             'Patch4: test-testing4.patch\n',
+                            'Patch5: rebase-helper-results/rebased_sources/test-testing5.patch\n',
                             '\n',
                             'BuildRequires: openssl-devel, pkgconfig, texinfo, gettext, autoconf\n',
                             '\n']],
@@ -460,3 +461,16 @@ class TestSpecFile(BaseTest):
         assert 'https://pypi.python.org/' in self.SPEC_FILE_OBJECT._get_raw_source_string(7)
         spec_hooks_runner.run_spec_hooks(None, self.SPEC_FILE_OBJECT)
         assert 'https://files.pythonhosted.org/' in self.SPEC_FILE_OBJECT._get_raw_source_string(7)
+
+    def test_update_paths_to_patches(self):
+        """
+        Check updated paths to patches in the rebased directory
+        :return:
+        """
+        line = [l for l in self.SPEC_FILE_OBJECT.spec_content if l.startswith('Patch5')][0]
+        assert 'rebased_sources' in line
+
+        self.SPEC_FILE_OBJECT.update_paths_to_patches()
+
+        line = [l for l in self.SPEC_FILE_OBJECT.spec_content if l.startswith('Patch5')][0]
+        assert not 'rebased_sources' in line

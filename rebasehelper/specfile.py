@@ -109,6 +109,7 @@ class SpecFile(object):
     patches = None
     rpm_sections = {}
     prep_section = []
+    removed_patches = []
 
     defined_sections = ['%package',
                         '%description',
@@ -346,6 +347,14 @@ class SpecFile(object):
                         patch_num.remove(num)
                         break
 
+    def update_paths_to_patches(self):
+        # Fix paths in rebase_spec_file to patches to current directory
+        for index, line in enumerate(self.spec_content):
+            if line.startswith('Patch'):
+                mod_line = re.sub(settings.REBASE_HELPER_REBASED_SOURCES_DIR + '/', '', line)
+                self.spec_content[index] = mod_line
+        self.save()
+
     def _correct_rebased_patches(self, patch_num):
         """
         Comment out patches from SPEC file
@@ -397,13 +406,14 @@ class SpecFile(object):
                     self.spec_content[index] = '#{0} {1}\n'.format(' '.join(fields[:-1]),
                                                                    os.path.basename(patch_name))
                     if patch_removed:
+                        self.removed_patches.append(patch_name)
                         removed_patches.append(patch_num)
                 if 'modified' in patches:
                     patch = [x for x in patches['modified'] if patch_name in x]
                 else:
                     patch = None
                 if patch:
-                    fields[1] = os.path.join(settings.REBASE_HELPER_RESULTS_DIR, patch_name)
+                    fields[1] = os.path.join(settings.REBASE_HELPER_REBASED_SOURCES_DIR, patch_name)
                     self.spec_content[index] = ' '.join(fields) + '\n'
                     modified_patches.append(patch_num)
 
