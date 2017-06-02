@@ -7,15 +7,15 @@ stages:
   services:
   script:
     - dnf -y install $(cat test-deps-fedora.txt)
-    - tox --recreate
+    - PYTEST_ADDOPTS="-m 'not optional'" tox
 
 test:f24:
   <<: *test_definition
   image: fedora:24
 
-test:f25:
+test:latest:
   <<: *test_definition
-  image: fedora:25
+  image: fedora:latest
 
 test:rawhide:
   <<: *test_definition
