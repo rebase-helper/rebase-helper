@@ -155,6 +155,13 @@ class CLI(object):
             help="do not interact with user"
         )
         parser.add_argument(
+            "--disable-inapplicable-patches",
+            default=False,
+            action="store_true",
+            dest='disable_inapplicable_patches',
+            help="disable inapplicable patches in rebased SPEC file"
+        )
+        parser.add_argument(
             "--comparepkgs-only",
             default=False,
             dest="comparepkgs",

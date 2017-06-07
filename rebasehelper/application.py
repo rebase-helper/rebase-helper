@@ -420,7 +420,8 @@ class Application(object):
                                                **self.kwargs)
         except RuntimeError:
             raise RebaseHelperError('Patching failed')
-        self.rebase_spec_file.write_updated_patches(self.rebased_patches)
+        self.rebase_spec_file.write_updated_patches(self.rebased_patches,
+                                                    self.conf.disable_inapplicable_patches)
         results_store.set_patches_results(self.rebased_patches)
 
     def generate_patch(self):

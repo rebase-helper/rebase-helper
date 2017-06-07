@@ -38,6 +38,7 @@ class TestCLI(object):
                 'not_download_sources': True,
                 'cont': True,
                 'non_interactive': True,
+                'disable_inapplicable_patches': False,
                 'comparepkgs': 'test_dir',
                 'fedpkg_build_tasks': None,
                 'build_tasks': ['123456', '654321'],
