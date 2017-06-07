@@ -93,7 +93,6 @@ class Application(object):
         if self.conf.build_tasks is None:
             self._get_spec_file()
             self._prepare_spec_objects()
-            self.git_helper = self._prepare_rebased_repository(self.spec_file.patches, self.rebased_sources_dir)
 
             # check the workspace dir
             if not self.conf.cont:
@@ -181,7 +180,10 @@ class Application(object):
         #  create an object representing the rebased SPEC file
         self.rebase_spec_file = self.spec_file.copy(self.rebase_spec_file_path)
 
-        #  check if argument passed as new source is a file or just a version
+        # Prepare rebased_sources_dir
+        self.git_helper = self._prepare_rebased_repository(self.spec_file.patches, self.rebased_sources_dir)
+
+        # check if argument passed as new source is a file or just a version
         if [True for ext in Archive.get_supported_archives() if self.conf.sources.endswith(ext)]:
             logger.debug("argument passed as a new source is a file")
             self.rebase_spec_file.set_version_using_archive(self.conf.sources)
