@@ -892,6 +892,18 @@ One of the possible configuration can be:\n
 
         return self._call_git_command(cmd)
 
+    def command_format_patch(self, patchname='changes.patch', directory='./'):
+        """
+        Method generates patch based on last commit
+
+        :param directory: Directory where patch will be placed
+        :param patchname: Name of the patch
+        :return: return code from ProcessHelper
+        """
+        cmd = ['format-patch', '--stdout', '-1']
+
+        return self._call_git_command(cmd, output_file=os.path.join(directory, patchname))
+
     def command_remote_add(self, upstream_name, directory):
         """Function add remote git repository to old_sources before a rebase"""
         cmd = []
@@ -985,6 +997,11 @@ One of the possible configuration can be:\n
         if not self.output_data:
             return None
         return self.output_data[0]
+
+    def command_rm(self, path):
+        cmd = ['rm']
+        cmd.append(path)
+        return self._call_git_command(cmd)
 
     def get_output_data(self):
         """Function returns output_data after calling call_git_command"""

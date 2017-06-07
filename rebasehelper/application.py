@@ -25,6 +25,7 @@ import os
 import shutil
 import logging
 import six
+import re
 
 from rebasehelper.archive import Archive
 from rebasehelper.specfile import SpecFile, get_rebase_name, spec_hooks_runner
@@ -58,6 +59,7 @@ class Application(object):
     report_log_file = None
     rebased_patches = {}
     upstream_monitoring = False
+    git_helper = None
 
     def __init__(self, cli_conf, execution_dir, results_dir, debug_log_file, report_log_file):
         """
@@ -70,6 +72,7 @@ class Application(object):
 
         self.conf = cli_conf
         self.execution_dir = execution_dir
+        self.rebased_sources_dir = os.path.join(results_dir, 'rebased_sources')
 
         self.debug_log_file = debug_log_file
         self.report_log_file = report_log_file
@@ -80,6 +83,9 @@ class Application(object):
         # Directory where results should be put
         self.kwargs['results_dir'] = self.results_dir = results_dir
 
+        # Directory contaning only those files, which are relevant for the new rebased version
+        self.kwargs['rebased_sources_dir'] = self.rebased_sources_dir
+
         self.kwargs['non_interactive'] = self.conf.non_interactive
 
         logger.debug("Rebase-helper version: %s" % version.VERSION)
@@ -87,6 +93,7 @@ class Application(object):
         if self.conf.build_tasks is None:
             self._get_spec_file()
             self._prepare_spec_objects()
+            self.git_helper = self._prepare_rebased_repository(self.spec_file.patches, self.rebased_sources_dir)
 
             # check the workspace dir
             if not self.conf.cont:
@@ -163,7 +170,7 @@ class Application(object):
 
         :return: 
         """
-        self.rebase_spec_file_path = get_rebase_name(self.results_dir, self.spec_file_path)
+        self.rebase_spec_file_path = get_rebase_name(self.rebased_sources_dir, self.spec_file_path)
 
         self.spec_file = SpecFile(self.spec_file_path,
                                   self.execution_dir,
@@ -308,6 +315,7 @@ class Application(object):
         os.makedirs(os.path.join(results_dir, settings.REBASE_HELPER_LOGS))
         os.makedirs(os.path.join(results_dir, 'old'))
         os.makedirs(os.path.join(results_dir, 'new'))
+        os.makedirs(os.path.join(results_dir, 'rebased_sources'))
 
     @staticmethod
     def extract_archive(archive_path, destination):
@@ -412,6 +420,37 @@ class Application(object):
             raise RebaseHelperError('Patching failed')
         self.rebase_spec_file.write_updated_patches(self.rebased_patches)
         results_store.set_patches_results(self.rebased_patches)
+
+    def generate_patch(self):
+        """
+        Generates patch to the results_dir containing all needed changes for
+        the rebased package version
+        """
+        # Delete removed patches from rebased_sources_dir from git
+        for removed_patch in self.rebase_spec_file.removed_patches:
+            self.git_helper.command_rm(os.path.join(self.rebased_sources_dir, removed_patch))
+
+        self.rebase_spec_file.update_paths_to_patches()
+
+        # Generate patch
+        self.git_helper.command_add_files('.')
+        self.git_helper.command_commit(message='New upstream release ' + self.rebase_spec_file.get_full_version())
+        self.git_helper.command_format_patch(directory=self.results_dir)
+
+    @classmethod
+    def _prepare_rebased_repository(cls, patches, rebased_sources_dir):
+        """
+        Initialize git repository in the rebased directory
+        :return: GitHelper instance to rebased_sources
+        """
+        for patch in patches['applied']:
+            shutil.copy(patch.path, rebased_sources_dir)
+
+        git_helper = GitHelper(rebased_sources_dir)
+        git_helper.command_init(rebased_sources_dir)
+        git_helper.command_add_files('.')
+        git_helper.command_commit('Initial Commit')
+        return git_helper
 
     def build_packages(self):
         """Function calls build class for building packages"""
@@ -608,7 +647,7 @@ class Application(object):
         output = output_tool.OutputTool(self.conf.outputtool)
         report_file = os.path.join(self.results_dir, self.conf.outputtool + settings.REBASE_HELPER_OUTPUT_SUFFIX)
         output.print_information(path=report_file)
-        logger.info('Report file from rebase-helper is available here: %s', report_file)
+        logger.info('\nReport file from rebase-helper is available here: %s', report_file)
 
     def print_task_info(self, builder):
         logs = self.get_new_build_logs()['build_ref']
@@ -716,8 +755,15 @@ class Application(object):
         if not self.conf.keep_workspace:
             self._delete_workspace_dir()
 
+        self.generate_patch()
+
         if self.debug_log_file:
             logger.info("Detailed debug log is located in '%s'", self.debug_log_file)
+            logger.info("Rebased spec file and patches "
+                        "are located in '%s'", self.rebased_sources_dir)
+            logger.info("Patch '%s' containing changes between original and rebased "
+                        "spec file and patches is located in '%s'",
+                        'changes.patch', self.results_dir)
         if not self.upstream_monitoring and not self.conf.patch_only:
             logger.info('Rebase package to %s was SUCCESSFUL.\n', self.conf.sources)
         return 0

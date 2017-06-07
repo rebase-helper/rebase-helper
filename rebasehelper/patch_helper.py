@@ -165,7 +165,7 @@ class GitPatchTool(PatchBase):
                 index = [i for i, l in enumerate(log) if l.endswith(patch_name)]
                 if index:
                     commit = GitHelper.get_commit_hash_log(log, number=index[0])
-                    base_name = os.path.join(cls.kwargs['results_dir'], patch_name)
+                    base_name = os.path.join(cls.kwargs['rebased_sources_dir'], patch_name)
                     cls.git_helper.command_diff('{}~1'.format(commit), commit, output_file=base_name)
                     modified_patches.append(base_name)
             if int(ret_code) != 0:
@@ -187,7 +187,7 @@ class GitPatchTool(PatchBase):
                     continue
                 modified_files = cls.git_helper.command_diff_status()
                 cls.git_helper.command_add_files(parameters=modified_files)
-                base_name = os.path.join(cls.kwargs['results_dir'], patch_name)
+                base_name = os.path.join(cls.kwargs['rebased_sources_dir'], patch_name)
                 cls.git_helper.command_diff('HEAD', output_file=base_name)
                 with open(base_name, "r") as f:
                     del_patches = f.readlines()
