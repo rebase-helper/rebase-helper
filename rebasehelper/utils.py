@@ -633,7 +633,9 @@ class RpmHelper(object):
         :param spec_path: absolute path to SPEC file
         :return: 
         """
-        cmd = ['pkexec', 'dnf', 'builddep', spec_path]
+        cmd = ['dnf', 'builddep', spec_path]
+        if os.geteuid() != 0:
+            cmd = ['pkexec'] + cmd
         if assume_yes:
             cmd.append('-y')
         return ProcessHelper.run_subprocess(cmd)

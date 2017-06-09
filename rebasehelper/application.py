@@ -469,7 +469,7 @@ class Application(object):
             task_id = None
 
             # prepare for building
-            builder.prepare(spec_object)
+            builder.prepare(spec_object, self.conf)
 
             if self.conf.build_tasks is None:
                 build_dict['name'] = spec_object.get_package_name()
