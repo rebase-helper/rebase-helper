@@ -21,9 +21,20 @@
 #          Tomas Hozza <thozza@redhat.com>
 
 import os
-import pkg_resources
+import shutil
+
+import pytest
 
 
-# make entry points accessible in case this package is not installed
-parent_dir = os.path.dirname(os.path.dirname(__file__))
-pkg_resources.working_set.add_entry(parent_dir)
+TESTS_DIR = os.path.dirname(__file__)
+TEST_FILES_DIR = os.path.join(TESTS_DIR, 'testing_files')
+
+
+@pytest.yield_fixture(autouse=True)
+def workdir(request, tmpdir_factory):
+    with tmpdir_factory.mktemp('workdir').as_cwd():
+        wd = os.getcwd()
+        # copy testing files into workdir
+        for file_name in getattr(request.cls, 'TEST_FILES', []):
+            shutil.copy(os.path.join(TEST_FILES_DIR, file_name), wd)
+        yield wd

@@ -18,5 +18,7 @@ test: $(TEST_IMAGE)
 $(TEST_IMAGE):
 	$(eval IMAGE := $(subst _COLON_,:,$@))
 	$(DOCKER) pull $(IMAGE)
-	git archive HEAD | $(DOCKER) run --rm -i -v /build -w /build -e PY_COLORS=1 $(IMAGE) \
-		/bin/sh -c 'dnf -y install tar && tar -x && dnf -y install $$(cat test-deps-fedora.txt) && tox --recreate'
+	git archive HEAD | $(DOCKER) run \
+		--cap-add=SYS_ADMIN --rm -i -v /build -w /build -e PY_COLORS=1 \
+		-e TOXENV="$(TOXENV)" -e PYTEST_ADDOPTS="$(PYTEST_ADDOPTS)" $(IMAGE) \
+		/bin/sh -c 'dnf -y install tar && tar -x && dnf -y install $$(cat test-deps-fedora.txt) && tox'

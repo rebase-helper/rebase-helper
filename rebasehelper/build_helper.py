@@ -169,7 +169,7 @@ class BuildToolBase(object):
         raise NotImplementedError()
 
     @classmethod
-    def prepare(cls, spec):
+    def prepare(cls, spec, conf):
         """
         Prepare for building.
         
@@ -360,10 +360,10 @@ class Builder(object):
     def creates_tasks(self):
         return self._tool.creates_tasks()
 
-    def prepare(self, spec):
+    def prepare(self, spec, conf):
         """Prepare for build"""
         logger.debug("Preparing for build using '%s'", self._tool_name)
-        self._tool.prepare(spec)
+        self._tool.prepare(spec, conf)
 
     def build(self, *args, **kwargs):
         """Build sources."""

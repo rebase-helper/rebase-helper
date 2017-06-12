@@ -23,19 +23,19 @@
 import os
 import json
 
-from .base_test import BaseTest
+import pytest
+
 from rebasehelper.output_tool import OutputTool
 from rebasehelper.results_store import ResultsStore
 
 
-class TestOutputTool(BaseTest):
-    """
-    Class is used for testing OutputTool and other BaseOutputTool based classes
-    """
+class TestOutputTool(object):
+    @pytest.fixture
+    def results_file_path(self, workdir):
+        return os.path.join(workdir, 'output_file')
 
-    def setup(self):
-        super(TestOutputTool, self).setup()
-
+    @pytest.fixture
+    def results_store(self, workdir):
         data = {'old': {'patches_full': {0: ['mytest.patch', '-p1', 0],
                                          1: ['mytest2.patch', '-p1', 1]},
                         'srpm': './test-1.2.0-1.src.rpm',
@@ -48,21 +48,21 @@ class TestOutputTool(BaseTest):
                         'rpm': ['./test-1.2.2-1.x86_64.rpm', './test-devel-1.2.2-1.x86_64.rpm'],
                         'logs': ['logfile3.log', 'logfile4.log']},
                 'patches': {'deleted': ['mytest2.patch']},
-                'results_dir': self.WORKING_DIR,
+                'results_dir': workdir,
                 'moved': ['/usr/sbin/test', '/usr/sbin/test2'],
                 }
 
-        self.results_store = ResultsStore()
-        self.results_store.set_build_data('old', data['old'])
-        self.results_store.set_build_data('new', data['new'])
-        self.results_store.set_patches_results(data['patches'])
+        rs = ResultsStore()
+        rs.set_build_data('old', data['old'])
+        rs.set_build_data('new', data['new'])
+        rs.set_patches_results(data['patches'])
         message = 'Following files were moved\n%s\n' % '\n'.join(data['moved'])
         test_output = {'pkgdiff': message}
-        self.results_store.set_checker_output('Results from checker(s)', test_output)
-        self.results_store.set_info_text('Information text', 'some information text')
-        self.results_store.set_info_text('Next Information', 'some another information text')
+        rs.set_checker_output('Results from checker(s)', test_output)
+        rs.set_info_text('Information text', 'some information text')
+        rs.set_info_text('Next Information', 'some another information text')
 
-        self.results_file_path = os.path.join(self.WORKING_DIR, 'output_file')
+        return rs
 
     def get_expected_text_output(self):
         expected_output = """
@@ -135,19 +135,19 @@ See for more details pkgdiff"""
         }
         return expected_output
 
-    def test_text_output_tool(self):
+    def test_text_output_tool(self, results_file_path, results_store):
         output = OutputTool('text')
-        output.print_information(self.results_file_path, self.results_store)
+        output.print_information(results_file_path, results_store)
 
-        with open(self.results_file_path) as f:
+        with open(results_file_path) as f:
             lines = [y.strip() for y in f.readlines()]
             assert lines == self.get_expected_text_output().split('\n')
 
-    def test_json_output_tool(self):
+    def test_json_output_tool(self, results_file_path, results_store):
         output = OutputTool('json')
-        output.print_information(self.results_file_path, self.results_store)
+        output.print_information(results_file_path, results_store)
 
-        with open(self.results_file_path) as f:
+        with open(results_file_path) as f:
             json_dict = json.load(f, encoding='utf-8')
             # in Python2 strings in json decoded dict are Unicode, which would make the test fail
             assert json_dict == json.loads(json.dumps(self.get_expected_json_output()))

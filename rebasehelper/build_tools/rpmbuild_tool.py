@@ -92,7 +92,7 @@ class RpmbuildBuildTool(BuildToolBase):
         return False
 
     @classmethod
-    def prepare(cls, spec):
+    def prepare(cls, spec, conf):
         """
         Checks if all build dependencies are installed. If not, asks user whether they should be installed.
         If he agrees, installs build dependencies using PolicyKit.
@@ -101,8 +101,9 @@ class RpmbuildBuildTool(BuildToolBase):
         """
         req_pkgs = spec.get_requires()
         if not RpmHelper.all_packages_installed(req_pkgs):
-            if ConsoleHelper.get_message('\nSome build dependencies are missing. Do you want to install them now'):
-                if RpmHelper.install_build_dependencies(spec.get_path()) != 0:
+            question = '\nSome build dependencies are missing. Do you want to install them now'
+            if conf.non_interactive or ConsoleHelper.get_message(question):
+                if RpmHelper.install_build_dependencies(spec.get_path(), assume_yes=conf.non_interactive) != 0:
                     raise RebaseHelperError('Failed to install build dependencies')
 
     @classmethod

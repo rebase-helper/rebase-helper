@@ -6,4 +6,4 @@ env:
     - DOCKER_IMAGE=fedora:latest
     - DOCKER_IMAGE=fedora:rawhide
 install: true
-script: make test-docker
+script: make PYTEST_ADDOPTS="$([ "$TRAVIS_EVENT_TYPE" = "cron" ] && echo "-m 1" || echo "-m 'not optional'")" test-docker

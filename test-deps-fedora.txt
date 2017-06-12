@@ -16,3 +16,9 @@ libxml2-devel
 libxslt-devel
 xz-devel
 git
+rpm-build
+mock
+rpmlint
+libabigail
+pkgdiff
+dnf

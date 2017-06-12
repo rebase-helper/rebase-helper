@@ -22,15 +22,12 @@
 
 import os
 
-from .base_test import BaseTest
 from rebasehelper.cli import CLI
 from rebasehelper.application import Application
 from rebasehelper import settings
 
 
-class TestApplication(BaseTest):
-    """ Application tests """
-
+class TestApplication(object):
     OLD_SOURCES = 'test-1.0.2.tar.xz'
     NEW_SOURCES = 'test-1.0.3.tar.xz'
     SPEC_FILE = 'test.spec'
@@ -55,61 +52,55 @@ class TestApplication(BaseTest):
 
     cmd_line_args = ['--not-download-sources', '1.0.3']
 
-    def test_application_sources(self):
+    def test_application_sources(self, workdir):
         expected_dict = {
             'new': {
-                'sources': [os.path.join(self.WORKING_DIR, 'test-source.sh'),
-                            os.path.join(self.WORKING_DIR, 'source-tests.sh'),
-                            os.path.join(self.WORKING_DIR, self.NEW_SOURCES)],
+                'sources': [os.path.join(workdir, 'test-source.sh'),
+                            os.path.join(workdir, 'source-tests.sh'),
+                            os.path.join(workdir, self.NEW_SOURCES)],
                 'version': '1.0.3',
                 'name': 'test',
                 'tarball': self.NEW_SOURCES,
-                'spec': os.path.join(self.WORKING_DIR, settings.REBASE_HELPER_RESULTS_DIR, self.SPEC_FILE),
-                'patches_full': {1: [os.path.join(self.WORKING_DIR, self.PATCH_1),
+                'spec': os.path.join(workdir, settings.REBASE_HELPER_RESULTS_DIR, self.SPEC_FILE),
+                'patches_full': {1: [os.path.join(workdir, self.PATCH_1),
                                      '',
                                      0,
                                      False],
-                                 2: [os.path.join(self.WORKING_DIR, self.PATCH_2),
+                                 2: [os.path.join(workdir, self.PATCH_2),
                                      '-p1',
                                      1,
                                      False],
-                                 3: [os.path.join(self.WORKING_DIR, self.PATCH_3),
+                                 3: [os.path.join(workdir, self.PATCH_3),
                                      '-p1',
                                      2,
                                      False]}},
-            'workspace_dir': os.path.join(self.WORKING_DIR, settings.REBASE_HELPER_WORKSPACE_DIR),
+            'workspace_dir': os.path.join(workdir, settings.REBASE_HELPER_WORKSPACE_DIR),
             'old': {
-                'sources': [os.path.join(self.WORKING_DIR, 'test-source.sh'),
-                            os.path.join(self.WORKING_DIR, 'source-tests.sh'),
-                            os.path.join(self.WORKING_DIR, self.OLD_SOURCES)],
+                'sources': [os.path.join(workdir, 'test-source.sh'),
+                            os.path.join(workdir, 'source-tests.sh'),
+                            os.path.join(workdir, self.OLD_SOURCES)],
                 'version': '1.0.2',
                 'name': 'test',
                 'tarball': self.OLD_SOURCES,
-                'spec': os.path.join(self.WORKING_DIR, self.SPEC_FILE),
-                'patches_full': {1: [os.path.join(self.WORKING_DIR, self.PATCH_1),
+                'spec': os.path.join(workdir, self.SPEC_FILE),
+                'patches_full': {1: [os.path.join(workdir, self.PATCH_1),
                                      '',
                                      0,
                                      False],
-                                 2: [os.path.join(self.WORKING_DIR, self.PATCH_2),
+                                 2: [os.path.join(workdir, self.PATCH_2),
                                      '-p1',
                                      1,
                                      False],
-                                 3: [os.path.join(self.WORKING_DIR, self.PATCH_3),
+                                 3: [os.path.join(workdir, self.PATCH_3),
                                      '-p1',
                                      2,
                                      False]}},
-            'results_dir': os.path.join(self.WORKING_DIR, settings.REBASE_HELPER_RESULTS_DIR)}
+            'results_dir': os.path.join(workdir, settings.REBASE_HELPER_RESULTS_DIR)}
 
-        try:
-            cli = CLI(self.cmd_line_args)
-            execution_dir, results_dir, debug_log_file, report_log_file = Application.setup(cli)
-            app = Application(cli, execution_dir, results_dir, debug_log_file, report_log_file)
-            app.prepare_sources()
-            for key, val in app.kwargs.items():
-                if key in expected_dict:
-                    assert val == expected_dict[key]
-        except OSError as oer:
-            pass
-
-
-
+        cli = CLI(self.cmd_line_args)
+        execution_dir, results_dir, debug_log_file, report_log_file = Application.setup(cli)
+        app = Application(cli, execution_dir, results_dir, debug_log_file, report_log_file)
+        app.prepare_sources()
+        for key, val in app.kwargs.items():
+            if key in expected_dict:
+                assert val == expected_dict[key]

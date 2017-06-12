@@ -28,9 +28,9 @@ import sys
 
 import rpm
 import pytest
+
 from six import StringIO
 
-from .base_test import BaseTest
 from rebasehelper.utils import ConsoleHelper
 from rebasehelper.utils import DownloadHelper
 from rebasehelper.utils import DownloadError
@@ -42,94 +42,41 @@ from rebasehelper.utils import MacroHelper
 from rebasehelper.utils import LookasideCacheHelper
 
 
-class TestConsoleHelper(BaseTest):
-    """
-    ConsoleHelper tests
-    """
+class TestConsoleHelper(object):
 
-    @staticmethod
-    def _setup_fake_IO(input_str):
-        """Function to setup fake STDIN and STDOUT for console testing."""
-        #  Use StringIO to be able to write and read to STDIN and from STDOUT
-        sys.stdin = StringIO(input_str)
-        sys.stdout = StringIO()
+    @pytest.yield_fixture
+    def fake_IO(self, answer):
+        # use StringIO to be able to write and read to STDIN and from STDOUT
+        stdin, sys.stdin = sys.stdin, StringIO(answer)
+        stdout, sys.stdout = sys.stdout, StringIO()
+        yield
+        sys.stdin = stdin
+        sys.stdout = stdout
 
-    def test_get_message_yes(self):
+    @pytest.mark.parametrize('suffix, answer, kwargs, expected_input', [
+        (' [Y/n]? ', 'yes', None, True),
+        (' [Y/n]? ', 'no', None, False),
+        (' [y/N]? ', 'yes', dict(default_yes=False), True),
+        (' [Y/n]? ', '\n', None, True),
+        (' [y/N]? ', '\n', dict(default_yes=False), False),
+        (' ', 'random input\ndsfdf', dict(any_input=True), True),
+        (' ', 'random input\n', dict(default_yes=False, any_input=True), False),
+    ], ids=[
+        'yes',
+        'no',
+        'yes-default_no',
+        'no_input-default_yes',
+        'no_input-default_no',
+        'any_input-default_yes',
+        'any_input-default_no',
+    ])
+    @pytest.mark.usefixtures('fake_IO')
+    def test_get_message(self, suffix, kwargs, expected_input):
         question = 'bla bla'
-        answer = 'yes'
-
-        self._setup_fake_IO(answer)
-        inp = ConsoleHelper.get_message(question)
+        inp = ConsoleHelper.get_message(question, **(kwargs or {}))
         sys.stdout.seek(0)
-
-        assert sys.stdout.readline() == question + ' [Y/n]? '
-        assert inp is True
-
-    def test_get_message_no(self):
-        question = 'bla bla'
-        answer = 'no'
-
-        self._setup_fake_IO(answer)
-        inp = ConsoleHelper.get_message(question)
-        sys.stdout.seek(0)
-
-        assert sys.stdout.readline() == question + ' [Y/n]? '
-        assert inp is False
-
-    def test_get_message_yes_default_no(self):
-        question = 'bla bla'
-        answer = 'yes'
-
-        self._setup_fake_IO(answer)
-        inp = ConsoleHelper.get_message(question, default_yes=False)
-        sys.stdout.seek(0)
-
-        assert sys.stdout.readline() == question + ' [y/N]? '
-        assert inp is True
-
-    def test_get_message_no_input_default_yes(self):
-        question = 'bla bla'
-        answer = '\n'
-
-        self._setup_fake_IO(answer)
-        inp = ConsoleHelper.get_message(question)
-        sys.stdout.seek(0)
-
-        assert sys.stdout.readline() == question + ' [Y/n]? '
-        assert inp is True
-
-    def test_get_message_no_input_default_no(self):
-        question = 'bla bla'
-        answer = '\n'
-
-        self._setup_fake_IO(answer)
-        inp = ConsoleHelper.get_message(question, default_yes=False)
-        sys.stdout.seek(0)
-
-        assert sys.stdout.readline() == question + ' [y/N]? '
-        assert inp is False
-
-    def test_get_message_any_input_default_yes(self):
-        question = 'bla bla'
-        answer = 'random input\ndsfdf'
-
-        self._setup_fake_IO(answer)
-        inp = ConsoleHelper.get_message(question, any_input=True)
-        sys.stdout.seek(0)
-
-        assert sys.stdout.readline() == question + ' '
-        assert inp is True
-
-    def test_get_message_any_input_default_no(self):
-        question = 'bla bla'
-        answer = 'random input\n'
-
-        self._setup_fake_IO(answer)
-        inp = ConsoleHelper.get_message(question, default_yes=False, any_input=True)
-        sys.stdout.seek(0)
-
-        assert sys.stdout.readline() == question + ' '
-        assert inp is False
+        assert sys.stdout.readline().decode(sys.stdout.encoding) == question + suffix
+        assert inp is expected_input
 
     def test_capture_output(self):
         def write():
@@ -145,8 +92,10 @@ class TestConsoleHelper(BaseTest):
         assert stderr == 'test stderr'
 
 
-class TestDownloadHelper(BaseTest):
+class TestDownloadHelper(object):
     """ DownloadHelper tests """
+
+    COMMIT = 'cf5ae2989a32c391d7769933e0267e6fbfae8e14'
 
     def test_keyboard_interrupt_situation(self, monkeypatch):
         """
@@ -166,134 +115,68 @@ class TestDownloadHelper(BaseTest):
 
         assert not os.path.exists(LOCAL_FILE)
 
-    def test_progress_integer(self, monkeypatch):
+    @pytest.mark.parametrize('total, downloaded, output', [
+        (100, 25, '\r 25%[=======>                      ]    25.00   eta 00:00:30 '),
+        (100.0, 25.0, '\r 25%[=======>                      ]    25.00   eta 00:00:30 '),
+        (-1, 1024 * 1024, '\r    [    <=>                       ]     1.00M   in 00:00:10 '),
+    ], ids=[
+        'integer',
+        'float',
+        'unknown_size',
+    ])
+    def test_progress(self, total, downloaded, output, monkeypatch):
         """
         Test that progress of a download is shown correctly. Test the case when size parameters are passed as integers.
         """
         buffer = StringIO()
         monkeypatch.setattr('sys.stdout', buffer)
         monkeypatch.setattr('time.time', lambda: 10.0)
-        DownloadHelper.progress(100, 25, 0.0)
-        assert buffer.getvalue() == '\r 25%[=======>                      ]    25.00   eta 00:00:30 '
+        DownloadHelper.progress(total, downloaded, 0.0)
+        assert buffer.getvalue() == output
 
-    def test_progress_float(self, monkeypatch):
-        """
-        Test that progress of a download is shown correctly. Test the case when size parameters are passed as floats.
-        """
-        buffer = StringIO()
-        monkeypatch.setattr('sys.stdout', buffer)
-        monkeypatch.setattr('time.time', lambda: 10.0)
-        DownloadHelper.progress(100.0, 25.0, 0.0)
-        assert buffer.getvalue() == '\r 25%[=======>                      ]    25.00   eta 00:00:30 '
+    @pytest.mark.parametrize('url, content', [
+        ('http://fedoraproject.org/static/hotspot.txt', 'OK'),
+        ('https://ftp.isc.org/isc/bind9/9.10.4-P1/srcid', 'SRCID=adfc588'),
+        ('ftp://ftp.isc.org/isc/bind9/9.10.4-P1/srcid', 'SRCID=adfc588'),
+        (
+            'https://git.kernel.org/cgit/linux/kernel/git/stable/linux-stable.git/patch/?id={}'.format(COMMIT),
+            'From {} Mon Sep 17 00:00:00 2001'.format(COMMIT),
+        ),
+        ('ftp://ftp.gnupg.org/README', 'Welcome hacker!'),
+    ], ids=[
+        'HTTP',
+        'HTTPS',
+        'FTP',
+        'HTTPS-unknown_size',
+        'FTP-unknown_size',
+    ])
+    def test_download_existing_file(self, url, content):
+        """Test downloading existing file"""
+        local_file = 'local_file'
+        DownloadHelper.download_file(url, local_file)
+        assert os.path.isfile(local_file)
+        with open(local_file) as f:
+            assert f.readline().strip() == content
 
-    def test_progress_unknown_total_size(self, monkeypatch):
-        """
-        Test that progress of a download is shown correctly. Test the case when total download size is not known.
-        """
-        buffer = StringIO()
-        monkeypatch.setattr('sys.stdout', buffer)
-        monkeypatch.setattr('time.time', lambda: 10.0)
-        DownloadHelper.progress(-1, 1024 * 1024, 0.0)
-        assert buffer.getvalue() == '\r    [    <=>                       ]     1.00M   in 00:00:10 '
-
-    def test_download_existing_file_HTTP(self):
-        """
-        Test downloading existing file via HTTP.
-        """
-        KNOWN_URL = 'http://fedoraproject.org/static/hotspot.txt'
-        LOCAL_FILE = os.path.basename(KNOWN_URL)
-        KNOWN_URL_CONTENT = 'OK'
-
-        DownloadHelper.download_file(KNOWN_URL, LOCAL_FILE)
-        assert os.path.isfile(LOCAL_FILE)
-        with open(LOCAL_FILE) as f:
-            assert f.read().strip() == KNOWN_URL_CONTENT
-
-    def test_download_existing_file_HTTPS(self):
-        """
-        Test downloading existing file via HTTPS.
-        """
-        KNOWN_URL = 'https://ftp.isc.org/isc/bind9/9.10.4-P1/srcid'
-        LOCAL_FILE = os.path.basename(KNOWN_URL)
-        KNOWN_URL_CONTENT = 'SRCID=adfc588'
-
-        DownloadHelper.download_file(KNOWN_URL, LOCAL_FILE)
-        assert os.path.isfile(LOCAL_FILE)
-        with open(LOCAL_FILE) as f:
-            assert f.read().strip() == KNOWN_URL_CONTENT
-
-    def test_download_existing_file_FTP(self):
-        """
-        Test downloading existing file via FTP
-        """
-        KNOWN_URL = 'ftp://ftp.isc.org/isc/bind9/9.10.4-P1/srcid'
-        LOCAL_FILE = os.path.basename(KNOWN_URL)
-        KNOWN_URL_CONTENT = 'SRCID=adfc588'
-
-        DownloadHelper.download_file(KNOWN_URL, LOCAL_FILE)
-        assert os.path.isfile(LOCAL_FILE)
-        with open(LOCAL_FILE) as f:
-            assert f.read().strip() == KNOWN_URL_CONTENT
-
-    def test_download_existing_file_of_unknown_length_HTTPS(self):
-        """
-        Test downloading existing file of unknown length via HTTPS
-        :return:
-        """
-        COMMIT = 'cf5ae2989a32c391d7769933e0267e6fbfae8e14'
-        KNOWN_URL = 'https://git.kernel.org/cgit/linux/kernel/git/stable/linux-stable.git/patch/?id={}'.format(COMMIT)
-        LOCAL_FILE = '{}.patch'.format(COMMIT)
-        KNOWN_URL_CONTENT = 'From {} Mon Sep 17 00:00:00 2001'.format(COMMIT)
-
-        DownloadHelper.download_file(KNOWN_URL, LOCAL_FILE)
-        assert os.path.isfile(LOCAL_FILE)
-        with open(LOCAL_FILE) as f:
-            assert f.readline().strip() == KNOWN_URL_CONTENT
-
-    def test_download_existing_file_of_unknown_length_FTP(self):
-        """
-        Test downloading existing file of unknown length via FTP
-        :return:
-        """
-        KNOWN_URL = 'ftp://ftp.gnupg.org/README'
-        LOCAL_FILE = os.path.basename(KNOWN_URL)
-        KNOWN_URL_CONTENT = 'Welcome hacker!'
-
-        DownloadHelper.download_file(KNOWN_URL, LOCAL_FILE)
-        assert os.path.isfile(LOCAL_FILE)
-        with open(LOCAL_FILE) as f:
-            assert f.readline().strip() == KNOWN_URL_CONTENT
-
-    def test_download_non_existing_file_HTTPS(self):
-        """
-        Test downloading NON existing file via HTTPS
-        :return:
-        """
-        KNOWN_URL = 'https://ftp.isc.org/isc/bind9/9.10.3-P5/srcid'
-        LOCAL_FILE = os.path.basename(KNOWN_URL)
-        KNOWN_URL_CONTENT = 'SRCID=adfc588'
-
+    @pytest.mark.parametrize('url', [
+        'https://ftp.isc.org/isc/bind9/9.10.3-P5/srcid',
+        'ftp://ftp.isc.org/isc/bind9/9.10.3-P5/srcid',
+    ], ids=[
+        'HTTPS',
+        'FTP',
+    ])
+    def test_download_non_existing_file(self, url):
+        """Test downloading NON existing file"""
+        local_file = 'local_file'
         with pytest.raises(DownloadError):
-            DownloadHelper.download_file(KNOWN_URL, LOCAL_FILE)
-        assert not os.path.isfile(LOCAL_FILE)
-
-    def test_download_non_existing_file_FTP(self):
-        """
-        Test downloading NON existing file via FTP
-        :return:
-        """
-        KNOWN_URL = 'ftp://ftp.isc.org/isc/bind9/9.10.3-P5/srcid'
-        LOCAL_FILE = os.path.basename(KNOWN_URL)
-
-        with pytest.raises(DownloadError):
-            DownloadHelper.download_file(KNOWN_URL, LOCAL_FILE)
-        assert not os.path.isfile(LOCAL_FILE)
+            DownloadHelper.download_file(url, local_file)
+        assert not os.path.isfile(local_file)
 
 
-class TestProcessHelper(BaseTest):
+class TestProcessHelper(object):
     """ ProcessHelper tests """
 
-    class TestRunSubprocess(BaseTest):
+    class TestRunSubprocess(object):
         """ ProcessHelper - run_subprocess() tests """
         TEMP_FILE = "temp_file"
         TEMP_DIR = "temp_dir"
@@ -304,7 +187,6 @@ class TestProcessHelper(BaseTest):
         TOUCH_COMMAND = ["touch", TEMP_FILE]
         LS_COMMAND = ["ls"]
         CAT_COMMAND = ["cat"]
-        WORKING_DIR = tempfile.gettempdir()
 
         def test_simple_cmd(self):
             ret = ProcessHelper.run_subprocess(self.TOUCH_COMMAND)
@@ -393,7 +275,7 @@ class TestProcessHelper(BaseTest):
             assert out_buff.readline().strip('\n') == self.PHRASE
             out_buff.close()
 
-    class TestRunSubprocessCwd(BaseTest):
+    class TestRunSubprocessCwd(object):
         """ ProcessHelper - run_subprocess_cwd() tests """
         TEMP_FILE = "temp_file"
         TEMP_DIR = "temp_dir"
@@ -402,7 +284,6 @@ class TestProcessHelper(BaseTest):
         ECHO_COMMAND = ["echo", PHRASE]
         TOUCH_COMMAND = ["touch", TEMP_FILE]
         LS_COMMAND = ["ls"]
-        WORKING_DIR = tempfile.gettempdir()
 
         def test_simple_cmd_changed_work_dir(self):
             os.mkdir(self.TEMP_DIR)
@@ -422,11 +303,10 @@ class TestProcessHelper(BaseTest):
             assert os.path.exists(self.OUT_FILE)
             assert open(self.OUT_FILE).readline().strip("\n") == self.TEMP_FILE
 
-    class TestRunSubprocessCwdEnv(BaseTest):
+    class TestRunSubprocessCwdEnv(object):
         """ ProcessHelper - run_subprocess_cwd_env() tests """
         OUT_FILE = "output_file"
         PHRASE = "hello world"
-        WORKING_DIR = tempfile.gettempdir()
 
         def test_setting_new_env(self):
             # make copy of existing environment
@@ -470,107 +350,101 @@ class TestProcessHelper(BaseTest):
 class TestPathHelper(object):
     """ PathHelper tests """
 
-    class TestPathHelperFindBase(BaseTest):
-        """ Base class for find methods """
-        WORKING_DIR = tempfile.gettempdir()
-        dirs = ["dir1",
-                "dir1/foo",
-                "dir1/faa",
-                "dir1/foo/bar",
-                "dir1/foo/baz",
-                "dir1/bar",
-                "dir1/baz",
-                "dir1/baz/bar"]
-        files = ["file",
-                 "ffile",
-                 "ppythooon",
-                 "dir1/fileee",
-                 "dir1/faa/pythooon",
-                 "dir1/foo/pythooon",
-                 "dir1/foo/bar/file",
-                 "dir1/foo/baz/file",
-                 "dir1/baz/ffile",
-                 "dir1/bar/file",
-                 "dir1/baz/bar/ffile",
-                 "dir1/baz/bar/test.spec"]
+    @pytest.fixture
+    def filelist(self):
+        files = [
+            'file',
+             'ffile',
+             'ppythooon',
+             'dir1/fileee',
+             'dir1/faa/pythooon',
+             'dir1/foo/pythooon',
+             'dir1/foo/bar/file',
+             'dir1/foo/baz/file',
+             'dir1/baz/ffile',
+             'dir1/bar/file',
+             'dir1/baz/bar/ffile',
+             'dir1/baz/bar/test.spec',
+        ]
 
-        def setup(self):
-            super(TestPathHelper.TestPathHelperFindBase, self).setup()
-            for d in self.dirs:
-                os.mkdir(d)
-            for f in self.files:
-                with open(f, "w") as fd:
-                    fd.write(f)
+        for f in files:
+            try:
+                os.makedirs(os.path.dirname(f))
+            except OSError:
+                pass
+            with open(f, 'w') as fd:
+                fd.write(f)
 
-    class TestFindFirstDirWithFile(TestPathHelperFindBase):
+        return files
+
+    class TestFindFirstDirWithFile(object):
         """ PathHelper - find_first_dir_with_file() tests """
-        def test_find_file(self):
+        def test_find_file(self, filelist):
             assert PathHelper.find_first_dir_with_file(
                 "dir1", "file") == os.path.abspath(
-                os.path.dirname(self.files[9]))
+                os.path.dirname(filelist[9]))
             assert PathHelper.find_first_dir_with_file(
-                os.path.curdir, "file") == os.path.abspath(os.path.dirname(self.files[0]))
+                os.path.curdir, "file") == os.path.abspath(os.path.dirname(filelist[0]))
             assert PathHelper.find_first_dir_with_file(
                 "dir1/baz", "file") is None
 
-        def test_find_ffile(self):
+        def test_find_ffile(self, filelist):
             assert PathHelper.find_first_dir_with_file(
                 "dir1", "*le") == os.path.abspath(
-                os.path.dirname(self.files[9]))
+                os.path.dirname(filelist[9]))
             assert PathHelper.find_first_dir_with_file(
                 "dir1", "ff*") == os.path.abspath(
-                os.path.dirname(self.files[8]))
+                os.path.dirname(filelist[8]))
             assert PathHelper.find_first_dir_with_file(
                 "dir1/foo", "ff*") is None
 
-        def test_find_pythoon(self):
+        def test_find_pythoon(self, filelist):
             assert PathHelper.find_first_dir_with_file(
                 "dir1", "pythooon") == os.path.abspath(
-                os.path.dirname(self.files[4]))
+                os.path.dirname(filelist[4]))
             assert PathHelper.find_first_dir_with_file(
-                os.path.curdir, "py*n") == os.path.abspath(os.path.dirname(self.files[4]))
+                os.path.curdir, "py*n") == os.path.abspath(os.path.dirname(filelist[4]))
             assert PathHelper.find_first_dir_with_file(
                 "dir1/bar", "pythooon") is None
 
-    class TestFindFirstFile(TestPathHelperFindBase):
+    class TestFindFirstFile(object):
         """ PathHelper - find_first_file() tests """
-        def test_find_file(self):
+        def test_find_file(self, filelist):
             assert PathHelper.find_first_file(
-                "dir1", "file") == os.path.abspath(self.files[9])
+                "dir1", "file") == os.path.abspath(filelist[9])
             assert PathHelper.find_first_file(
-                os.path.curdir, "file") == os.path.abspath(self.files[0])
+                os.path.curdir, "file") == os.path.abspath(filelist[0])
             assert PathHelper.find_first_file("dir1/baz", "file") is None
 
-        def test_find_ffile(self):
+        def test_find_ffile(self, filelist):
             assert PathHelper.find_first_file(
-                "dir1", "*le") == os.path.abspath(self.files[9])
+                "dir1", "*le") == os.path.abspath(filelist[9])
             assert PathHelper.find_first_file(
-                "dir1", "ff*") == os.path.abspath(self.files[8])
+                "dir1", "ff*") == os.path.abspath(filelist[8])
             assert PathHelper.find_first_file("dir1/foo", "ff*") is None
 
-        def test_find_pythoon(self):
+        def test_find_pythoon(self, filelist):
             assert PathHelper.find_first_file(
-                "dir1", "pythooon") == os.path.abspath(self.files[4])
+                "dir1", "pythooon") == os.path.abspath(filelist[4])
             assert PathHelper.find_first_file(
-                os.path.curdir, "py*n") == os.path.abspath(self.files[4])
+                os.path.curdir, "py*n") == os.path.abspath(filelist[4])
             assert PathHelper.find_first_file("dir1/bar", "pythooon") is None
 
-        def test_find_with_recursion(self):
+        def test_find_with_recursion(self, filelist):
             assert PathHelper.find_first_file(os.path.curdir, "*.spec", 0) is None
             assert PathHelper.find_first_file(os.path.curdir, "*.spec", 1) is None
             assert PathHelper.find_first_file(os.path.curdir, "*.spec", 2) is None
             assert PathHelper.find_first_file(os.path.curdir, "*.spec", 3) is None
-            assert PathHelper.find_first_file(os.path.curdir, "*.spec", 4) == os.path.abspath(self.files[-1])
+            assert PathHelper.find_first_file(os.path.curdir, "*.spec", 4) == os.path.abspath(filelist[-1])
 
-        def test_find_without_recursion(self):
-            assert PathHelper.find_first_file(os.path.curdir, "*.spec") == os.path.abspath(self.files[-1])
+        def test_find_without_recursion(self, filelist):
+            assert PathHelper.find_first_file(os.path.curdir, "*.spec") == os.path.abspath(filelist[-1])
 
 
-class TestTemporaryEnvironment(BaseTest):
+class TestTemporaryEnvironment(object):
     """ TemporaryEnvironment class tests. """
 
     def test_with_statement(self):
-        path = ''
         with TemporaryEnvironment() as temp:
             path = temp.path()
             assert path != ''
@@ -597,7 +471,6 @@ class TestTemporaryEnvironment(BaseTest):
         assert not os.path.isdir(path)
 
     def test_with_statement_callback(self):
-        path = ''
         tmp_file, tmp_path = tempfile.mkstemp(text=True)
         os.close(tmp_file)
 
@@ -639,7 +512,7 @@ class TestTemporaryEnvironment(BaseTest):
         os.unlink(tmp_path)
 
 
-class TestRpmHelper(BaseTest):
+class TestRpmHelper(object):
     """ RpmHelper class tests. """
 
     def test_is_package_installed_existing(self):
@@ -657,7 +530,7 @@ class TestRpmHelper(BaseTest):
         assert RpmHelper.all_packages_installed(['glibc', 'coreutils', 'non-existing-package']) is False
 
 
-class TestMacroHelper(BaseTest):
+class TestMacroHelper(object):
 
     def test_get_macros(self):
         rpm.addMacro('test_macro', 'test_macro value')
@@ -669,45 +542,31 @@ class TestMacroHelper(BaseTest):
         assert macros[0]['level'] == -1
 
 
-class TestLookasideCacheHelper(BaseTest):
+class TestLookasideCacheHelper(object):
 
-    SETUPS = [
-        {
-            'tool': 'fedpkg',
-            'package': 'vim-go',
-            'filename': 'v1.6.tar.gz',
-            'hashtype': 'md5',
-            'hash': '847d3e3577982a9515ad0aec6d5111b2',
-            'url': 'https://src.fedoraproject.org/repo/pkgs',
-        },
-        {
-            'tool': 'fedpkg',
-            'package': 'rebase-helper',
-            'filename': '0.8.0.tar.gz',
-            'hashtype': 'md5',
-            'hash': '91de540caef64cb8aa7fd250f2627a93',
-            'url': 'https://src.fedoraproject.org/repo/pkgs',
-        },
-        {
-            'tool': 'fedpkg',
-            'package': 'man-pages',
-            'filename': 'man-pages-posix-2013-a.tar.xz',
-            'hashtype': 'sha512',
-            'hash': 'e6ec8eb57269fadf368aeaac31b5a98b9c71723d4d5cc189f9c4642d6e865c88'
-                    'e44f77481dccbdb72e31526488eb531f624d455016361687a834ccfcac19fa14',
-            'url': 'https://src.fedoraproject.org/repo/pkgs',
-        },
-    ]
-
-    @pytest.mark.parametrize('setup', SETUPS)
-    def test_download(self, setup):
-        target = os.path.basename(setup['filename'])
-        LookasideCacheHelper._download_source(setup['tool'],
-                                              setup['url'],
-                                              setup['package'],
-                                              setup['filename'],
-                                              setup['hashtype'],
-                                              setup['hash'],
+    @pytest.mark.parametrize('package, filename, hashtype, hash', [
+        ('vim-go', 'v1.6.tar.gz', 'md5', '847d3e3577982a9515ad0aec6d5111b2'),
+        ('rebase-helper', '0.8.0.tar.gz', 'md5', '91de540caef64cb8aa7fd250f2627a93'),
+        (
+            'man-pages',
+            'man-pages-posix-2013-a.tar.xz',
+            'sha512',
+            'e6ec8eb57269fadf368aeaac31b5a98b9c71723d4d5cc189f9c4642d6e865c88'
+            'e44f77481dccbdb72e31526488eb531f624d455016361687a834ccfcac19fa14',
+        ),
+    ], ids=[
+        'vim-go',
+        'rebase-helper',
+        'man-pages',
+    ])
+    def test_download(self, package, filename, hashtype, hash):
+        target = os.path.basename(filename)
+        LookasideCacheHelper._download_source('fedpkg',
+                                              'https://src.fedoraproject.org/repo/pkgs',
+                                              package,
+                                              filename,
+                                              hashtype,
+                                              hash,
                                               target)
         assert os.path.isfile(target)
-        assert LookasideCacheHelper._hash(target, setup['hashtype']) == setup['hash']
+        assert LookasideCacheHelper._hash(target, hashtype) == hash

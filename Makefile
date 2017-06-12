@@ -50,7 +50,7 @@ man: build
 
 
 test:
-	tox --recreate
+	tox
 
 
 test-docker:

@@ -420,7 +420,8 @@ class Application(object):
                                                **self.kwargs)
         except RuntimeError:
             raise RebaseHelperError('Patching failed')
-        self.rebase_spec_file.write_updated_patches(self.rebased_patches)
+        self.rebase_spec_file.write_updated_patches(self.rebased_patches,
+                                                    self.conf.disable_inapplicable_patches)
         results_store.set_patches_results(self.rebased_patches)
 
     def generate_patch(self):
@@ -468,7 +469,7 @@ class Application(object):
             task_id = None
 
             # prepare for building
-            builder.prepare(spec_object)
+            builder.prepare(spec_object, self.conf)
 
             if self.conf.build_tasks is None:
                 build_dict['name'] = spec_object.get_package_name()

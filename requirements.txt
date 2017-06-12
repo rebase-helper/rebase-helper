@@ -4,3 +4,4 @@ backports.lzma
 copr
 pyquery
 six
+GitPython

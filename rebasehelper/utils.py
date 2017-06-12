@@ -633,7 +633,9 @@ class RpmHelper(object):
         :param spec_path: absolute path to SPEC file
         :return: 
         """
-        cmd = ['pkexec', 'dnf', 'builddep', spec_path]
+        cmd = ['dnf', 'builddep', spec_path]
+        if os.geteuid() != 0:
+            cmd = ['pkexec'] + cmd
         if assume_yes:
             cmd.append('-y')
         return ProcessHelper.run_subprocess(cmd)
@@ -859,7 +861,7 @@ One of the possible configuration can be:\n
         return automerged_patches
 
     @staticmethod
-    def get_unapplied_patch(output):
+    def get_inapplicable_patch(output):
         patch_name = None
         lines = [x for x in output if x.startswith("Patch failed at")]
         if not lines:

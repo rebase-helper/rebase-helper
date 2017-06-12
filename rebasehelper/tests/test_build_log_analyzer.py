@@ -21,44 +21,37 @@
 #          Tomas Hozza <thozza@redhat.com>
 
 import shutil
-from .base_test import BaseTest
+
+import pytest
+
 from rebasehelper.build_log_analyzer import BuildLogAnalyzer, BuildLogAnalyzerMakeError
 from rebasehelper.build_log_analyzer import BuildLogAnalyzerPatchError
 
 
-class TestBuildLogAnalyzer(BaseTest):
-
+class TestBuildLogAnalyzer(object):
     BUILD_FAILED_BUILDING = "build-failed-building.log"
     BUILD_FAILED_PATCH = "build-failed-patch.log"
-    BUILD_MISSING = "build_missing.log"
-    BUILD_OBSOLETES = "build_obsoletes.log"
+
     TEST_FILES = [
         BUILD_FAILED_BUILDING,
         BUILD_FAILED_PATCH,
-        BUILD_MISSING,
-        BUILD_OBSOLETES
     ]
+
     BUILD_LOG = "build.log"
 
-    def _prepare_files(self, log):
+    @pytest.fixture
+    def analyzer(self, log):
         ba = BuildLogAnalyzer()
         shutil.copy(log, self.BUILD_LOG)
         return ba
 
-    def test_failed_build(self):
-        ba = self._prepare_files(self.BUILD_FAILED_BUILDING)
-        catch_failed = False
-        try:
-            ba.parse_log(self.WORKING_DIR, self.BUILD_LOG)
-        except BuildLogAnalyzerMakeError:
-            catch_failed = True
-        assert catch_failed is True
-
-    def test_failed_patching(self):
-        ba = self._prepare_files(self.BUILD_FAILED_PATCH)
-        catch_failed = False
-        try:
-            ba.parse_log(self.WORKING_DIR, self.BUILD_LOG)
-        except BuildLogAnalyzerPatchError:
-            catch_failed = True
-        assert catch_failed is True
+    @pytest.mark.parametrize('log, exception', [
+        (BUILD_FAILED_BUILDING, BuildLogAnalyzerMakeError),
+        (BUILD_FAILED_PATCH, BuildLogAnalyzerPatchError),
+    ], ids=[
+        'failed_build',
+        'failed_patch',
+    ])
+    def test_build_log_analyzer(self, exception, workdir, analyzer):
+        with pytest.raises(exception):
+            analyzer.parse_log(workdir, self.BUILD_LOG)

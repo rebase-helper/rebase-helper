@@ -125,7 +125,7 @@ class GitPatchTool(PatchBase):
         cls.output_data = cls.git_helper.get_output_data()
 
     @classmethod
-    def _update_deleted_patches(cls, deleted_patches, unapplied_patches):
+    def _update_deleted_patches(cls, deleted_patches, inapplicable_patches):
         """Function checks patches against rebase-patches"""
         cls.output_data = cls.git_helper.command_log(parameters='--pretty=oneline')
         updated_patches = []
@@ -133,7 +133,7 @@ class GitPatchTool(PatchBase):
             patch_name = patch.get_patch_name()
             if (not [x for x in cls.output_data if patch_name in x] and
                     patch_name not in deleted_patches and
-                    patch_name not in unapplied_patches):
+                    patch_name not in inapplicable_patches):
                 updated_patches.append(patch_name)
         return updated_patches
 
@@ -158,7 +158,7 @@ class GitPatchTool(PatchBase):
         patch_dictionary = {}
         modified_patches = []
         deleted_patches = []
-        unapplied_patches = []
+        inapplicable_patches = []
         while True:
             log = cls.git_helper.command_log(parameters='--pretty=oneline')
             for patch_name in cls.git_helper.get_automerged_patches(cls.output_data):
@@ -170,7 +170,7 @@ class GitPatchTool(PatchBase):
                     modified_patches.append(base_name)
             if int(ret_code) != 0:
                 if not cls.non_interactive:
-                    patch_name = cls.git_helper.get_unapplied_patch(cls.output_data)
+                    patch_name = cls.git_helper.get_inapplicable_patch(cls.output_data)
                     logger.info("Git has problems with rebasing patch %s", patch_name)
                     cls.git_helper.command_mergetool()
                 else:
@@ -181,7 +181,7 @@ class GitPatchTool(PatchBase):
                     except IOError:
                         raise RuntimeError("Git rebase failed with unknown reason. Please check log file")
                     # Getting the patch which failed
-                    unapplied_patches.append(cls.patches[int(number) - 1].get_patch_name())
+                    inapplicable_patches.append(cls.patches[int(number) - 1].get_patch_name())
                     ret_code = cls.git_helper.command_rebase('--skip')
                     cls._get_git_helper_data()
                     continue
@@ -206,13 +206,13 @@ class GitPatchTool(PatchBase):
             else:
                 break
         deleted_patches = cls._update_deleted_patches(deleted_patches,
-                                                      unapplied_patches)
+                                                      inapplicable_patches)
         if deleted_patches:
             patch_dictionary['deleted'] = deleted_patches
         if modified_patches:
             patch_dictionary['modified'] = modified_patches
-        if unapplied_patches:
-            patch_dictionary['unapplied'] = unapplied_patches
+        if inapplicable_patches:
+            patch_dictionary['inapplicable'] = inapplicable_patches
         #TODO correct settings for merge tool in ~/.gitconfig
         # currently now meld is not started
         return patch_dictionary
