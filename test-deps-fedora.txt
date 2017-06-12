@@ -22,3 +22,4 @@ rpmlint
 libabigail
 pkgdiff
 dnf
+dnf-plugins-core
