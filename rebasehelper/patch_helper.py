@@ -22,13 +22,14 @@
 
 from __future__ import print_function
 import os
+
+import git
+
 from rebasehelper.logger import logger
 from rebasehelper.utils import ConsoleHelper
 from rebasehelper.utils import ProcessHelper
-from rebasehelper.utils import GitHelper, GitRebaseError
+from rebasehelper.utils import GitHelper
 
-#from git import Repo
-#import git
 
 patch_tools = {}
 
@@ -66,10 +67,9 @@ class GitPatchTool(PatchBase):
     old_sources = ""
     new_sources = ""
     diff_cls = None
-    output_data = []
+    output_data = None
     old_repo = None
     new_repo = None
-    git_helper = None
     non_interactive = False
     patches = None
     prep_section = False
@@ -84,7 +84,7 @@ class GitPatchTool(PatchBase):
             return False
 
     @staticmethod
-    def apply_patch(git_helper, patch_object):
+    def apply_patch(repo, patch_object):
         """
         Function applies patches to old sources
         It tries apply patch with am command and if it fails
@@ -94,119 +94,138 @@ class GitPatchTool(PatchBase):
 
         patch_name = patch_object.get_path()
         patch_option = patch_object.get_option()
-        ret_code = git_helper.command_am(input_file=patch_name)
-        if int(ret_code) != 0:
-            git_helper.command_am(parameters='--abort', input_file=patch_name)
-            logger.debug('Applying patch with git am failed.')
-            ret_code = git_helper.command_apply(input_file=patch_name, option=patch_option)
-            if int(ret_code) != 0:
-                ret_code = git_helper.command_apply(input_file=patch_name, option=patch_option, ignore_space=True)
-            ret_code = GitPatchTool.commit_patch(git_helper, patch_name)
+        try:
+            repo.git.am(patch_name)
+        except git.exc.GitCommandError:
+            logger.debug('Applying patch with git-am failed.')
+            try:
+                repo.git.apply(patch_name, patch_option)
+            except git.exc.GitCommandError:
+                repo.git.apply(patch_name, patch_option, reject=True, whitespace='fix')
+            repo.git.add(all=True)
+            repo.index.commit('Patch: {0}'.format(os.path.basename(patch_name)))
         else:
             # replace last commit message with patch name to preserve mapping between commits and patches
-            ret_code = git_helper.command_commit(message='Patch: {0}'.format(os.path.basename(patch_name)), amend=True)
-        return ret_code
-
-    @classmethod
-    def _prepare_git(cls, upstream_name):
-        cls.git_helper.command_remote_add(upstream_name, cls.new_sources)
-        cls.git_helper.command_fetch(upstream_name)
-        cls.output_data = cls.git_helper.command_log(parameters='--pretty=oneline')
-        logger.debug('Outputdata from git log %s', cls.output_data)
-        number = 0
-        if cls.prep_section:
-            number = 1
-        last_hash = GitHelper.get_commit_hash_log(cls.output_data, number=number)
-        init_hash = GitHelper.get_commit_hash_log(cls.output_data, len(cls.output_data)-1)
-        return init_hash, last_hash
-
-    @classmethod
-    def _get_git_helper_data(cls):
-        cls.output_data = cls.git_helper.get_output_data()
+            repo.head.reset('HEAD~1', index=False)
+            repo.index.commit('Patch: {0}'.format(os.path.basename(patch_name)))
 
     @classmethod
     def _update_deleted_patches(cls, deleted_patches, inapplicable_patches):
         """Function checks patches against rebase-patches"""
-        cls.output_data = cls.git_helper.command_log(parameters='--pretty=oneline')
+        commits = list(cls.old_repo.iter_commits())
         updated_patches = []
         for patch in cls.patches:
             patch_name = patch.get_patch_name()
-            if (not [x for x in cls.output_data if patch_name in x] and
+            if (not [c for c in commits if c.summary.endswith(patch_name)] and
                     patch_name not in deleted_patches and
                     patch_name not in inapplicable_patches):
                 updated_patches.append(patch_name)
         return updated_patches
 
+    @staticmethod
+    def _get_automerged_patches(output):
+        automerged_patches = []
+        if not output:
+            return automerged_patches
+        patch_name = None
+        for line in output.split('\n'):
+            if line.startswith('Applying:'):
+                patch_name = line.split()[-1]
+            elif line.startswith('Auto-merging'):
+                if patch_name and patch_name not in automerged_patches:
+                    automerged_patches.append(patch_name)
+        return automerged_patches
+
     @classmethod
     def _git_rebase(cls):
         """Function performs git rebase between old and new sources"""
-        # in old_sources do.
+        # in old_sources do:
         # 1) git remote add new_sources <path_to_new_sources>
         # 2) git fetch new_sources
-        # 3 git rebase -i --onto new_sources/master <oldest_commit_old_source> <the_latest_commit_old_sourcese>
+        # 3) git rebase --onto new_sources/master <root_commit_old_sources> <last_commit_old_sources>
         if not cls.cont:
-            logger.info('Git-rebase operation to %s is ongoing...', os.path.basename(cls.new_sources))
+            logger.info('git-rebase operation to %s is ongoing...', os.path.basename(cls.new_sources))
             upstream = 'new_upstream'
-            init_hash, last_hash = cls._prepare_git(upstream)
-            ret_code = cls.git_helper.command_rebase(parameters='--onto', upstream_name=upstream,
-                                                     first_hash=init_hash, last_hash=last_hash)
+            cls.old_repo.create_remote(upstream, url=cls.new_sources).fetch()
+            root_commit = cls.old_repo.git.rev_list('HEAD', max_parents=0)
+            last_commit = cls.old_repo.commit('HEAD~{}'.format(1 if cls.prep_section else 0))
+            try:
+                cls.output_data = cls.old_repo.git.rebase(root_commit, last_commit, onto='{}/master'.format(upstream))
+            except git.GitCommandError as e:
+                ret_code = e.status
+                cls.output_data = e.stdout
+            else:
+                ret_code = 0
         else:
-            logger.info('Git-rebase operation continues...')
-            ret_code = cls.git_helper.command_rebase(parameters='--skip')
-        cls._get_git_helper_data()
+            logger.info('git-rebase operation continues...')
+            try:
+                cls.output_data = cls.old_repo.git.rebase(skip=True)
+            except git.GitCommandError as e:
+                ret_code = e.status
+                cls.output_data = e.stdout
+            else:
+                ret_code = 0
         logger.debug(cls.output_data)
         patch_dictionary = {}
         modified_patches = []
         deleted_patches = []
         inapplicable_patches = []
         while True:
-            log = cls.git_helper.command_log(parameters='--pretty=oneline')
-            for patch_name in cls.git_helper.get_automerged_patches(cls.output_data):
-                index = [i for i, l in enumerate(log) if l.endswith(patch_name)]
-                if index:
-                    commit = GitHelper.get_commit_hash_log(log, number=index[0])
+            automerged_patches = cls._get_automerged_patches(cls.output_data)
+            for patch_name in automerged_patches:
+                commits = [c for c in cls.old_repo.iter_commits() if c.summary.endswith(patch_name)]
+                if commits:
                     base_name = os.path.join(cls.kwargs['rebased_sources_dir'], patch_name)
-                    cls.git_helper.command_diff('{}~1'.format(commit), commit, output_file=base_name)
+                    with open(base_name, 'w') as f:
+                        f.write(cls.old_repo.git.diff(commits[0].parents[0], commits[0]) + '\n')
                     modified_patches.append(base_name)
-            if int(ret_code) != 0:
+            if ret_code != 0:
+                # Take the patch which failed from .git/rebase-apply/next file
+                try:
+                    with open(os.path.join(cls.old_sources, '.git', 'rebase-apply', 'next')) as f:
+                        failed_patch = cls.patches[int(f.readline()) - 1].get_patch_name()
+                except IOError:
+                    raise RuntimeError('Git rebase failed with unknown reason. Please check log file')
                 if not cls.non_interactive:
-                    patch_name = cls.git_helper.get_inapplicable_patch(cls.output_data)
-                    logger.info("Git has problems with rebasing patch %s", patch_name)
-                    cls.git_helper.command_mergetool()
+                    logger.info("Git has problems with rebasing patch %s", failed_patch)
+                    cls.old_repo.git.mergetool()
                 else:
-                    # Take the patch which failed from .git/rebase-apply/next file
+                    inapplicable_patches.append(failed_patch)
                     try:
-                        with open(os.path.join(cls.old_sources, '.git', 'rebase-apply', 'next')) as f:
-                            number = '\n'.join(f.readlines())
-                    except IOError:
-                        raise RuntimeError("Git rebase failed with unknown reason. Please check log file")
-                    # Getting the patch which failed
-                    inapplicable_patches.append(cls.patches[int(number) - 1].get_patch_name())
-                    ret_code = cls.git_helper.command_rebase('--skip')
-                    cls._get_git_helper_data()
+                        cls.output_data = cls.old_repo.git.rebase(skip=True)
+                    except git.GitCommandError as e:
+                        ret_code = e.status
+                        cls.output_data = e.stdout
+                    else:
+                        ret_code = 0
                     continue
-                modified_files = cls.git_helper.command_diff_status()
-                cls.git_helper.command_add_files(parameters=modified_files)
                 base_name = os.path.join(cls.kwargs['rebased_sources_dir'], patch_name)
-                cls.git_helper.command_diff('HEAD', output_file=base_name)
-                with open(base_name, "r") as f:
-                    del_patches = f.readlines()
-                if not del_patches:
-                    deleted_patches.append(base_name)
-                else:
-                    logger.info('Following files were modified: %s', ','.join(modified_files))
-                    cls.git_helper.command_commit(message=patch_name)
-                    cls.git_helper.command_diff('HEAD~1', output_file=base_name)
+                # unstaged changes
+                diff = cls.old_repo.commit().diff(None)
+                if diff:
+                    # staged changes
+                    diff = cls.old_repo.index.diff(cls.old_repo.commit())
+                    modified_files = [d.a_path for d in diff]
+                    logger.info('Following files were modified: %s', ', '.join(modified_files))
+                    commit = cls.old_repo.index.commit(patch_name)
+                    with open(base_name, 'w') as f:
+                        f.write(cls.old_repo.git.diff(commit.parents[0], commit) + '\n')
                     modified_patches.append(base_name)
+                else:
+                    deleted_patches.append(base_name)
                 if not cls.non_interactive:
                     if not ConsoleHelper.get_message('Do you want to continue with another patch'):
                         raise KeyboardInterrupt
-                ret_code = cls.git_helper.command_rebase('--skip')
-                cls._get_git_helper_data()
+                try:
+                    cls.output_data = cls.old_repo.git.rebase(skip=True)
+                except git.GitCommandError as e:
+                    ret_code = e.status
+                    cls.output_data = e.stdout
+                else:
+                    ret_code = 0
             else:
                 break
-        deleted_patches = cls._update_deleted_patches(deleted_patches,
-                                                      inapplicable_patches)
+        deleted_patches = cls._update_deleted_patches(deleted_patches, inapplicable_patches)
         if deleted_patches:
             patch_dictionary['deleted'] = deleted_patches
         if modified_patches:
@@ -217,16 +236,6 @@ class GitPatchTool(PatchBase):
         # currently now meld is not started
         return patch_dictionary
 
-    @staticmethod
-    def commit_patch(git_helper, patch_name):
-        """Function commits patched files to git"""
-        logger.debug('Commit patch')
-        ret_code = git_helper.command_add_files(parameters=['--all'])
-        if int(ret_code) != 0:
-            raise GitRebaseError('We are not able to add changed files to local git repository.')
-        ret_code = git_helper.command_commit(message='Patch: {0}'.format(os.path.basename(patch_name)))
-        return ret_code
-
     @classmethod
     def apply_old_patches(cls):
         """Function applies a patch to a old/new sources"""
@@ -234,11 +243,10 @@ class GitPatchTool(PatchBase):
             logger.info("Applying patch '%s' to '%s'",
                         os.path.basename(patch.get_path()),
                         os.path.basename(cls.source_dir))
-            ret_code = GitPatchTool.apply_patch(cls.git_helper, patch)
-            # unexpected
-            if int(ret_code) != 0:
-                if cls.source_dir == cls.old_sources:
-                    raise RuntimeError('Failed to patch old sources')
+            try:
+                cls.apply_patch(cls.old_repo, patch)
+            except git.exc.GitCommandError:
+                raise RuntimeError('Failed to patch old sources')
 
     @classmethod
     def _prepare_prep_script(cls, sources, prep):
@@ -289,20 +297,22 @@ class GitPatchTool(PatchBase):
         ProcessHelper.run_subprocess(prep_script_path,
                                      output=os.path.join(cls.kwargs['workspace_dir'], 'prep_script.log'))
         if not cls.patch_sources_by_prep_script:
-            cls.git_helper.command_add_files(parameters=["--all"])
-            cls.git_helper.command_commit(message="prep_script prep_corrections")
+            cls.old_repo.git.add(all=True)
+            cls.old_repo.index.commit('prep_script prep_corrections')
         os.chdir(cwd)
 
     @classmethod
     def init_git(cls, directory):
         """Function initialize old and new Git repository"""
-        gh = GitHelper(directory)
-        gh.command_init(directory)
-        gh.command_add_files('.')
-        gh.command_commit(message='Initial Commit')
+        repo = git.Repo.init(directory)
+        repo.git.config('user.name', GitHelper.get_user(), local=True)
+        repo.git.config('user.email', GitHelper.get_email(), local=True)
+        repo.git.add(all=True)
+        repo.index.commit('Initial commit')
+        return repo
 
     @classmethod
-    def run_patch(cls, old_dir, new_dir, rest_sources, git_helper, patches, prep, **kwargs):
+    def run_patch(cls, old_dir, new_dir, rest_sources, patches, prep, **kwargs):
         """
         The function can be used for patching one
         directory against another
@@ -310,15 +320,14 @@ class GitPatchTool(PatchBase):
         cls.kwargs = kwargs
         cls.old_sources = old_dir
         cls.new_sources = new_dir
-        cls.output_data = []
+        cls.output_data = None
         cls.cont = cls.kwargs['continue']
         cls.rest_sources = rest_sources
-        cls.git_helper = git_helper
         cls.patches = patches
         cls.non_interactive = kwargs.get('non_interactive')
         if not os.path.isdir(os.path.join(cls.old_sources, '.git')):
-            cls.init_git(old_dir)
-            cls.init_git(new_dir)
+            cls.old_repo = cls.init_git(old_dir)
+            cls.new_repo = cls.init_git(new_dir)
             cls.source_dir = cls.old_sources
             prep_path = cls.create_prep_script(prep)
             if not cls.patch_sources_by_prep_script:
@@ -327,6 +336,9 @@ class GitPatchTool(PatchBase):
                 logger.info('Executing prep script')
                 cls.call_prep_script(prep_path)
             cls.cont = False
+        else:
+            cls.old_repo = git.Repo(old_dir)
+            cls.new_repo = git.Repo(new_dir)
 
         return cls._git_rebase()
 
@@ -356,7 +368,7 @@ class Patcher(object):
         if self._tool is None:
             raise NotImplementedError("Unsupported patch tool")
 
-    def patch(self, old_dir, new_dir, rest_sources, git_helper, patches, prep, **kwargs):
+    def patch(self, old_dir, new_dir, rest_sources, patches, prep, **kwargs):
         """
         Apply patches and generate rebased patches if needed
 
@@ -368,7 +380,7 @@ class Patcher(object):
         :return: 
         """
         logger.debug("Patching source by patch tool %s", self._patch_tool_name)
-        return self._tool.run_patch(old_dir, new_dir, rest_sources, git_helper, patches, prep, **kwargs)
+        return self._tool.run_patch(old_dir, new_dir, rest_sources, patches, prep, **kwargs)
 
 
 
