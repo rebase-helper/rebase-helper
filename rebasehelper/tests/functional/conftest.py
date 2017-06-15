@@ -39,9 +39,11 @@ def make_logs_report():
         'old/SRPM/build.log',
         'old/RPM/build.log',
         'old/RPM/root.log',
+        'old/RPM/mock_output.log',
         'new/SRPM/build.log',
         'new/RPM/build.log',
         'new/RPM/root.log',
+        'new/RPM/mock_output.log',
     ]
     report = []
     for log in logs:
