@@ -467,19 +467,32 @@ class Application(object):
             spec_object = self.spec_file if version == 'old' else self.rebase_spec_file
             build_dict = {}
             task_id = None
+            koji_build_id = None
+
+            pkg_name = spec_object.get_package_name()
+            pkg_version = spec_object.get_version()
+            pkg_full_version = spec_object.get_full_version()
+
+            if version == 'old' and KojiHelper.functional and self.conf.get_old_build_from_koji:
+                koji_version, koji_build_id = KojiHelper.get_latest_build(pkg_name)
+                if koji_version:
+                    if koji_version != pkg_version:
+                        logger.warning('Version of the latest Koji build (%s) differs from version in SPEC file (%s)!',
+                                       koji_version, pkg_version)
+                    pkg_version = pkg_full_version = koji_version
+                else:
+                    logger.warning('Unable to find the latest Koji build!')
 
             # prepare for building
             builder.prepare(spec_object, self.conf)
 
             if self.conf.build_tasks is None:
-                build_dict['name'] = spec_object.get_package_name()
-                build_dict['version'] = spec_object.get_version()
+                build_dict['name'] = pkg_name
+                build_dict['version'] = pkg_version
                 patches = [x.get_path() for x in spec_object.get_patches()]
                 spec = spec_object.get_path()
                 sources = spec_object.get_sources()
-                logger.info('Building packages for %s version %s',
-                            spec_object.get_package_name(),
-                            spec_object.get_full_version())
+                logger.info('Building packages for %s version %s', pkg_name, pkg_full_version)
             else:
                 if version == 'old':
                     task_id = self.conf.build_tasks[0]
@@ -495,7 +508,11 @@ class Application(object):
             while self.conf.build_retries != number_retries:
                 try:
                     if self.conf.build_tasks is None:
-                        build_dict.update(builder.build(spec, sources, patches, results_dir, **build_dict))
+                        if koji_build_id:
+                            build_dict['rpm'], build_dict['logs'] = KojiHelper.download_build(koji_build_id,
+                                                                                              results_dir)
+                        else:
+                            build_dict.update(builder.build(spec, sources, patches, results_dir, **build_dict))
                     if builder.creates_tasks():
                         if not self.conf.builds_nowait:
                             build_dict['rpm'], build_dict['logs'] = builder.wait_for_task(build_dict, results_dir)
