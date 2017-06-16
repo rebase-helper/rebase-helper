@@ -38,6 +38,7 @@ import copr
 import pyquery
 import hashlib
 
+import git
 import six
 from six import StringIO
 from six.moves import input
@@ -731,283 +732,23 @@ class GitHelper(object):
 
     """Class which operates with git repositories"""
 
-    GIT = 'git'
     # provide fallback values if system is not configured
     GIT_USER_NAME = 'rebase-helper'
     GIT_USER_EMAIL = 'rebase-helper@localhost.local'
-    output_data = []
-
-    def __init__(self, git_directory):
-        self.git_directory = git_directory
-        # use user-configured values if possible
-        try:
-            self.GIT_USER_NAME = self._get_git_config_val('user.name')
-        except KeyError:
-            pass
-        try:
-            self.GIT_USER_EMAIL = self._get_git_config_val('user.email')
-        except KeyError:
-            pass
 
     @classmethod
-    def _get_git_config_val(cls, name):
-        """
-        :param name: config key name, e.g. user.name
-        :return: configured value from git config --get
-                 or KeyError if the key is not configured
-        """
-        cmd = [cls.GIT, 'config', '--get', name]
-        output = StringIO()
-        ret_code = ProcessHelper.run_subprocess_cwd(cmd, output=output)
-        if ret_code:
-            raise KeyError(
-                    'git config --get {} did not return value'.format(name))
-        return output.getvalue().strip()
+    def get_user(cls):
+        try:
+            return git.cmd.Git().config('--global', 'user.name', get=True)
+        except git.GitCommandError:
+            return cls.GIT_USER_NAME
 
-    def _call_git_command(self, command, input_file=None, output_file=None):
-        """
-        Class calls git command
-
-        :param command: git command which is executed
-        :param directory: git directory
-        :param input_file: input file for git operations
-        :return: ret_code and output of git command
-        """
-        cmd = []
-        cmd.append(self.GIT)
-        cmd.extend(['-c', 'user.name={}'.format(self.GIT_USER_NAME)])
-        cmd.extend(['-c', 'user.email={}'.format(self.GIT_USER_EMAIL)])
-        cmd.extend(command)
-        self.output_data = []
-        if not output_file:
-            output = StringIO()
-        elif output_file == '-':
-            output = None
-        else:
-            output = output_file
-        ret_code = ProcessHelper.run_subprocess_cwd(cmd,
-                                                    cwd=self.git_directory,
-                                                    input=input_file,
-                                                    output=output)
-        if not output_file:
-            out = output.readlines()
-            for o in out:
-                self.output_data.append(o.strip())
-        return ret_code
-
-    def check_git_config(self):
-        """
-        Function checks whether you have setup a merge tool in ~/.gitconfig
-
-        :return: True or False
-        """
-        merge = self.command_config('--get', 'merge.tool')
-        git_config_name = os.path.expanduser('~/{0}'.format(settings.GIT_CONFIG))
-        if not merge:
-            message = """[merge] section is not defined in %s.\n
-One of the possible configuration can be:\n
-[mergetool "mymeld"]
-    cmd = meld --auto-merge --output $MERGED $LOCAL $BASE $REMOTE --diff $BASE $LOCAL --diff $BASE $REMOTE --label old_sources --label merge --label new_sources
-[merge]
-    tool = mymeld
-    conflictstyle = diff3"""
-            raise RebaseHelperError(message % git_config_name)
-        return merge
-
-    @staticmethod
-    def get_commit_hash_log(commit_log, number=None):
-        commit = commit_log[number]
-        fields = commit.split()
-        return fields[0]
-
-    @staticmethod
-    def get_untracked_files(output):
-        untracked_files = []
-        for line in output:
-            if not line.startswith("Untracked files:"):
-                continue
-            # skip two lines
-            output.next()
-            output.next()
-
-            for untracked_info in output:
-                if not untracked_info.startswith("\t"):
-                    break
-                untracked_files.append(untracked_info.replace("\t", "").rstrip())
-                # END for each utracked info line
-        # END for each line
-        return untracked_files
-
-    @staticmethod
-    def get_modified_files(output):
-        """Function returns list of modified files from output text"""
-        modified_files = []
-        for line in output:
-            if 'modified:' not in line:
-                continue
-            modified_files.append(line.strip().split()[1])
-        return modified_files
-
-    @staticmethod
-    def get_automerged_patches(output):
-        automerged_patches = []
-        patch_name = None
-        for line in output:
-            if line.startswith('Applying:'):
-                patch_name = line.split()[-1]
-            elif line.startswith('Auto-merging'):
-                if patch_name and patch_name not in automerged_patches:
-                    automerged_patches.append(patch_name)
-        return automerged_patches
-
-    @staticmethod
-    def get_inapplicable_patch(output):
-        patch_name = None
-        lines = [x for x in output if x.startswith("Patch failed at")]
-        if not lines:
-            return patch_name
-        fields = lines[0].split()
-        # We need to return only patch name
-        return fields[len(fields)-1]
-
-    def command_init(self, directory):
-        cmd = ['init']
-        cmd.append(directory)
-        return self._call_git_command(cmd)
-
-    def command_commit(self, message=None, amend=False):
-        """
-        Method commits message to Git
-
-        :param directory: Git directtory
-        :param message: commit message
-        :return: return code from ProcessHelper
-        """
-        cmd = ['commit']
-        if message:
-            cmd.extend(['-m', message])
-        else:
-            cmd.extend(['-m', 'Empty message'])
-
-        if amend:
-            cmd.append('--amend')
-
-        return self._call_git_command(cmd)
-
-    def command_format_patch(self, patchname='changes.patch', directory='./'):
-        """
-        Method generates patch based on last commit
-
-        :param directory: Directory where patch will be placed
-        :param patchname: Name of the patch
-        :return: return code from ProcessHelper
-        """
-        cmd = ['format-patch', '--stdout', '-1']
-
-        return self._call_git_command(cmd, output_file=os.path.join(directory, patchname))
-
-    def command_remote_add(self, upstream_name, directory):
-        """Function add remote git repository to old_sources before a rebase"""
-        cmd = []
-        cmd.append('remote')
-        cmd.append('add')
-        cmd.append(upstream_name)
-        cmd.append(directory)
-        return self._call_git_command(cmd)
-
-    def command_diff_status(self):
-        """Function shows which files are modified"""
-        cmd = []
-        cmd.append('diff')
-        cmd.append('--name-only')
-        cmd.append('--staged')
-        self._call_git_command(cmd)
-        return self.output_data
-
-    def command_fetch(self, upstream_name):
-        cmd = ['fetch']
-        cmd.append(upstream_name)
-        return self._call_git_command(cmd)
-
-    def command_log(self, parameters=None):
-        """
-        Function returns git log
-
-        :param parameters: a parameter to git log command
-        :return: 
-        """
-        cmd = ['log']
-        if parameters:
-            cmd.append(parameters)
-        ret_code = self._call_git_command(cmd)
-        if int(ret_code) != 0:
-            return None
-        else:
-            return self.output_data
-
-    def command_mergetool(self):
-        """Function calls git mergetool program"""
-        cmd = ['mergetool']
-        ret_code = self._call_git_command(cmd, output_file='-')
-        return ret_code
-
-    def command_rebase(self, parameters, upstream_name=None, first_hash=None, last_hash=None):
-        """Function calls git rebase"""
-        cmd = ['rebase']
-        if parameters == '--onto':
-            cmd.append(parameters)
-            cmd.append(upstream_name + '/master')
-            cmd.append(first_hash)
-            cmd.append(last_hash)
-        else:
-            cmd.append(parameters)
-        return self._call_git_command(cmd)
-
-    def command_add_files(self, parameters=None):
-        cmd = ['add']
-        if parameters:
-            cmd.extend(parameters)
-        return self._call_git_command(cmd)
-
-    def command_diff(self, head, head2=None, output_file=None):
-        cmd = ['diff']
-        cmd.append(head)
-        if head2:
-            cmd.append(head2)
-        return self._call_git_command(cmd, output_file=output_file)
-
-    def command_am(self, parameters=None, input_file=None):
-        cmd = ['am']
-        if parameters:
-            cmd.append(parameters)
-        return self._call_git_command(cmd, input_file=input_file)
-
-    def command_apply(self, input_file=None, option=None, ignore_space=False):
-        cmd = ['apply']
-        if option is not None:
-            cmd.append(option)
-        if ignore_space:
-            cmd.append('--reject')
-            cmd.append('--whitespace=fix')
-        return self._call_git_command(cmd, input_file=input_file)
-
-    def command_config(self, parameters, variable=None):
-        cmd = ['config']
-        cmd.append(parameters)
-        cmd.append(variable)
-        self._call_git_command(cmd)
-        if not self.output_data:
-            return None
-        return self.output_data[0]
-
-    def command_rm(self, path):
-        cmd = ['rm']
-        cmd.append(path)
-        return self._call_git_command(cmd)
-
-    def get_output_data(self):
-        """Function returns output_data after calling call_git_command"""
-        return self.output_data
+    @classmethod
+    def get_email(cls):
+        try:
+            return git.cmd.Git().config('--global', 'user.email', get=True)
+        except git.GitCommandError:
+            return cls.GIT_USER_EMAIL
 
 
 class KojiHelper(object):

@@ -24,16 +24,18 @@ from __future__ import print_function
 import os
 import re
 import shutil
-import six
 import rpm
 import argparse
 import shlex
 import pkg_resources
+
+import six
+
 from datetime import date
 from operator import itemgetter
 from six.moves import urllib
 
-from rebasehelper.utils import DownloadHelper, DownloadError, MacroHelper
+from rebasehelper.utils import DownloadHelper, DownloadError, MacroHelper, GitHelper
 from rebasehelper.utils import LookasideCacheHelper, LookasideCacheError, defenc
 from rebasehelper.logger import logger
 from rebasehelper import settings
@@ -1095,18 +1097,16 @@ class SpecFile(object):
 
         self.save()
 
-    def get_new_log(self, git_helper):
+    def get_new_log(self):
         new_record = []
         today = date.today()
-        git_name = git_helper.command_config('--get', 'user.name')
-        git_email = git_helper.command_config('--get', 'user.email')
         evr = '{epoch}:{ver}-{rel}'.format(epoch=self.get_epoch_number(),
                                            ver=self.get_version(),
                                            rel=self.get_release_number())
         evr = evr[2:] if evr.startswith('0:') else evr
         new_record.append('* {day} {name} <{email}> - {evr}\n'.format(day=today.strftime('%a %b %d %Y'),
-                                                                      name=git_name,
-                                                                      email=git_email,
+                                                                      name=GitHelper.get_user(),
+                                                                      email=GitHelper.get_email(),
                                                                       evr=evr))
         new_record.append('- New upstream release {rel}\n'.format(rel=self.get_version()))
         new_record.append('\n')

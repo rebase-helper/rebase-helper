@@ -24,8 +24,9 @@ from __future__ import print_function
 import os
 import shutil
 import logging
+
+import git
 import six
-import re
 
 from rebasehelper.archive import Archive
 from rebasehelper.specfile import SpecFile, get_rebase_name, spec_hooks_runner
@@ -59,7 +60,7 @@ class Application(object):
     report_log_file = None
     rebased_patches = {}
     upstream_monitoring = False
-    git_helper = None
+    rebased_repo = None
 
     def __init__(self, cli_conf, execution_dir, results_dir, debug_log_file, report_log_file):
         """
@@ -181,7 +182,7 @@ class Application(object):
         self.rebase_spec_file = self.spec_file.copy(self.rebase_spec_file_path)
 
         # Prepare rebased_sources_dir
-        self.git_helper = self._prepare_rebased_repository(self.spec_file.patches, self.rebased_sources_dir)
+        self.rebased_repo = self._prepare_rebased_repository(self.spec_file.patches, self.rebased_sources_dir)
 
         # check if argument passed as new source is a file or just a version
         if [True for ext in Archive.get_supported_archives() if self.conf.sources.endswith(ext)]:
@@ -405,16 +406,12 @@ class Application(object):
 
     def patch_sources(self, sources):
         # Patch sources
-        git_helper = GitHelper(sources[0])
-        if not self.conf.non_interactive:
-            git_helper.check_git_config()
-        patch = Patcher(GitHelper.GIT)
-        self.rebase_spec_file.update_changelog(self.rebase_spec_file.get_new_log(git_helper))
+        patch = Patcher('git')
+        self.rebase_spec_file.update_changelog(self.rebase_spec_file.get_new_log())
         try:
             self.rebased_patches = patch.patch(sources[0],
                                                sources[1],
                                                self.old_rest_sources,
-                                               git_helper,
                                                self.spec_file.get_applied_patches(),
                                                self.spec_file.get_prep_section(),
                                                **self.kwargs)
@@ -430,30 +427,33 @@ class Application(object):
         the rebased package version
         """
         # Delete removed patches from rebased_sources_dir from git
-        for removed_patch in self.rebase_spec_file.removed_patches:
-            self.git_helper.command_rm(os.path.join(self.rebased_sources_dir, removed_patch))
+        removed_patches = self.rebase_spec_file.removed_patches
+        if removed_patches:
+            self.rebased_repo.index.remove(removed_patches, working_tree=True)
 
         self.rebase_spec_file.update_paths_to_patches()
 
         # Generate patch
-        self.git_helper.command_add_files('.')
-        self.git_helper.command_commit(message='New upstream release ' + self.rebase_spec_file.get_full_version())
-        self.git_helper.command_format_patch(directory=self.results_dir)
+        self.rebased_repo.git.add(all=True)
+        self.rebased_repo.index.commit('New upstream release {}'.format(self.rebase_spec_file.get_full_version()))
+        with open(os.path.join(self.results_dir, 'changes.patch'), 'w') as f:
+            f.write(self.rebased_repo.git.format_patch('-1', stdout=True) + '\n')
 
     @classmethod
     def _prepare_rebased_repository(cls, patches, rebased_sources_dir):
         """
         Initialize git repository in the rebased directory
-        :return: GitHelper instance to rebased_sources
+        :return: git.Repo instance of rebased_sources
         """
         for patch in patches['applied']:
             shutil.copy(patch.path, rebased_sources_dir)
 
-        git_helper = GitHelper(rebased_sources_dir)
-        git_helper.command_init(rebased_sources_dir)
-        git_helper.command_add_files('.')
-        git_helper.command_commit('Initial Commit')
-        return git_helper
+        repo = git.Repo.init(rebased_sources_dir)
+        repo.git.config('user.name', GitHelper.get_user(), local=True)
+        repo.git.config('user.email', GitHelper.get_email(), local=True)
+        repo.git.add(all=True)
+        repo.index.commit('Initial commit')
+        return repo
 
     def build_packages(self):
         """Function calls build class for building packages"""
