@@ -6,6 +6,7 @@ stages:
   # don't start any services (mainly not the default ones)
   services:
   script:
+    - dnf -y upgrade openssl-libs
     - dnf -y install yum
     - dnf -y install $(cat test-deps-fedora.txt)
     - PYTEST_ADDOPTS="-m 'not optional'" tox
