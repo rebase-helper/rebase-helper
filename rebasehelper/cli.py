@@ -33,6 +33,7 @@ from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.build_helper import Builder
 from rebasehelper.checker import checkers_runner
 from rebasehelper.output_tool import OutputTool
+from rebasehelper.utils import KojiHelper
 
 
 class CustomHelpFormatter(argparse.HelpFormatter):
@@ -206,6 +207,13 @@ class CLI(object):
             help="enable arbitrary local builder option(s), enclose %(metavar)s in quotes "
                  "and note that = before it is mandatory"
         )
+        if KojiHelper.functional:
+            parser.add_argument(
+                "--get-old-build-from-koji",
+                default=False,
+                action="store_true",
+                help="do not build old sources, download latest build from Koji instead"
+            )
         return parser
 
     def __init__(self, args=None):

@@ -26,34 +26,39 @@ from rebasehelper.cli import CLI
 class TestCLI(object):
     def test_cli_unit(self):
         """Function tests cli class with all arguments"""
-        conf = {'build_only': True,
-                'patch_only': True,
-                'sources': 'test-1.0.3.tar.gz',
-                'verbose': True,
-                'buildtool': 'rpmbuild',
-                'difftool': 'vimdiff',
-                'pkgcomparetool': ['rpmdiff'],
-                'outputtool': 'json',
-                'keep_workspace': True,
-                'not_download_sources': True,
-                'cont': True,
-                'non_interactive': True,
-                'disable_inapplicable_patches': False,
-                'comparepkgs': 'test_dir',
-                'fedpkg_build_tasks': None,
-                'build_tasks': ['123456', '654321'],
-                'builds_nowait': True,
-                'build_retries': 2,
-                'results_dir': '/tmp/rebase-helper',
-                'builder_options': '\"-v\"'}
-        arguments = ['--build-only', '--patch-only', 'test-1.0.3.tar.gz', '--verbose',
-                     '--buildtool', 'rpmbuild', '--pkgcomparetool',
-                     'rpmdiff', '--outputtool', 'json', '--keep-workspace', '--not-download-sources', '--continue',
-                     '--non-interactive', '--comparepkgs-only', 'test_dir',
-                     '--builds-nowait', '--build-tasks', '123456,654321',
-                     '--build-retries', '2',
-                     '--results-dir', '/tmp/rebase-helper',
-                     '--builder-options=\"-v\"']
+        conf = {
+            'build_only': True,
+            'patch_only': True,
+            'sources': 'test-1.0.3.tar.gz',
+            'verbose': True,
+            'buildtool': 'rpmbuild',
+            'difftool': 'vimdiff',
+            'pkgcomparetool': ['rpmdiff'],
+            'outputtool': 'json',
+            'keep_workspace': True,
+            'not_download_sources': True,
+            'cont': True,
+            'non_interactive': True,
+            'disable_inapplicable_patches': False,
+            'comparepkgs': 'test_dir',
+            'fedpkg_build_tasks': None,
+            'build_tasks': ['123456', '654321'],
+            'builds_nowait': True,
+            'build_retries': 2,
+            'results_dir': '/tmp/rebase-helper',
+            'builder_options': '\"-v\"',
+            'get_old_build_from_koji': False,
+        }
+        arguments = [
+            '--build-only', '--patch-only', 'test-1.0.3.tar.gz', '--verbose',
+             '--buildtool', 'rpmbuild', '--pkgcomparetool',
+             'rpmdiff', '--outputtool', 'json', '--keep-workspace', '--not-download-sources', '--continue',
+             '--non-interactive', '--comparepkgs-only', 'test_dir',
+             '--builds-nowait', '--build-tasks', '123456,654321',
+             '--build-retries', '2',
+             '--results-dir', '/tmp/rebase-helper',
+             '--builder-options=\"-v\"',
+        ]
         cli = CLI(arguments)
         for key, value in cli.args.__dict__.items():
             assert cli.args.__dict__[key] == conf[key]

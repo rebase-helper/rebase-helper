@@ -56,9 +56,9 @@ try:
     from pyrpkg.cli import TaskWatcher
     from OpenSSL import SSL
 except ImportError:
-    koji_builder = False
+    koji_helper_functional = False
 else:
-    koji_builder = True
+    koji_helper_functional = True
 
 
 defenc = locale.getpreferredencoding()
@@ -753,12 +753,14 @@ class GitHelper(object):
 
 class KojiHelper(object):
 
+    functional = koji_helper_functional
     cert = os.path.expanduser('~/.fedora.cert')
     ca_cert = os.path.expanduser('~/.fedora-server-ca.cert')
     koji_web = "koji.fedoraproject.org"
     server = "https://%s/kojihub" % koji_web
     scratch_url = "http://%s/work/" % koji_web
     baseurl = 'http://kojipkgs.fedoraproject.org/work/'
+    baseurl_pkg = 'https://kojipkgs.fedoraproject.org/packages/'
 
     @classmethod
     def _unique_path(cls, prefix):
@@ -940,6 +942,64 @@ class KojiHelper(object):
                                                  full_path_name)
         return rpm_list, log_list
 
+    @classmethod
+    def get_latest_build(cls, package):
+        """
+        Searches for the latest Koji build of a package
+
+        :param package: package name
+        :return: (latest version, Koji build ID)
+        """
+        session = cls.session_maker(baseurl=cls.server)
+        builds = session.getLatestBuilds('rawhide', package=package)
+        if builds:
+            return builds[0]['version'], builds[0]['id']
+        return None, None
+
+    @classmethod
+    def download_build(cls, build_id, destination):
+        """
+        Downloads all x86_64 RPMs and logs of a Koji build
+
+        :param build_id: Koji build ID
+        :param destination: target path
+        :return: (list of paths to RPMs, list of paths to logs)
+        """
+        session = cls.session_maker(baseurl=cls.server)
+        build = session.getBuild(build_id)
+        rpms = session.listRPMs(buildID=build_id)
+        rpm_list = []
+        log_list = []
+        for rpm in rpms:
+            if rpm['arch'] not in ['noarch', 'x86_64']:
+                continue
+            for logname in ['build.log', 'root.log', 'state.log']:
+                dest_path = os.path.join(destination, logname)
+                if not dest_path in log_list:
+                    url = '/'.join([
+                        cls.baseurl_pkg,
+                        build['package_name'],
+                        build['version'],
+                        build['release'],
+                        'data',
+                        'logs',
+                        rpm['arch'],
+                        logname])
+                    DownloadHelper.download_file(url, dest_path)
+                    log_list.append(dest_path)
+            filename = '.'.join([rpm['nvr'], rpm['arch'], 'rpm'])
+            dest_path = os.path.join(destination, filename)
+            if not dest_path in rpm_list:
+                url = '/'.join([
+                    cls.baseurl_pkg,
+                    build['package_name'],
+                    build['version'],
+                    build['release'],
+                    rpm['arch'],
+                    filename])
+                DownloadHelper.download_file(url, dest_path)
+                rpm_list.append(dest_path)
+        return rpm_list, log_list
 
 class CoprHelper(object):
 
