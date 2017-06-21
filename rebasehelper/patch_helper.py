@@ -24,6 +24,7 @@ from __future__ import print_function
 import os
 
 import git
+import six
 
 from rebasehelper.logger import logger
 from rebasehelper.utils import ConsoleHelper
@@ -150,7 +151,9 @@ class GitPatchTool(PatchBase):
             root_commit = cls.old_repo.git.rev_list('HEAD', max_parents=0)
             last_commit = cls.old_repo.commit('HEAD~{}'.format(1 if cls.prep_section else 0))
             try:
-                cls.output_data = cls.old_repo.git.rebase(root_commit, last_commit, onto='{}/master'.format(upstream))
+                cls.output_data = cls.old_repo.git.rebase(root_commit, last_commit,
+                                                          onto='{}/master'.format(upstream),
+                                                          stdout_as_string=six.PY3)
             except git.GitCommandError as e:
                 ret_code = e.status
                 cls.output_data = e.stdout
@@ -159,7 +162,7 @@ class GitPatchTool(PatchBase):
         else:
             logger.info('git-rebase operation continues...')
             try:
-                cls.output_data = cls.old_repo.git.rebase(skip=True)
+                cls.output_data = cls.old_repo.git.rebase(skip=True, stdout_as_string=six.PY3)
             except git.GitCommandError as e:
                 ret_code = e.status
                 cls.output_data = e.stdout
@@ -176,8 +179,10 @@ class GitPatchTool(PatchBase):
                 commits = [c for c in cls.old_repo.iter_commits() if c.summary.endswith(patch_name)]
                 if commits:
                     base_name = os.path.join(cls.kwargs['rebased_sources_dir'], patch_name)
-                    with open(base_name, 'w') as f:
-                        f.write(cls.old_repo.git.diff(commits[0].parents[0], commits[0]) + '\n')
+                    diff = cls.old_repo.git.diff(commits[0].parents[0], commits[0], stdout_as_string=False)
+                    with open(base_name, 'wb') as f:
+                        f.write(diff)
+                        f.write(b'\n')
                     modified_patches.append(base_name)
             if ret_code != 0:
                 # Take the patch which failed from .git/rebase-apply/next file
@@ -192,7 +197,7 @@ class GitPatchTool(PatchBase):
                 else:
                     inapplicable_patches.append(failed_patch)
                     try:
-                        cls.output_data = cls.old_repo.git.rebase(skip=True)
+                        cls.output_data = cls.old_repo.git.rebase(skip=True, stdout_as_string=six.PY3)
                     except git.GitCommandError as e:
                         ret_code = e.status
                         cls.output_data = e.stdout
@@ -208,8 +213,10 @@ class GitPatchTool(PatchBase):
                     modified_files = [d.a_path for d in diff]
                     logger.info('Following files were modified: %s', ', '.join(modified_files))
                     commit = cls.old_repo.index.commit(patch_name)
-                    with open(base_name, 'w') as f:
-                        f.write(cls.old_repo.git.diff(commit.parents[0], commit) + '\n')
+                    diff = cls.old_repo.git.diff(commit.parents[0], commit, stdout_as_string=False)
+                    with open(base_name, 'wb') as f:
+                        f.write(diff)
+                        f.write(b'\n')
                     modified_patches.append(base_name)
                 else:
                     deleted_patches.append(base_name)
@@ -217,7 +224,7 @@ class GitPatchTool(PatchBase):
                     if not ConsoleHelper.get_message('Do you want to continue with another patch'):
                         raise KeyboardInterrupt
                 try:
-                    cls.output_data = cls.old_repo.git.rebase(skip=True)
+                    cls.output_data = cls.old_repo.git.rebase(skip=True, stdout_as_string=six.PY3)
                 except git.GitCommandError as e:
                     ret_code = e.status
                     cls.output_data = e.stdout

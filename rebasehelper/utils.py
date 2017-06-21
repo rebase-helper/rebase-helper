@@ -739,14 +739,14 @@ class GitHelper(object):
     @classmethod
     def get_user(cls):
         try:
-            return git.cmd.Git().config('--global', 'user.name', get=True)
+            return git.cmd.Git().config('--global', 'user.name', get=True, stdout_as_string=six.PY3)
         except git.GitCommandError:
             return cls.GIT_USER_NAME
 
     @classmethod
     def get_email(cls):
         try:
-            return git.cmd.Git().config('--global', 'user.email', get=True)
+            return git.cmd.Git().config('--global', 'user.email', get=True, stdout_as_string=six.PY3)
         except git.GitCommandError:
             return cls.GIT_USER_EMAIL
 
