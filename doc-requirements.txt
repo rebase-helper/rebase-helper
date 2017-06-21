@@ -1,9 +1,3 @@
-# This can not be installed from pip, on Fedora you need to install rpm-python{,3}
-#rpm-python
-backports.lzma
-copr
-pyquery
-six
+-r requirements.txt
 sphinx_rtd_theme
-# use fixed version of m2r, see: https://github.com/miyakogi/m2r/pull/3
-git+https://github.com/miyakogi/m2r.git@d649fc4dd4e20234404884a59a556e5a3793505b#egg=m2r
+m2r

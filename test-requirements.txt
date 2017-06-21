@@ -1,3 +1,4 @@
+-r requirements.txt
 cov-core
 coverage
 pytest-cov
@@ -5,5 +6,3 @@ pytest
 pytest-pylint
 pylint>=1.4.5
 unidiff
-# use fixed version of astroid, see: https://github.com/PyCQA/astroid/pull/422 and https://github.com/PyCQA/astroid/pull/430
-git+https://github.com/PyCQA/astroid.git@56db400412fb36b5c2bbdb9ffb18b7c007f19b49#egg=astroid
