@@ -750,6 +750,17 @@ class GitHelper(object):
         except git.GitCommandError:
             return cls.GIT_USER_EMAIL
 
+    @classmethod
+    def run_mergetool(cls, repo):
+        # we can't use GitPython here, as it doesn't allow
+        # for the command to attach to stdout directly
+        cwd = os.getcwd()
+        try:
+            os.chdir(repo.working_tree_dir)
+            ProcessHelper.run_subprocess(['git', 'mergetool'])
+        finally:
+            os.chdir(cwd)
+
 
 class KojiHelper(object):
 

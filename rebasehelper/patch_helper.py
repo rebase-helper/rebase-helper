@@ -193,7 +193,7 @@ class GitPatchTool(PatchBase):
                     raise RuntimeError('Git rebase failed with unknown reason. Please check log file')
                 if not cls.non_interactive:
                     logger.info("Git has problems with rebasing patch %s", failed_patch)
-                    cls.old_repo.git.mergetool()
+                    GitHelper.run_mergetool(cls.old_repo)
                 else:
                     inapplicable_patches.append(failed_patch)
                     try:
