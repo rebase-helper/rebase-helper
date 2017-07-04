@@ -85,11 +85,11 @@ class TestConsoleHelper(object):
             with os.fdopen(sys.__stderr__.fileno(), 'w') as f:  # pylint:disable=no-member
                 f.write('test stderr')
 
-        stdout, stderr = ConsoleHelper.capture_output(
-            write, capture_stdout=True, capture_stderr=True)
+        with ConsoleHelper.Capturer(stdout=True, stderr=True) as capturer:
+            write()
 
-        assert stdout == 'test stdout'
-        assert stderr == 'test stderr'
+        assert capturer.stdout == 'test stdout'
+        assert capturer.stderr == 'test stderr'
 
 
 class TestDownloadHelper(object):

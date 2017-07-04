@@ -132,77 +132,62 @@ class ConsoleHelper(object):
             else:
                 return bool(user_input)
 
-    @staticmethod
-    def capture_output(func, capture_stdout=False, capture_stderr=False):
-        """
-        Captures stdout and stderr of specified function
+    class Capturer(object):
+        """ContextManager for capturing stdout/stderr"""
 
-        :param func: function to be executed
-        :param capture_stdout: if True, capture stdout
-        :param capture_stderr: if True, capture stderr
-        :return: tuple containing captured stdout and stderr
-        """
-        stdout_data = None
-        stderr_data = None
+        def __init__(self, stdout=False, stderr=False):
+            self.capture_stdout = stdout
+            self.capture_stderr = stderr
+            self.stdout = None
+            self.stderr = None
 
-        stdout = sys.__stdout__.fileno()  # pylint:disable=no-member
-        stderr = sys.__stderr__.fileno()  # pylint:disable=no-member
+        def __enter__(self):
+            self._stdout_fileno = sys.__stdout__.fileno()  # pylint:disable=no-member
+            self._stderr_fileno = sys.__stderr__.fileno()  # pylint:disable=no-member
 
-        stdout_tmp = tempfile.TemporaryFile(
-            mode='w+b') if capture_stdout else None
-        try:
-            stderr_tmp = tempfile.TemporaryFile(
-                mode='w+b') if capture_stderr else None
-            try:
-                stdout_copy = os.fdopen(
-                    os.dup(stdout), 'wb') if capture_stdout else None
-                try:
-                    stderr_copy = os.fdopen(
-                        os.dup(stderr), 'wb') if capture_stderr else None
-                    try:
-                        try:
-                            if stdout_tmp:
-                                sys.stdout.flush()
-                                os.dup2(stdout_tmp.fileno(), stdout)
-                            if stderr_tmp:
-                                sys.stderr.flush()
-                                os.dup2(stderr_tmp.fileno(), stderr)
-                            try:
-                                func()
-                            finally:
-                                if stdout_copy:
-                                    sys.stdout.flush()
-                                    os.dup2(stdout_copy.fileno(), stdout)
-                                if stderr_copy:
-                                    sys.stderr.flush()
-                                    os.dup2(stderr_copy.fileno(), stderr)
-                        finally:
-                            if stdout_tmp:
-                                stdout_tmp.flush()
-                                stdout_tmp.seek(0, io.SEEK_SET)
-                                stdout_data = stdout_tmp.read()
-                                if six.PY3:
-                                    stdout_data = stdout_data.decode(defenc)
-                            if stderr_tmp:
-                                stderr_tmp.flush()
-                                stderr_tmp.seek(0, io.SEEK_SET)
-                                stderr_data = stderr_tmp.read()
-                                if six.PY3:
-                                    stderr_data = stderr_data.decode(defenc)
-                    finally:
-                        if stderr_copy:
-                            stderr_copy.close()
-                finally:
-                    if stdout_copy:
-                        stdout_copy.close()
-            finally:
-                if stderr_tmp:
-                    stderr_tmp.close()
-        finally:
-            if stdout_tmp:
-                stdout_tmp.close()
+            self._stdout_tmp = tempfile.TemporaryFile(mode='w+b') if self.capture_stdout else None
+            self._stderr_tmp = tempfile.TemporaryFile(mode='w+b') if self.capture_stderr else None
+            self._stdout_copy = os.fdopen(os.dup(self._stdout_fileno), 'wb') if self.capture_stdout else None
+            self._stderr_copy = os.fdopen(os.dup(self._stderr_fileno), 'wb') if self.capture_stderr else None
 
-        return stdout_data, stderr_data
+            if self._stdout_tmp:
+                sys.stdout.flush()
+                os.dup2(self._stdout_tmp.fileno(), self._stdout_fileno)
+            if self._stderr_tmp:
+                sys.stderr.flush()
+                os.dup2(self._stderr_tmp.fileno(), self._stderr_fileno)
+
+            return self
+
+        def __exit__(self, *args):
+            if self._stdout_copy:
+                sys.stdout.flush()
+                os.dup2(self._stdout_copy.fileno(), self._stdout_fileno)
+            if self._stderr_copy:
+                sys.stderr.flush()
+                os.dup2(self._stderr_copy.fileno(), self._stderr_fileno)
+
+            if self._stdout_tmp:
+                self._stdout_tmp.flush()
+                self._stdout_tmp.seek(0, io.SEEK_SET)
+                self.stdout = self._stdout_tmp.read()
+                if six.PY3:
+                    self.stdout = self.stdout.decode(defenc)
+            if self._stderr_tmp:
+                self._stderr_tmp.flush()
+                self._stderr_tmp.seek(0, io.SEEK_SET)
+                self.stderr = self._stderr_tmp.read()
+                if six.PY3:
+                    self.stderr = self.stderr.decode(defenc)
+
+            if self._stdout_tmp:
+                self._stdout_tmp.close()
+            if self._stderr_tmp:
+                self._stderr_tmp.close()
+            if self._stdout_copy:
+                self._stdout_copy.close()
+            if self._stderr_copy:
+                self._stderr_copy.close()
 
 
 class DownloadError(Exception):
@@ -696,12 +681,12 @@ class MacroHelper(object):
             ''',
             re.VERBOSE)
 
-        _, stderr = ConsoleHelper.capture_output(
-            lambda: rpm.expandMacro('%dump'), capture_stderr=True)
+        with ConsoleHelper.Capturer(stderr=True) as capturer:
+            rpm.expandMacro('%dump')
 
         macros = []
 
-        for line in stderr.split('\n'):
+        for line in capturer.stderr.split('\n'):
             match = macro_re.match(line)
             if match:
                 macro = match.groupdict()
