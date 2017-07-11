@@ -193,7 +193,7 @@ class GitPatchTool(PatchBase):
                     raise RuntimeError('Git rebase failed with unknown reason. Please check log file')
                 if not cls.non_interactive:
                     logger.info("Git has problems with rebasing patch %s", failed_patch)
-                    cls.old_repo.git.mergetool()
+                    GitHelper.run_mergetool(cls.old_repo)
                 else:
                     inapplicable_patches.append(failed_patch)
                     try:
@@ -212,12 +212,16 @@ class GitPatchTool(PatchBase):
                     diff = cls.old_repo.index.diff(cls.old_repo.commit())
                     modified_files = [d.a_path for d in diff]
                     logger.info('Following files were modified: %s', ', '.join(modified_files))
-                    commit = cls.old_repo.index.commit(patch_name)
-                    diff = cls.old_repo.git.diff(commit.parents[0], commit, stdout_as_string=False)
-                    with open(base_name, 'wb') as f:
-                        f.write(diff)
-                        f.write(b'\n')
-                    modified_patches.append(base_name)
+                    try:
+                        commit = cls.old_repo.index.commit(patch_name)
+                    except git.UnmergedEntriesError:
+                        inapplicable_patches.append(failed_patch)
+                    else:
+                        diff = cls.old_repo.git.diff(commit.parents[0], commit, stdout_as_string=False)
+                        with open(base_name, 'wb') as f:
+                            f.write(diff)
+                            f.write(b'\n')
+                        modified_patches.append(base_name)
                 else:
                     deleted_patches.append(base_name)
                 if not cls.non_interactive:
