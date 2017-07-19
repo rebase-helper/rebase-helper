@@ -471,24 +471,25 @@ class Application(object):
             task_id = None
             koji_build_id = None
 
-            pkg_name = spec_object.get_package_name()
-            pkg_version = spec_object.get_version()
-            pkg_full_version = spec_object.get_full_version()
-
-            if version == 'old' and KojiHelper.functional and self.conf.get_old_build_from_koji:
-                koji_version, koji_build_id = KojiHelper.get_latest_build(pkg_name)
-                if koji_version:
-                    if koji_version != pkg_version:
-                        logger.warning('Version of the latest Koji build (%s) differs from version in SPEC file (%s)!',
-                                       koji_version, pkg_version)
-                    pkg_version = pkg_full_version = koji_version
-                else:
-                    logger.warning('Unable to find the latest Koji build!')
-
-            # prepare for building
-            builder.prepare(spec_object, self.conf)
-
             if self.conf.build_tasks is None:
+                pkg_name = spec_object.get_package_name()
+                pkg_version = spec_object.get_version()
+                pkg_full_version = spec_object.get_full_version()
+
+                if version == 'old' and KojiHelper.functional and self.conf.get_old_build_from_koji:
+                    koji_version, koji_build_id = KojiHelper.get_latest_build(pkg_name)
+                    if koji_version:
+                        if koji_version != pkg_version:
+                            logger.warning('Version of the latest Koji build (%s) '
+                                           'differs from version in SPEC file (%s)!',
+                                           koji_version, pkg_version)
+                        pkg_version = pkg_full_version = koji_version
+                    else:
+                        logger.warning('Unable to find the latest Koji build!')
+
+                # prepare for building
+                builder.prepare(spec_object, self.conf)
+
                 build_dict['name'] = pkg_name
                 build_dict['version'] = pkg_version
                 patches = [x.get_path() for x in spec_object.get_patches()]
@@ -515,13 +516,15 @@ class Application(object):
                                                                                               results_dir)
                         else:
                             build_dict.update(builder.build(spec, sources, patches, results_dir, **build_dict))
-                    if builder.creates_tasks():
+                    if builder.creates_tasks() and not koji_build_id:
                         if not self.conf.builds_nowait:
                             build_dict['rpm'], build_dict['logs'] = builder.wait_for_task(build_dict, results_dir)
+                            if build_dict['rpm'] is None:
+                                return False
                         elif self.conf.build_tasks:
                             build_dict['rpm'], build_dict['logs'] = builder.get_detached_task(task_id, results_dir)
-                        if build_dict['rpm'] is None:
-                            return False
+                            if build_dict['rpm'] is None:
+                                return False
                     # Build finishes properly. Go out from while cycle
                     results_store.set_build_data(version, build_dict)
                     break
@@ -777,7 +780,8 @@ class Application(object):
         if not self.conf.keep_workspace:
             self._delete_workspace_dir()
 
-        self.generate_patch()
+        if not self.conf.build_tasks:
+            self.generate_patch()
 
         if self.debug_log_file:
             logger.info("Detailed debug log is located in '%s'", self.debug_log_file)

@@ -53,8 +53,7 @@ from rebasehelper import settings
 
 try:
     import koji
-    from pyrpkg.cli import TaskWatcher
-    from OpenSSL import SSL
+    from koji_cli.lib import TaskWatcher
 except ImportError:
     koji_helper_functional = False
 else:
@@ -132,77 +131,62 @@ class ConsoleHelper(object):
             else:
                 return bool(user_input)
 
-    @staticmethod
-    def capture_output(func, capture_stdout=False, capture_stderr=False):
-        """
-        Captures stdout and stderr of specified function
+    class Capturer(object):
+        """ContextManager for capturing stdout/stderr"""
 
-        :param func: function to be executed
-        :param capture_stdout: if True, capture stdout
-        :param capture_stderr: if True, capture stderr
-        :return: tuple containing captured stdout and stderr
-        """
-        stdout_data = None
-        stderr_data = None
+        def __init__(self, stdout=False, stderr=False):
+            self.capture_stdout = stdout
+            self.capture_stderr = stderr
+            self.stdout = None
+            self.stderr = None
 
-        stdout = sys.__stdout__.fileno()  # pylint:disable=no-member
-        stderr = sys.__stderr__.fileno()  # pylint:disable=no-member
+        def __enter__(self):
+            self._stdout_fileno = sys.__stdout__.fileno()  # pylint:disable=no-member
+            self._stderr_fileno = sys.__stderr__.fileno()  # pylint:disable=no-member
 
-        stdout_tmp = tempfile.TemporaryFile(
-            mode='w+b') if capture_stdout else None
-        try:
-            stderr_tmp = tempfile.TemporaryFile(
-                mode='w+b') if capture_stderr else None
-            try:
-                stdout_copy = os.fdopen(
-                    os.dup(stdout), 'wb') if capture_stdout else None
-                try:
-                    stderr_copy = os.fdopen(
-                        os.dup(stderr), 'wb') if capture_stderr else None
-                    try:
-                        try:
-                            if stdout_tmp:
-                                sys.stdout.flush()
-                                os.dup2(stdout_tmp.fileno(), stdout)
-                            if stderr_tmp:
-                                sys.stderr.flush()
-                                os.dup2(stderr_tmp.fileno(), stderr)
-                            try:
-                                func()
-                            finally:
-                                if stdout_copy:
-                                    sys.stdout.flush()
-                                    os.dup2(stdout_copy.fileno(), stdout)
-                                if stderr_copy:
-                                    sys.stderr.flush()
-                                    os.dup2(stderr_copy.fileno(), stderr)
-                        finally:
-                            if stdout_tmp:
-                                stdout_tmp.flush()
-                                stdout_tmp.seek(0, io.SEEK_SET)
-                                stdout_data = stdout_tmp.read()
-                                if six.PY3:
-                                    stdout_data = stdout_data.decode(defenc)
-                            if stderr_tmp:
-                                stderr_tmp.flush()
-                                stderr_tmp.seek(0, io.SEEK_SET)
-                                stderr_data = stderr_tmp.read()
-                                if six.PY3:
-                                    stderr_data = stderr_data.decode(defenc)
-                    finally:
-                        if stderr_copy:
-                            stderr_copy.close()
-                finally:
-                    if stdout_copy:
-                        stdout_copy.close()
-            finally:
-                if stderr_tmp:
-                    stderr_tmp.close()
-        finally:
-            if stdout_tmp:
-                stdout_tmp.close()
+            self._stdout_tmp = tempfile.TemporaryFile(mode='w+b') if self.capture_stdout else None
+            self._stderr_tmp = tempfile.TemporaryFile(mode='w+b') if self.capture_stderr else None
+            self._stdout_copy = os.fdopen(os.dup(self._stdout_fileno), 'wb') if self.capture_stdout else None
+            self._stderr_copy = os.fdopen(os.dup(self._stderr_fileno), 'wb') if self.capture_stderr else None
 
-        return stdout_data, stderr_data
+            if self._stdout_tmp:
+                sys.stdout.flush()
+                os.dup2(self._stdout_tmp.fileno(), self._stdout_fileno)
+            if self._stderr_tmp:
+                sys.stderr.flush()
+                os.dup2(self._stderr_tmp.fileno(), self._stderr_fileno)
+
+            return self
+
+        def __exit__(self, *args):
+            if self._stdout_copy:
+                sys.stdout.flush()
+                os.dup2(self._stdout_copy.fileno(), self._stdout_fileno)
+            if self._stderr_copy:
+                sys.stderr.flush()
+                os.dup2(self._stderr_copy.fileno(), self._stderr_fileno)
+
+            if self._stdout_tmp:
+                self._stdout_tmp.flush()
+                self._stdout_tmp.seek(0, io.SEEK_SET)
+                self.stdout = self._stdout_tmp.read()
+                if six.PY3:
+                    self.stdout = self.stdout.decode(defenc)
+            if self._stderr_tmp:
+                self._stderr_tmp.flush()
+                self._stderr_tmp.seek(0, io.SEEK_SET)
+                self.stderr = self._stderr_tmp.read()
+                if six.PY3:
+                    self.stderr = self.stderr.decode(defenc)
+
+            if self._stdout_tmp:
+                self._stdout_tmp.close()
+            if self._stderr_tmp:
+                self._stderr_tmp.close()
+            if self._stdout_copy:
+                self._stdout_copy.close()
+            if self._stderr_copy:
+                self._stderr_copy.close()
 
 
 class DownloadError(Exception):
@@ -696,12 +680,12 @@ class MacroHelper(object):
             ''',
             re.VERBOSE)
 
-        _, stderr = ConsoleHelper.capture_output(
-            lambda: rpm.expandMacro('%dump'), capture_stderr=True)
+        with ConsoleHelper.Capturer(stderr=True) as capturer:
+            rpm.expandMacro('%dump')
 
         macros = []
 
-        for line in stderr.split('\n'):
+        for line in capturer.stderr.split('\n'):
             match = macro_re.match(line)
             if match:
                 macro = match.groupdict()
@@ -800,7 +784,7 @@ class KojiHelper(object):
 
     @classmethod
     def display_task_results(cls, tasks):
-        """Function is copy/paste from pyrpkg/cli.py"""
+        """Taken from from koji_cli.lib"""
         for task in [task for task in tasks.values() if task.level == 0]:
             state = task.info['state']
             task_label = task.str()
@@ -818,21 +802,23 @@ class KojiHelper(object):
 
     @classmethod
     def watch_koji_tasks(cls, session, tasklist):
-        """Function is copy/paste from pyrpkg/cli.py"""
+        """Taken from from koji_cli.lib"""
         if not tasklist:
             return
-        # Place holder for return value
+        sys.stdout.flush()
         rh_tasks = {}
         try:
             tasks = {}
-
             for task_id in tasklist:
-                tasks[task_id] = TaskWatcher(task_id, session, logger,
-                                             quiet=False)
+                tasks[task_id] = TaskWatcher(task_id, session, quiet=False)
             while True:
                 all_done = True
-                for task_id, task in tasks.items():
-                    changed = task.update()
+                for task_id, task in list(tasks.items()):
+                    with ConsoleHelper.Capturer(stdout=True) as capturer:
+                        changed = task.update()
+                    for line in capturer.stdout.split('\n'):
+                        if line:
+                            logger.info(line)
                     info = session.getTaskInfo(task_id)
                     state = task.info['state']
                     if state == koji.TASK_STATES['FAILED']:
@@ -844,39 +830,36 @@ class KojiHelper(object):
                         all_done = False
                     else:
                         if changed:
+                            # task is done and state just changed
                             cls.display_task_results(tasks)
                         if not task.is_success():
                             rh_tasks = None
-                    try:
-                        for child in session.getTaskChildren(task_id):
-                            child_id = child['id']
-                            if child_id not in tasks.keys():
-                                tasks[child_id] = TaskWatcher(child_id,
-                                                              session,
-                                                              logger,
-                                                              task.level + 1,
-                                                              quiet=False)
+                    for child in session.getTaskChildren(task_id):
+                        child_id = child['id']
+                        if not child_id in list(tasks.keys()):
+                            tasks[child_id] = TaskWatcher(child_id, session, task.level + 1, quiet=False)
+                            with ConsoleHelper.Capturer(stdout=True) as capturer:
                                 tasks[child_id].update()
-                                # If we found new children, go through the list
-                                # again, in case they have children also
-                                info = session.getTaskInfo(child_id)
-                                state = task.info['state']
-                                if state == koji.TASK_STATES['FAILED']:
-                                    return {info['id']: state}
-                                else:
-                                    if info['arch'] == 'x86_64' or info['arch'] == 'noarch':
-                                        rh_tasks[info['id']] = state
-                                all_done = False
-                    except SSL.SysCallError as e:
-                        logger.error('Detected SSL error: %s', six.text_type(e))
+                            for line in capturer.stdout.split('\n'):
+                                if line:
+                                    logger.info(line)
+                            info = session.getTaskInfo(child_id)
+                            state = task.info['state']
+                            if state == koji.TASK_STATES['FAILED']:
+                                return {info['id']: state}
+                            else:
+                                if info['arch'] == 'x86_64' or info['arch'] == 'noarch':
+                                    rh_tasks[info['id']] = state
+                            # If we found new children, go through the list again,
+                            # in case they have children also
+                            all_done = False
                 if all_done:
                     cls.display_task_results(tasks)
                     break
 
+                sys.stdout.flush()
                 time.sleep(1)
-        except (KeyboardInterrupt):
-            # A ^c should return non-zero so that it doesn't continue
-            # on to any && commands.
+        except KeyboardInterrupt:
             rh_tasks = None
         return rh_tasks
 
@@ -892,6 +875,8 @@ class KojiHelper(object):
                 base_path = koji.pathinfo.taskrelpath(task_id)
                 output = session.listTaskOutput(task['id'])
                 for filename in output:
+                    if filename.endswith('.src.rpm'):
+                        continue
                     logger.info('Downloading file %s', filename)
                     downloaded_file = os.path.join(dir_name, filename)
                     DownloadHelper.download_file(cls.scratch_url + base_path + '/' + filename,

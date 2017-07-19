@@ -24,6 +24,9 @@ import os
 import six
 import koji  # pylint: disable=import-error
 
+# unused import needed to prevent loading koji buildtool with Koji < 1.13
+import koji_cli.lib  # pylint: disable=import-error
+
 from rebasehelper.utils import KojiHelper
 from rebasehelper.logger import logger
 from rebasehelper.build_helper import BuildToolBase
