@@ -69,6 +69,7 @@ setup(
         ],
         'rebasehelper.versioneers': [
             'anitya = rebasehelper.versioneers.anitya_versioneer:AnityaVersioneer',
+            'pypi = rebasehelper.versioneers.pypi_versioneer:PyPIVersioneer',
         ]
     },
     setup_requires=[],

@@ -26,6 +26,7 @@ from pkg_resources import parse_version
 
 from rebasehelper.versioneer import versioneers_runner
 from rebasehelper.versioneers.anitya_versioneer import AnityaVersioneer
+from rebasehelper.versioneers.pypi_versioneer import PyPIVersioneer
 
 
 class TestVersioneer(object):
@@ -40,4 +41,16 @@ class TestVersioneer(object):
     def test_anitya_versioneer(self, package, min_version):
         assert AnityaVersioneer.get_name() in versioneers_runner.versioneers
         version = versioneers_runner.run(AnityaVersioneer.get_name(), package)
+        assert parse_version(version) >= parse_version(min_version)
+
+    @pytest.mark.parametrize('package, min_version', [
+        ('python-m2r', '0.1.7'),
+        ('pyodbc', '4.0.17'),
+    ], ids=[
+        'python-m2r>=0.1.7',
+        'pyodbc>=4.0.17',
+    ])
+    def test_pypi_versioneer(self, package, min_version):
+        assert PyPIVersioneer.get_name() in versioneers_runner.versioneers
+        version = versioneers_runner.run(PyPIVersioneer.get_name(), package)
         assert parse_version(version) >= parse_version(min_version)
