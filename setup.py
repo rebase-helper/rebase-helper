@@ -43,6 +43,7 @@ setup(
         'rebasehelper.build_tools',
         'rebasehelper.checkers',
         'rebasehelper.spec_hooks',
+        'rebasehelper.versioneers',
         'rebasehelper.tests',
     ],
     include_package_data=True,
@@ -65,6 +66,9 @@ setup(
         'rebasehelper.spec_hooks': [
             'typo_fix = rebasehelper.spec_hooks.typo_fix:TypoFixHook',
             'pypi_url_fix = rebasehelper.spec_hooks.pypi_url_fix:PyPIURLFixHook',
+        ],
+        'rebasehelper.versioneers': [
+            'anitya = rebasehelper.versioneers.anitya_versioneer:AnityaVersioneer',
         ]
     },
     setup_requires=[],
