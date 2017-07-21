@@ -447,7 +447,7 @@ class Application(object):
         Initialize git repository in the rebased directory
         :return: git.Repo instance of rebased_sources
         """
-        for patch in patches['applied']:
+        for patch in patches['applied'] + patches['not_applied']:
             shutil.copy(patch.path, rebased_sources_dir)
 
         repo = git.Repo.init(rebased_sources_dir)

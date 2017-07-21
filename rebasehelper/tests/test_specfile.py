@@ -421,15 +421,6 @@ class TestSpecFile(object):
         assert changelog[0] == result[0]
         assert changelog[1] == result[1]
 
-    def test_patch_macro(self, spec_object):
-        spec_object._correct_rebased_patches(['4'])
-        spec_object._write_spec_file_to_disc()
-        expected_patch = ['%patch4 -b .testing4 -p1\n']
-        with open(self.SPEC_FILE) as spec:
-            lines = spec.readlines()
-        lines = [x for x in lines if x.startswith('%patch4')]
-        assert expected_patch == lines
-
     def test_update_setup_dirname(self, spec_object):
         prep = spec_object.get_spec_section('%prep')
         spec_object.update_setup_dirname('test-1.0.2')

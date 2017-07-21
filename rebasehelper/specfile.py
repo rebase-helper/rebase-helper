@@ -331,23 +331,35 @@ class SpecFile(object):
         """
         return self.patches['not_applied']
 
-    def _comment_out_patches(self, patch_num, note=None):
+    def _process_patches(self, comment_out=[], remove_patches=[], disable_inapplicable_patches=None):
         """
-        Comment out patches from SPEC file
+        Comment out and delete patches from SPEC file
 
-        :var patch_num: list with patch numbers to comment out
+        :var comment_out: list with patch numbers to comment out
+        :var remove_patches: list with patch numbers to delete
+        :var disable_inapplicable_patches: boolean value deciding if the inapplicable patches should be commented out
         """
         for index, line in enumerate(self.spec_content):
             #  if patch is applied on the line, try to check if it should be commented out
             if line.startswith('%patch'):
                 #  check patch numbers
-                for num in patch_num:
+                for num in comment_out:
                     #  if the line should be commented out
                     if line.startswith('%patch{0}'.format(num)):
-                        comment = '# {}\n'.format(note) if note is not None else ''
-                        self.spec_content[index] = '{}#%{}'.format(comment, line)
+                        comment = '# Following patch contains conflicts\n'
+                        if disable_inapplicable_patches:
+                            self.spec_content[index] = '{}#%{}'.format(comment, line)
+                        else:
+                            self.spec_content[index] = '{}{}'.format(comment, line)
                         #  remove the patch number from list
-                        patch_num.remove(num)
+                        comment_out.remove(num)
+                        break
+                for num in remove_patches:
+                    #  if the line should be removed
+                    if line.startswith('%patch{0}'.format(num)):
+                        self.spec_content[index] = ''
+                        #  remove the patch number from list
+                        remove_patches.remove(num)
                         break
 
     def update_paths_to_patches(self):
@@ -358,37 +370,11 @@ class SpecFile(object):
                 self.spec_content[index] = mod_line
         self.save()
 
-    def _correct_rebased_patches(self, patch_num):
-        """
-        Comment out patches from SPEC file
-
-        :var patch_num: list with patch numbers to update
-        """
-        for index, line in enumerate(self.spec_content):
-            #  if patch is applied on the line, try to check if it should be commented out
-            if line.startswith('%patch'):
-                #  check patch numbers
-                for num in patch_num:
-                    #  if the line should be commented out
-                    if line.startswith('%patch{0}'.format(num)):
-                        patch_fields = line.strip().split()
-                        patch_fields = [x for x in patch_fields if not x.startswith('-p')]
-                        self.spec_content[index] = '{begin}\n#{line}{new_line}\n{end}\n'.format(
-                            begin=settings.BEGIN_COMMENT,
-                            line=line,
-                            new_line=' '.join(patch_fields) + ' -p1',
-                            end=settings.END_COMMENT,
-                        )
-                        #  remove the patch number from list
-                        patch_num.remove(num)
-                        break
-
     def write_updated_patches(self, patches, disable_inapplicable):
         """Function writes the patches to -rebase.spec file"""
-        #  TODO: this method should not take whole kwargs as argument, take only what it needs.
         if not patches:
             return None
-        # If some patches are not applied then commented out
+        # If some patches are not applied then comment out or remove
         removed_patches = []
         inapplicable_patches = []
         modified_patches = []
@@ -399,9 +385,10 @@ class SpecFile(object):
                 patch_name = fields[1]
                 patch_num = self._get_patch_number(fields)
                 # We check if patch is mentioned in SPEC file but not used.
-                # We are comment out the patch
+                # We comment out the patch
                 check_not_applied = [x for x in self.get_not_used_patches() if
                                      int(x.get_index()) == int(patch_num)]
+
                 if 'deleted' in patches:
                     patch_removed = [x for x in patches['deleted'] if patch_name in x]
                 else:
@@ -410,14 +397,20 @@ class SpecFile(object):
                     patch_inapplicable = [x for x in patches['inapplicable'] if patch_name in x]
                 else:
                     patch_inapplicable = None
-                if check_not_applied or patch_removed:
-                    self.spec_content[index] = '#{0} {1}\n'.format(' '.join(fields[:-1]),
-                                                                   os.path.basename(patch_name))
-                    if patch_removed:
-                        self.removed_patches.append(patch_name)
-                        removed_patches.append(patch_num)
-                if patch_inapplicable and disable_inapplicable:
+
+                if patch_removed or check_not_applied:
+                    # remove the line of the patch that was removed
+                    self.removed_patches.append(patch_name)
+                    removed_patches.append(patch_num)
+                    self.spec_content[index] = ''
+
+                if patch_inapplicable:
+                    if disable_inapplicable:
+                        # comment out line if the patch was not applied
+                        self.spec_content[index] = '#{0} {1}\n'.format(' '.join(fields[:-1]),
+                                                                       os.path.basename(patch_name))
                     inapplicable_patches.append(patch_num)
+
                 if 'modified' in patches:
                     patch = [x for x in patches['modified'] if patch_name in x]
                 else:
@@ -427,10 +420,8 @@ class SpecFile(object):
                     self.spec_content[index] = ' '.join(fields) + '\n'
                     modified_patches.append(patch_num)
 
-        self._comment_out_patches(removed_patches)
-        note = 'Disabled because of conflicts, please verify'
-        self._comment_out_patches(inapplicable_patches, note=note)
-        self._correct_rebased_patches(modified_patches)
+        self._process_patches(inapplicable_patches, removed_patches, disable_inapplicable)
+
         #  save changes
         self.save()
 
