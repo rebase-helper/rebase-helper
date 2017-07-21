@@ -41,6 +41,7 @@ from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
 from rebasehelper.build_log_analyzer import BuildLogAnalyzer, BuildLogAnalyzerMissingError
 from rebasehelper.results_store import results_store
 from rebasehelper.build_log_analyzer import BuildLogAnalyzerMakeError, BuildLogAnalyzerPatchError
+from rebasehelper.versioneer import versioneers_runner
 from rebasehelper import version
 
 
@@ -180,6 +181,14 @@ class Application(object):
             results_store.set_info_text('WARNING', 'Test suite is not enabled at build time.')
         #  create an object representing the rebased SPEC file
         self.rebase_spec_file = self.spec_file.copy(self.rebase_spec_file_path)
+
+        if not self.conf.sources:
+            self.conf.sources = versioneers_runner.run(self.conf.versioneer, self.spec_file.get_package_name())
+            if self.conf.sources:
+                logger.info("Determined latest upstream version '%s'", self.conf.sources)
+            else:
+                raise RebaseHelperError('Could not determine latest upstream version '
+                                        'and no SOURCES argument specified!')
 
         # Prepare rebased_sources_dir
         self.rebased_repo = self._prepare_rebased_repository(self.spec_file.patches, self.rebased_sources_dir)

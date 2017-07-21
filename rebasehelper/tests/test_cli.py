@@ -35,6 +35,7 @@ class TestCLI(object):
             'difftool': 'vimdiff',
             'pkgcomparetool': ['rpmdiff'],
             'outputtool': 'json',
+            'versioneer': 'anitya',
             'keep_workspace': True,
             'not_download_sources': True,
             'cont': True,

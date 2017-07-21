@@ -33,6 +33,7 @@ from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.build_helper import Builder
 from rebasehelper.checker import checkers_runner
 from rebasehelper.output_tool import OutputTool
+from rebasehelper.versioneer import versioneers_runner
 from rebasehelper.utils import KojiHelper
 
 
@@ -123,6 +124,12 @@ class CLI(object):
             help="tool to use for formatting rebase output, defaults to %(default)s"
         )
         parser.add_argument(
+            "--versioneer",
+            choices=versioneers_runner.get_available_versioneers(),
+            default=versioneers_runner.get_default_versioneer(),
+            help="tool to use for determining latest upstream version, defaults to %(default)s"
+        )
+        parser.add_argument(
             "-w",
             "--keep-workspace",
             default=False,
@@ -146,6 +153,8 @@ class CLI(object):
         parser.add_argument(
             "sources",
             metavar='SOURCES',
+            nargs='?',
+            default=None,
             help="new upstream sources"
         )
         parser.add_argument(
