@@ -251,8 +251,8 @@ class CliHelper(object):
         except KeyboardInterrupt:
             logger.info('\nInterrupted by user')
         except RebaseHelperError as e:
-            if e.args:
-                logger.error('\n%s', e.args[0] % e.args[1:])
+            if e.msg:
+                logger.error('\n%s', e.msg)
             else:
                 logger.error('\n%s', six.text_type(e))
             sys.exit(1)

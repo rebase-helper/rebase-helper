@@ -94,8 +94,8 @@ class TestRebase(object):
             '--pkgcomparetool', 'rpmdiff,pkgdiff,abipkgdiff',
             version
         ])
-        execution_dir, results_dir, debug_log_file, report_log_file = Application.setup(cli)
-        app = Application(cli, execution_dir, results_dir, debug_log_file, report_log_file)
+        execution_dir, results_dir, debug_log_file = Application.setup(cli)
+        app = Application(cli, execution_dir, results_dir, debug_log_file)
         app.run()
         with open(os.path.join(REBASE_HELPER_RESULTS_DIR, 'json.txt')) as f:
             report = json.load(f)

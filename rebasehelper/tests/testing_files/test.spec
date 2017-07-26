@@ -20,7 +20,7 @@ Patch1: test-testing.patch
 Patch2: test-testing2.patch
 Patch3: test-testing3.patch
 Patch4: test-testing4.patch
-Patch5: rebase-helper-results/rebased_sources/test-testing5.patch
+Patch5: rebase-helper-results/rebased-sources/test-testing5.patch
 
 BuildRequires: openssl-devel, pkgconfig, texinfo, gettext, autoconf
 
