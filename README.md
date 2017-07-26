@@ -7,7 +7,7 @@ There are several steps that need to be done when rebasing a package. The goal o
 
 ## General workflow
 - *rebase-helper-workspace* and *rebase-helper-results* directories are created
-- original SPEC file is copied to *rebase-helper-results* directory and its Version tag is modified
+- original SPEC file is copied to *rebase-helper-results/rebased_sources* directory and its Version tag is modified
 - old and new source tarballs are downloaded and extracted to *rebase-helper-workspace* directory
 - downstream patches are rebased on top of new sources using `git-rebase`, resulting modified patches are saved to *rebase-helper-results* directory
 - old and new source RPMs are created and built with selected build tool
@@ -21,7 +21,9 @@ There are several steps that need to be done when rebasing a package. The goal o
 - new sources are extracted and added as a remote repository
 - `git-rebase` is used to rebase the commits on top of new sources
 - original patches are modified/deleted accordingly
-- changes are reflected in the spec file
+- rebased sources are stored in *rebase-helper-results/rebased_sources*. These files are needed for the new version.
+- Patch *changes.patch* containing changes between original and rebased spec file and patches is located in *rebase-helper-results*
+- changes are also reflected in the rebased spec file
 
 
 ## How to run rebase-helper

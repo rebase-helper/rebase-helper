@@ -33,7 +33,7 @@ from rebasehelper.specfile import SpecFile, get_rebase_name, spec_hooks_runner
 from rebasehelper.logger import logger, logger_report, LoggerHelper
 from rebasehelper import settings
 from rebasehelper import output_tool
-from rebasehelper.utils import PathHelper, ConsoleHelper, GitHelper, KojiHelper, FileHelper
+from rebasehelper.utils import PathHelper, ConsoleHelper, GitHelper, KojiHelper, FileHelper, ProcessHelper
 from rebasehelper.checker import checkers_runner
 from rebasehelper.build_helper import Builder, SourcePackageBuildError, BinaryPackageBuildError
 from rebasehelper.patch_helper import Patcher
@@ -63,7 +63,7 @@ class Application(object):
     upstream_monitoring = False
     rebased_repo = None
 
-    def __init__(self, cli_conf, execution_dir, results_dir, debug_log_file, report_log_file):
+    def __init__(self, cli_conf, execution_dir, results_dir, debug_log_file):
         """
         Initialize the application
 
@@ -77,7 +77,6 @@ class Application(object):
         self.rebased_sources_dir = os.path.join(results_dir, 'rebased_sources')
 
         self.debug_log_file = debug_log_file
-        self.report_log_file = report_log_file
 
         # Temporary workspace for Builder, checks, ...
         self.kwargs['workspace_dir'] = self.workspace_dir = os.path.join(self.execution_dir,
@@ -124,9 +123,8 @@ class Application(object):
             os.makedirs(os.path.join(results_dir, settings.REBASE_HELPER_LOGS))
 
         debug_log_file = Application._add_debug_log_file(results_dir)
-        report_log_file = Application._add_report_log_file(results_dir)
 
-        return execution_dir, results_dir, debug_log_file, report_log_file
+        return execution_dir, results_dir, debug_log_file
 
     @staticmethod
     def _add_debug_log_file(results_dir):
@@ -179,7 +177,7 @@ class Application(object):
         # Check whether test suite is enabled at build time
         if not self.spec_file.is_test_suite_enabled():
             results_store.set_info_text('WARNING', 'Test suite is not enabled at build time.')
-        #  create an object representing the rebased SPEC file
+        # create an object representing the rebased SPEC file
         self.rebase_spec_file = self.spec_file.copy(self.rebase_spec_file_path)
 
         if not self.conf.sources:
@@ -325,8 +323,9 @@ class Application(object):
             shutil.rmtree(results_dir)
         os.makedirs(results_dir)
         os.makedirs(os.path.join(results_dir, settings.REBASE_HELPER_LOGS))
-        os.makedirs(os.path.join(results_dir, 'old'))
-        os.makedirs(os.path.join(results_dir, 'new'))
+        os.makedirs(os.path.join(results_dir, 'old_build'))
+        os.makedirs(os.path.join(results_dir, 'new_build'))
+        os.makedirs(os.path.join(results_dir, 'checkers'))
         os.makedirs(os.path.join(results_dir, 'rebased_sources'))
 
     @staticmethod
@@ -451,6 +450,8 @@ class Application(object):
             f.write(patch)
             f.write(b'\n')
 
+        results_store.set_changes_patch('changes_patch', os.path.join(self.results_dir, 'changes.patch'))
+
     @classmethod
     def _prepare_rebased_repository(cls, patches, rebased_sources_dir):
         """
@@ -511,10 +512,7 @@ class Application(object):
                     task_id = self.conf.build_tasks[0]
                 else:
                     task_id = self.conf.build_tasks[1]
-            results_dir = os.path.join(self.results_dir, version)
-            build_dict['builds_nowait'] = self.conf.builds_nowait
-            build_dict['build_tasks'] = self.conf.build_tasks
-            build_dict['builder_options'] = self.conf.builder_options
+            results_dir = os.path.join(self.results_dir, version) + '_build'
 
             files = {}
             number_retries = 0
@@ -588,12 +586,12 @@ class Application(object):
                     self.rebase_spec_file.modify_spec_files_section(files)
 
                 if not self.conf.non_interactive:
-                        msg = 'Do you want rebase-helper to try build the packages one more time'
-                        if not ConsoleHelper.get_message(msg):
-                            raise KeyboardInterrupt
+                    msg = 'Do you want rebase-helper to try build the packages one more time'
+                    if not ConsoleHelper.get_message(msg):
+                        raise KeyboardInterrupt
                 else:
                     logger.warning('Some patches were not successfully applied')
-                #  build just failed, otherwise we would break out of the while loop
+                # build just failed, otherwise we would break out of the while loop
                 logger.debug('Number of retries is %s', self.conf.build_retries)
                 if os.path.exists(os.path.join(results_dir, 'RPM')):
                     shutil.rmtree(os.path.join(results_dir, 'RPM'))
@@ -621,7 +619,7 @@ class Application(object):
 
         for checker_name in self.conf.pkgcomparetool:
             try:
-                results[checker_name] = checkers_runner.run_checker(results_dir, checker_name)
+                results[checker_name] = checkers_runner.run_checker(os.path.join(results_dir, 'checkers'), checker_name)
             except CheckerNotFoundError:
                 logger.error("Rebase-helper did not find checker '%s'." % checker_name)
 
@@ -678,11 +676,29 @@ class Application(object):
             output_patch_string.append('Patches were not touched. All were applied properly')
         return output_patch_string
 
-    def print_summary(self):
-        output = output_tool.OutputTool(self.conf.outputtool)
-        report_file = os.path.join(self.results_dir, self.conf.outputtool + settings.REBASE_HELPER_OUTPUT_SUFFIX)
-        output.print_information(path=report_file)
-        logger.info('\nReport file from rebase-helper is available here: %s', report_file)
+    def print_summary(self, message=None):
+        """
+        Save rebase-helper result ant print the summary using output_tools_runner
+        :param message: Error message from rebase-helper
+        :return:
+        """
+        log = None
+        # Store rebase helper result message
+        if message:
+            if len(message.args) > 1:
+                result = message.args[0] % message.args[1:]
+                if os.path.exists(message.args[2]):
+                    log = message.args[2]
+            else:
+                result = message.args[0]
+            results_store.set_result_message('fail', result)
+        else:
+            result = "Rebase to %s SUCCEEDED" % self.conf.sources
+            results_store.set_result_message('success', result)
+
+        self.rebase_spec_file.update_paths_to_patches()
+        self.generate_patch()
+        output_tools_runner.run_output_tools(log, self)
 
     def print_task_info(self, builder):
         logs = self.get_new_build_logs()['build_ref']
@@ -758,7 +774,13 @@ class Application(object):
         if self.conf.build_tasks is None:
             sources = self.prepare_sources()
             if not self.conf.build_only and not self.conf.comparepkgs:
-                self.patch_sources(sources)
+                try:
+                    self.patch_sources(sources)
+                except Exception as e:
+                    # Print summary and return error
+                    self.print_summary(e)
+                    return 1
+
 
         build = False
         if not self.conf.patch_only:
@@ -768,11 +790,11 @@ class Application(object):
                     build = self.build_packages()
                     if self.conf.builds_nowait and not self.conf.build_tasks:
                         return
-                except RuntimeError:
-                    logger.error('Unknown error caused by build log analysis')
-                    # TODO: exception should be raised instead of returning a value - it is never checked!
+                # Print summary and return error
+                except Exception as e:
+                    self.print_summary(e)
                     return 1
-                # Perform checks
+                    # Perform checks
             else:
                 build = self.get_rpm_packages(self.conf.comparepkgs)
                 # We don't care dirname doesn't contain any RPM packages
@@ -783,28 +805,18 @@ class Application(object):
                 if not self.upstream_monitoring:
                     # TODO: This should be an ERROR
                     logger.info('Rebase package to %s FAILED. See for more details', self.conf.sources)
-                # TODO: exception should be raised instead of returning a value - it is never checked!
+                # TODO: no error message is being passed
+                self.print_summary()
                 return 1
-            self.print_summary()
 
         if not self.conf.keep_workspace:
             self._delete_workspace_dir()
 
-        if not self.conf.build_tasks:
-            self.generate_patch()
-
         if self.debug_log_file:
-            logger.info("Detailed debug log is located in '%s'", self.debug_log_file)
-            logger.info("Rebased spec file and patches "
-                        "are located in '%s'", self.rebased_sources_dir)
-            logger.info("Patch '%s' containing changes between original and rebased "
-                        "spec file and patches is located in '%s'",
-                        'changes.patch', self.results_dir)
-        if not self.upstream_monitoring and not self.conf.patch_only:
-            logger.info('Rebase package to %s was SUCCESSFUL.\n', self.conf.sources)
+            self.print_summary()
         return 0
 
 
 if __name__ == '__main__':
-    a = Application(None, None, None, None, None)
+    a = Application(None, None, None, None)
     a.run()
