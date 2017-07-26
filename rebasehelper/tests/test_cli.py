@@ -49,6 +49,7 @@ class TestCLI(object):
             'results_dir': '/tmp/rebase-helper',
             'builder_options': '\"-v\"',
             'get_old_build_from_koji': False,
+            'non_colored_cli_output': True,
         }
         arguments = [
             '--build-only', '--patch-only', 'test-1.0.3.tar.gz', '--verbose',
@@ -59,6 +60,7 @@ class TestCLI(object):
              '--build-retries', '2',
              '--results-dir', '/tmp/rebase-helper',
              '--builder-options=\"-v\"',
+             '--non-colored-cli-output',
         ]
         cli = CLI(arguments)
         for key, value in cli.args.__dict__.items():

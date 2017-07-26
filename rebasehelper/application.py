@@ -32,7 +32,7 @@ from rebasehelper.archive import Archive
 from rebasehelper.specfile import SpecFile, get_rebase_name, spec_hooks_runner
 from rebasehelper.logger import logger, logger_report, LoggerHelper
 from rebasehelper import settings
-from rebasehelper import output_tool
+from rebasehelper.output_tool import output_tools_runner
 from rebasehelper.utils import PathHelper, ConsoleHelper, GitHelper, KojiHelper, FileHelper, ProcessHelper
 from rebasehelper.checker import checkers_runner
 from rebasehelper.build_helper import Builder, SourcePackageBuildError, BinaryPackageBuildError

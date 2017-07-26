@@ -43,6 +43,7 @@ setup(
         'rebasehelper.build_tools',
         'rebasehelper.checkers',
         'rebasehelper.spec_hooks',
+        'rebasehelper.output_tools',
         'rebasehelper.versioneers',
         'rebasehelper.tests',
     ],
@@ -70,6 +71,11 @@ setup(
         'rebasehelper.versioneers': [
             'anitya = rebasehelper.versioneers.anitya_versioneer:AnityaVersioneer',
             'pypi = rebasehelper.versioneers.pypi_versioneer:PyPIVersioneer',
+        ],
+	'rebasehelper.output_tools': [
+            'html_output_tool = rebasehelper.output_tools.html_output_tool:HTMLOutputTool',
+            'json_output_tool = rebasehelper.output_tools.json_output_tool:JSONOutputTool',
+            'text_output_tool = rebasehelper.output_tools.text_output_tool:TextOutputTool',
         ]
     },
     setup_requires=[],

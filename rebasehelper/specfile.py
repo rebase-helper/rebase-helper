@@ -1285,7 +1285,6 @@ class SpecHooksRunner(object):
     def run_spec_hooks(self, spec_file, rebase_spec_file):
         """
         Runs all spec hooks.
-
         :param spec_file: Original spec file object
         :param rebase_spec_file: Rebased spec file object
         """
