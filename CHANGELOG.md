@@ -6,7 +6,7 @@
 - Added support for test suite to be run in Docker containers
 
 ### Changed
-- Introduced plugin system for extending build tools and checkers
+- Introduced plugin system for extending build tools, output tools and checkers
 - Improved project documentation
 
 ### Fixed

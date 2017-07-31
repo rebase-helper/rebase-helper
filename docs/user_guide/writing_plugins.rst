@@ -7,13 +7,14 @@ You can implement your own build tool, checker or SPEC hook. All you have to do 
 to derive your plugin from corresponding base class, implement all necessary methods
 and register it using one of the following entry points:
 
-=========== ================================ ===============================================
-Plugin type Entry point                      Base class
-=========== ================================ ===============================================
-build tool  :samp:`rebasehelper.build_tools` :samp:`rebasehelper.build_helper.BuildToolBase`
-checker     :samp:`rebasehelper.checkers`    :samp:`rebasehelper.checker.BaseChecker`
-SPEC hook   :samp:`rebasehelper.spec_hooks`  :samp:`rebasehelper.specfile.BaseSpecHook`
-=========== ================================ ===============================================
+=========== ================================= ===============================================
+Plugin type Entry point                       Base class
+=========== ================================= ===============================================
+build tool  :samp:`rebasehelper.build_tools`  :samp:`rebasehelper.build_helper.BuildToolBase`
+checker     :samp:`rebasehelper.checkers`     :samp:`rebasehelper.checker.BaseChecker`
+SPEC hook   :samp:`rebasehelper.spec_hooks`   :samp:`rebasehelper.specfile.BaseSpecHook`
+output tool :samp:`rebasehelper.output_tools` :samp:`rebasehelper.specfile.BaseOutputTool`
+=========== ================================= ===============================================
 
 
 Example
