@@ -444,7 +444,8 @@ class Application(object):
 
         # Generate patch
         self.rebased_repo.git.add(all=True)
-        self.rebased_repo.index.commit('New upstream release {}'.format(self.rebase_spec_file.get_full_version()))
+        self.rebased_repo.index.commit('New upstream release {}'.format(self.rebase_spec_file.get_full_version()),
+                                       skip_hooks=True)
         patch = self.rebased_repo.git.format_patch('-1', stdout=True, stdout_as_string=False)
         with open(os.path.join(self.results_dir, 'changes.patch'), 'wb') as f:
             f.write(patch)
@@ -463,7 +464,7 @@ class Application(object):
         repo.git.config('user.name', GitHelper.get_user(), local=True)
         repo.git.config('user.email', GitHelper.get_email(), local=True)
         repo.git.add(all=True)
-        repo.index.commit('Initial commit')
+        repo.index.commit('Initial commit', skip_hooks=True)
         return repo
 
     def build_packages(self):
