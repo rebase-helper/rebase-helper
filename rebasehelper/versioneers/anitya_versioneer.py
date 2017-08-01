@@ -49,7 +49,7 @@ class AnityaVersioneer(BaseVersioneer):
             return None
         data = r.json()
         try:
-            versions = [p['version'] for p in data['projects']]
+            versions = [p['version'] for p in data['projects'] if p['version']]
         except KeyError:
             return None
         # there can be multiple matching projects, just return the highest version of all of them
