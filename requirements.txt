@@ -6,3 +6,5 @@ pyquery
 requests
 six
 GitPython
+ansicolors
+yattag
