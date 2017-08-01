@@ -104,11 +104,11 @@ class GitPatchTool(PatchBase):
             except git.exc.GitCommandError:
                 repo.git.apply(patch_name, patch_option, reject=True, whitespace='fix')
             repo.git.add(all=True)
-            repo.index.commit('Patch: {0}'.format(os.path.basename(patch_name)))
+            repo.index.commit('Patch: {0}'.format(os.path.basename(patch_name)), skip_hooks=True)
         else:
             # replace last commit message with patch name to preserve mapping between commits and patches
             repo.head.reset('HEAD~1', index=False)
-            repo.index.commit('Patch: {0}'.format(os.path.basename(patch_name)))
+            repo.index.commit('Patch: {0}'.format(os.path.basename(patch_name)), skip_hooks=True)
 
     @classmethod
     def _update_deleted_patches(cls, deleted_patches, inapplicable_patches):
@@ -213,7 +213,7 @@ class GitPatchTool(PatchBase):
                     modified_files = [d.a_path for d in diff]
                     logger.info('Following files were modified: %s', ', '.join(modified_files))
                     try:
-                        commit = cls.old_repo.index.commit(patch_name)
+                        commit = cls.old_repo.index.commit(patch_name, skip_hooks=True)
                     except git.UnmergedEntriesError:
                         inapplicable_patches.append(failed_patch)
                     else:
@@ -309,7 +309,7 @@ class GitPatchTool(PatchBase):
                                      output=os.path.join(cls.kwargs['workspace_dir'], 'prep_script.log'))
         if not cls.patch_sources_by_prep_script:
             cls.old_repo.git.add(all=True)
-            cls.old_repo.index.commit('prep_script prep_corrections')
+            cls.old_repo.index.commit('prep_script prep_corrections', skip_hooks=True)
         os.chdir(cwd)
 
     @classmethod
@@ -319,7 +319,7 @@ class GitPatchTool(PatchBase):
         repo.git.config('user.name', GitHelper.get_user(), local=True)
         repo.git.config('user.email', GitHelper.get_email(), local=True)
         repo.git.add(all=True)
-        repo.index.commit('Initial commit')
+        repo.index.commit('Initial commit', skip_hooks=True)
         return repo
 
     @classmethod
