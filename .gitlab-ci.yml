@@ -11,9 +11,9 @@ stages:
     - dnf -y install $(cat test-deps-fedora.txt)
     - PYTEST_ADDOPTS="-m 'not optional'" tox
 
-test:f24:
+test:f25:
   <<: *test_definition
-  image: fedora:24
+  image: fedora:25
 
 test:latest:
   <<: *test_definition

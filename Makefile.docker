@@ -1,4 +1,4 @@
-DOCKER_IMAGE ?= fedora:24 fedora:latest fedora:rawhide
+DOCKER_IMAGE ?= fedora:25 fedora:latest fedora:rawhide
 
 DOCKER := docker
 
