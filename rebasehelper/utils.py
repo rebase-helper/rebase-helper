@@ -45,6 +45,7 @@ from six.moves import input
 from six.moves import urllib
 from six.moves import configparser
 from distutils.util import strtobool
+from pkg_resources import parse_version
 
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.logger import logger
@@ -685,13 +686,31 @@ class MacroHelper(object):
 
         macros = []
 
+        def add_macro(properties):
+            macro = dict(properties)
+            macro['used'] = macro['used'] == '='
+            macro['level'] = int(macro['level'])
+            if parse_version(rpm.__version__) < parse_version('4.13.90'):
+                # in RPM < 4.13.90 level of some macros is decreased by 1
+                if macro['level'] == -1:
+                    # this could be macro with level -1 or level 0, we can not be sure
+                    # so just duplicate the macro for both levels
+                    macros.append(macro)
+                    macro = dict(macro)
+                    macro['level'] = 0
+                    macros.append(macro)
+                elif macro['level'] in (-14, -16):
+                    macro['level'] += 1
+                    macros.append(macro)
+                else:
+                    macros.append(macro)
+            else:
+                macros.append(macro)
+
         for line in capturer.stderr.split('\n'):
             match = macro_re.match(line)
             if match:
-                macro = match.groupdict()
-                macro['level'] = int(macro['level'])
-                macro['used'] = macro['used'] == '='
-                macros.append(macro)
+                add_macro(match.groupdict())
 
         return macros
 

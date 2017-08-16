@@ -535,7 +535,7 @@ class TestMacroHelper(object):
     def test_get_macros(self):
         rpm.addMacro('test_macro', 'test_macro value')
         macros = MacroHelper.dump()
-        macros = MacroHelper.filter(macros, name='test_macro')
+        macros = MacroHelper.filter(macros, name='test_macro', level=-1)
         assert len(macros) == 1
         assert macros[0]['name'] == 'test_macro'
         assert macros[0]['value'] == 'test_macro value'
