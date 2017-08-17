@@ -5,6 +5,11 @@ env:
     - DOCKER_IMAGE=fedora:25
     - DOCKER_IMAGE=fedora:latest
     - DOCKER_IMAGE=fedora:rawhide
+before_install:
+    # Update docker to allow using ARG in FROM (>= 17.05.0-ce)
+    # https://github.com/moby/moby/blob/master/CHANGELOG.md
+    - sudo apt-get update
+    - sudo apt-get -y -o Dpkg::Options::="--force-confnew" install docker-ce
 install: true
 before_script:
     - |
@@ -13,4 +18,6 @@ before_script:
         else
             PYTEST_ADDOPTS="-m 'not optional'"
         fi
-script: make PYTEST_ADDOPTS="${PYTEST_ADDOPTS}" test-docker
+script:
+    - docker version
+    - make PYTEST_ADDOPTS="${PYTEST_ADDOPTS}" test-docker

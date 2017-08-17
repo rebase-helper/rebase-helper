@@ -17,8 +17,12 @@ test: $(TEST_IMAGE)
 
 $(TEST_IMAGE):
 	$(eval IMAGE := $(subst _COLON_,:,$@))
-	$(DOCKER) pull $(IMAGE)
-	git archive HEAD | $(DOCKER) run \
-		--cap-add=SYS_ADMIN --rm -i -v /build -w /build -e PY_COLORS=1 \
-		-e TOXENV="$(TOXENV)" -e PYTEST_ADDOPTS="$(PYTEST_ADDOPTS)" $(IMAGE) \
-		/bin/sh -c 'dnf -y install tar && tar -x && dnf -y upgrade openssl-libs && dnf -y install yum && dnf -y install $$(cat test-deps-fedora.txt) && tox'
+	$(DOCKER) build \
+		--build-arg DOCKER_IMAGE="$(IMAGE)" \
+		-t rebase-helper \
+		.
+	$(DOCKER) run \
+		--cap-add=SYS_ADMIN \
+		-e TOXENV="$(TOXENV)" \
+		-e PYTEST_ADDOPTS="$(PYTEST_ADDOPTS)" \
+		-t rebase-helper
