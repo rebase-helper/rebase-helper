@@ -21,4 +21,4 @@ $(TEST_IMAGE):
 	git archive HEAD | $(DOCKER) run \
 		--cap-add=SYS_ADMIN --rm -i -v /build -w /build -e PY_COLORS=1 \
 		-e TOXENV="$(TOXENV)" -e PYTEST_ADDOPTS="$(PYTEST_ADDOPTS)" $(IMAGE) \
-		/bin/sh -c 'dnf -y install tar && tar -x && dnf -y upgrade openssl-libs && dnf -y install yum && dnf -y install $$(cat test-deps-fedora.txt) && tox'
+		/bin/sh -c 'dnf -y install tar && tar -x && dnf -y install $$(cat test-deps-fedora.txt) && tox'
