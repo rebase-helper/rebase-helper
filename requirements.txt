@@ -1,4 +1,6 @@
-# This can not be installed from pip, on Fedora you need to install rpm-python{,3}
+# This can not be installed from pip, on Fedora you need to install
+# python{2,3}-rpm package containing the module.
+# See: https://github.com/rpm-software-management/rpm/tree/master/python/rpm
 #rpm-python
 backports.lzma
 copr
