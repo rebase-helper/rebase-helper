@@ -490,9 +490,9 @@ class Application(object):
                     koji_version, koji_build_id = KojiHelper.get_latest_build(pkg_name)
                     if koji_version:
                         if koji_version != pkg_version:
-                            logger.warning('Version of the latest Koji build (%s) '
+                            logger.warning('Version of the latest Koji build (%s) with id (%s) '
                                            'differs from version in SPEC file (%s)!',
-                                           koji_version, pkg_version)
+                                           koji_version, koji_build_id, pkg_version)
                         pkg_version = pkg_full_version = koji_version
                     else:
                         logger.warning('Unable to find the latest Koji build!')
