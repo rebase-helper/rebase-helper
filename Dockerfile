@@ -15,7 +15,6 @@ RUN mv RPM-GPG-KEY-fedora-28-primary /etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-28-x86_
 RUN rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-28-x86_64
 
 RUN dnf -y update
-RUN dnf -y install yum
 # python2-pip is not available on F25.
 RUN dnf -y install \
   python2 \

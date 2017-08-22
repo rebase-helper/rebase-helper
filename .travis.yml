@@ -19,5 +19,4 @@ before_script:
             PYTEST_ADDOPTS="-m 'not optional'"
         fi
 script:
-    - docker version
     - make PYTEST_ADDOPTS="${PYTEST_ADDOPTS}" test-docker
