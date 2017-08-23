@@ -34,7 +34,7 @@ from rebasehelper.build_helper import Builder
 from rebasehelper.checker import checkers_runner
 from rebasehelper.output_tool import OutputTool
 from rebasehelper.versioneer import versioneers_runner
-from rebasehelper.utils import KojiHelper
+from rebasehelper.utils import KojiHelper, ConsoleHelper
 
 
 class CustomHelpFormatter(argparse.HelpFormatter):
@@ -160,6 +160,13 @@ class CLI(object):
             help="continue previously interrupted rebase"
         )
         parser.add_argument(
+            "--color",
+            default='auto',
+            dest='color',
+            choices=['always', 'never', 'auto'],
+            help="colorize the output, defaults to %(default)s"
+        )
+        parser.add_argument(
             "--disable-inapplicable-patches",
             default=False,
             action="store_true",
@@ -243,6 +250,7 @@ class CliHelper(object):
                 raise RebaseHelperError('Wrong format of --builder-options. It must be in the following form:'
                                         ' --builder-options="--desired-builder-option".')
             cli = CLI()
+            ConsoleHelper.use_colors = ConsoleHelper.should_use_colors(cli)
             execution_dir, results_dir, debug_log_file, report_log_file = Application.setup(cli)
             if not cli.verbose:
                 handler.setLevel(logging.INFO)

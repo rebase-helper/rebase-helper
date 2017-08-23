@@ -51,6 +51,7 @@ from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.logger import logger
 from rebasehelper import settings
 
+import colors
 
 try:
     import koji
@@ -94,6 +95,39 @@ def get_value_from_kwargs(kwargs, field, source='old'):
 class ConsoleHelper(object):
 
     """Class for command line interaction with the user."""
+
+    use_colors = False
+
+    @classmethod
+    def should_use_colors(cls, conf):
+        """Determine whether ansi colors should be used for CLI output"""
+        if os.environ.get('PY_COLORS') == '1':
+            return True
+        if os.environ.get('PY_COLORS') == '0':
+            return False
+        if conf.color == 'auto':
+            if (not os.isatty(sys.stdout.fileno()) or
+                    os.environ.get('TERM') == 'dumb'):
+                return False
+        elif conf.color == 'never':
+            return False
+        return True
+
+
+    @classmethod
+    def cprint(cls, message, color=None):
+        """
+        Print colored output if possible
+
+        :param color: color to be used in the output
+        :param message: string to be printed out
+        """
+        if (cls.use_colors and
+            color is not None and
+            hasattr(colors, color)):
+                print(getattr(colors, color)(message))
+        else:
+            print(message)
 
     @staticmethod
     def get_message(message, default_yes=True, any_input=False):

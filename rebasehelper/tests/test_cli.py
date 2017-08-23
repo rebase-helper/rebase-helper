@@ -49,6 +49,7 @@ class TestCLI(object):
             'results_dir': '/tmp/rebase-helper',
             'builder_options': '\"-v\"',
             'get_old_build_from_koji': False,
+            'color': 'auto',
         }
         arguments = [
             'test-1.0.3.tar.gz', '--verbose',
