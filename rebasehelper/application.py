@@ -742,6 +742,10 @@ class Application(object):
                                         ' and '.join(options_used),
                                         ', '.join(tools_creating_tasks)
                                         )
+        elif self.conf.builds_nowait and self.conf.get_old_build_from_koji:
+            raise RebaseHelperError("%s can't be used with: %s" %
+                                    ('--builds-nowait', '--get-old-build-from-koji')
+                                    )
 
         tools_accepting_options = [k for k, v in six.iteritems(Builder.build_tools) if v.accepts_options()]
         if self.conf.buildtool not in tools_accepting_options:

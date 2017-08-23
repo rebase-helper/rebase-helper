@@ -90,14 +90,15 @@ class CLI(object):
             action="store_true",
             help="be more verbose (recommended)"
         )
-        parser.add_argument(
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument(
             "-b",
             "--build-only",
             default=False,
             action="store_true",
             help="only build SRPM and RPMs"
         )
-        parser.add_argument(
+        group.add_argument(
             "--comparepkgs-only",
             default=False,
             dest="comparepkgs",
@@ -105,7 +106,7 @@ class CLI(object):
             help="compare already built packages, %(metavar)s must be a directory "
                  "with the following structure: <dir_name>/{old,new}/RPM"
         )
-        parser.add_argument(
+        group.add_argument(
             "-p",
             "--patch-only",
             default=False,
