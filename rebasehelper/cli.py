@@ -210,13 +210,6 @@ class CLI(object):
                 action="store_true",
                 help="do not build old sources, download latest build from Koji instead"
             )
-        # deprecated argument, kept for backward compatibility
-        parser.add_argument(
-            "--fedpkg-build-tasks",
-            dest="fedpkg_build_tasks",
-            type=lambda s: s.split(','),
-            help=argparse.SUPPRESS
-        )
         parser.add_argument(
             "sources",
             metavar='SOURCES',

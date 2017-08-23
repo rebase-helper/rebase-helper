@@ -43,7 +43,6 @@ class TestCLI(object):
             'non_interactive': True,
             'disable_inapplicable_patches': False,
             'comparepkgs': 'test_dir',
-            'fedpkg_build_tasks': None,
             'build_tasks': ['123456', '654321'],
             'builds_nowait': True,
             'build_retries': 2,

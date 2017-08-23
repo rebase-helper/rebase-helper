@@ -723,12 +723,6 @@ class Application(object):
         return rh_stuff
 
     def run(self):
-        # TODO: Move this check to CliHelper OR possibly to a private method validating the configuration.
-        if self.conf.fedpkg_build_tasks:
-            logger.warning("Option --fedpkg-build-tasks is deprecated, use --build-tasks instead.")
-            if not self.conf.build_tasks:
-                self.conf.build_tasks = self.conf.fedpkg_build_tasks
-
         # Certain options can be used only with specific build tools
         tools_creating_tasks = [k for k, v in six.iteritems(Builder.build_tools) if v.creates_tasks()]
         if self.conf.buildtool not in tools_creating_tasks:
