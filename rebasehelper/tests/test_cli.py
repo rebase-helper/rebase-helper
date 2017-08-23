@@ -27,8 +27,9 @@ class TestCLI(object):
     def test_cli_unit(self):
         """Function tests cli class with all arguments"""
         conf = {
-            'build_only': True,
-            'patch_only': True,
+            'build_only': False,
+            'patch_only': False,
+            'compare_pkgs_only': True,
             'sources': 'test-1.0.3.tar.gz',
             'verbose': True,
             'buildtool': 'rpmbuild',
@@ -51,7 +52,7 @@ class TestCLI(object):
             'get_old_build_from_koji': False,
         }
         arguments = [
-            '--build-only', '--patch-only', 'test-1.0.3.tar.gz', '--verbose',
+            'test-1.0.3.tar.gz', '--verbose',
              '--buildtool', 'rpmbuild', '--pkgcomparetool',
              'rpmdiff', '--outputtool', 'json', '--keep-workspace', '--not-download-sources', '--continue',
              '--non-interactive', '--comparepkgs-only', 'test_dir',
