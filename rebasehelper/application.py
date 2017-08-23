@@ -490,9 +490,9 @@ class Application(object):
                     koji_version, koji_build_id = KojiHelper.get_latest_build(pkg_name)
                     if koji_version:
                         if koji_version != pkg_version:
-                            logger.warning('Version of the latest Koji build (%s) '
+                            logger.warning('Version of the latest Koji build (%s) with id (%s) '
                                            'differs from version in SPEC file (%s)!',
-                                           koji_version, pkg_version)
+                                           koji_version, koji_build_id, pkg_version)
                         pkg_version = pkg_full_version = koji_version
                     else:
                         logger.warning('Unable to find the latest Koji build!')
@@ -723,12 +723,6 @@ class Application(object):
         return rh_stuff
 
     def run(self):
-        # TODO: Move this check to CliHelper OR possibly to a private method validating the configuration.
-        if self.conf.fedpkg_build_tasks:
-            logger.warning("Option --fedpkg-build-tasks is deprecated, use --build-tasks instead.")
-            if not self.conf.build_tasks:
-                self.conf.build_tasks = self.conf.fedpkg_build_tasks
-
         # Certain options can be used only with specific build tools
         tools_creating_tasks = [k for k, v in six.iteritems(Builder.build_tools) if v.creates_tasks()]
         if self.conf.buildtool not in tools_creating_tasks:
@@ -742,6 +736,10 @@ class Application(object):
                                         ' and '.join(options_used),
                                         ', '.join(tools_creating_tasks)
                                         )
+        elif self.conf.builds_nowait and self.conf.get_old_build_from_koji:
+            raise RebaseHelperError("%s can't be used with: %s" %
+                                    ('--builds-nowait', '--get-old-build-from-koji')
+                                    )
 
         tools_accepting_options = [k for k, v in six.iteritems(Builder.build_tools) if v.accepts_options()]
         if self.conf.buildtool not in tools_accepting_options:

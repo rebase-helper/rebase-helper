@@ -90,19 +90,28 @@ class CLI(object):
             action="store_true",
             help="be more verbose (recommended)"
         )
-        parser.add_argument(
-            "-p",
-            "--patch-only",
-            default=False,
-            action="store_true",
-            help="only apply patches"
-        )
-        parser.add_argument(
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument(
             "-b",
             "--build-only",
             default=False,
             action="store_true",
             help="only build SRPM and RPMs"
+        )
+        group.add_argument(
+            "--comparepkgs-only",
+            default=False,
+            dest="comparepkgs",
+            metavar="COMPAREPKGS_DIR",
+            help="compare already built packages, %(metavar)s must be a directory "
+                 "with the following structure: <dir_name>/{old,new}/RPM"
+        )
+        group.add_argument(
+            "-p",
+            "--patch-only",
+            default=False,
+            action="store_true",
+            help="only apply patches"
         )
         parser.add_argument(
             "--buildtool",
@@ -130,17 +139,17 @@ class CLI(object):
             help="tool to use for determining latest upstream version, defaults to %(default)s"
         )
         parser.add_argument(
+            "--not-download-sources",
+            default=False,
+            action="store_true",
+            help="do not download sources"
+        )
+        parser.add_argument(
             "-w",
             "--keep-workspace",
             default=False,
             action="store_true",
             help="do not remove workspace directory after finishing"
-        )
-        parser.add_argument(
-            "--not-download-sources",
-            default=False,
-            action="store_true",
-            help="do not download sources"
         )
         parser.add_argument(
             "-c",
@@ -151,11 +160,11 @@ class CLI(object):
             help="continue previously interrupted rebase"
         )
         parser.add_argument(
-            "sources",
-            metavar='SOURCES',
-            nargs='?',
-            default=None,
-            help="new upstream sources"
+            "--disable-inapplicable-patches",
+            default=False,
+            action="store_true",
+            dest='disable_inapplicable_patches',
+            help="disable inapplicable patches in rebased SPEC file"
         )
         parser.add_argument(
             "--non-interactive",
@@ -165,34 +174,6 @@ class CLI(object):
             help="do not interact with user"
         )
         parser.add_argument(
-            "--disable-inapplicable-patches",
-            default=False,
-            action="store_true",
-            dest='disable_inapplicable_patches',
-            help="disable inapplicable patches in rebased SPEC file"
-        )
-        parser.add_argument(
-            "--comparepkgs-only",
-            default=False,
-            dest="comparepkgs",
-            metavar="COMPAREPKGS_DIR",
-            help="compare already built packages, %(metavar)s must be a directory "
-                 "with the following structure: <dir_name>/{old,new}/RPM"
-        )
-        parser.add_argument(
-            "--builds-nowait",
-            default=False,
-            action="store_true",
-            help="do not wait for remote builds to finish"
-        )
-        # deprecated argument, kept for backward compatibility
-        parser.add_argument(
-            "--fedpkg-build-tasks",
-            dest="fedpkg_build_tasks",
-            type=lambda s: s.split(','),
-            help=argparse.SUPPRESS
-        )
-        parser.add_argument(
             "--build-tasks",
             dest="build_tasks",
             metavar="OLD_TASK,NEW_TASK",
@@ -200,14 +181,10 @@ class CLI(object):
             help="comma-separated remote build task ids"
         )
         parser.add_argument(
-            "--results-dir",
-            help="directory where rebase-helper output will be stored"
-        )
-        parser.add_argument(
-            "--build-retries",
-            default=2,
-            help="number of retries of a failed build, defaults to %(default)d",
-            type=int
+            "--builds-nowait",
+            default=False,
+            action="store_true",
+            help="do not wait for remote builds to finish"
         )
         parser.add_argument(
             "--builder-options",
@@ -216,6 +193,16 @@ class CLI(object):
             help="enable arbitrary local builder option(s), enclose %(metavar)s in quotes "
                  "and note that = before it is mandatory"
         )
+        parser.add_argument(
+            "--build-retries",
+            default=2,
+            help="number of retries of a failed build, defaults to %(default)d",
+            type=int
+        )
+        parser.add_argument(
+            "--results-dir",
+            help="directory where rebase-helper output will be stored"
+        )
         if KojiHelper.functional:
             parser.add_argument(
                 "--get-old-build-from-koji",
@@ -223,6 +210,13 @@ class CLI(object):
                 action="store_true",
                 help="do not build old sources, download latest build from Koji instead"
             )
+        parser.add_argument(
+            "sources",
+            metavar='SOURCES',
+            nargs='?',
+            default=None,
+            help="new upstream sources"
+        )
         return parser
 
     def __init__(self, args=None):
