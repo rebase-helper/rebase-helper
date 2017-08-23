@@ -1,24 +1,30 @@
 stages:
-  - test
+    - test
 
 .test_template: &test_definition
-  stage: test
-  # don't start any services (mainly not the default ones)
-  services:
-  script:
-    - dnf -y upgrade openssl-libs
-    - dnf -y install yum
-    - dnf -y install $(cat test-deps-fedora.txt)
-    - PYTEST_ADDOPTS="-m 'not optional'" tox
+    stage: test
+    image: docker:latest
+    variables:
+        DOCKER_HOST: tcp://docker:2375
+        DOCKER_DRIVER: overlay
+    services:
+        - docker:dind
+    script:
+        - apk update
+        - apk add make git
+        - make PYTEST_ADDOPTS="-m 'not optional'" test-docker
 
 test:f25:
-  <<: *test_definition
-  image: fedora:25
+    <<: *test_definition
+    variables:
+        DOCKER_IMAGE: fedora:25
 
 test:latest:
-  <<: *test_definition
-  image: fedora:latest
+    <<: *test_definition
+    variables:
+        DOCKER_IMAGE: fedora:latest
 
 test:rawhide:
-  <<: *test_definition
-  image: fedora:rawhide
+    <<: *test_definition
+    variables:
+        DOCKER_IMAGE: fedora:rawhide
