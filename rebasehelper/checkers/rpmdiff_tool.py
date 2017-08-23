@@ -35,7 +35,7 @@ from rebasehelper.checker import BaseChecker
 
 
 class RpmDiffTool(BaseChecker):
-    """ RpmDiff compare tool."""
+    """rpmdiff compare tool"""
 
     CMD = "rpmdiff"
     DEFAULT = True
@@ -119,13 +119,20 @@ class RpmDiffTool(BaseChecker):
         old_pkgs = cls._get_rpms(results_store.get_old_build().get('rpm', None))
         new_pkgs = cls._get_rpms(results_store.get_new_build().get('rpm', None))
         for key, value in six.iteritems(old_pkgs):
+            if 'debuginfo' in key or 'debugsource' in key:
+                # skip debug{info,source} packages
+                continue
             cmd = [cls.CMD]
             # TODO modify to online command
             for x in not_catched_flags:
                 cmd.extend(['-i', x])
             cmd.append(value)
             # We would like to build correct old package against correct new packages
-            cmd.append(new_pkgs[key])
+            try:
+                cmd.append(new_pkgs[key])
+            except KeyError:
+                logger.warning('New version of package %s was not found!', key)
+                continue
             output = StringIO()
             try:
                 ProcessHelper.run_subprocess(cmd, output=output)

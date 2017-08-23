@@ -23,6 +23,8 @@ RUN dnf -y install \
   python3-devel \
   python2-rpm \
   python3-rpm \
+  python2-hawkey \
+  python3-hawkey \
   python2-tox \
   python3-tox \
   python-pip \

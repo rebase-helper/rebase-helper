@@ -24,7 +24,11 @@ from __future__ import print_function
 import os
 import re
 
-from rebasehelper.utils import ProcessHelper
+import rpm
+
+from hawkey import split_nevra
+
+from rebasehelper.utils import ProcessHelper, RpmHelper
 from rebasehelper.logger import logger
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
 from rebasehelper.results_store import results_store
@@ -33,7 +37,7 @@ from rebasehelper.checker import BaseChecker
 
 
 class AbiCheckerTool(BaseChecker):
-    """ Pkgdiff compare tool. """
+    """abipkgdiff compare tool"""
 
     CMD = "abipkgdiff"
     DEFAULT = True
@@ -71,61 +75,56 @@ class AbiCheckerTool(BaseChecker):
         return debug_package, rest_packages
 
     @classmethod
+    def _find_debuginfo(cls, debug, pkg):
+        name = split_nevra(os.path.basename(pkg)).name
+        debuginfo = '{}-debuginfo'.format(name)
+        find = [x for x in debug if split_nevra(os.path.basename(x)).name == debuginfo]
+        if find:
+            return find[0]
+        srpm = RpmHelper.get_info_from_rpm(pkg, rpm.RPMTAG_SOURCERPM)
+        debuginfo = '{}-debuginfo'.format(split_nevra(srpm).name)
+        find = [x for x in debug if split_nevra(os.path.basename(x)).name == debuginfo]
+        if find:
+            return find[0]
+        return None
+
+    @classmethod
     def run_check(cls, result_dir):
-        """Compares old and new RPMs using pkgdiff"""
+        """Compares old and new RPMs using abipkgdiff"""
         debug_old, rest_pkgs_old = cls._get_packages_for_abipkgdiff(results_store.get_build('old'))
         debug_new, rest_pkgs_new = cls._get_packages_for_abipkgdiff(results_store.get_build('new'))
         cmd = [cls.CMD]
-        if debug_old is None:
-            logger.warning("Package doesn't contain any debug package")
-            return None
-        try:
-            cmd.append('--d1')
-            cmd.append(debug_old[0])
-        except IndexError:
-            logger.error('Debuginfo package not found for old package.')
-            return None
-        try:
-            cmd.append('--d2')
-            cmd.append(debug_new[0])
-        except IndexError:
-            logger.error('Debuginfo package not found for new package.')
-            return None
         reports = {}
         for pkg in rest_pkgs_old:
             command = list(cmd)
-            # Package can be <letters><numbers>-<letters>-<and_whatever>
-            regexp = r'^(\w*)(-\D+)?.*$'
-            reg = re.compile(regexp)
-            matched = reg.search(os.path.basename(pkg))
-            if matched:
-                file_name = matched.group(1)
-                command.append(pkg)
-                find = [x for x in rest_pkgs_new if os.path.basename(x).startswith(file_name)]
-                command.append(find[0])
-                package_name = os.path.basename(os.path.basename(pkg))
-                logger.debug('Package name for ABI comparision %s', package_name)
-                regexp_name = r'(\w-)*(\D+)*'
-                reg_name = re.compile(regexp_name)
-                matched = reg_name.search(os.path.basename(pkg))
-                logger.debug('Found matches %s', matched.groups())
-                if matched:
-                    package_name = matched.group(0) + cls.log_name
-                else:
-                    package_name = package_name + '-' + cls.log_name
-                output = os.path.join(cls.results_dir, result_dir, package_name)
-                try:
-                    ret_code = ProcessHelper.run_subprocess(command, output=output)
-                except OSError:
-                    raise CheckerNotFoundError("Checker '%s' was not found or installed." % cls.CMD)
+            debug = cls._find_debuginfo(debug_old, pkg)
+            if debug:
+                command.append('--d1')
+                command.append(debug)
+            old_name = split_nevra(os.path.basename(pkg)).name
+            find = [x for x in rest_pkgs_new if split_nevra(os.path.basename(x)).name == old_name]
+            if not find:
+                logger.warning('New version of package %s was not found!', old_name)
+                continue
+            new_pkg = find[0]
+            debug = cls._find_debuginfo(debug_new, new_pkg)
+            if debug:
+                command.append('--d2')
+                command.append(debug)
+            command.append(pkg)
+            command.append(new_pkg)
+            logger.debug('Package name for ABI comparison %s', old_name)
+            output = os.path.join(cls.results_dir, result_dir, old_name + '-' + cls.log_name)
+            try:
+                ret_code = ProcessHelper.run_subprocess(command, output=output)
+            except OSError:
+                raise CheckerNotFoundError("Checker '%s' was not found or installed." % cls.CMD)
 
-                if int(ret_code) & settings.ABIDIFF_ERROR and int(ret_code) & settings.ABIDIFF_USAGE_ERROR:
-                    raise RebaseHelperError('Execution of %s failed.\nCommand line is: %s' % (cls.CMD, cmd))
-                if int(ret_code) == 0:
-                    text = 'ABI of the compared binaries in package %s are equal.' % package_name
-                else:
-                    text = 'ABI of the compared binaries in package %s are not equal.' % package_name
-                reports[output] = text
+            if int(ret_code) & settings.ABIDIFF_ERROR and int(ret_code) & settings.ABIDIFF_USAGE_ERROR:
+                raise RebaseHelperError('Execution of %s failed.\nCommand line is: %s' % (cls.CMD, cmd))
+            if int(ret_code) == 0:
+                text = 'ABI of the compared binaries in package %s are equal.' % old_name
             else:
-                logger.debug("Rebase-helper did not find a package name in '%s'", package_name)
+                text = 'ABI of the compared binaries in package %s are not equal.' % old_name
+            reports[output] = text
         return reports
