@@ -92,12 +92,13 @@ class TestRebase(object):
             '--buildtool', buildtool,
             '--outputtool', 'json',
             '--pkgcomparetool', 'rpmdiff,pkgdiff,abipkgdiff',
+            '--color=always',
             version
         ])
         execution_dir, results_dir, debug_log_file = Application.setup(cli)
         app = Application(cli, execution_dir, results_dir, debug_log_file)
         app.run()
-        with open(os.path.join(REBASE_HELPER_RESULTS_DIR, 'json.txt')) as f:
+        with open(os.path.join(REBASE_HELPER_RESULTS_DIR, 'report.json')) as f:
             report = json.load(f)
             for k in ['deleted', 'modified', 'inapplicable']:
                 assert set(report['patches'].get(k, [])) == (patches[k] or set())

@@ -25,7 +25,9 @@ import json
 
 import pytest
 
-from rebasehelper.output_tool import OutputTool
+from rebasehelper.output_tool import output_tools_runner
+from rebasehelper.output_tools.json_output_tool import JSONOutputTool
+from rebasehelper.output_tools.text_output_tool import TextOutputTool
 from rebasehelper.results_store import ResultsStore
 
 
@@ -50,6 +52,7 @@ class TestOutputTool(object):
                 'patches': {'deleted': ['mytest2.patch']},
                 'results_dir': workdir,
                 'moved': ['/usr/sbin/test', '/usr/sbin/test2'],
+                'success': 'Success',
                 }
 
         rs = ResultsStore()
@@ -61,11 +64,14 @@ class TestOutputTool(object):
         rs.set_checker_output('Results from checker(s)', test_output)
         rs.set_info_text('Information text', 'some information text')
         rs.set_info_text('Next Information', 'some another information text')
+        rs.set_result_message('success', data['success'])
 
         return rs
 
     def get_expected_text_output(self):
-        expected_output = """
+        expected_output = """\
+Success
+
 Summary information about patches:
 Patch mytest2.patch [deleted]
 
@@ -131,21 +137,24 @@ See for more details pkgdiff"""
             },
             ResultsStore.RESULTS_PATCHES: {
                 "deleted": ["mytest2.patch"]
+            },
+            ResultsStore.RESULTS_SUCCESS: {
+                "success": "Success"
             }
         }
         return expected_output
 
     def test_text_output_tool(self, results_file_path, results_store):
-        output = OutputTool('text')
-        output.print_information(results_file_path, results_store)
+        assert TextOutputTool.get_name() in output_tools_runner.output_tools
+        TextOutputTool.print_summary(results_file_path, results_store)
 
         with open(results_file_path) as f:
             lines = [y.strip() for y in f.readlines()]
             assert lines == self.get_expected_text_output().split('\n')
 
     def test_json_output_tool(self, results_file_path, results_store):
-        output = OutputTool('json')
-        output.print_information(results_file_path, results_store)
+        assert JSONOutputTool.get_name() in output_tools_runner.output_tools
+        JSONOutputTool.print_summary(results_file_path, results_store)
 
         with open(results_file_path) as f:
             json_dict = json.load(f, encoding='utf-8')
