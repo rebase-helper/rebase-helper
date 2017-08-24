@@ -620,6 +620,8 @@ class RpmHelper(object):
 
     """Helper class for doing various tasks with RPM database, packages, ..."""
 
+    ARCHES = None
+
     @staticmethod
     def is_package_installed(pkg_name=None):
         """
@@ -688,6 +690,44 @@ class RpmHelper(object):
         h = RpmHelper.get_header_from_rpm(rpm_name)
         name = h[info].decode(defenc) if six.PY3 else h[info]
         return name
+
+    @staticmethod
+    def get_arches():
+        """Get list of all known architectures"""
+        arches = ['aarch64', 'noarch', 'ppc', 'riscv64', 's390', 's390x', 'src', 'x86_64']
+        macros = MacroHelper.dump()
+        macros = [m for m in macros if m['name'] in ('ix86', 'arm', 'mips', 'sparc', 'alpha', 'power64')]
+        for m in macros:
+            arches.extend(rpm.expandMacro(m['value']).split())
+        return arches
+
+    @classmethod
+    def split_nevra(cls, string):
+        """Splits string into name, epoch, version, release and arch components"""
+        regexps = [
+            ('NEVRA', re.compile(r'^([^:]+)-(([0-9]+):)?([^-:]+)-(.+)\.([^.]+)$')),
+            ('NEVR', re.compile(r'^([^:]+)-(([0-9]+):)?([^-:]+)-(.+)()$')),
+            ('NA', re.compile(r'^([^:]+)()()()()\.([^.]+)$')),
+            ('N', re.compile(r'^([^:]+)()()()()()$')),
+        ]
+        if not cls.ARCHES:
+            cls.ARCHES = cls.get_arches()
+        for pattern, regexp in regexps:
+            match = regexp.match(string)
+            if not match:
+                continue
+            name = match.group(1) or None
+            epoch = match.group(3) or None
+            if epoch:
+                epoch = int(epoch)
+            version = match.group(4) or None
+            release = match.group(5) or None
+            arch = match.group(6) or None
+            if pattern == 'NEVRA' and arch not in cls.ARCHES:
+                # unknown arch, let's assume it's actually dist
+                continue
+            return dict(name=name, epoch=epoch, version=version, release=release, arch=arch)
+        raise RebaseHelperError('Unable to split string into NEVRA.')
 
 
 class MacroHelper(object):

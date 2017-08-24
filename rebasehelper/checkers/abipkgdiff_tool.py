@@ -22,11 +22,8 @@
 
 from __future__ import print_function
 import os
-import re
 
 import rpm
-
-from hawkey import split_nevra
 
 from rebasehelper.utils import ProcessHelper, RpmHelper
 from rebasehelper.logger import logger
@@ -76,14 +73,14 @@ class AbiCheckerTool(BaseChecker):
 
     @classmethod
     def _find_debuginfo(cls, debug, pkg):
-        name = split_nevra(os.path.basename(pkg)).name
+        name = RpmHelper.split_nevra(os.path.basename(pkg))['name']
         debuginfo = '{}-debuginfo'.format(name)
-        find = [x for x in debug if split_nevra(os.path.basename(x)).name == debuginfo]
+        find = [x for x in debug if RpmHelper.split_nevra(os.path.basename(x))['name'] == debuginfo]
         if find:
             return find[0]
         srpm = RpmHelper.get_info_from_rpm(pkg, rpm.RPMTAG_SOURCERPM)
-        debuginfo = '{}-debuginfo'.format(split_nevra(srpm).name)
-        find = [x for x in debug if split_nevra(os.path.basename(x)).name == debuginfo]
+        debuginfo = '{}-debuginfo'.format(RpmHelper.split_nevra(srpm)['name'])
+        find = [x for x in debug if RpmHelper.split_nevra(os.path.basename(x))['name'] == debuginfo]
         if find:
             return find[0]
         return None
@@ -101,8 +98,8 @@ class AbiCheckerTool(BaseChecker):
             if debug:
                 command.append('--d1')
                 command.append(debug)
-            old_name = split_nevra(os.path.basename(pkg)).name
-            find = [x for x in rest_pkgs_new if split_nevra(os.path.basename(x)).name == old_name]
+            old_name = RpmHelper.split_nevra(os.path.basename(pkg))['name']
+            find = [x for x in rest_pkgs_new if RpmHelper.split_nevra(os.path.basename(x))['name'] == old_name]
             if not find:
                 logger.warning('New version of package %s was not found!', old_name)
                 continue
