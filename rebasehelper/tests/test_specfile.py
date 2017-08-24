@@ -239,7 +239,7 @@ class TestSpecFile(object):
                             'Patch2: test-testing2.patch\n',
                             'Patch3: test-testing3.patch\n',
                             'Patch4: test-testing4.patch\n',
-                            'Patch5: rebase-helper-results/rebased_sources/test-testing5.patch\n',
+                            'Patch5: rebase-helper-results/rebased-sources/test-testing5.patch\n',
                             '\n',
                             'BuildRequires: openssl-devel, pkgconfig, texinfo, gettext, autoconf\n',
                             '\n']],
@@ -460,9 +460,9 @@ class TestSpecFile(object):
         :return:
         """
         line = [l for l in spec_object.spec_content if l.startswith('Patch5')][0]
-        assert 'rebased_sources' in line
+        assert 'rebased-sources' in line
 
         spec_object.update_paths_to_patches()
 
         line = [l for l in spec_object.spec_content if l.startswith('Patch5')][0]
-        assert not 'rebased_sources' in line
+        assert not 'rebased-sources' in line

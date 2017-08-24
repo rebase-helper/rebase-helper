@@ -20,215 +20,164 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
-import sys
 import os
 import six
-import json
+import pkg_resources
 
-from rebasehelper.exceptions import RebaseHelperError
-from rebasehelper.logger import LoggerHelper, logger, logger_report
+from rebasehelper.logger import logger
 from rebasehelper.results_store import results_store
-
-output_tools = {}
-
-
-def register_output_tool(output_tool):
-    output_tools[output_tool.PRINT] = output_tool
-    return output_tool
+from rebasehelper.utils import ConsoleHelper
 
 
 class BaseOutputTool(object):
-
     """
-    Class used for testing and other future stuff, ...
-    Each method should overwrite method like run_check
+    Base class for OutputTools.
+    print_cli_summary must be overridden in order to produce different CLI output
     """
 
     DEFAULT = False
+    NAME = 'name'
+    EXTENSION = 'ext'
 
     @classmethod
-    def match(cls, cmd=None, *args, **kwargs):
+    def get_report_path(cls, app):
+        return os.path.join(app.results_dir, 'report.' + cls.get_extension())
+
+    @classmethod
+    def get_extension(cls):
+        raise NotImplementedError
+
+    @classmethod
+    def print_cli_summary(cls, app):
+        """
+        Print report of the rebase
+
+        :param app: Application instance
+        """
+        cls.app = app
+        cls.print_patches_cli()
+
+        ConsoleHelper.cprint('\nAvailable logs:', color='yellow')
+        print('{0}:\n{1}'.format('Debug log', app.debug_log_file))
+        if results_store.get_old_build() is not None:
+            print('{0}:\n{1}'.format('Old build logs and (S)RPMs', os.path.join(app.results_dir, 'old-build')))
+        if results_store.get_new_build() is not None:
+            print('{0}:\n{1}'.format('New build logs and (S)RPMs', os.path.join(app.results_dir, 'new-build')))
+        print('')
+
+        ConsoleHelper.cprint('%s:' % 'Rebased sources', color='yellow')
+        print("%s" % app.rebased_sources_dir)
+
+        ConsoleHelper.cprint('%s:' % 'Generated patch', color='yellow')
+        print("%s\n" % os.path.join(app.results_dir, 'changes.patch'))
+
+        cls.print_report_file_path()
+
+        result = results_store.get_result_message()
+
+        if not app.conf.patch_only:
+            if 'success' in result:
+                ConsoleHelper.cprint('\n%s' % result['success'], color='green')
+            # Error is printed out through exception caught in CliHelper.run()
+        else:
+            if results_store.get_patches()['success']:
+                ConsoleHelper.cprint("\nPatching successful", color='green')
+            elif results_store.get_patches()['success']:
+                ConsoleHelper.cprint("\nPatching failed", color='red')
+
+    @classmethod
+    def print_report_file_path(cls):
+        """Print path to the report file"""
+        ConsoleHelper.cprint('%s report:' % cls.NAME, color='yellow')
+        print('%s' % os.path.join(cls.app.results_dir, 'report.' + cls.get_extension()))
+
+    @classmethod
+    def print_patches_cli(cls):
+        """Print info about patches"""
+        patch_dict = {
+            'inapplicable': 'red',
+            'modified': 'green',
+            'deleted': 'green'}
+
+        for patch_type, color in six.iteritems(patch_dict):
+            cls.print_patches_section_cli(color, patch_type)
+
+    @classmethod
+    def print_patches_section_cli(cls, color, patch_type):
+        """
+        Print info about one of the patches key section
+
+        :param color: color used for the message printing
+        :param patch_type: string containing key for the patch_dict
+        """
+        patches = results_store.get_patches()
+        if not patches:
+            return
+
+        if patch_type in patches:
+            print('\n%s patches:' % patch_type)
+            for patch in patches[patch_type]:
+                ConsoleHelper.cprint(patch, color=color)
+
+    @classmethod
+    def run(cls):
+        raise NotImplementedError()
+
+    @classmethod
+    def match(cls, cmd=None):
         """Checks if tool name matches the desired one."""
         raise NotImplementedError()
 
-    def print_summary(self, path, results, **kwargs):
-        """
-        Return list of files which has been changed against old version
-        This will be used by checkers
-        """
+    @classmethod
+    def get_name(cls):
         raise NotImplementedError()
 
-
-@register_output_tool
-class TextOutputTool(BaseOutputTool):
-
-    """ Text output tool. """
-
-    PRINT = "text"
-    DEFAULT = True
-
-    @classmethod
-    def match(cls, cmd=None):
-        if cmd == cls.PRINT:
-            return True
-        else:
-            return False
-
-    @classmethod
-    def print_message_and_separator(cls, message="", separator='='):
-        logger_report.info(message)
-        logger_report.info(separator * len(message))
-
-    @classmethod
-    def print_patches(cls, patches, summary):
-        if not patches:
-            logger_report.info("Patches were neither modified nor deleted.")
-            return
-        logger_report.info(summary)
-        max_name = 0
-        for value in six.itervalues(patches):
-            if value:
-                new_max = max([len(os.path.basename(x)) for x in value])
-                if new_max > max_name:
-                    max_name = new_max
-        max_key = max([len(x) for x in six.iterkeys(patches)])
-        for key, value in six.iteritems(patches):
-            if value:
-                for patch in value:
-                    logger_report.info('Patch %s [%s]', os.path.basename(patch).ljust(max_name), key.ljust(max_key))
-
-    @classmethod
-    def print_rpms(cls, rpms, version):
-        pkgs = ['srpm', 'rpm']
-        if not rpms.get('srpm', None):
-            return
-        message = '\n{0} (S)RPM packages:'.format(version)
-        cls.print_message_and_separator(message=message, separator='-')
-        for type_rpm in pkgs:
-            srpm = rpms.get(type_rpm, None)
-            if not srpm:
-                continue
-            message = "%s package(s): are in directory %s :"
-            if isinstance(srpm, str):
-                logger_report.info(message, type_rpm.upper(), os.path.dirname(srpm))
-                logger_report.info("- %s", os.path.basename(srpm))
-            else:
-                logger_report.info(message, type_rpm.upper(), os.path.dirname(srpm[0]))
-                for pkg in srpm:
-                    logger_report.info("- %s", os.path.basename(pkg))
-
-    @classmethod
-    def print_build_logs(cls, rpms, version):
-        """
-        Function is used for printing rpm build logs
-
-        :param kwargs: 
-        :return: 
-        """
-        if rpms.get('logs', None) is None:
-            return
-        logger_report.info('Available %s logs:', version)
-        for logs in rpms.get('logs', None):
-            logger_report.info('- %s', logs)
-
-    @classmethod
-    def print_summary(cls, path, results=results_store):
-        """
-        Function is used for printing summary informations
-
-        :return: 
-        """
-        if results.get_summary_info():
-            for key, value in six.iteritems(results.get_summary_info()):
-                logger.info("%s %s\n", key, value)
-
-        try:
-            LoggerHelper.add_file_handler(logger_report, path)
-        except (OSError, IOError):
-            raise RebaseHelperError("Can not create results file '%s'" % path)
-
-        type_pkgs = ['old', 'new']
-        if results.get_patches():
-            cls.print_patches(results.get_patches(), '\nSummary information about patches:')
-        for pkg in type_pkgs:
-            type_pkg = results.get_build(pkg)
-            if type_pkg:
-                cls.print_rpms(type_pkg, pkg.capitalize())
-                cls.print_build_logs(type_pkg, pkg.capitalize())
-
-        cls.print_pkgdiff_tool(results.get_checkers())
-
-    @classmethod
-    def print_pkgdiff_tool(cls, checkers_results):
-        """Function prints a summary information about pkgcomparetool"""
-        if checkers_results:
-            for check, data in six.iteritems(checkers_results):
-                logger_report.info("=== Checker %s results ===", check)
-                if data:
-                    for checker, output in six.iteritems(data):
-                        if output is None:
-                            logger_report.info("Log is available here: %s\n", checker)
-                        else:
-                            if isinstance(output, list):
-                                logger_report.info("%s See for more details %s", ','.join(output), checker)
-                            else:
-                                logger_report.info("%s See for more details %s", output, checker)
-
-
-@register_output_tool
-class JSONOutputTool(BaseOutputTool):
-
-    """ JSON output tool. """
-
-    PRINT = "json"
-
-    @classmethod
-    def match(cls, cmd=None):
-        if cmd == cls.PRINT:
-            return True
-        else:
-            return False
-
-    @classmethod
-    def print_summary(cls, path, results=results_store):
-        """
-        Function is used for storing output dictionary into JSON structure
-        JSON output file is stored into path
-        :return:
-        """
-        with open(path, 'w') as outputfile:
-            json.dump(results.get_all(), outputfile, indent=4, sort_keys=True)
-
-
-class OutputTool(object):
-
-    """Class representing printing the final results."""
-
-    def __init__(self, output_tool=None):
-        if output_tool is None:
-            raise TypeError("Expected argument 'tool' (pos 1) is missing")
-        self._output_tool_name = output_tool
-        self._tool = None
-
-        for output in output_tools.values():
-            if output.match(self._output_tool_name):
-                self._tool = output
-
-        if self._tool is None:
-            raise NotImplementedError("Unsupported output tool")
-
-    def print_information(self, path, results=results_store):
-        """Build sources."""
-        logger.debug("Printing information using '%s'", self._output_tool_name)
-        return self._tool.print_summary(path, results)
-
-    @classmethod
-    def get_supported_tools(cls):
+    @staticmethod
+    def get_supported_tools():
         """Returns list of supported output tools"""
-        return output_tools.keys()
+        return output_tools_runner.output_tools.keys()
 
-    @classmethod
-    def get_default_tool(cls):
+    @staticmethod
+    def get_default_tool():
         """Returns default output tool"""
-        default = [k for k, v in six.iteritems(output_tools) if v.DEFAULT]
+        default = [k for k, v in six.iteritems(output_tools_runner.output_tools) if v.DEFAULT]
         return default[0] if default else None
+
+
+class OutputToolRunner(object):
+    """
+    Class representing the process of running various output tools.
+    """
+
+    def __init__(self):
+        """
+        Constructor of OutputToolRunner class.
+        """
+        self.output_tools = {}
+        for entrypoint in pkg_resources.iter_entry_points('rebasehelper.output_tools'):
+            try:
+                output_tool = entrypoint.load()
+            except ImportError:
+                # silently skip broken plugin
+                continue
+            try:
+                self.output_tools[output_tool.get_name()] = output_tool
+            except (AttributeError, NotImplementedError):
+                # silently skip broken plugin
+                continue
+
+    def run_output_tools(self, log=None, app=None):
+        """
+        Runs all output tools.
+
+        :param log: Log that probably contains the important message concerning the rebase fail
+        :param app: Application class instance
+        """
+        for name, output_tool in six.iteritems(self.output_tools):
+            if output_tool.match(app.conf.outputtool):
+                logger.info("Running '%s' output tool." % output_tool.get_name())
+                output_tool.run(log, app=app)
+                output_tool.print_cli_summary(app)
+
+# Global instance of OutputToolRunner. It is enough to load it once per application run.
+output_tools_runner = OutputToolRunner()

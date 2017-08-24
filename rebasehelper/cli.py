@@ -32,9 +32,9 @@ from rebasehelper.logger import logger, LoggerHelper
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.build_helper import Builder
 from rebasehelper.checker import checkers_runner
-from rebasehelper.output_tool import OutputTool
+from rebasehelper.output_tool import BaseOutputTool
 from rebasehelper.versioneer import versioneers_runner
-from rebasehelper.utils import KojiHelper
+from rebasehelper.utils import KojiHelper, ConsoleHelper
 
 
 class CustomHelpFormatter(argparse.HelpFormatter):
@@ -128,8 +128,8 @@ class CLI(object):
         )
         parser.add_argument(
             "--outputtool",
-            choices=OutputTool.get_supported_tools(),
-            default=OutputTool.get_default_tool(),
+            choices=BaseOutputTool.get_supported_tools(),
+            default=BaseOutputTool.get_default_tool(),
             help="tool to use for formatting rebase output, defaults to %(default)s"
         )
         parser.add_argument(
@@ -158,6 +158,13 @@ class CLI(object):
             action="store_true",
             dest='cont',
             help="continue previously interrupted rebase"
+        )
+        parser.add_argument(
+            "--color",
+            default='auto',
+            dest='color',
+            choices=['always', 'never', 'auto'],
+            help="colorize the output, defaults to %(default)s"
         )
         parser.add_argument(
             "--disable-inapplicable-patches",
@@ -243,16 +250,17 @@ class CliHelper(object):
                 raise RebaseHelperError('Wrong format of --builder-options. It must be in the following form:'
                                         ' --builder-options="--desired-builder-option".')
             cli = CLI()
-            execution_dir, results_dir, debug_log_file, report_log_file = Application.setup(cli)
+            ConsoleHelper.use_colors = ConsoleHelper.should_use_colors(cli)
+            execution_dir, results_dir, debug_log_file = Application.setup(cli)
             if not cli.verbose:
                 handler.setLevel(logging.INFO)
-            app = Application(cli, execution_dir, results_dir, debug_log_file, report_log_file)
+            app = Application(cli, execution_dir, results_dir, debug_log_file)
             app.run()
         except KeyboardInterrupt:
             logger.info('\nInterrupted by user')
         except RebaseHelperError as e:
-            if e.args:
-                logger.error('\n%s', e.args[0] % e.args[1:])
+            if e.msg:
+                logger.error('\n%s', e.msg)
             else:
                 logger.error('\n%s', six.text_type(e))
             sys.exit(1)

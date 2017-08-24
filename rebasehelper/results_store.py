@@ -30,6 +30,8 @@ class ResultsStore(object):
     RESULTS_CHECKERS = 'checkers'
     RESULTS_BUILDS = 'builds'
     RESULTS_PATCHES = 'patches'
+    RESULTS_CHANGES_PATCH = 'changes_patch'
+    RESULTS_SUCCESS = 'result'
 
     def __init__(self):
         self._data_store = dict()
@@ -42,7 +44,9 @@ class ResultsStore(object):
                 self.RESULTS_INFORMATION,
                 self.RESULTS_CHECKERS,
                 self.RESULTS_BUILDS,
-                self.RESULTS_PATCHES
+                self.RESULTS_PATCHES,
+                self.RESULTS_CHANGES_PATCH,
+                self.RESULTS_SUCCESS
         ):
             raise ValueError('Trying to set unsupported type of results: %s!', results_type)
 
@@ -64,6 +68,12 @@ class ResultsStore(object):
 
     def set_build_data(self, version, data):
         self.set_results(self.RESULTS_BUILDS, {version: data})
+
+    def set_changes_patch(self, text, data):
+        self.set_results(self.RESULTS_CHANGES_PATCH, {text: data})
+
+    def set_result_message(self, text, data):
+        self.set_results(self.RESULTS_SUCCESS, {text: data})
 
     def get_all(self):
         return copy.deepcopy(self._data_store)
@@ -90,6 +100,11 @@ class ResultsStore(object):
     def get_summary_info(self):
         return self._data_store.get(self.RESULTS_INFORMATION, None)
 
+    def get_changes_patch(self):
+        return self._data_store.get(self.RESULTS_CHANGES_PATCH, None)
+
+    def get_result_message(self):
+        return self._data_store.get(self.RESULTS_SUCCESS, None)
 
 # global results store
 results_store = ResultsStore()

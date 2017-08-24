@@ -12,3 +12,4 @@ pyquery
 requests
 six
 GitPython
+ansicolors
