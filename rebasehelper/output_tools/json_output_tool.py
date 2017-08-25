@@ -41,7 +41,7 @@ class JSONOutputTool(BaseOutputTool):
             json.dump(results_store.get_all(), outputfile, indent=4, sort_keys=True)
 
     @classmethod
-    def run(cls, log, app):
+    def run(cls, logs, app):
         """
         Function is used for storing output dictionary into JSON structure
         JSON output is stored into report.json

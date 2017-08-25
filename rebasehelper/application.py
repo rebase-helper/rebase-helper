@@ -558,7 +558,7 @@ class Application(object):
                         error_message = 'Building old RPM package failed. Check logs: {} '.format(
                             builder.get_logs().get('logs', 'N/A')
                         )
-                        raise RebaseHelperError(error_message, logfile=builder.get_logs().get('logs', 'N/A'))
+                        raise RebaseHelperError(error_message, logfiles=builder.get_logs().get('logs'))
                     logger.error('Building binary packages failed.')
                     msg = 'Building package failed'
                     try:
@@ -567,14 +567,14 @@ class Application(object):
                         raise RebaseHelperError('Build log %s does not exist', build_log_path)
                     except BuildLogAnalyzerMakeError:
                         raise RebaseHelperError('%s during build. Check log %s', msg, build_log_path,
-                                                logfile=build_log_path)
+                                                logfiles=[build_log_path])
                     except BuildLogAnalyzerPatchError:
                         raise RebaseHelperError('%s during patching. Check log %s', msg, build_log_path,
-                                                logfile=build_log_path)
+                                                logfiles=[build_log_path])
                     except RuntimeError:
                         if self.conf.build_retries == number_retries:
                             raise RebaseHelperError('%s with unknown reason. Check log %s', msg, build_log_path,
-                                                    logfile=build_log_path)
+                                                    logfiles=[build_log_path])
 
                     if 'missing' in files:
                         missing_files = '\n'.join(files['missing'])
@@ -585,7 +585,7 @@ class Application(object):
                     else:
                         if self.conf.build_retries == number_retries:
                             raise RebaseHelperError("Build failed, but no issues were found in the build log %s",
-                                                    build_log, logfile=build_log)
+                                                    build_log, logfiles=[build_log])
                     self.rebase_spec_file.modify_spec_files_section(files)
 
                 if not self.conf.non_interactive:
@@ -686,11 +686,11 @@ class Application(object):
         :param exception: Error message from rebase-helper
         :return:
         """
-        log = None
+        logs = None
         # Store rebase helper result exception
         if exception:
-            if exception.logfile and os.path.exists(exception.logfile):
-                log = exception.logfile
+            if exception.logfiles:
+                logs = exception.logfiles
 
             results_store.set_result_message('fail', exception.msg)
         else:
@@ -699,7 +699,7 @@ class Application(object):
 
         self.rebase_spec_file.update_paths_to_patches()
         self.generate_patch()
-        output_tools_runner.run_output_tools(log, self)
+        output_tools_runner.run_output_tools(logs, self)
 
     def print_task_info(self, builder):
         logs = self.get_new_build_logs()['build_ref']

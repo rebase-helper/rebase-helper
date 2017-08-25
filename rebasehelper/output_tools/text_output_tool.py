@@ -154,6 +154,6 @@ class TextOutputTool(BaseOutputTool):
                                 logger_report.info("%s See for more details %s", output, checker)
 
     @classmethod
-    def run(cls, log, app):
+    def run(cls, logs, app):
         path = cls.get_report_path(app)
         cls.print_summary(path, results_store)
