@@ -2,16 +2,25 @@
 
 ## [Unreleased]
 ### Added
-- Implemented extensible SPEC hooks
+- Implemented extensible SPEC hooks and versioneers
+- Added **PyPI** SPEC hook for automatic fixing of Source URL of Python packages
+- Added **Anitya** and **PyPI** versioneers for determining latest upstream version of a package
+- Added possibility to download old version build of a package from Koji
 - Added support for test suite to be run in Docker containers
+- Implemented functional tests for automatic testing of whole rebase process
+- Diff against original source files is now generated as *changes.patch*
 
 ### Changed
-- Introduced plugin system for extending build tools, output tools and checkers
+- Introduced plugin system for extending build tools, checkers and output tools
+- Updated for **Koji 1.13** which finally brings Python 3 support
+- Improved output information and reports
+- Added colorized output
 - Improved project documentation
 
 ### Fixed
-- Pre-configured git username and e-mail address is used if available
-- Fixed several test suite related isues
+- Pre-configured git username and e-mail address is now used if available
+- Fixed several issues in **rpmdiff** and especially **abipkgdiff** checkers
+- Fixed several test suite related issues
 
 
 ## [0.9.0] - 2017-01-05

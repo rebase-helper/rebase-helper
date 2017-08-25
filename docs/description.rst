@@ -8,3 +8,5 @@ and patches (usually cloned dist-git repository).
 
 The new version is specified by :option:`SOURCES` argument, which can be
 either version number or filename of the new source archive.
+Starting with version 0.10.0, this argument can be omitted and the new version
+determined automatically using one of available *versioneers*.
