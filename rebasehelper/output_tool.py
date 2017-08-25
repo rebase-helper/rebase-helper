@@ -166,7 +166,7 @@ class OutputToolRunner(object):
                 # silently skip broken plugin
                 continue
 
-    def run_output_tools(self, log=None, app=None):
+    def run_output_tools(self, logs=None, app=None):
         """
         Runs all output tools.
 
@@ -176,7 +176,7 @@ class OutputToolRunner(object):
         for name, output_tool in six.iteritems(self.output_tools):
             if output_tool.match(app.conf.outputtool):
                 logger.info("Running '%s' output tool." % output_tool.get_name())
-                output_tool.run(log, app=app)
+                output_tool.run(logs, app=app)
                 output_tool.print_cli_summary(app)
 
 # Global instance of OutputToolRunner. It is enough to load it once per application run.

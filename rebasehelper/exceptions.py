@@ -26,7 +26,6 @@ class RebaseHelperError(Exception):
     Class representing Error raised inside rebase-helper after intentionally
     catching some expected and well known exception/error.
     """
-
     def __init__(self, *args, **kwargs):
         """Constructor of RebaseHelperError"""
         if not args:
@@ -35,7 +34,7 @@ class RebaseHelperError(Exception):
             self.msg = args[0] % args[1:]
         else:
             self.msg = args[0]
-        self.logfile = kwargs.get('logfile')
+        self.logfiles = kwargs.get('logfiles')
 
 
 class CheckerNotFoundError(RuntimeError):
