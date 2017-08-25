@@ -1,6 +1,8 @@
 # Change Log
 
 ## [Unreleased]
+
+## [0.10.0] - 2017-08-25
 ### Added
 - Implemented extensible SPEC hooks and versioneers
 - Added **PyPI** SPEC hook for automatic fixing of Source URL of Python packages
