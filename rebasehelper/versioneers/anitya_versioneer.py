@@ -25,6 +25,7 @@ import requests
 from pkg_resources import parse_version
 
 from rebasehelper.versioneer import BaseVersioneer
+from rebasehelper.logger import logger
 
 
 class AnityaVersioneer(BaseVersioneer):
@@ -32,7 +33,8 @@ class AnityaVersioneer(BaseVersioneer):
     DEFAULT = True
     NAME = 'anitya'
 
-    API_URL = 'https://release-monitoring.org/api/projects'
+    BASE_URL = 'https://release-monitoring.org'
+    API_URL = '{}/api'.format(BASE_URL)
 
     @classmethod
     def is_default(cls):
@@ -43,17 +45,36 @@ class AnityaVersioneer(BaseVersioneer):
         return cls.NAME
 
     @classmethod
-    def run(cls, package_name):
-        r = requests.get(cls.API_URL, params=dict(pattern=package_name))
+    def _get_version_using_distro_api(cls, package_name):
+        r = requests.get('{}/project/Fedora/{}'.format(cls.API_URL, package_name))
+        if not r.ok:
+            return None
+        data = r.json()
+        return data.get('version')
+
+    @classmethod
+    def _get_version_using_pattern_api(cls, package_name):
+        r = requests.get('{}/projects'.format(cls.API_URL), params=dict(pattern=package_name))
         if not r.ok:
             return None
         data = r.json()
         try:
-            versions = [p['version'] for p in data['projects'] if p['version']]
+            versions = [p['version'] for p in data['projects'] if p['name'] == package_name and p['version']]
         except KeyError:
             return None
-        # there can be multiple matching projects, just return the highest version of all of them
-        if versions:
-            return sorted(versions, key=parse_version, reverse=True)[0]
-        else:
+        if not versions:
             return None
+        # there can be multiple matching projects, just return the highest version of all of them
+        return sorted(versions, key=parse_version, reverse=True)[0]
+
+    @classmethod
+    def run(cls, package_name):
+        version = cls._get_version_using_distro_api(package_name)
+        if version:
+            return version
+        version = cls._get_version_using_pattern_api(package_name)
+        if version:
+            return version
+        logger.error("Failed to determine latest upstream version!\n"
+                     "Check that the package exists on %s.", cls.BASE_URL)
+        return None
