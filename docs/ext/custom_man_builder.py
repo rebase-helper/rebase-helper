@@ -88,11 +88,17 @@ class CustomManPageTranslator(ManualPageTranslator):
 class CustomManPageBuilder(ManualPageBuilder):
     """Manual page builder which uses CustomManualPageTranslator"""
     name = 'custom-man'
+    format = 'man'
+    # use custom translator (Sphinx >= 1.6)
+    default_translator_class = CustomManPageTranslator
 
     def init(self):
         ManualPageBuilder.init(self)
-        # use custom translator
-        self.translator_class = CustomManPageTranslator
+        # use custom translator (Sphinx < 1.6)
+        try:
+            self.translator_class = CustomManPageTranslator
+        except AttributeError:
+            pass
 
 
 def setup(app):
