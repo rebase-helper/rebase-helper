@@ -77,6 +77,19 @@ setup(
             'text_output_tool = rebasehelper.output_tools.text_output_tool:TextOutputTool',
         ]
     },
+    install_requires=[
+        # This can not be installed from pip, on Fedora you need to install
+        # python{2,3}-rpm package containing the module.
+        # See: https://github.com/rpm-software-management/rpm/tree/master/python/rpm
+        #'rpm-python',
+        'backports.lzma',
+        'copr',
+        'pyquery',
+        'requests',
+        'six',
+        'GitPython',
+        'ansicolors',
+    ],
     setup_requires=[],
     classifiers=[
         'Development Status :: 4 - Beta',

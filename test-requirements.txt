@@ -1,4 +1,4 @@
--r requirements.txt
+.
 cov-core
 coverage
 pytest-cov
