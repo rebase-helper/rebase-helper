@@ -25,6 +25,7 @@ import re
 import requests
 
 from rebasehelper.versioneer import BaseVersioneer
+from rebasehelper.logger import logger
 
 
 class PyPIVersioneer(BaseVersioneer):
@@ -32,7 +33,8 @@ class PyPIVersioneer(BaseVersioneer):
     DEFAULT = False
     NAME = 'pypi'
 
-    API_URL = 'https://pypi.python.org/pypi'
+    BASE_URL = 'https://pypi.python.org'
+    API_URL = '{}/pypi'.format(BASE_URL)
 
     @classmethod
     def is_default(cls):
@@ -43,7 +45,7 @@ class PyPIVersioneer(BaseVersioneer):
         return cls.NAME
 
     @classmethod
-    def run(cls, package_name):
+    def _get_version(cls, package_name):
         r = requests.get('{}/{}/json'.format(cls.API_URL, package_name))
         if not r.ok:
             # try to strip python prefix
@@ -56,3 +58,12 @@ class PyPIVersioneer(BaseVersioneer):
             return data['info']['version']
         except KeyError:
             return None
+
+    @classmethod
+    def run(cls, package_name):
+        version = cls._get_version(package_name)
+        if version:
+            return version
+        logger.error("Failed to determine latest upstream version!\n"
+                     "Check that the package exists on %s.", cls.BASE_URL)
+        return None
