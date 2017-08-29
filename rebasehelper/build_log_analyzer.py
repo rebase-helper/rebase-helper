@@ -73,8 +73,6 @@ class BuildLogAnalyzer(object):
         :return: list of files which are either missing or not exists
         """
         files = {}
-        files['missing'] = []
-        files['deleted'] = []
 
         with open(log_name, 'r') as f:
             lines = f.read()
@@ -156,10 +154,6 @@ class BuildLogAnalyzer(object):
         :param log_name: mock logfile
         :return: files which failed
         """
-        files = {}
-        files['missing'] = []
-        files['deleted'] = []
-
         with open(log_name, 'r') as f:
             lines = f.read()
         if not lines:
