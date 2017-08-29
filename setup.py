@@ -82,7 +82,7 @@ setup(
         # python{2,3}-rpm package containing the module.
         # See: https://github.com/rpm-software-management/rpm/tree/master/python/rpm
         #'rpm-python',
-        'backports.lzma',
+        'backports.lzma;python_version<"3.3"',
         'copr',
         'pyquery',
         'requests',
