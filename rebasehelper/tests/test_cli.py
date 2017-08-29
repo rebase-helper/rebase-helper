@@ -27,6 +27,7 @@ class TestCLI(object):
     def test_cli_unit(self):
         """Function tests cli class with all arguments"""
         conf = {
+            'version': False,
             'build_only': False,
             'patch_only': False,
             'compare_pkgs_only': True,
