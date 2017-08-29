@@ -27,6 +27,7 @@ import sys
 import six
 
 from rebasehelper.constants import PROGRAM_DESCRIPTION, NEW_ISSUE_LINK
+from rebasehelper.version import VERSION
 from rebasehelper.application import Application
 from rebasehelper.logger import logger, LoggerHelper
 from rebasehelper.exceptions import RebaseHelperError
@@ -83,6 +84,12 @@ class CLI(object):
     def build_parser():
         parser = CustomArgumentParser(description=PROGRAM_DESCRIPTION,
                                       formatter_class=CustomHelpFormatter)
+        parser.add_argument(
+            "--version",
+            default=False,
+            action="store_true",
+            help="show rebase-helper version and exit"
+        )
         parser.add_argument(
             "-v",
             "--verbose",
@@ -250,6 +257,9 @@ class CliHelper(object):
                 raise RebaseHelperError('Wrong format of --builder-options. It must be in the following form:'
                                         ' --builder-options="--desired-builder-option".')
             cli = CLI()
+            if cli.version:
+                logger.info(VERSION)
+                sys.exit(0)
             ConsoleHelper.use_colors = ConsoleHelper.should_use_colors(cli)
             execution_dir, results_dir, debug_log_file = Application.setup(cli)
             if not cli.verbose:

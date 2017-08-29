@@ -32,7 +32,7 @@ except ImportError:
 setup(
     name='rebasehelper',
     version=VERSION,
-    description='RebaseHelper helps you to rebase your packages.',
+    description='rebase-helper helps you to rebase your packages',
     keywords='packages, easy, quick',
     author='Petr Hracek',
     author_email='phracek@redhat.com',
@@ -77,6 +77,19 @@ setup(
             'text_output_tool = rebasehelper.output_tools.text_output_tool:TextOutputTool',
         ]
     },
+    install_requires=[
+        # This can not be installed from pip, on Fedora you need to install
+        # python{2,3}-rpm package containing the module.
+        # See: https://github.com/rpm-software-management/rpm/tree/master/python/rpm
+        #'rpm-python',
+        'backports.lzma;python_version<"3.3"',
+        'copr',
+        'pyquery',
+        'requests',
+        'six',
+        'GitPython',
+        'ansicolors',
+    ],
     setup_requires=[],
     classifiers=[
         'Development Status :: 4 - Beta',
