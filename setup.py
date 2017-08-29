@@ -32,7 +32,7 @@ except ImportError:
 setup(
     name='rebasehelper',
     version=VERSION,
-    description='RebaseHelper helps you to rebase your packages.',
+    description='rebase-helper helps you to rebase your packages',
     keywords='packages, easy, quick',
     author='Petr Hracek',
     author_email='phracek@redhat.com',
