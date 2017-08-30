@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+## [0.10.1] - 2017-08-30
+### Added
+- Added `--version` argument
+
+### Changed
+- **Anitya** versioneer now primarily searches for projects using Fedora mapping
+- Python dependencies moved from `requirements.txt` to `setup.py`
+
+### Fixed
+- Made `CustomManPagesBuilder` work with Sphinx >= 1.6
+- *%prep* section parser is now able to handle backslash-split lines
+
 ## [0.10.0] - 2017-08-25
 ### Added
 - Implemented extensible SPEC hooks and versioneers
