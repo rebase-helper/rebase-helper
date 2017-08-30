@@ -1209,13 +1209,22 @@ class SpecFile(object):
         :param archive: Path to archive
         :return: Target path relative to builddir or None if not determined
         """
+        def _sanitize_prep(prep):
+            # join lines split by backslash
+            result = []
+            while prep:
+                if result and result[-1].endswith('\\'):
+                    result[-1] = result[-1][:-1] + prep.pop(0)
+                else:
+                    result.append(prep.pop(0))
+            return result
         cd_parser = argparse.ArgumentParser()
         cd_parser.add_argument('dir', default=os.environ.get('HOME', ''))
         tar_parser = argparse.ArgumentParser()
         tar_parser.add_argument('-C', default='.', dest='target')
         unzip_parser = argparse.ArgumentParser()
         unzip_parser.add_argument('-d', default='.', dest='target')
-        prep = self.get_prep_section(complete=True)
+        prep = _sanitize_prep(self.get_prep_section(complete=True))
         archive = os.path.basename(archive)
         builddir = rpm.expandMacro('%{_builddir}')
         basedir = builddir
