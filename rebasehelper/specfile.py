@@ -1125,6 +1125,13 @@ class SpecFile(object):
         parser.add_argument('-a', type=int, default=-1)
         parser.add_argument('-b', type=int, default=-1)
         parser.add_argument('-T', action='store_true')
+        parser.add_argument('-q', action='store_true')
+        parser.add_argument('-c', action='store_true')
+        parser.add_argument('-D', action='store_true')
+        parser.add_argument('-v', action='store_true')
+        parser.add_argument('-N', action='store_true')
+        parser.add_argument('-p', type=int, default=-1)
+        parser.add_argument('-S', default='')
         return parser
 
     def get_setup_dirname(self):
@@ -1194,6 +1201,20 @@ class SpecFile(object):
                         args.extend(['-b', str(ns.b)])
                     if ns.T:
                         args.append('-T')
+                    if ns.q:
+                        args.append('-q')
+                    if ns.c:
+                        args.append('-c')
+                    if ns.D:
+                        args.append('-D')
+                    if ns.v:
+                        args.append('-v')
+                    if ns.N:
+                        args.append('-N')
+                    if ns.p != -1:
+                        args.extend(['-p', str(ns.p)])
+                    if ns.S != '':
+                        args.extend(['-S', ns.S])
                     args.extend(unknown)
 
                     self.spec_content[index] = '#{0}'.format(line)
