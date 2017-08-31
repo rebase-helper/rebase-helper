@@ -205,7 +205,7 @@ class Application(object):
             self.rebase_spec_file.set_extra_version(extra_version)
 
         # run spec hooks
-        spec_hooks_runner.run_spec_hooks(self.spec_file, self.rebase_spec_file)
+        spec_hooks_runner.run_spec_hooks(self.spec_file, self.rebase_spec_file, **self.kwargs)
 
         # spec file object has been sanitized downloading can proceed
         for spec_file in [self.spec_file, self.rebase_spec_file]:

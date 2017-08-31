@@ -1479,12 +1479,13 @@ class BaseSpecHook(object):
         raise NotImplementedError()
 
     @classmethod
-    def run(cls, spec_file, rebase_spec_file):
+    def run(cls, spec_file, rebase_spec_file, **kwargs):
         """
         Runs a spec hook.
 
         :param spec_file: Original spec file object
         :param rebase_spec_file: Rebased spec file object
+        :param kwargs: Keyword arguments from Application instance
         """
         raise NotImplementedError()
 
@@ -1511,12 +1512,13 @@ class SpecHooksRunner(object):
                 # silently skip broken plugin
                 continue
 
-    def run_spec_hooks(self, spec_file, rebase_spec_file):
+    def run_spec_hooks(self, spec_file, rebase_spec_file, **kwargs):
         """
         Runs all spec hooks.
 
         :param spec_file: Original spec file object
         :param rebase_spec_file: Rebased spec file object
+        :param kwargs: Keyword arguments from Application instance
         """
         for name, spec_hook in six.iteritems(self.spec_hooks):
             logger.info("Running '%s' spec hook", name)

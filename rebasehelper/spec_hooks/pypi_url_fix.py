@@ -41,7 +41,7 @@ class PyPIURLFixHook(BaseSpecHook):
         return cls.NAME
 
     @classmethod
-    def run(cls, spec_file, rebase_spec_file):
+    def run(cls, spec_file, rebase_spec_file, **kwargs):
         """
         Run _transform_url() for all sources to replace all pypi.* urls by
         files.pythonhosted.* urls.
