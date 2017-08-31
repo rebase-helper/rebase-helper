@@ -71,6 +71,7 @@ setup(
         'rebasehelper.versioneers': [
             'anitya = rebasehelper.versioneers.anitya_versioneer:AnityaVersioneer',
             'pypi = rebasehelper.versioneers.pypi_versioneer:PyPIVersioneer',
+            'rubygems = rebasehelper.versioneers.rubygems_versioneer:RubyGemsVersioneer',
         ],
         'rebasehelper.output_tools': [
             'json_output_tool = rebasehelper.output_tools.json_output_tool:JSONOutputTool',
