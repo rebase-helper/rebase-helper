@@ -1479,6 +1479,11 @@ class BaseSpecHook(object):
         raise NotImplementedError()
 
     @classmethod
+    def get_categories(cls):
+        """Returns list of categories of a spec hook"""
+        raise NotImplementedError()
+
+    @classmethod
     def run(cls, spec_file, rebase_spec_file, **kwargs):
         """
         Runs a spec hook.
@@ -1521,8 +1526,10 @@ class SpecHooksRunner(object):
         :param kwargs: Keyword arguments from Application instance
         """
         for name, spec_hook in six.iteritems(self.spec_hooks):
-            logger.info("Running '%s' spec hook", name)
-            spec_hook.run(spec_file, rebase_spec_file)
+            categories = spec_hook.get_categories()
+            if not categories or spec_file.category in categories:
+                logger.info("Running '%s' spec hook", name)
+                spec_hook.run(spec_file, rebase_spec_file, **kwargs)
 
 
 # Global instance of SpecHooksRunner. It is enough to load it once per application run.
