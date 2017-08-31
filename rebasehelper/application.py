@@ -92,12 +92,12 @@ class Application(object):
         logger.debug("Rebase-helper version: %s" % version.VERSION)
 
         if self.conf.build_tasks is None:
-            self._get_spec_file()
-            self._prepare_spec_objects()
-
             # check the workspace dir
             if not self.conf.cont:
                 self._check_workspace_dir()
+
+            self._get_spec_file()
+            self._prepare_spec_objects()
 
             # TODO: Remove the value from kwargs and use only CLI attribute!
             self.kwargs['continue'] = self.conf.cont
