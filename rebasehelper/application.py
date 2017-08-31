@@ -181,7 +181,9 @@ class Application(object):
         self.rebase_spec_file = self.spec_file.copy(self.rebase_spec_file_path)
 
         if not self.conf.sources:
-            self.conf.sources = versioneers_runner.run(self.conf.versioneer, self.spec_file.get_package_name())
+            self.conf.sources = versioneers_runner.run(self.conf.versioneer,
+                                                       self.spec_file.get_package_name(),
+                                                       self.spec_file.category)
             if self.conf.sources:
                 logger.info("Determined latest upstream version '%s'", self.conf.sources)
             else:
