@@ -109,6 +109,7 @@ class SpecFile(object):
     spc = None
     hdr = None
     extra_version = None
+    category = None
     sources = None
     patches = None
     rpm_sections = {}
@@ -162,6 +163,27 @@ class SpecFile(object):
                     raise RebaseHelperError("Failed to download file from URL {}. "
                                             "Reason: '{}'. ".format(remote_file, str(e)))
 
+    def _guess_category(self):
+        def _decode(s):
+            if six.PY3:
+                return s.decode(defenc)
+            return s
+        categories = {
+            'python': re.compile(r'^python[23]?-'),
+            'perl': re.compile(r'^perl-'),
+            'ruby': re.compile(r'^rubygem-'),
+            'nodejs': re.compile(r'^nodejs-'),
+            'php': re.compile(r'^php-'),
+        }
+        for pkg in self.spc.packages:
+            for category, regexp in six.iteritems(categories):
+                if regexp.match(_decode(pkg.header[rpm.RPMTAG_NAME])):
+                    return category
+                for provide in pkg.header[rpm.RPMTAG_PROVIDENAME]:
+                    if regexp.match(_decode(provide)):
+                        return category
+        return None
+
     def _update_data(self):
         """
         Function updates data from given SPEC file
@@ -173,6 +195,7 @@ class SpecFile(object):
             self.spc = rpm.spec(self.path)
         except ValueError:
             raise RebaseHelperError("Problem with parsing SPEC file '%s'" % self.path)
+        self.category = self._guess_category()
         self.sources = self._get_spec_sources_list(self.spc)
         self.prep_section = self.spc.prep
         # HEADER of SPEC file
