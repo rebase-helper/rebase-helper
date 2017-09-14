@@ -15,7 +15,6 @@ RUN mv RPM-GPG-KEY-fedora-28-primary /etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-28-x86_
 RUN rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-fedora-28-x86_64
 
 RUN dnf -y update
-# python2-pip is not available on F25.
 RUN dnf -y install \
   python2 \
   python2-devel \
@@ -25,6 +24,7 @@ RUN dnf -y install \
   python3-rpm \
   python2-tox \
   python3-tox \
+  # python2-pip is not available on F25.
   python-pip \
   python3-pip \
   python2-setuptools \
@@ -42,6 +42,8 @@ RUN dnf -y install \
   pkgdiff \
   dnf \
   dnf-plugins-core \
+  # needed by rpm-py-installer.
+  rpm-devel \
   && dnf clean all
 
 CMD ["/usr/bin/tox"]
