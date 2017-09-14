@@ -32,7 +32,9 @@ import pkg_resources
 import six
 
 from datetime import date
+from difflib import SequenceMatcher
 from operator import itemgetter
+
 from six.moves import urllib
 
 from rebasehelper.utils import DownloadHelper, DownloadError, MacroHelper, GitHelper
@@ -656,6 +658,228 @@ class SpecFile(object):
         self.set_version(version)
         self.set_extra_version_separator(separator)
         self.set_extra_version(extra_version)
+
+    def set_tag(self, tag, value, preserve_macros=False):
+        """Sets value of a tag while trying to preserve macros if requested"""
+        macro_def_re = re.compile(
+            r'''
+            ^
+            (?P<cond>%{!?\?\w+:\s*)?
+            (?(cond)%global|%(global|define))
+            \s+
+            (?P<name>\w+)
+            (?P<options>\(.+?\))?
+            \s+
+            (?P<value>.+)
+            (?(cond)})
+            $
+            ''',
+            re.VERBOSE)
+
+        def _get_macro_value(macro):
+            """Returns raw value of a macro"""
+            for line in self.spec_content:
+                match = macro_def_re.match(line)
+                if not match:
+                    continue
+                if match.group('name') == macro:
+                    return match.group('value')
+            return None
+
+        def _redefine_macro(macro, value):
+            """Replaces value of an existing macro"""
+            for index, line in enumerate(self.spec_content):
+                match = macro_def_re.match(line)
+                if not match:
+                    continue
+                if match.group('name') != macro:
+                    continue
+                line = line[:match.start('value')] + value + line[match.end('value'):]
+                if match.group('options'):
+                    line = line[:match.start('options')] + line[match.end('options'):]
+                self.spec_content[index] = line
+                break
+            self.save()
+
+        def _find_macros(s):
+            """Returns all redefinable macros present in a string"""
+            macro_re = re.compile(r'%(?P<brace>{\??)?(?P<name>\w+)(?(brace)})')
+            macros = []
+            for line in self.spec_content:
+                match = macro_def_re.match(line)
+                if not match:
+                    continue
+                macros.append(match.group('name'))
+            result = []
+            for match in macro_re.finditer(s):
+                if not match:
+                    continue
+                if match.group('name') not in macros:
+                    continue
+                result.append((match.group('name'), match.span()))
+            return result
+
+        def _expand_macros(s):
+            """Expands all redefinable macros containing redefinable macros"""
+            replace = []
+            for macro, span in _find_macros(s):
+                value = _get_macro_value(macro)
+                if not value:
+                    continue
+                rep = _expand_macros(value)
+                if _find_macros(rep):
+                    replace.append((rep, span))
+            for rep, span in reversed(replace):
+                s = s[:span[0]] + rep + s[span[1]:]
+            return s
+
+        def _tokenize(s):
+            """Removes conditional macros and splits string on macro boundaries"""
+            def parse(inp):
+                tree = []
+                text = ''
+                macro = ''
+                buf = ''
+                while inp:
+                    c = inp.pop(0)
+                    if c == '%':
+                        c = inp.pop(0)
+                        if c == '%':
+                            text += c
+                        elif c == '{':
+                            if text:
+                                tree.append(('t', text))
+                                text = ''
+                            while inp and c not in ':}':
+                                c = inp.pop(0)
+                                buf += c
+                            if c == ':':
+                                tree.append(('c', buf[:-1], parse(inp)))
+                                buf = ''
+                            elif c == '}':
+                                tree.append(('m', buf[:-1]))
+                                buf = ''
+                        else:
+                            if text:
+                                tree.append(('t', text))
+                                text = ''
+                            while inp and (c.isalnum() or c == '_'):
+                                c = inp.pop(0)
+                                macro += c
+                            tree.append(('m', macro))
+                            macro = ''
+                    elif c == '}':
+                        if text:
+                            tree.append(('t', text))
+                        inp.append(c)
+                        return tree
+                    else:
+                        text += c
+                if text:
+                    tree.append(('t', text))
+                return tree
+
+            def traverse(tree):
+                result = []
+                for node in tree:
+                    if node[0] == 't':
+                        result.append(node[1])
+                    elif node[0] == 'm':
+                        m = '%{{{}}}'.format(node[1])
+                        if rpm.expandMacro(m):
+                            result.append(m)
+                    elif node[0] == 'c':
+                        if rpm.expandMacro('%{{{}:1}}'.format(node[1])):
+                            result.extend(traverse(node[2]))
+                return result
+
+            inp = list(s)
+            tree = parse(inp)
+            return traverse(tree)
+
+        def _sync_macros(s):
+            """Makes all macros present in a string up-to-date in rpm context"""
+            macros = set([m for m, _ in _find_macros(s)])
+            macros.update([m for m, _ in _find_macros(_expand_macros(s))])
+            for macro in macros:
+                m = '%{{{}}}'.format(macro)
+                while rpm.expandMacro(m) != m:
+                    rpm.delMacro(macro)
+                value = _get_macro_value(macro)
+                if value and rpm.expandMacro(value):
+                    rpm.addMacro(macro, value)
+
+        def _process_value(curval, newval):
+            """
+            Replaces non-redefinable-macro parts of curval with matching parts from newval
+            and redefines values of macros accordingly
+            """
+            value = _expand_macros(curval)
+            _sync_macros(curval + newval)
+            tokens = _tokenize(value)
+            values = [None] * len(tokens)
+            sm = SequenceMatcher(a=newval)
+            i = 0
+            # split newval to match tokens
+            for index, token in enumerate(tokens):
+                sm.set_seq2(token)
+                m = sm.find_longest_match(i, len(newval), 0, len(token))
+                # only full match in case of macro
+                if m.size and token[0] != '%' or m.size == len(token):
+                    tokens[index] = token[m.b:m.b+m.size]
+                    if index > 0:
+                        values[index] = newval[m.a:m.a+m.size]
+                        if not values[index - 1]:
+                            values[index - 1] = newval[i:m.a]
+                    else:
+                        values[index] = newval[i:m.a+m.size]
+                    i = m.a + m.size
+            if newval[i:]:
+                if not values[-1]:
+                    values[-1] = newval[i:]
+                else:
+                    values[-1] += newval[i:]
+            # try to fill empty macros
+            for index, token in enumerate(tokens):
+                if token[0] == '%':
+                    continue
+                if token == values[index]:
+                    continue
+                for i in range(index, 0, -1):
+                    if tokens[i][0] == '%' and not values[i]:
+                        values[i] = values[index]
+                        values[index] = None
+                        break
+            # redefine macros and update tokens
+            for index, token in enumerate(tokens):
+                if token == values[index]:
+                    continue
+                if not values[index]:
+                    values[index] = '%{nil}' if token[0] == '%' else ''
+                macros = _find_macros(token)
+                if macros:
+                    _redefine_macro(macros[0][0], values[index])
+                else:
+                    tokens[index] = values[index]
+            result = ''.join(tokens)
+            _sync_macros(curval + result)
+            # only change value if necessary
+            if rpm.expandMacro(curval) == rpm.expandMacro(result):
+                return curval
+            return result
+
+        tag_re = re.compile(r'^(?P<name>\w+):\s*(?P<value>.+)$')
+        for index, line in enumerate(self.spec_content):
+            match = tag_re.match(line)
+            if not match:
+                continue
+            if match.group('name') != tag:
+                continue
+            if preserve_macros:
+                value = _process_value(match.group('value'), value)
+            self.spec_content[index] = line[:match.start('value')] + value + line[match.end('value'):]
+            break
+        self.save()
 
     def set_version(self, version):
         """

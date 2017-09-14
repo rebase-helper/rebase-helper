@@ -1,7 +1,19 @@
-Summary: A testing spec file
+%{!?specfile: %global specfile spec file}
+%global summary %{?longsum}%{!?longsum:A testing %{specfile}}
+
+%global version_major 1
+%global version_minor 0
+%global version_patch 2
+%global version_major_minor %{version_major}.%{version_minor}
+%global version %{version_major_minor}.%{version_patch}
+
+%global release 34
+%global release_str %{release}%{?dist}
+
+Summary: %{summary}
 Name: test
-Version: 1.0.2
-Release: 34%{?dist}
+Version: %{version}
+Release: %{release_str}
 License: GPL2+
 Group: System Environment
 URL: http://testing.org
