@@ -501,14 +501,8 @@ class SpecFile(object):
         :param release:
         :return:
         """
-        for index, line in enumerate(self.spec_content):
-            if line.startswith('Release:'):
-                new_release_line = re.sub(r'(Release:\s*)[0-9.]+(.*%{\?dist}\s*)', r'\g<1>{0}\2'.format(release),
-                                          line)
-                logger.debug("Changing release line to '%s'", new_release_line.strip())
-                self.spec_content[index] = new_release_line
-                self.save()
-                break
+        logger.debug("Changing release number to '%s'", release)
+        self.set_tag('Release', '{}%{{?dist}}'.format(release), preserve_macros=True)
 
     def redefine_release_with_macro(self, macro):
         """
@@ -888,23 +882,8 @@ class SpecFile(object):
         :param version: string with new version
         :return: None
         """
-        version_re = re.compile(r'^Version:\s*(.+)')
-        for index, line in enumerate(self.spec_content):
-            match = version_re.search(line)
-            if match:
-                logger.debug("Updating version in SPEC from '%s' with '%s'", self.get_version(), version)
-
-                # search for used macros in spec file scope
-                for m in MacroHelper.filter(self.macros, level=0, used=True):
-                    if m['name'] in match.group(1):
-                        # redefine the macro, don't touch Version tag
-                        self._set_macro(m['name'], version)
-                        return
-
-                self.spec_content[index] = line.replace(match.group(1), version)
-                break
-        #  save changes to the disc
-        self.save()
+        logger.debug("Updating version in SPEC from '%s' with '%s'", self.get_version(), version)
+        self.set_tag('Version', version, preserve_macros=True)
 
     @staticmethod
     def split_version_string(version_string=''):
@@ -1282,34 +1261,6 @@ class SpecFile(object):
             pass
 
         self.spec_content = self._create_spec_from_sections()
-        self.save()
-
-    def _set_macro(self, macro, value):
-
-        """
-        (Re)defines given macro value in the SPEC file
-
-        :param macro: macro name
-        :param value: macro value
-        """
-        macro_re = re.compile(r'(%global|%define)\s+(\w+)(\(.+?\))?\s+(.+)')
-        defined = False
-
-        for index, line in enumerate(self.spec_content):
-            match = macro_re.search(line)
-            if match:
-                if match.group(2) != macro:
-                    continue
-
-                if match.group(3):
-                    line = line.replace(match.group(3), '')
-
-                self.spec_content[index] = line.replace(match.group(4), value)
-                defined = True
-
-        if not defined:
-            self.spec_content.insert(0, '%global {} {}'.format(macro, value))
-
         self.save()
 
     def get_new_log(self):
