@@ -401,7 +401,7 @@ class TestSpecFile(object):
         macro = '%{REBASE_VER}'
         spec_object.redefine_release_with_macro(macro)
         with open(spec_object.get_path()) as f:
-            while f.readline() != '#Release: 34%{?dist}\n':
+            while f.readline() != '#Release: %{release_str}\n':
                 pass
             assert f.readline() == 'Release: 34' + '.' + macro + '%{?dist}\n'
 
@@ -412,7 +412,7 @@ class TestSpecFile(object):
         with open(spec_object.get_path()) as f:
             for line in f.readlines():
                 if line.startswith('Release:'):
-                    assert line == 'Release: 34%{?dist}\n'
+                    assert line == 'Release: %{release_str}\n'
                     return
         # the line has to be found, fail if not!
         assert False

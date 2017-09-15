@@ -511,14 +511,14 @@ class SpecFile(object):
         :param macro:
         :return:
         """
+        release = '{}.{}%{{?dist}}'.format(self.get_release_number(), macro)
         for index, line in enumerate(self.spec_content):
             if line.startswith('Release:'):
-                new_release_line = re.sub(r'(Release:\s*[0-9.]*[0-9]+).*(%{\?dist}\s*)', r'\g<1>.{0}\2'.format(macro),
-                                          line)
                 logger.debug("Commenting out original Release line '%s'", line.strip())
                 self.spec_content[index] = '#{0}'.format(line)
-                logger.debug("Inserting new Release line '%s'", new_release_line.strip())
-                self.spec_content.insert(index + 1, new_release_line)
+                line = 'Release: {}\n'.format(release)
+                logger.debug("Inserting new Release line '%s'", line)
+                self.spec_content.insert(index + 1, line)
                 self.save()
                 break
 
