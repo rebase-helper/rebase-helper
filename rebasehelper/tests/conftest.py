@@ -38,3 +38,15 @@ def workdir(request, tmpdir_factory):
         for file_name in getattr(request.cls, 'TEST_FILES', []):
             shutil.copy(os.path.join(TEST_FILES_DIR, file_name), wd)
         yield wd
+
+
+def pytest_collection_modifyitems(items):
+    for item in items:
+        # item is an instance of Function class.
+        # https://github.com/pytest-dev/pytest/blob/master/_pytest/python.py
+        if 'functional_long_running' in item.keywords:
+            pass
+        elif 'functional' in item.fspath.strpath:
+            item.add_marker(pytest.mark.functional)
+        else:
+            item.add_marker(pytest.mark.standard)

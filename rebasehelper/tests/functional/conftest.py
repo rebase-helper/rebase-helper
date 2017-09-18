@@ -27,12 +27,6 @@ import pytest
 from rebasehelper.settings import REBASE_HELPER_RESULTS_DIR, REBASE_HELPER_DEBUG_LOG
 
 
-def pytest_collection_modifyitems(items):
-    for item in items:
-        if os.path.dirname(__file__) in item.fspath.strpath:
-            item.add_marker(pytest.mark.functional)
-
-
 def make_logs_report():
     logs = [
         REBASE_HELPER_DEBUG_LOG,
