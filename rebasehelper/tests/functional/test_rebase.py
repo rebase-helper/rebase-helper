@@ -52,7 +52,7 @@ class TestRebase(object):
             '1.12',
             {'deleted': None, 'modified': None, 'inapplicable': None},
         ),
-        pytest.mark.optional((
+        pytest.mark.functional_long_running((
             'libtiff',
             'https://src.fedoraproject.org/git/rpms/libtiff.git',
             '7b1dffc529cb934f8d30083e624f874a2df7c981',

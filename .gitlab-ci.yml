@@ -12,7 +12,7 @@ stages:
     script:
         - apk update
         - apk add make git
-        - make PYTEST_ADDOPTS="-m 'not optional'" test-docker
+        - make PYTEST_ADDOPTS="-m 'standard or functional'" test-docker
 
 test:f25:
     <<: *test_definition
