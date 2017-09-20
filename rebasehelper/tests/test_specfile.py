@@ -217,10 +217,22 @@ class TestSpecFile(object):
 
     def test__split_sections(self, spec_object):
         expected_sections = {
-            0: ['%header', ['Summary: A testing spec file\n',
+            0: ['%header', ['%{!?specfile: %global specfile spec file}\n',
+                            '%global summary %{?longsum}%{!?longsum:A testing %{specfile}}\n',
+                            '\n',
+                            '%global version_major 1\n',
+                            '%global version_minor 0\n',
+                            '%global version_patch 2\n',
+                            '%global version_major_minor %{version_major}.%{version_minor}\n',
+                            '%global version %{version_major_minor}.%{version_patch}\n',
+                            '\n',
+                            '%global release 34\n',
+                            '%global release_str %{release}%{?dist}\n',
+                            '\n',
+                            'Summary: %{summary}\n',
                             'Name: test\n',
-                            'Version: 1.0.2\n',
-                            'Release: 34%{?dist}\n',
+                            'Version: %{version}\n',
+                            'Release: %{release_str}\n',
                             'License: GPL2+\n',
                             'Group: System Environment\n',
                             'URL: http://testing.org\n',
@@ -389,7 +401,7 @@ class TestSpecFile(object):
         macro = '%{REBASE_VER}'
         spec_object.redefine_release_with_macro(macro)
         with open(spec_object.get_path()) as f:
-            while f.readline() != '#Release: 34%{?dist}\n':
+            while f.readline() != '#Release: %{release_str}\n':
                 pass
             assert f.readline() == 'Release: 34' + '.' + macro + '%{?dist}\n'
 
@@ -400,7 +412,7 @@ class TestSpecFile(object):
         with open(spec_object.get_path()) as f:
             for line in f.readlines():
                 if line.startswith('Release:'):
-                    assert line == 'Release: 34%{?dist}\n'
+                    assert line == 'Release: %{release_str}\n'
                     return
         # the line has to be found, fail if not!
         assert False
@@ -466,3 +478,69 @@ class TestSpecFile(object):
 
         line = [l for l in spec_object.spec_content if l.startswith('Patch5')][0]
         assert not 'rebased-sources' in line
+
+    @pytest.mark.parametrize('preserve_macros', [
+        False,
+        True,
+    ], ids=[
+        'ignoring_macros',
+        'preserving_macros',
+    ])
+    @pytest.mark.parametrize('tag, value, lines, lines_preserve', [
+        (
+            'Summary',
+            'A testing SPEC file',
+            [
+                '%{!?specfile: %global specfile spec file}\n',
+                '%global summary %{?longsum}%{!?longsum:A testing %{specfile}}\n',
+                'Summary: A testing SPEC file\n',
+            ],
+            [
+                '%{!?specfile: %global specfile SPEC file}\n',
+                '%global summary %{?longsum}%{!?longsum:A testing %{specfile}}\n',
+                'Summary: %{summary}\n',
+            ],
+        ),
+        (
+            'Version',
+            '1.1.8',
+            [
+                '%global version_major 1\n',
+                '%global version_minor 0\n',
+                '%global version_patch 2\n',
+                '%global version_major_minor %{version_major}.%{version_minor}\n',
+                '%global version %{version_major_minor}.%{version_patch}\n',
+                'Version: 1.1.8\n',
+            ],
+            [
+                '%global version_major 1\n',
+                '%global version_minor 1\n',
+                '%global version_patch 8\n',
+                '%global version_major_minor %{version_major}.%{version_minor}\n',
+                '%global version %{version_major_minor}.%{version_patch}\n',
+                'Version: %{version}\n',
+            ],
+        ),
+        (
+            'Release',
+            '42%{?dist}',
+            [
+                '%global release 34\n',
+                '%global release_str %{release}%{?dist}\n',
+                'Release: 42%{?dist}\n',
+            ],
+            [
+                '%global release 42\n',
+                '%global release_str %{release}%{?dist}\n',
+                'Release: %{release_str}\n',
+            ],
+        ),
+    ], ids=[
+        'Summary=>"A testing SPEC file..."',
+        'Version=>"1.1.8"',
+        'Release=>"42%{?dist}"',
+    ])
+    def test_set_tag(self, spec_object, preserve_macros, tag, value, lines, lines_preserve):
+        spec_object.set_tag(tag, value, preserve_macros=preserve_macros)
+        for line in lines_preserve if preserve_macros else lines:
+            assert line in spec_object.spec_content
