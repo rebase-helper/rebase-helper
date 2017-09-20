@@ -596,11 +596,13 @@ class Application(object):
                     logger.warning('Some patches were not successfully applied')
                 # build just failed, otherwise we would break out of the while loop
                 logger.debug('Number of retries is %s', self.conf.build_retries)
-                if os.path.exists(os.path.join(results_dir, 'RPM')):
-                    shutil.rmtree(os.path.join(results_dir, 'RPM'))
-                if os.path.exists(os.path.join(results_dir, 'SRPM')):
-                    shutil.rmtree(os.path.join(results_dir, 'SRPM'))
                 number_retries += 1
+                if self.conf.build_retries > number_retries:
+                    # only remove builds if this retry is not the last one
+                    if os.path.exists(os.path.join(results_dir, 'RPM')):
+                        shutil.rmtree(os.path.join(results_dir, 'RPM'))
+                    if os.path.exists(os.path.join(results_dir, 'SRPM')):
+                        shutil.rmtree(os.path.join(results_dir, 'SRPM'))
             if self.conf.build_retries == number_retries:
                 raise RebaseHelperError('Building package failed with unknown reason. Check all available log files.')
 
