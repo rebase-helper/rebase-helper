@@ -133,6 +133,7 @@ class SpecFile(object):
         self._read_spec_content()
         # Load rpm information
         self.set_extra_version_separator('')
+        self.removed_patches = []
         self._update_data()
 
     def download_remote_sources(self):
