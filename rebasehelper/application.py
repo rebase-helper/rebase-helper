@@ -537,8 +537,9 @@ class Application(object):
                     results_store.set_build_data(version, build_dict)
                     break
 
-                except SourcePackageBuildError:
+                except SourcePackageBuildError as e:
                     build_dict.update(builder.get_logs())
+                    build_dict['source_package_build_error'] = six.text_type(e)
                     results_store.set_build_data(version, build_dict)
                     #  always fail for original version
                     if version == 'old':
@@ -547,10 +548,11 @@ class Application(object):
                     #  TODO: implement log analyzer for SRPMs and add the checks here!!!
                     raise
 
-                except BinaryPackageBuildError:
+                except BinaryPackageBuildError as e:
                     #  always fail for original version
                     rpm_dir = os.path.join(results_dir, 'RPM')
                     build_dict.update(builder.get_logs())
+                    build_dict['binary_package_build_error'] = six.text_type(e)
                     results_store.set_build_data(version, build_dict)
                     build_log = 'build.log'
                     build_log_path = os.path.join(rpm_dir, build_log)
