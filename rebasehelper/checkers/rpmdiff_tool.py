@@ -75,12 +75,13 @@ class RpmDiffTool(BaseChecker):
 
             fields = line.strip().split()
             logger.debug(fields)
-            if 'removed' in line:
+            if line.startswith('removed'):
                 results_dict['removed'].append(fields[1])
                 continue
-            if 'added' in line:
+            if line.startswith('added'):
                 results_dict['added'].append(fields[1])
                 continue
+
             #'S.5........' for regexp
             regexp = '(S)+\.(5)+\.\.\.\.\.\.\.\.'
             match = re.search(regexp, fields[0])
@@ -100,7 +101,7 @@ class RpmDiffTool(BaseChecker):
         for item in results_dict['added']:
             found = [x for x in results_dict['removed'] if os.path.basename(item) in x]
             if not found:
-                removed.append(item)
+                added.append(item)
         results_dict['added'] = added
         results_dict['removed'] = removed
         return results_dict
