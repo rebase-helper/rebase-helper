@@ -97,11 +97,11 @@ class GitPatchTool(PatchBase):
         patch_option = patch_object.get_option()
         try:
             repo.git.am(patch_name)
-        except git.exc.GitCommandError:
+        except git.GitCommandError:
             logger.debug('Applying patch with git-am failed.')
             try:
                 repo.git.apply(patch_name, patch_option)
-            except git.exc.GitCommandError:
+            except git.GitCommandError:
                 repo.git.apply(patch_name, patch_option, reject=True, whitespace='fix')
             repo.git.add(all=True)
             repo.index.commit('Patch: {0}'.format(os.path.basename(patch_name)), skip_hooks=True)
@@ -256,7 +256,7 @@ class GitPatchTool(PatchBase):
                         os.path.basename(cls.source_dir))
             try:
                 cls.apply_patch(cls.old_repo, patch)
-            except git.exc.GitCommandError:
+            except git.GitCommandError:
                 raise RuntimeError('Failed to patch old sources')
 
     @classmethod
