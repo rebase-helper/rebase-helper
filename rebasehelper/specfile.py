@@ -109,6 +109,7 @@ class SpecFile(object):
     spc = None
     hdr = None
     extra_version = None
+    category = None
     sources = None
     patches = None
     rpm_sections = {}
@@ -162,6 +163,27 @@ class SpecFile(object):
                     raise RebaseHelperError("Failed to download file from URL {}. "
                                             "Reason: '{}'. ".format(remote_file, str(e)))
 
+    def _guess_category(self):
+        def _decode(s):
+            if six.PY3:
+                return s.decode(defenc)
+            return s
+        categories = {
+            'python': re.compile(r'^python[23]?-'),
+            'perl': re.compile(r'^perl-'),
+            'ruby': re.compile(r'^rubygem-'),
+            'nodejs': re.compile(r'^nodejs-'),
+            'php': re.compile(r'^php-'),
+        }
+        for pkg in self.spc.packages:
+            for category, regexp in six.iteritems(categories):
+                if regexp.match(_decode(pkg.header[rpm.RPMTAG_NAME])):
+                    return category
+                for provide in pkg.header[rpm.RPMTAG_PROVIDENAME]:
+                    if regexp.match(_decode(provide)):
+                        return category
+        return None
+
     def _update_data(self):
         """
         Function updates data from given SPEC file
@@ -173,6 +195,7 @@ class SpecFile(object):
             self.spc = rpm.spec(self.path)
         except ValueError:
             raise RebaseHelperError("Problem with parsing SPEC file '%s'" % self.path)
+        self.category = self._guess_category()
         self.sources = self._get_spec_sources_list(self.spc)
         self.prep_section = self.spc.prep
         # HEADER of SPEC file
@@ -1456,12 +1479,18 @@ class BaseSpecHook(object):
         raise NotImplementedError()
 
     @classmethod
-    def run(cls, spec_file, rebase_spec_file):
+    def get_categories(cls):
+        """Returns list of categories of a spec hook"""
+        raise NotImplementedError()
+
+    @classmethod
+    def run(cls, spec_file, rebase_spec_file, **kwargs):
         """
         Runs a spec hook.
 
         :param spec_file: Original spec file object
         :param rebase_spec_file: Rebased spec file object
+        :param kwargs: Keyword arguments from Application instance
         """
         raise NotImplementedError()
 
@@ -1488,16 +1517,19 @@ class SpecHooksRunner(object):
                 # silently skip broken plugin
                 continue
 
-    def run_spec_hooks(self, spec_file, rebase_spec_file):
+    def run_spec_hooks(self, spec_file, rebase_spec_file, **kwargs):
         """
         Runs all spec hooks.
 
         :param spec_file: Original spec file object
         :param rebase_spec_file: Rebased spec file object
+        :param kwargs: Keyword arguments from Application instance
         """
         for name, spec_hook in six.iteritems(self.spec_hooks):
-            logger.info("Running '%s' spec hook", name)
-            spec_hook.run(spec_file, rebase_spec_file)
+            categories = spec_hook.get_categories()
+            if not categories or spec_file.category in categories:
+                logger.info("Running '%s' spec hook", name)
+                spec_hook.run(spec_file, rebase_spec_file, **kwargs)
 
 
 # Global instance of SpecHooksRunner. It is enough to load it once per application run.

@@ -20,21 +20,21 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
-import requests
+import re
 
-from pkg_resources import parse_version
+import requests
 
 from rebasehelper.versioneer import BaseVersioneer
 from rebasehelper.logger import logger
 
 
-class AnityaVersioneer(BaseVersioneer):
+class RubyGemsVersioneer(BaseVersioneer):
 
-    NAME = 'anitya'
-    CATEGORIES = None
+    NAME = 'rubygems'
+    CATEGORIES = ['ruby']
 
-    BASE_URL = 'https://release-monitoring.org'
-    API_URL = '{}/api'.format(BASE_URL)
+    BASE_URL = 'https://rubygems.org'
+    API_URL = '{}/api/v1/gems'.format(BASE_URL)
 
     @classmethod
     def get_name(cls):
@@ -45,34 +45,23 @@ class AnityaVersioneer(BaseVersioneer):
         return cls.CATEGORIES
 
     @classmethod
-    def _get_version_using_distro_api(cls, package_name):
-        r = requests.get('{}/project/Fedora/{}'.format(cls.API_URL, package_name))
-        if not r.ok:
+    def _get_version(cls, package_name):
+        # special-case "ruby", as https://rubygems.org/api/v1/gems/ruby.json returns nonsense
+        if package_name == 'ruby':
             return None
+        r = requests.get('{}/{}.json'.format(cls.API_URL, package_name))
+        if not r.ok:
+            # try to strip rubygem prefix
+            package_name = re.sub(r'^rubygem-', '', package_name)
+            r = requests.get('{}/{}.json'.format(cls.API_URL, package_name))
+            if not r.ok:
+                return None
         data = r.json()
         return data.get('version')
 
     @classmethod
-    def _get_version_using_pattern_api(cls, package_name):
-        r = requests.get('{}/projects'.format(cls.API_URL), params=dict(pattern=package_name))
-        if not r.ok:
-            return None
-        data = r.json()
-        try:
-            versions = [p['version'] for p in data['projects'] if p['name'] == package_name and p['version']]
-        except KeyError:
-            return None
-        if not versions:
-            return None
-        # there can be multiple matching projects, just return the highest version of all of them
-        return sorted(versions, key=parse_version, reverse=True)[0]
-
-    @classmethod
     def run(cls, package_name):
-        version = cls._get_version_using_distro_api(package_name)
-        if version:
-            return version
-        version = cls._get_version_using_pattern_api(package_name)
+        version = cls._get_version(package_name)
         if version:
             return version
         logger.error("Failed to determine latest upstream version!\n"

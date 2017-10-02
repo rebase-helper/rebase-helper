@@ -142,8 +142,8 @@ class CLI(object):
         parser.add_argument(
             "--versioneer",
             choices=versioneers_runner.get_available_versioneers(),
-            default=versioneers_runner.get_default_versioneer(),
-            help="tool to use for determining latest upstream version, defaults to %(default)s"
+            default=None,
+            help="tool to use for determining latest upstream version"
         )
         parser.add_argument(
             "--not-download-sources",

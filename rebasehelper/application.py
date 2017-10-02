@@ -92,12 +92,12 @@ class Application(object):
         logger.debug("Rebase-helper version: %s" % version.VERSION)
 
         if self.conf.build_tasks is None:
-            self._get_spec_file()
-            self._prepare_spec_objects()
-
             # check the workspace dir
             if not self.conf.cont:
                 self._check_workspace_dir()
+
+            self._get_spec_file()
+            self._prepare_spec_objects()
 
             # TODO: Remove the value from kwargs and use only CLI attribute!
             self.kwargs['continue'] = self.conf.cont
@@ -181,7 +181,9 @@ class Application(object):
         self.rebase_spec_file = self.spec_file.copy(self.rebase_spec_file_path)
 
         if not self.conf.sources:
-            self.conf.sources = versioneers_runner.run(self.conf.versioneer, self.spec_file.get_package_name())
+            self.conf.sources = versioneers_runner.run(self.conf.versioneer,
+                                                       self.spec_file.get_package_name(),
+                                                       self.spec_file.category)
             if self.conf.sources:
                 logger.info("Determined latest upstream version '%s'", self.conf.sources)
             else:
@@ -203,7 +205,7 @@ class Application(object):
             self.rebase_spec_file.set_extra_version(extra_version)
 
         # run spec hooks
-        spec_hooks_runner.run_spec_hooks(self.spec_file, self.rebase_spec_file)
+        spec_hooks_runner.run_spec_hooks(self.spec_file, self.rebase_spec_file, **self.kwargs)
 
         # spec file object has been sanitized downloading can proceed
         for spec_file in [self.spec_file, self.rebase_spec_file]:

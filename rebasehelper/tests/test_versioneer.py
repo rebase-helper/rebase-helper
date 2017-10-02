@@ -40,7 +40,7 @@ class TestVersioneer(object):
     ])
     def test_anitya_versioneer(self, package, min_version):
         assert AnityaVersioneer.get_name() in versioneers_runner.versioneers
-        version = versioneers_runner.run(AnityaVersioneer.get_name(), package)
+        version = versioneers_runner.run(AnityaVersioneer.get_name(), package, None)
         assert parse_version(version) >= parse_version(min_version)
 
     @pytest.mark.parametrize('package, min_version', [
@@ -52,5 +52,5 @@ class TestVersioneer(object):
     ])
     def test_pypi_versioneer(self, package, min_version):
         assert PyPIVersioneer.get_name() in versioneers_runner.versioneers
-        version = versioneers_runner.run(PyPIVersioneer.get_name(), package)
+        version = versioneers_runner.run(PyPIVersioneer.get_name(), package, None)
         assert parse_version(version) >= parse_version(min_version)

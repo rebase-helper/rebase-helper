@@ -29,6 +29,7 @@ class TypoFixHook(BaseSpecHook):
     """Sample spec hook that fixes typos in spec file"""
 
     NAME = 'Typo fix'
+    CATEGORIES = ['sample']
     REPLACEMENTS = [
         ('chnagelog', 'changelog'),
         ('indentional', 'intentional'),
@@ -39,7 +40,11 @@ class TypoFixHook(BaseSpecHook):
         return cls.NAME
 
     @classmethod
-    def run(cls, spec_file, rebase_spec_file):
+    def get_categories(cls):
+        return cls.CATEGORIES
+
+    @classmethod
+    def run(cls, spec_file, rebase_spec_file, **kwargs):
         for index, line in enumerate(rebase_spec_file.spec_content):
             for replacement in cls.REPLACEMENTS:
                 line = re.sub(replacement[0], replacement[1], line)

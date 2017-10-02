@@ -457,13 +457,15 @@ class TestSpecFile(object):
     def test_typo_fix_spec_hook(self, spec_object):
         assert TypoFixHook.get_name() in spec_hooks_runner.spec_hooks
         assert '- This is chnagelog entry with some indentional typos\n' in spec_object.spec_content
-        spec_hooks_runner.run_spec_hooks(None, spec_object)
+        spec_object.category = 'sample'
+        spec_hooks_runner.run_spec_hooks(spec_object, spec_object)
         assert '- This is changelog entry with some intentional typos\n' in spec_object.spec_content
 
     def test_pypi_to_python_hosted_url_trans(self, spec_object):
         assert PyPIURLFixHook.get_name() in spec_hooks_runner.spec_hooks
         assert 'https://pypi.python.org/' in spec_object._get_raw_source_string(7)
-        spec_hooks_runner.run_spec_hooks(None, spec_object)
+        spec_object.category = 'python'
+        spec_hooks_runner.run_spec_hooks(spec_object, spec_object)
         assert 'https://files.pythonhosted.org/' in spec_object._get_raw_source_string(7)
 
     def test_update_paths_to_patches(self, spec_object):

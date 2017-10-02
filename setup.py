@@ -67,10 +67,12 @@ setup(
         'rebasehelper.spec_hooks': [
             'typo_fix = rebasehelper.spec_hooks.typo_fix:TypoFixHook',
             'pypi_url_fix = rebasehelper.spec_hooks.pypi_url_fix:PyPIURLFixHook',
+            'ruby_helper = rebasehelper.spec_hooks.ruby_helper:RubyHelperHook',
         ],
         'rebasehelper.versioneers': [
             'anitya = rebasehelper.versioneers.anitya_versioneer:AnityaVersioneer',
             'pypi = rebasehelper.versioneers.pypi_versioneer:PyPIVersioneer',
+            'rubygems = rebasehelper.versioneers.rubygems_versioneer:RubyGemsVersioneer',
         ],
         'rebasehelper.output_tools': [
             'json_output_tool = rebasehelper.output_tools.json_output_tool:JSONOutputTool',

@@ -29,16 +29,14 @@ from rebasehelper.logger import logger
 class BaseVersioneer(object):
     """Base class for a versioneer"""
 
-    DEFAULT = False
-
-    @classmethod
-    def is_default(cls):
-        """Checks if the versioneer is the default choice"""
-        raise NotImplementedError()
-
     @classmethod
     def get_name(cls):
         """Returns the name of a versioneer"""
+        raise NotImplementedError()
+
+    @classmethod
+    def get_categories(cls):
+        """Returns list of categories of a versioneer"""
         raise NotImplementedError()
 
     @classmethod
@@ -72,21 +70,27 @@ class VersioneersRunner(object):
         """Returns a list of available versioneers"""
         return [k for k, v in six.iteritems(self.versioneers)]
 
-    def get_default_versioneer(self):
-        """Returns default versioneer"""
-        default = [k for k, v in six.iteritems(self.versioneers) if v.is_default()]
-        return default[0] if default else None
-
-    def run(self, versioneer, package_name):
+    def run(self, versioneer, package_name, category):
         """
-        Runs specified versioneer.
+        Runs specified versioneer or all versioneers subsequently until one of them succeeds.
 
         :param versioneer: Name of a versioneer
         :param package_name: Name of a package
+        :param category: Package category
         :return: Latest upstream version of a package
         """
-        logger.info("Running '%s' versioneer", versioneer)
-        return self.versioneers[versioneer].run(package_name)
+        if versioneer:
+            logger.info("Running '%s' versioneer", versioneer)
+            return self.versioneers[versioneer].run(package_name)
+        # run all versioneers, categorized first
+        for versioneer in sorted(self.versioneers.values(), key=lambda v: not v.get_categories()):
+            categories = versioneer.get_categories()
+            if not categories or category in categories:
+                logger.info("Running '%s' versioneer", versioneer.get_name())
+                result = versioneer.run(package_name)
+                if result:
+                    return result
+        return None
 
 
 # Global instance of VersioneersRunner. It is enough to load it once per application run.

@@ -32,6 +32,7 @@ class PyPIURLFixHook(BaseSpecHook):
     """
 
     NAME = 'PyPI URL Fix'
+    CATEGORIES = ['python']
     SOURCES_URL_TRANSFORMATIONS = [
         ('https?://pypi.python.org/', 'https://files.pythonhosted.org/'),
     ]
@@ -41,7 +42,11 @@ class PyPIURLFixHook(BaseSpecHook):
         return cls.NAME
 
     @classmethod
-    def run(cls, spec_file, rebase_spec_file):
+    def get_categories(cls):
+        return cls.CATEGORIES
+
+    @classmethod
+    def run(cls, spec_file, rebase_spec_file, **kwargs):
         """
         Run _transform_url() for all sources to replace all pypi.* urls by
         files.pythonhosted.* urls.
