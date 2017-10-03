@@ -16,6 +16,7 @@ help:
 	@echo " source                  create source tarball"
 	@echo " html                    create HTML documentation"
 	@echo " man                     generate manual page"
+	@echo " completion              generate bash completion script"
 	@echo " test                    run test suite"
 	@echo " test-docker             run test suite inside Docker containers for several Fedora releases"
 
@@ -50,6 +51,10 @@ html: build
 
 man: build
 	make -f Makefile.docs man
+
+
+completion: build
+	$(PYTHON) -m rebasehelper.completion rebase-helper.bash.in build/rebase-helper.bash
 
 
 test:
