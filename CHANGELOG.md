@@ -1,6 +1,21 @@
 # Change Log
 
 ## [Unreleased]
+### Added
+- Added `rpm-py-installer` to install `rpm-python` from pip
+- Implemented detection of package category (*python*, *perl*, *ruby*, *nodejs*, *php*)
+- Added **RubyGems** versioneer
+- Added **RubyHelper** SPEC hook for getting additional sources based on instructions in SPEC file comments
+
+### Changed
+- Value of *Version* and *Release* tags is now preserved if there are any macros that can be modified instead
+- Versioneers and SPEC hooks are now run only for matching package categories
+- Bash completion is now generated from source code, so it is always up-to-date
+
+### Fixed
+- Prevented unwanted modifications of *%prep* section
+- Fixed unexpected removal of rpms and build logs after last build retry
+- Added files are no longer listed as removed in **rpmdiff** report
 
 ## [0.10.1] - 2017-08-30
 ### Added
