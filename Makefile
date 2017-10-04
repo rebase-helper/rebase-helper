@@ -1,3 +1,6 @@
+PYTHON = python
+
+
 all: help
 
 
@@ -13,12 +16,13 @@ help:
 	@echo " source                  create source tarball"
 	@echo " html                    create HTML documentation"
 	@echo " man                     generate manual page"
+	@echo " completion              generate bash completion script"
 	@echo " test                    run test suite"
 	@echo " test-docker             run test suite inside Docker containers for several Fedora releases"
 
 
 clean:
-	@python setup.py clean
+	@$(PYTHON) setup.py clean
 	rm -f MANIFEST
 	rm -rf build/html
 	rm -rf build/man
@@ -26,11 +30,11 @@ clean:
 
 
 install:
-	@python setup.py install
+	@$(PYTHON) setup.py install
 
 
 build:
-	@python setup.py build
+	@$(PYTHON) setup.py build
 
 
 log:
@@ -38,7 +42,7 @@ log:
 
 
 source: clean
-	@python setup.py sdist
+	@$(PYTHON) setup.py sdist
 
 
 html: build
@@ -47,6 +51,10 @@ html: build
 
 man: build
 	make -f Makefile.docs man
+
+
+completion: build
+	$(PYTHON) -m rebasehelper.completion rebase-helper.bash.in build/rebase-helper.bash
 
 
 test:
