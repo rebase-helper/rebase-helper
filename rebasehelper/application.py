@@ -489,16 +489,19 @@ class Application(object):
                 pkg_version = spec_object.get_version()
                 pkg_full_version = spec_object.get_full_version()
 
-                if version == 'old' and KojiHelper.functional and self.conf.get_old_build_from_koji:
-                    koji_version, koji_build_id = KojiHelper.get_latest_build(pkg_name)
-                    if koji_version:
-                        if koji_version != pkg_version:
-                            logger.warning('Version of the latest Koji build (%s) with id (%s) '
-                                           'differs from version in SPEC file (%s)!',
-                                           koji_version, koji_build_id, pkg_version)
-                        pkg_version = pkg_full_version = koji_version
+                if version == 'old' and self.conf.get_old_build_from_koji:
+                    if KojiHelper.functional:
+                        koji_version, koji_build_id = KojiHelper.get_latest_build(pkg_name)
+                        if koji_version:
+                            if koji_version != pkg_version:
+                                logger.warning('Version of the latest Koji build (%s) with id (%s) '
+                                               'differs from version in SPEC file (%s)!',
+                                               koji_version, koji_build_id, pkg_version)
+                            pkg_version = pkg_full_version = koji_version
+                        else:
+                            logger.warning('Unable to find the latest Koji build!')
                     else:
-                        logger.warning('Unable to find the latest Koji build!')
+                        logger.warning('Unable to get the latest Koji build!')
 
                 # prepare for building
                 builder.prepare(spec_object, self.conf)

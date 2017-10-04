@@ -217,13 +217,12 @@ class CLI(object):
             "--results-dir",
             help="directory where rebase-helper output will be stored"
         )
-        if KojiHelper.functional:
-            parser.add_argument(
-                "--get-old-build-from-koji",
-                default=False,
-                action="store_true",
-                help="do not build old sources, download latest build from Koji instead"
-            )
+        parser.add_argument(
+            "--get-old-build-from-koji",
+            default=False,
+            action="store_true",
+            help="do not build old sources, download latest build from Koji instead"
+        )
         parser.add_argument(
             "sources",
             metavar='SOURCES',
