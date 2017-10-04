@@ -1,6 +1,8 @@
 # Change Log
 
 ## [Unreleased]
+
+## [0.11.0] - 2017-10-04
 ### Added
 - Added `rpm-py-installer` to install `rpm-python` from pip
 - Implemented detection of package category (*python*, *perl*, *ruby*, *nodejs*, *php*)
