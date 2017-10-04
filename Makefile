@@ -1,3 +1,6 @@
+PYTHON = python
+
+
 all: help
 
 
@@ -18,7 +21,7 @@ help:
 
 
 clean:
-	@python setup.py clean
+	@$(PYTHON) setup.py clean
 	rm -f MANIFEST
 	rm -rf build/html
 	rm -rf build/man
@@ -26,11 +29,11 @@ clean:
 
 
 install:
-	@python setup.py install
+	@$(PYTHON) setup.py install
 
 
 build:
-	@python setup.py build
+	@$(PYTHON) setup.py build
 
 
 log:
@@ -38,7 +41,7 @@ log:
 
 
 source: clean
-	@python setup.py sdist
+	@$(PYTHON) setup.py sdist
 
 
 html: build
