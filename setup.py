@@ -21,12 +21,26 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
+import pkg_resources
+
 from rebasehelper.version import VERSION
+
 
 try:
     from setuptools import setup
 except ImportError:
     from distutils.core import setup
+
+
+def get_rpm_distribution():
+    for distribution in ['rpm', 'rpm-python']:
+        try:
+            pkg_resources.get_distribution(distribution)
+        except pkg_resources.DistributionNotFound:
+            continue
+        else:
+            return distribution
+    return 'rpm-py-installer'
 
 
 setup(
@@ -80,8 +94,7 @@ setup(
         ]
     },
     install_requires=[
-        # This installs the rpm package if not already present
-        'rpm-py-installer',
+        get_rpm_distribution(),
         'backports.lzma;python_version<"3.3"',
         'copr',
         'pyquery',
