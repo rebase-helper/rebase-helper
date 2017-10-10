@@ -21,6 +21,8 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
+import os
+
 import pkg_resources
 
 from rebasehelper.version import VERSION
@@ -41,6 +43,22 @@ def get_rpm_distribution():
         else:
             return distribution
     return 'rpm-py-installer'
+
+
+def get_requirements():
+    result = [
+       'backports.lzma;python_version<"3.3"',
+       'copr',
+       'pyquery',
+       'requests',
+       'six',
+       'GitPython',
+       'ansicolors',
+    ]
+    # there is no rpm inside RTD build environment
+    if not os.getenv('READTHEDOCS'):
+        result.append(get_rpm_distribution())
+    return result
 
 
 setup(
@@ -93,16 +111,7 @@ setup(
             'text_output_tool = rebasehelper.output_tools.text_output_tool:TextOutputTool',
         ]
     },
-    install_requires=[
-        get_rpm_distribution(),
-        'backports.lzma;python_version<"3.3"',
-        'copr',
-        'pyquery',
-        'requests',
-        'six',
-        'GitPython',
-        'ansicolors',
-    ],
+    install_requires=get_requirements(),
     setup_requires=[],
     classifiers=[
         'Development Status :: 4 - Beta',
