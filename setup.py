@@ -103,6 +103,7 @@ setup(
         ],
         'rebasehelper.versioneers': [
             'anitya = rebasehelper.versioneers.anitya_versioneer:AnityaVersioneer',
+            'npmjs = rebasehelper.versioneers.npmjs_versioneer:NPMJSVersioneer',
             'pypi = rebasehelper.versioneers.pypi_versioneer:PyPIVersioneer',
             'rubygems = rebasehelper.versioneers.rubygems_versioneer:RubyGemsVersioneer',
         ],
