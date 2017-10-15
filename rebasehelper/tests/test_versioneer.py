@@ -27,6 +27,7 @@ from pkg_resources import parse_version
 from rebasehelper.versioneer import versioneers_runner
 from rebasehelper.versioneers.anitya_versioneer import AnityaVersioneer
 from rebasehelper.versioneers.pypi_versioneer import PyPIVersioneer
+from rebasehelper.versioneers.npmjs_versioneer import NPMJSVersioneer
 
 
 class TestVersioneer(object):
@@ -53,4 +54,16 @@ class TestVersioneer(object):
     def test_pypi_versioneer(self, package, min_version):
         assert PyPIVersioneer.get_name() in versioneers_runner.versioneers
         version = versioneers_runner.run(PyPIVersioneer.get_name(), package, None)
+        assert parse_version(version) >= parse_version(min_version)
+
+    @pytest.mark.parametrize('package, min_version', [
+        ('nodejs-read-pkg', '1.1.0'),
+        ('uglify-js', '1.2.1')
+    ], ids=[
+        'nodejs-read-pkg>=1.1.0',
+        'uglify-js>=1.2.1'
+    ])
+    def test_npmjs_versioneer(self, package, min_version):
+        assert NPMJSVersioneer.get_name() in versioneers_runner.versioneers
+        version = versioneers_runner.run(NPMJSVersioneer.get_name(), package, None)
         assert parse_version(version) >= parse_version(min_version)
