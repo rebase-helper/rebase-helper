@@ -105,7 +105,8 @@ setup(
             'anitya = rebasehelper.versioneers.anitya_versioneer:AnityaVersioneer',
             'pypi = rebasehelper.versioneers.pypi_versioneer:PyPIVersioneer',
             'rubygems = rebasehelper.versioneers.rubygems_versioneer:RubyGemsVersioneer',
-            'npmjs = rebasehelper.versioneers.npmjs_versioneer:NPMJSVersioneer'
+            'npmjs = rebasehelper.versioneers.npmjs_versioneer:NPMJSVersioneer',
+            'cpan = rebasehelper.versioneers.cpan_versioneer:CPANVersioneer',
         ],
         'rebasehelper.output_tools': [
             'json_output_tool = rebasehelper.output_tools.json_output_tool:JSONOutputTool',
