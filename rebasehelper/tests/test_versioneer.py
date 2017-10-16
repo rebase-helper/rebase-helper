@@ -28,6 +28,7 @@ from rebasehelper.versioneer import versioneers_runner
 from rebasehelper.versioneers.anitya_versioneer import AnityaVersioneer
 from rebasehelper.versioneers.pypi_versioneer import PyPIVersioneer
 from rebasehelper.versioneers.npmjs_versioneer import NPMJSVersioneer
+from rebasehelper.versioneers.cpan_versioneer import CPANVersioneer
 
 
 class TestVersioneer(object):
@@ -66,4 +67,16 @@ class TestVersioneer(object):
     def test_npmjs_versioneer(self, package, min_version):
         assert NPMJSVersioneer.get_name() in versioneers_runner.versioneers
         version = versioneers_runner.run(NPMJSVersioneer.get_name(), package, None)
+        assert parse_version(version) >= parse_version(min_version)
+
+    @pytest.mark.parametrize('package, min_version', [
+        ('perl-Task-Kensho-Toolchain', '0.39'),
+        ('perl-Data-GUID', '0.049')
+    ], ids=[
+        'perl-Task-Kensho-Toolchain>=0.39',
+        'perl-Data-GUID>=0.049'
+    ])
+    def test_cpan_versioneer(self, package, min_version):
+        assert CPANVersioneer.get_name() in versioneers_runner.versioneers
+        version = versioneers_runner.run(CPANVersioneer.get_name(), package, None)
         assert parse_version(version) >= parse_version(min_version)
