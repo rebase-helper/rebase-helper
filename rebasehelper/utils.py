@@ -657,6 +657,7 @@ class RpmHelper(object):
         """
         cmd = ['dnf', 'builddep', spec_path]
         if os.geteuid() != 0:
+            logger.warning("Authentication required to install build dependencies using '%s'", ' '.join(cmd))
             cmd = ['pkexec'] + cmd
         if assume_yes:
             cmd.append('-y')
