@@ -230,6 +230,11 @@ class CLI(object):
             default=None,
             help="new upstream sources"
         )
+        parser.add_argument(
+            "--changelog-entry",
+            default="- New upstream release %{version}",
+            help="text to use as changelog entry, can contain RPM macros, which will be expanded"
+        )
         return parser
 
     def __init__(self, args=None):
