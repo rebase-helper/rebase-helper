@@ -51,6 +51,7 @@ class TestCLI(object):
             'builder_options': '\"-v\"',
             'get_old_build_from_koji': False,
             'color': 'auto',
+            'changelog_entry': 'Update to %{version}',
         }
         arguments = [
             'test-1.0.3.tar.gz', '--verbose',
@@ -61,6 +62,7 @@ class TestCLI(object):
              '--build-retries', '2',
              '--results-dir', '/tmp/rebase-helper',
              '--builder-options=\"-v\"',
+             '--changelog-entry', 'Update to %{version}',
         ]
         cli = CLI(arguments)
         for key, value in cli.args.__dict__.items():

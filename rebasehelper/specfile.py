@@ -125,10 +125,11 @@ class SpecFile(object):
                         '%files',
                         '%changelog']
 
-    def __init__(self, path, sources_location='', download=True):
+    def __init__(self, path, changelog_entry, sources_location='', download=True):
         self.path = path
         self.download = download
         self.sources_location = sources_location
+        self.changelog_entry = changelog_entry
         #  Read the content of the whole SPEC file
         rpm.addMacro("_sourcedir", self.sources_location)
         self._read_spec_content()
@@ -1120,7 +1121,7 @@ class SpecFile(object):
         """
         if new_path:
             shutil.copy(self.path, new_path)
-        new_object = SpecFile(new_path, self.sources_location, self.download)
+        new_object = SpecFile(new_path, self.changelog_entry, self.sources_location, self.download)
         return new_object
 
     def save(self):
@@ -1298,7 +1299,8 @@ class SpecFile(object):
                                                                       name=GitHelper.get_user(),
                                                                       email=GitHelper.get_email(),
                                                                       evr=evr))
-        new_record.append('- New upstream release {rel}\n'.format(rel=self.get_version()))
+        self._update_data()
+        new_record.append(rpm.expandMacro(self.changelog_entry) + '\n')
         new_record.append('\n')
         return new_record
 

@@ -24,6 +24,7 @@ from __future__ import print_function
 import os
 import shutil
 import logging
+import rpm
 
 import git
 import six
@@ -88,6 +89,8 @@ class Application(object):
         self.kwargs['rebased_sources_dir'] = self.rebased_sources_dir
 
         self.kwargs['non_interactive'] = self.conf.non_interactive
+
+        self.kwargs['changelog_entry'] = self.conf.changelog_entry
 
         logger.debug("Rebase-helper version: %s" % version.VERSION)
 
@@ -172,6 +175,7 @@ class Application(object):
         self.rebase_spec_file_path = get_rebase_name(self.rebased_sources_dir, self.spec_file_path)
 
         self.spec_file = SpecFile(self.spec_file_path,
+                                  self.conf.changelog_entry,
                                   self.execution_dir,
                                   download=not self.conf.not_download_sources)
         # Check whether test suite is enabled at build time
@@ -445,8 +449,8 @@ class Application(object):
 
         # Generate patch
         self.rebased_repo.git.add(all=True)
-        self.rebased_repo.index.commit('New upstream release {}'.format(self.rebase_spec_file.get_full_version()),
-                                       skip_hooks=True)
+        self.rebase_spec_file._update_data()
+        self.rebased_repo.index.commit(rpm.expandMacro(self.conf.changelog_entry))
         patch = self.rebased_repo.git.format_patch('-1', stdout=True, stdout_as_string=False)
         with open(os.path.join(self.results_dir, 'changes.patch'), 'wb') as f:
             f.write(patch)
