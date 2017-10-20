@@ -168,9 +168,8 @@ class CLI(object):
         )
         parser.add_argument(
             "--color",
-            default='auto',
-            dest='color',
             choices=['always', 'never', 'auto'],
+            default='auto',
             help="colorize the output, defaults to %(default)s"
         )
         parser.add_argument(

@@ -25,7 +25,7 @@ _rebase-helper()
     local rh_choices=@RH_CHOICES@
     local rh_extensions=@RH_EXTENSIONS@
 
-    local cur prev opt
+    local cur prev idx
 
     _get_comp_words_by_ref -n = cur prev
     _split_longopt
