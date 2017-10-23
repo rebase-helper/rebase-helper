@@ -115,7 +115,7 @@ class MockBuildTool(BuildToolBase):
                  'logs' -> list with absolute paths to logs
         """
         # build SRPM
-        srpm, cls.logs = cls._build_srpm(spec, sources, patches, results_dir)
+        srpm, cls.logs = cls._build_srpm(spec, sources, patches, results_dir, **kwargs)
 
         # build RPMs
         rpm_results_dir = os.path.join(results_dir, "RPM")

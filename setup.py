@@ -73,6 +73,7 @@ setup(
     packages=[
         'rebasehelper',
         'rebasehelper.build_tools',
+        'rebasehelper.srpm_build_tools',
         'rebasehelper.checkers',
         'rebasehelper.spec_hooks',
         'rebasehelper.output_tools',
@@ -89,6 +90,10 @@ setup(
             'mock = rebasehelper.build_tools.mock_tool:MockBuildTool',
             'koji = rebasehelper.build_tools.koji_tool:KojiBuildTool',
             'copr = rebasehelper.build_tools.copr_tool:CoprBuildTool',
+        ],
+        'rebasehelper.srpm_build_tools': [
+            'rpmbuild = rebasehelper.srpm_build_tools.rpmbuild_tool:RpmbuildSRPMBuildTool',
+            'mock = rebasehelper.srpm_build_tools.mock_tool:MockSRPMBuildTool',
         ],
         'rebasehelper.checkers': [
             'rpmdiff = rebasehelper.checkers.rpmdiff_tool:RpmDiffTool',

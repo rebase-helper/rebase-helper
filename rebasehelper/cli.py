@@ -31,7 +31,7 @@ from rebasehelper.version import VERSION
 from rebasehelper.application import Application
 from rebasehelper.logger import logger, LoggerHelper
 from rebasehelper.exceptions import RebaseHelperError
-from rebasehelper.build_helper import Builder
+from rebasehelper.build_helper import Builder, SRPMBuilder
 from rebasehelper.checker import checkers_runner
 from rebasehelper.output_tool import BaseOutputTool
 from rebasehelper.versioneer import versioneers_runner
@@ -127,6 +127,12 @@ class CLI(object):
             help="build tool to use, defaults to %(default)s"
         )
         parser.add_argument(
+            "--srpm-buildtool",
+            choices=SRPMBuilder.get_supported_tools(),
+            default=SRPMBuilder.get_default_tool(),
+            help="SRPM build tool to use, defaults to %(default)s"
+        )
+        parser.add_argument(
             "--pkgcomparetool",
             choices=checkers_runner.get_supported_tools(),
             default=checkers_runner.get_default_tools(),
@@ -204,6 +210,13 @@ class CLI(object):
             default=None,
             metavar="BUILDER_OPTIONS",
             help="enable arbitrary local builder option(s), enclose %(metavar)s in quotes "
+                 "and note that = before it is mandatory"
+        )
+        parser.add_argument(
+            "--srpm-builder-options",
+            default=None,
+            metavar="SRPM_BUILDER_OPTIONS",
+            help="enable arbitrary local srpm builder option(s), enclose %(metavar)s in quotes "
                  "and note that = before it is mandatory"
         )
         parser.add_argument(
