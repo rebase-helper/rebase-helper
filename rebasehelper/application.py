@@ -29,6 +29,8 @@ import rpm
 import git
 import six
 
+from pkg_resources import parse_version
+
 from rebasehelper.archive import Archive
 from rebasehelper.specfile import SpecFile, get_rebase_name, spec_hooks_runner
 from rebasehelper.logger import logger, logger_report, LoggerHelper
@@ -207,6 +209,9 @@ class Application(object):
             self.rebase_spec_file.set_version(version)
             self.rebase_spec_file.set_extra_version_separator(separator)
             self.rebase_spec_file.set_extra_version(extra_version)
+
+        if parse_version(self.rebase_spec_file.get_version()) <= parse_version(self.spec_file.get_version()):
+            raise RebaseHelperError("Current version is equal to or newer than the requested version, nothing to do.")
 
         # run spec hooks
         spec_hooks_runner.run_spec_hooks(self.spec_file, self.rebase_spec_file, **self.kwargs)
