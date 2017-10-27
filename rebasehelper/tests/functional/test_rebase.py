@@ -41,7 +41,10 @@ class TestRebase(object):
         return repo
 
     @pytest.mark.parametrize('buildtool', [
-        'rpmbuild',
+         pytest.mark.skipif(
+             os.geteuid() != 0,
+             reason='requires superuser privileges')
+         ('rpmbuild'),
         'mock',
     ])
     @pytest.mark.parametrize('package, url, commit, version, patches', [
