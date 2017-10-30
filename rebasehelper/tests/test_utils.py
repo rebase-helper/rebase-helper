@@ -26,11 +26,13 @@ import random
 import string
 import sys
 
+import git
 import rpm
 import pytest
 
 from six import StringIO
 
+from rebasehelper.utils import GitHelper
 from rebasehelper.utils import ConsoleHelper
 from rebasehelper.utils import DownloadHelper
 from rebasehelper.utils import DownloadError
@@ -40,6 +42,73 @@ from rebasehelper.utils import TemporaryEnvironment
 from rebasehelper.utils import RpmHelper
 from rebasehelper.utils import MacroHelper
 from rebasehelper.utils import LookasideCacheHelper
+
+
+class TestGitHelper(object):
+
+    def write_config_file(self, config_file, name, email):
+        with open(config_file, 'w') as f:
+            f.write('[user]\n'
+                    '    name = {0}\n'
+                    '    email = {1}\n'.format(name, email))
+
+    @pytest.mark.parametrize('config', [
+        # Get from $XDG_CONFIG_HOME/git/config
+        'global',
+        # Get from included file in $XDG_CONFIG_HOME/git/config
+        'global_include',
+        # Get from $repo_path/.git/config
+        'local',
+        # Get from GIT_CONFIG
+        'env',
+    ])
+    def test_get_user_and_email(self, config, workdir):
+        name = 'Foo Bar'
+        email = 'foo@bar.com'
+        env_git_config = os.environ.get('GIT_CONFIG')
+        env_xdg_config_home = os.environ.get('XDG_CONFIG_HOME')
+
+        try:
+            if config == 'global':
+                work_git_path = os.path.join(workdir, 'git')
+                os.makedirs(work_git_path)
+
+                config_file = os.path.join(work_git_path, 'config')
+                self.write_config_file(config_file, name, email)
+                os.environ['XDG_CONFIG_HOME'] = workdir
+            elif config == 'global_include':
+                work_git_path = os.path.join(workdir, 'git')
+                os.makedirs(work_git_path)
+
+                config_file = os.path.join(work_git_path, 'config')
+                with open(config_file, 'w') as f:
+                    f.write('[include]\n'
+                            '    path = included_config\n')
+                included_config_file = os.path.join(work_git_path, 'included_config')
+                self.write_config_file(included_config_file, name, email)
+                os.environ['XDG_CONFIG_HOME'] = workdir
+            elif config == 'local':
+                repo = git.Repo.init(workdir)
+                repo.git.config('user.name', name, local=True)
+                repo.git.config('user.email', email, local=True)
+            elif config == 'env':
+                config_file = os.path.join(workdir, 'git_config')
+                os.environ['GIT_CONFIG'] = config_file
+                self.write_config_file(config_file, name, email)
+            else:
+               raise RuntimeError()
+
+            assert name == GitHelper.get_user()
+            assert email == GitHelper.get_email()
+        finally:
+            if env_git_config:
+                os.environ['GIT_CONFIG'] = env_git_config
+            elif 'GIT_CONFIG' in os.environ:
+                del os.environ['GIT_CONFIG']
+            if env_xdg_config_home:
+                os.environ['XDG_CONFIG_HOME'] = env_xdg_config_home
+            elif 'XDG_CONFIG_HOME' in os.environ:
+                del os.environ['XDG_CONFIG_HOME']
 
 
 class TestConsoleHelper(object):
