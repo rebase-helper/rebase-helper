@@ -11,7 +11,7 @@ stages:
         - docker:dind
     script:
         - apk update
-        - apk add make git
+        - apk add make git python py-setuptools
         - make PYTEST_ADDOPTS="-m 'standard or functional'" test-docker
 
 test:f25:
