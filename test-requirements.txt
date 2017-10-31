@@ -3,5 +3,4 @@ cov-core
 coverage
 pytest-cov
 pytest
-pylint>=1.4.5
 unidiff
