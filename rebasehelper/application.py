@@ -41,9 +41,7 @@ from rebasehelper.checker import checkers_runner
 from rebasehelper.build_helper import Builder, SourcePackageBuildError, BinaryPackageBuildError
 from rebasehelper.patch_helper import Patcher
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
-from rebasehelper.build_log_analyzer import BuildLogAnalyzer, BuildLogAnalyzerMissingError
 from rebasehelper.results_store import results_store
-from rebasehelper.build_log_analyzer import BuildLogAnalyzerMakeError, BuildLogAnalyzerPatchError
 from rebasehelper.versioneer import versioneers_runner
 from rebasehelper import version
 
@@ -534,7 +532,6 @@ class Application(object):
                     task_id = self.conf.build_tasks[1]
             results_dir = os.path.join(self.results_dir, version) + '-build'
 
-            files = {}
             number_retries = 0
             while self.conf.build_retries != number_retries:
                 try:
@@ -566,54 +563,28 @@ class Application(object):
                     build_dict.update(builder.get_logs())
                     build_dict['source_package_build_error'] = six.text_type(e)
                     results_store.set_build_data(version, build_dict)
-                    #  always fail for original version
-                    if version == 'old':
-                        raise RebaseHelperError('Creating old SRPM package failed.')
-                    logger.error('Building source package failed.')
-                    #  TODO: implement log analyzer for SRPMs and add the checks here!!!
-                    raise
+
+                    if e.logfile is None:
+                        msg = 'Building {} SRPM packages failed; see logs in {} for more information'.format(
+                            version, os.path.join(results_dir, 'SRPM')
+                        )
+                    else:
+                        msg = 'Building {} SRPM packages failed; see {} for more information'.format(version, e.logfile)
+                    raise RebaseHelperError(msg, logfiles=builder.get_logs().get('logs'))
 
                 except BinaryPackageBuildError as e:
                     #  always fail for original version
-                    rpm_dir = os.path.join(results_dir, 'RPM')
                     build_dict.update(builder.get_logs())
                     build_dict['binary_package_build_error'] = six.text_type(e)
                     results_store.set_build_data(version, build_dict)
-                    build_log = 'build.log'
-                    build_log_path = os.path.join(rpm_dir, build_log)
-                    if version == 'old':
-                        error_message = 'Building old RPM package failed. Check logs: {} '.format(
-                            builder.get_logs().get('logs', 'N/A')
-                        )
-                        raise RebaseHelperError(error_message, logfiles=builder.get_logs().get('logs'))
-                    logger.error('Building binary packages failed.')
-                    msg = 'Building package failed'
-                    try:
-                        files = BuildLogAnalyzer.parse_log(rpm_dir, build_log)
-                    except BuildLogAnalyzerMissingError:
-                        raise RebaseHelperError('Build log %s does not exist', build_log_path)
-                    except BuildLogAnalyzerMakeError:
-                        raise RebaseHelperError('%s during build. Check log %s', msg, build_log_path,
-                                                logfiles=[build_log_path])
-                    except BuildLogAnalyzerPatchError:
-                        raise RebaseHelperError('%s during patching. Check log %s', msg, build_log_path,
-                                                logfiles=[build_log_path])
-                    except RuntimeError:
-                        if self.conf.build_retries == number_retries:
-                            raise RebaseHelperError('%s with unknown reason. Check log %s', msg, build_log_path,
-                                                    logfiles=[build_log_path])
 
-                    if 'missing' in files:
-                        missing_files = '\n'.join(files['missing'])
-                        logger.info('Files not packaged in the SPEC file:\n%s', missing_files)
-                    elif 'deleted' in files:
-                        deleted_files = '\n'.join(files['deleted'])
-                        logger.warning('Removed files packaged in SPEC file:\n%s', deleted_files)
+                    if e.logfile is None:
+                        msg = 'Building {} RPM packages failed; see logs in {} for more information'.format(
+                            version, os.path.join(results_dir, 'RPM')
+                        )
                     else:
-                        if self.conf.build_retries == number_retries:
-                            raise RebaseHelperError("Build failed, but no issues were found in the build log %s",
-                                                    build_log, logfiles=[build_log])
-                    self.rebase_spec_file.modify_spec_files_section(files)
+                        msg = 'Building {} RPM packages failed; see {} for more information'.format(version, e.logfile)
+                    raise RebaseHelperError(msg, logfiles=builder.get_logs().get('logs'))
 
                 if not self.conf.non_interactive:
                     msg = 'Do you want rebase-helper to try to build the packages one more time'

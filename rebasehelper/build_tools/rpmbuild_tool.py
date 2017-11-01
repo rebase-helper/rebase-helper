@@ -42,7 +42,7 @@ class RpmbuildBuildTool(BuildToolBase):
     logs = []
 
     @classmethod
-    def _build_rpm(cls, srpm, workdir, results_dir, builder_options=None):
+    def _build_rpm(cls, srpm, workdir, results_dir, rpm_results_dir, builder_options=None):
         """
         Build RPM using rpmbuild.
 
@@ -50,6 +50,7 @@ class RpmbuildBuildTool(BuildToolBase):
         :param workdir: abs path to working directory with rpmbuild directory
                         structure, which will be used as HOME dir.
         :param results_dir: abs path to dir where the log should be placed.
+        :param rpm_results_dir: path directory to where rpms will be placed
         :return: If build process ends successfully returns list of abs paths
                  to built RPMs, otherwise 'None'.
         """
@@ -63,10 +64,14 @@ class RpmbuildBuildTool(BuildToolBase):
                                                    env={'HOME': workdir},
                                                    output=output)
 
-        if ret != 0:
-            return None
-        else:
+        build_log_path = os.path.join(rpm_results_dir, 'build.log')
+
+        if ret == 0:
             return [f for f in PathHelper.find_all_files(workdir, '*.rpm') if not f.endswith('.src.rpm')]
+        # An error occurred, raise an exception
+        logfile = build_log_path
+        cls.logs.extend([l for l in PathHelper.find_all_files(rpm_results_dir, '*.log')])
+        raise BinaryPackageBuildError("Building RPMs failed!", results_dir, logfile=logfile)
 
     @classmethod
     def match(cls, cmd=None):
@@ -129,13 +134,9 @@ class RpmbuildBuildTool(BuildToolBase):
             env = tmp_env.env()
             tmp_dir = tmp_env.path()
             tmp_results_dir = env.get(RpmbuildTemporaryEnvironment.TEMPDIR_RESULTS)
-            rpms = cls._build_rpm(srpm, tmp_dir, tmp_results_dir, builder_options=cls.get_builder_options(**kwargs))
+            rpms = cls._build_rpm(srpm, tmp_dir, tmp_results_dir, rpm_results_dir, builder_options=cls.get_builder_options(**kwargs))
 
-        if rpms is None:
-            cls.logs.extend([l for l in PathHelper.find_all_files(rpm_results_dir, '*.log')])
-            raise BinaryPackageBuildError("Building RPMs failed!")
-        else:
-            logger.info("Building RPMs finished successfully")
+        logger.info("Building RPMs finished successfully")
 
         # RPMs paths in results_dir
         rpms = [os.path.join(rpm_results_dir, os.path.basename(f)) for f in rpms]

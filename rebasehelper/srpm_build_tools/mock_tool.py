@@ -23,7 +23,7 @@
 import os
 
 from rebasehelper.logger import logger
-from rebasehelper.build_helper import SRPMBuildToolBase
+from rebasehelper.build_helper import SRPMBuildToolBase, SourcePackageBuildError
 from rebasehelper.utils import PathHelper
 from rebasehelper.utils import ProcessHelper
 
@@ -43,13 +43,14 @@ class MockSRPMBuildTool(SRPMBuildToolBase):
         return cls.DEFAULT
 
     @classmethod
-    def build_srpm(cls, spec, workdir, results_dir, srpm_builder_options):
+    def build_srpm(cls, spec, workdir, results_dir, srpm_results_dir, srpm_builder_options):
         """
         Build SRPM using mock.
 
         :param spec: abs path to SPEC file inside the rpmbuild/SPECS in workdir.
         :param workdir: abs path to working directory with rpmbuild directory
                         structure, which will be used as HOME dir.
+        :param srpm_results_dir: path to directory where srpms will be stored
         :param results_dir: abs path to dir where the log should be placed.
         :param srpm_builder_options: list of additional options for mock build tool(eg. '-r fedora-XX-x86_64')
         :return: If build process ends successfully returns abs path
@@ -73,8 +74,19 @@ class MockSRPMBuildTool(SRPMBuildToolBase):
                                                    env={'HOME': workdir},
                                                    output=output)
 
-        if ret != 0:
-            return None
-        else:
+        build_log_path = os.path.join(srpm_results_dir, 'build.log')
+        mock_log_path = os.path.join(srpm_results_dir, 'mock_output.log')
+        root_log_path = os.path.join(srpm_results_dir, 'root.log')
+
+        if ret == 0:
             return PathHelper.find_first_file(workdir, '*.src.rpm')
+        if ret == 1:
+            if not os.path.exists(build_log_path) and os.path.exists(mock_log_path):
+                logfile = mock_log_path
+            else:
+                logfile = build_log_path
+        else:
+            logfile = root_log_path
+        cls.logs = [l for l in PathHelper.find_all_files(srpm_results_dir, '*.log')]
+        raise SourcePackageBuildError("Building SRPM failed!", logfile=logfile)
 
