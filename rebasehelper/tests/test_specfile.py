@@ -28,7 +28,6 @@ import re
 import pytest
 
 from rebasehelper.specfile import SpecFile, spec_hooks_runner
-from rebasehelper.build_log_analyzer import BuildLogAnalyzer
 from rebasehelper.spec_hooks.typo_fix import TypoFixHook
 from rebasehelper.spec_hooks.pypi_url_fix import PyPIURLFixHook
 
@@ -342,25 +341,6 @@ class TestSpecFile(object):
                           '#END THIS MODIFIED BY REBASE-HELPER\n',
                           '\n']
         assert expected_devel == section_devel
-
-    def test_spec_missing_from_logfile(self, workdir, spec_object):
-        shutil.move('build_missing.log', 'build.log')
-        files = BuildLogAnalyzer.parse_log(workdir, 'build.log')
-        spec_object.modify_spec_files_section(files)
-        section = spec_object.get_spec_section('%files')
-        expected = ['#BEGIN THIS MODIFIED BY REBASE-HELPER\n',
-                    '%{_bindir}/test2\n',
-                    '#END THIS MODIFIED BY REBASE-HELPER\n',
-                    '%{_bindir}/file.txt\n',
-                    '\n']
-        assert expected == section
-
-    def test_spec_obsolete_from_logfile(self, workdir, spec_object):
-        shutil.move('build_obsoletes.log', 'build.log')
-        files = BuildLogAnalyzer.parse_log(workdir, 'build.log')
-        spec_object.modify_spec_files_section(files)
-        section = spec_object.get_spec_section('%files')
-        assert '%{_libdir}/libtest.so' not in section
 
     def test_is_test_suite_enabled(self, spec_object):
         found = spec_object.is_test_suite_enabled()
