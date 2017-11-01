@@ -517,6 +517,12 @@ class Application(object):
 
                 build_dict['name'] = pkg_name
                 build_dict['version'] = pkg_version
+                build_dict['builds_nowait'] = self.conf.builds_nowait
+                build_dict['build_tasks'] = self.conf.build_tasks
+                build_dict['builder_options'] = self.conf.builder_options
+                build_dict['srpm_builder_options'] = self.conf.srpm_builder_options
+                build_dict['srpm_buildtool'] = self.conf.srpm_buildtool
+
                 patches = [x.get_path() for x in spec_object.get_patches()]
                 spec = spec_object.get_path()
                 sources = spec_object.get_sources()
@@ -548,6 +554,11 @@ class Application(object):
                             if build_dict['rpm'] is None:
                                 return False
                     # Build finishes properly. Go out from while cycle
+
+                    # Do not store rebase-helper internal data to the results
+                    for opt in ['builds_nowait', 'build_tasks', 'builder_options',
+                                'srpm_builder_options', 'srpm_buildtool']:
+                        build_dict.pop(opt)
                     results_store.set_build_data(version, build_dict)
                     break
 

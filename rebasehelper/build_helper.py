@@ -25,7 +25,6 @@ import os
 import six
 import pkg_resources
 
-from rebasehelper.utils import ProcessHelper
 from rebasehelper.utils import PathHelper
 from rebasehelper.utils import TemporaryEnvironment
 from rebasehelper.logger import logger
@@ -244,37 +243,29 @@ class BuildToolBase(object):
         """
         raise NotImplementedError()
 
-    @classmethod
-    def _do_build_srpm(cls, spec, workdir, results_dir):
-        """
-        Build SRPM using rpmbuild.
 
-        :param spec: abs path to SPEC file inside the rpmbuild/SPECS in workdir.
-        :param workdir: abs path to working directory with rpmbuild directory
-                        structure, which will be used as HOME dir.
-        :param results_dir: abs path to dir where the log should be placed.
-        :return: If build process ends successfully returns abs path
-                 to built SRPM, otherwise 'None'.
-        """
-        logger.info("Building SRPM")
-        spec_loc, spec_name = os.path.split(spec)
-        output = os.path.join(results_dir, "build.log")
+    @staticmethod
+    def get_builder_options(**kwargs):
+        builder_options = kwargs.get('builder_options')
+        if builder_options is not None:
+            return filter(None, kwargs['builder_options'].split(" "))
+        return None
 
-        cmd = ['rpmbuild', '-bs', spec_name]
-        ret = ProcessHelper.run_subprocess_cwd_env(cmd,
-                                                   cwd=spec_loc,
-                                                   env={'HOME': workdir},
-                                                   output=output)
+    @staticmethod
+    def get_srpm_builder_options(**kwargs):
+        srpm_builder_options = kwargs.get('srpm_builder_options')
+        if srpm_builder_options is not None:
+            return filter(None, kwargs['srpm_builder_options'].split(" "))
+        return None
 
-        if ret != 0:
-            return None
-        else:
-            return PathHelper.find_first_file(workdir, '*.src.rpm')
+    @staticmethod
+    def get_srpm_buildtool(**kwargs):
+        return kwargs.get('srpm_buildtool')
 
     @classmethod
-    def _build_srpm(cls, spec, sources, patches, results_dir):
+    def _build_srpm(cls, spec, sources, patches, results_dir, **kwargs):
         """
-        Builds the SRPM using rpmbuild
+        Builds the SRPM using chosen SRPM builder tool
 
         :param spec: absolute path to the SPEC file.
         :param sources: list with absolute paths to SOURCES
@@ -286,12 +277,18 @@ class BuildToolBase(object):
         srpm_results_dir = os.path.join(results_dir, "SRPM")
         with RpmbuildTemporaryEnvironment(sources, patches, spec,
                                           srpm_results_dir) as tmp_env:
+            srpm_builder_options = cls.get_srpm_builder_options(**kwargs)
+            srpm_build_tool = cls.get_srpm_buildtool(**kwargs)
+
             env = tmp_env.env()
             tmp_dir = tmp_env.path()
             tmp_spec = env.get(RpmbuildTemporaryEnvironment.TEMPDIR_SPEC)
             tmp_results_dir = env.get(
                 RpmbuildTemporaryEnvironment.TEMPDIR_RESULTS)
-            srpm = cls._do_build_srpm(tmp_spec, tmp_dir, tmp_results_dir)
+
+            srpm_builder = SRPMBuilder.srpm_build_tools[srpm_build_tool]
+            srpm = srpm_builder.build_srpm(tmp_spec, tmp_dir, tmp_results_dir,
+                                              srpm_builder_options=srpm_builder_options)
 
         if srpm is None:
             cls.logs = [l for l in PathHelper.find_all_files(srpm_results_dir, '*.log')]
@@ -308,12 +305,72 @@ class BuildToolBase(object):
 
         return srpm, logs
 
-    @staticmethod
-    def get_builder_options(**kwargs):
-        builder_options = kwargs.get('builder_options', None)
-        if builder_options is not None:
-            return filter(None, kwargs['builder_options'].split(" "))
-        return None
+
+class SRPMBuildToolBase(object):
+    """
+    Base class for SRPM builder tools
+    """
+
+    DEFAULT = False
+
+    @classmethod
+    def get_build_tool_name(cls):
+        """Returns name of the SRPM Build Tool"""
+        return NotImplementedError()
+
+    @classmethod
+    def is_default(cls):
+        """Returns true if the SRPM Build Tool is set to be default"""
+        return NotImplementedError()
+
+    @classmethod
+    def build_srpm(cls, spec, workdir, results_dir, srpm_builder_options):
+        """
+        Build SRPM with chosen SRPM Build Tool
+
+        :param spec: abs path to SPEC file inside the rpmbuild/SPECS in workdir.
+        :param workdir: abs path to working directory with rpmbuild directory
+        structure, which will be used as HOME dir.
+        :param results_dir: abs path to dir where the log should be placed.
+        :param srpm_builder_options: list of additional options to rpmbuild.
+        :return: If build process ends successfully returns abs path
+        to built SRPM, otherwise 'None'.
+        """
+        raise NotImplementedError()
+
+
+class SRPMBuilder(object):
+    """
+    Builder class for building SRPMs.
+    """
+
+    srpm_build_tools = {}
+
+    @classmethod
+    def load_srpm_build_tools(cls):
+        for entrypoint in pkg_resources.iter_entry_points('rebasehelper.srpm_build_tools'):
+            try:
+                srpm_build_tool = entrypoint.load()
+            except ImportError:
+                # silently skip broken plugin
+                continue
+            try:
+                cls.srpm_build_tools[srpm_build_tool.get_build_tool_name()] = srpm_build_tool
+            except (AttributeError, NotImplementedError):
+                # silently skip broken plugin
+                continue
+
+    @classmethod
+    def get_supported_tools(cls):
+        """Returns list of supported srpm build tools"""
+        return cls.srpm_build_tools.keys()
+
+    @classmethod
+    def get_default_tool(cls):
+        """Returns default build tool"""
+        default = [k for k, v in six.iteritems(cls.srpm_build_tools) if v.is_default()]
+        return default[0] if default else None
+
 
 
 class Builder(object):
@@ -406,4 +463,5 @@ class Builder(object):
         return default[0] if default else None
 
 
+SRPMBuilder.load_srpm_build_tools()
 Builder.load_build_tools()

@@ -52,6 +52,8 @@ class TestCLI(object):
             'get_old_build_from_koji': False,
             'color': 'auto',
             'changelog_entry': 'Update to %{version}',
+            'srpm_builder_options': '\"-r fedora-26-x86_64\"',
+            'srpm_buildtool': 'mock',
         }
         arguments = [
             'test-1.0.3.tar.gz', '--verbose',
@@ -63,6 +65,8 @@ class TestCLI(object):
              '--results-dir', '/tmp/rebase-helper',
              '--builder-options=\"-v\"',
              '--changelog-entry', 'Update to %{version}',
+             '--srpm-builder-options=\"-r fedora-26-x86_64\"',
+             '--srpm-buildtool', 'mock',
         ]
         cli = CLI(arguments)
         for key, value in cli.args.__dict__.items():
