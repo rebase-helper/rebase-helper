@@ -24,9 +24,11 @@ help:
 clean:
 	@$(PYTHON) setup.py clean
 	rm -f MANIFEST
+	rm -f build/rebase-helper.bash
 	rm -rf build/html
 	rm -rf build/man
-	find . -\( -name "*.pyc" -o -name '*.pyo' -o -name "*~" -\) -delete
+	find . -type f -name "*.py[co]" -delete
+	find . -type d -name "__pycache__" -delete
 
 
 install:
