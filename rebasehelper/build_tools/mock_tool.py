@@ -59,13 +59,13 @@ class MockBuildTool(BuildToolBase):
         """
         Build RPM using mock.
 
-        :param srpm: full path to the srpm
-        :param results_dir: tmp directory for building
-        :param rpm_results_dir: directory where rpms will be placed
-        :param root: path to where chroot should be built
-        :param arch: target architectures for the build
-        :param builder_options: builder_options for mock
-        :return list of rpms
+        :param srpm: full path to the srpm.
+        :param results_dir: abs path to dir where the log should be placed.
+        :param rpm_results_dir: directory where rpms will be placed.
+        :param root: path to where chroot should be built.
+        :param arch: target architectures for the build.
+        :param builder_options: builder_options for mock.
+        :return abs paths to RPMs.
         """
         logger.info("Building RPMs")
         output = os.path.join(results_dir, "mock_output.log")

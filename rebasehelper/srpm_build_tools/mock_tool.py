@@ -50,11 +50,10 @@ class MockSRPMBuildTool(SRPMBuildToolBase):
         :param spec: abs path to SPEC file inside the rpmbuild/SPECS in workdir.
         :param workdir: abs path to working directory with rpmbuild directory
                         structure, which will be used as HOME dir.
-        :param srpm_results_dir: path to directory where srpms will be stored
         :param results_dir: abs path to dir where the log should be placed.
-        :param srpm_builder_options: list of additional options for mock build tool(eg. '-r fedora-XX-x86_64')
-        :return: If build process ends successfully returns abs path
-                 to built SRPM, otherwise 'None'.
+        :param srpm_results_dir: path to directory where SRPM will be placed.
+        :param srpm_builder_options: list of additional options for mock build tool(eg. '-r fedora-XX-x86_64').
+        :return:  abs path to built SRPM.
         """
         logger.info("Building SRPM")
         spec_loc, spec_name = os.path.split(spec)

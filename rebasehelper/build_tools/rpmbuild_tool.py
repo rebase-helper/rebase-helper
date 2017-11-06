@@ -50,9 +50,8 @@ class RpmbuildBuildTool(BuildToolBase):
         :param workdir: abs path to working directory with rpmbuild directory
                         structure, which will be used as HOME dir.
         :param results_dir: abs path to dir where the log should be placed.
-        :param rpm_results_dir: path directory to where rpms will be placed
-        :return: If build process ends successfully returns list of abs paths
-                 to built RPMs, otherwise 'None'.
+        :param rpm_results_dir: path directory to where RPMs will be placed.
+        :return: abs paths to built RPMs.
         """
         logger.info("Building RPMs")
         output = os.path.join(results_dir, "build.log")

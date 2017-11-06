@@ -51,10 +51,9 @@ class RpmbuildSRPMBuildTool(SRPMBuildToolBase):
         :param workdir: abs path to working directory with rpmbuild directory
                         structure, which will be used as HOME dir.
         :param results_dir: abs path to dir where the log should be placed.
-        :param srpm_results_dir: path to directory where srpms will be placed
+        :param srpm_results_dir: path to directory where SRPM will be placed.
         :param srpm_builder_options: list of additional options to rpmbuild.
-        :return: If build process ends successfully returns abs path
-                 to built SRPM, otherwise 'None'.
+        :return: abs path to built SRPM.
         """
         logger.info("Building SRPM")
         spec_loc, spec_name = os.path.split(spec)
