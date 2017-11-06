@@ -532,77 +532,58 @@ class Application(object):
                     task_id = self.conf.build_tasks[1]
             results_dir = os.path.join(self.results_dir, version) + '-build'
 
-            number_retries = 0
-            while self.conf.build_retries != number_retries:
-                try:
-                    if self.conf.build_tasks is None:
-                        if koji_build_id:
-                            build_dict['rpm'], build_dict['logs'] = KojiHelper.download_build(koji_build_id,
-                                                                                              results_dir)
-                        else:
-                            build_dict.update(builder.build(spec, sources, patches, results_dir, **build_dict))
-                    if builder.creates_tasks() and not koji_build_id:
-                        if not self.conf.builds_nowait:
-                            build_dict['rpm'], build_dict['logs'] = builder.wait_for_task(build_dict, results_dir)
-                            if build_dict['rpm'] is None:
-                                return False
-                        elif self.conf.build_tasks:
-                            build_dict['rpm'], build_dict['logs'] = builder.get_detached_task(task_id, results_dir)
-                            if build_dict['rpm'] is None:
-                                return False
-                    # Build finishes properly. Go out from while cycle
-
-                    # Do not store rebase-helper internal data to the results
-                    for opt in ['builds_nowait', 'build_tasks', 'builder_options',
-                                'srpm_builder_options', 'srpm_buildtool']:
-                        build_dict.pop(opt)
-                    results_store.set_build_data(version, build_dict)
-                    break
-
-                except SourcePackageBuildError as e:
-                    build_dict.update(builder.get_logs())
-                    build_dict['source_package_build_error'] = six.text_type(e)
-                    results_store.set_build_data(version, build_dict)
-
-                    if e.logfile is None:
-                        msg = 'Building {} SRPM packages failed; see logs in {} for more information'.format(
-                            version, os.path.join(results_dir, 'SRPM')
-                        )
+            try:
+                if self.conf.build_tasks is None:
+                    if koji_build_id:
+                        build_dict['rpm'], build_dict['logs'] = KojiHelper.download_build(koji_build_id,
+                                                                                          results_dir)
                     else:
-                        msg = 'Building {} SRPM packages failed; see {} for more information'.format(version, e.logfile)
-                    raise RebaseHelperError(msg, logfiles=builder.get_logs().get('logs'))
+                        build_dict.update(builder.build(spec, sources, patches, results_dir, **build_dict))
+                if builder.creates_tasks() and not koji_build_id:
+                    if not self.conf.builds_nowait:
+                        build_dict['rpm'], build_dict['logs'] = builder.wait_for_task(build_dict, results_dir)
+                        if build_dict['rpm'] is None:
+                            return False
+                    elif self.conf.build_tasks:
+                        build_dict['rpm'], build_dict['logs'] = builder.get_detached_task(task_id, results_dir)
+                        if build_dict['rpm'] is None:
+                            return False
 
-                except BinaryPackageBuildError as e:
-                    #  always fail for original version
-                    build_dict.update(builder.get_logs())
-                    build_dict['binary_package_build_error'] = six.text_type(e)
-                    results_store.set_build_data(version, build_dict)
+                # Do not store rebase-helper internal data to the results
+                for opt in ['builds_nowait', 'build_tasks', 'builder_options',
+                            'srpm_builder_options', 'srpm_buildtool']:
+                    build_dict.pop(opt)
+                results_store.set_build_data(version, build_dict)
 
-                    if e.logfile is None:
-                        msg = 'Building {} RPM packages failed; see logs in {} for more information'.format(
-                            version, os.path.join(results_dir, 'RPM')
-                        )
-                    else:
-                        msg = 'Building {} RPM packages failed; see {} for more information'.format(version, e.logfile)
-                    raise RebaseHelperError(msg, logfiles=builder.get_logs().get('logs'))
+            except SourcePackageBuildError as e:
+                build_dict.update(builder.get_logs())
+                build_dict['source_package_build_error'] = six.text_type(e)
+                results_store.set_build_data(version, build_dict)
 
-                if not self.conf.non_interactive:
-                    msg = 'Do you want rebase-helper to try to build the packages one more time'
-                    if not ConsoleHelper.get_message(msg):
-                        raise KeyboardInterrupt
+                if e.logfile is None:
+                    msg = 'Building {} SRPM packages failed; see logs in {} for more information'.format(
+                        version, os.path.join(results_dir, 'SRPM')
+                    )
                 else:
-                    logger.warning('Some patches were not successfully applied')
-                # build just failed, otherwise we would break out of the while loop
-                logger.debug('Number of retries is %s', self.conf.build_retries)
-                number_retries += 1
-                if self.conf.build_retries > number_retries:
-                    # only remove builds if this retry is not the last one
-                    if os.path.exists(os.path.join(results_dir, 'RPM')):
-                        shutil.rmtree(os.path.join(results_dir, 'RPM'))
-                    if os.path.exists(os.path.join(results_dir, 'SRPM')):
-                        shutil.rmtree(os.path.join(results_dir, 'SRPM'))
-            if self.conf.build_retries == number_retries:
-                raise RebaseHelperError('Building package failed with unknown reason. Check all available log files.')
+                    msg = 'Building {} SRPM packages failed; see {} for more information'.format(version, e.logfile)
+                raise RebaseHelperError(msg, logfiles=builder.get_logs().get('logs'))
+
+            except BinaryPackageBuildError as e:
+                build_dict.update(builder.get_logs())
+                build_dict['binary_package_build_error'] = six.text_type(e)
+                results_store.set_build_data(version, build_dict)
+
+                if e.logfile is None:
+                    msg = 'Building {} RPM packages failed; see logs in {} for more information'.format(
+                        version, os.path.join(results_dir, 'RPM')
+                    )
+                else:
+                    msg = 'Building {} RPM packages failed; see {} for more information'.format(version, e.logfile)
+                raise RebaseHelperError(msg, logfiles=builder.get_logs().get('logs'))
+
+            except Exception:
+                raise RebaseHelperError('Building package failed with unknown reason. '
+                                        'Check all available log files.')
 
         if self.conf.builds_nowait and not self.conf.build_tasks:
             if builder.creates_tasks():

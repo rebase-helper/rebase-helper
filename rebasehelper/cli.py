@@ -220,12 +220,6 @@ class CLI(object):
                  "and note that = before it is mandatory"
         )
         parser.add_argument(
-            "--build-retries",
-            default=2,
-            help="number of retries of a failed build, defaults to %(default)d",
-            type=int
-        )
-        parser.add_argument(
             "--results-dir",
             help="directory where rebase-helper output will be stored"
         )
