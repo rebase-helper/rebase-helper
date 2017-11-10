@@ -55,8 +55,18 @@ class MockBuildTool(BuildToolBase):
     logs = []
 
     @classmethod
-    def _build_rpm(cls, srpm, results_dir, root=None, arch=None, builder_options=None):
-        """Build RPM using mock."""
+    def _build_rpm(cls, srpm, results_dir, rpm_results_dir, root=None, arch=None, builder_options=None):
+        """
+        Build RPM using mock.
+
+        :param srpm: full path to the srpm.
+        :param results_dir: abs path to dir where the log should be placed.
+        :param rpm_results_dir: directory where rpms will be placed.
+        :param root: path to where chroot should be built.
+        :param arch: target architectures for the build.
+        :param builder_options: builder_options for mock.
+        :return abs paths to RPMs.
+        """
         logger.info("Building RPMs")
         output = os.path.join(results_dir, "mock_output.log")
 
@@ -70,10 +80,25 @@ class MockBuildTool(BuildToolBase):
 
         ret = ProcessHelper.run_subprocess(cmd, output=output)
 
-        if ret != 0:
-            return None
-        else:
+        tmp_build_log_path = os.path.join(results_dir, 'build.log')
+        tmp_mock_log_path = os.path.join(results_dir, 'mock_output.log')
+
+        build_log_path = os.path.join(rpm_results_dir, 'build.log')
+        mock_log_path = os.path.join(rpm_results_dir, 'mock_output.log')
+        root_log_path = os.path.join(rpm_results_dir, 'root.log')
+
+        if ret == 0:
             return [f for f in PathHelper.find_all_files(results_dir, '*.rpm') if not f.endswith('.src.rpm')]
+        if ret == 1:
+            if not os.path.exists(tmp_build_log_path) and os.path.exists(tmp_mock_log_path):
+                logfile = mock_log_path
+            else:
+                logfile = build_log_path
+        else:
+            logfile = root_log_path
+            # We need to be inform what directory to analyze and what spec file failed
+        cls.logs.extend([l for l in PathHelper.find_all_files(rpm_results_dir, '*.log')])
+        raise BinaryPackageBuildError("Building RPMs failed!", rpm_results_dir, logfile=logfile)
 
     @classmethod
     def match(cls, cmd=None):
@@ -122,18 +147,14 @@ class MockBuildTool(BuildToolBase):
         with MockTemporaryEnvironment(sources, patches, spec, rpm_results_dir) as tmp_env:
             env = tmp_env.env()
             tmp_results_dir = env.get(MockTemporaryEnvironment.TEMPDIR_RESULTS)
-            rpms = cls._build_rpm(srpm, tmp_results_dir, builder_options=cls.get_builder_options(**kwargs))
+            rpms = cls._build_rpm(srpm, tmp_results_dir, rpm_results_dir,
+                                  builder_options=cls.get_builder_options(**kwargs))
             # remove SRPM - side product of building RPM
             tmp_srpm = PathHelper.find_first_file(tmp_results_dir, "*.src.rpm")
             if tmp_srpm is not None:
                 os.unlink(tmp_srpm)
 
-        if rpms is None:
-            # We need to be inform what directory to analyze and what spec file failed
-            cls.logs.extend([l for l in PathHelper.find_all_files(rpm_results_dir, '*.log')])
-            raise BinaryPackageBuildError("Building RPMs failed!", rpm_results_dir, spec)
-        else:
-            logger.info("Building RPMs finished successfully")
+        logger.info("Building RPMs finished successfully")
 
         rpms = [os.path.join(rpm_results_dir, os.path.basename(f)) for f in rpms]
         logger.debug("Successfully built RPMs: '%s'", str(rpms))

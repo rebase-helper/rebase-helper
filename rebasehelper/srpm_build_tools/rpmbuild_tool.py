@@ -23,7 +23,7 @@
 import os
 
 from rebasehelper.logger import logger
-from rebasehelper.build_helper import SRPMBuildToolBase
+from rebasehelper.build_helper import SRPMBuildToolBase, SourcePackageBuildError
 from rebasehelper.utils import PathHelper
 from rebasehelper.utils import ProcessHelper
 
@@ -43,7 +43,7 @@ class RpmbuildSRPMBuildTool(SRPMBuildToolBase):
         return cls.DEFAULT
 
     @classmethod
-    def build_srpm(cls, spec, workdir, results_dir, srpm_builder_options):
+    def build_srpm(cls, spec, workdir, results_dir, srpm_results_dir, srpm_builder_options):
         """
         Build SRPM using rpmbuild.
 
@@ -51,9 +51,9 @@ class RpmbuildSRPMBuildTool(SRPMBuildToolBase):
         :param workdir: abs path to working directory with rpmbuild directory
                         structure, which will be used as HOME dir.
         :param results_dir: abs path to dir where the log should be placed.
+        :param srpm_results_dir: path to directory where SRPM will be placed.
         :param srpm_builder_options: list of additional options to rpmbuild.
-        :return: If build process ends successfully returns abs path
-                 to built SRPM, otherwise 'None'.
+        :return: abs path to built SRPM.
         """
         logger.info("Building SRPM")
         spec_loc, spec_name = os.path.split(spec)
@@ -69,8 +69,12 @@ class RpmbuildSRPMBuildTool(SRPMBuildToolBase):
                                                    env={'HOME': workdir},
                                                    output=output)
 
-        if ret != 0:
-            return None
-        else:
+        build_log_path = os.path.join(srpm_results_dir, 'build.log')
+
+        if ret == 0:
             return PathHelper.find_first_file(workdir, '*.src.rpm')
+        # An error occurred, raise an exception
+        logfile = build_log_path
+        cls.logs = [l for l in PathHelper.find_all_files(srpm_results_dir, '*.log')]
+        raise SourcePackageBuildError("Building SRPM failed!", logfile=logfile)
 

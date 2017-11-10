@@ -34,14 +34,28 @@ class SourcePackageBuildError(RuntimeError):
     """
     Error indicating failure to build Source Package.
     """
-    pass
+    def __init__(self, *args, **kwargs):
+        """
+        Constructor of SourcePackageBuildError
+        :param args: tuple of arguments stored in the exception instance
+        :param kwargs: dictionary containing path to the logfile that contains main errors
+        """
+        self.args = args
+        self.logfile = kwargs.get('logfile')
 
 
 class BinaryPackageBuildError(RuntimeError):
     """
     Error indicating failure to build Binary Package
     """
-    pass
+    def __init__(self, *args, **kwargs):
+        """
+        Constructor of BinaryPackageBuildError
+        :param args: tuple of arguments stored in the exception instance
+        :param kwargs: dictionary containing path to the logfile that contains main errors
+        """
+        self.args = args
+        self.logfile = kwargs.get('logfile')
 
 
 class BuildTemporaryEnvironment(TemporaryEnvironment):
@@ -287,14 +301,10 @@ class BuildToolBase(object):
                 RpmbuildTemporaryEnvironment.TEMPDIR_RESULTS)
 
             srpm_builder = SRPMBuilder.srpm_build_tools[srpm_build_tool]
-            srpm = srpm_builder.build_srpm(tmp_spec, tmp_dir, tmp_results_dir,
+            srpm = srpm_builder.build_srpm(tmp_spec, tmp_dir, tmp_results_dir, srpm_results_dir,
                                               srpm_builder_options=srpm_builder_options)
 
-        if srpm is None:
-            cls.logs = [l for l in PathHelper.find_all_files(srpm_results_dir, '*.log')]
-            raise SourcePackageBuildError("Building SRPM failed!")
-        else:
-            logger.info("Building SRPM finished successfully")
+        logger.info("Building SRPM finished successfully")
 
         # srpm path in results_dir
         srpm = os.path.join(srpm_results_dir, os.path.basename(srpm))
