@@ -50,10 +50,42 @@ class CustomHelpFormatter(argparse.HelpFormatter):
         return re.sub(r' ((SRPM_)?BUILDER_OPTIONS)', r'=\1', text)
 
     def _expand_help(self, action):
+        action.default = getattr(action, 'actual_default', None)
         if isinstance(action.default, list):
             default_str = ','.join([str(c) for c in action.default])
             action.default = default_str
         return super(CustomHelpFormatter, self)._expand_help(action)
+
+
+class CustomAction(argparse.Action):
+    def __init__(self, option_strings,
+                 switch=False,
+                 actual_default=None,
+                 dest=None,
+                 default=None,
+                 nargs=None,
+                 required=False,
+                 type=None,
+                 metavar=None,
+                 help=None,
+                 choices=None):
+
+        super(CustomAction, self).__init__(
+            option_strings=option_strings,
+            dest=dest,
+            default=default,
+            required=required,
+            metavar=metavar,
+            type=type,
+            help=help,
+            choices=choices)
+
+        self.switch = switch
+        self.nargs = 0 if self.switch else nargs
+        self.actual_default = actual_default
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        setattr(namespace, self.dest, True if self.switch else values)
 
 
 class CustomArgumentParser(argparse.ArgumentParser):
