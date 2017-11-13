@@ -185,6 +185,10 @@ OPTIONS = [
         "default": "- New upstream release %{version}",
         "help": "text to use as changelog entry, can contain RPM macros, which will be expanded",
     },
+    {
+        "name": ("--conf",),
+        "help": "custom path to configuration file",
+    },
 ]
 
 
