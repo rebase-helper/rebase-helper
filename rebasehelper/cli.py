@@ -22,6 +22,7 @@
 
 import argparse
 import logging
+import re
 import sys
 
 import six
@@ -42,11 +43,11 @@ class CustomHelpFormatter(argparse.HelpFormatter):
 
     def _format_actions_usage(self, actions, groups):
         text = super(CustomHelpFormatter, self)._format_actions_usage(actions, groups)
-        return text.replace(' BUILDER_OPTIONS', '=BUILDER_OPTIONS')
+        return re.sub(r' ((SRPM_)?BUILDER_OPTIONS)', r'=\1', text)
 
     def _format_action_invocation(self, action):
         text = super(CustomHelpFormatter, self)._format_action_invocation(action)
-        return text.replace(' BUILDER_OPTIONS', '=BUILDER_OPTIONS')
+        return re.sub(r' ((SRPM_)?BUILDER_OPTIONS)', r'=\1', text)
 
     def _expand_help(self, action):
         if isinstance(action.default, list):
