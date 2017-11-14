@@ -340,11 +340,11 @@ class SRPMBuildToolBase(object):
 
         :param spec: abs path to SPEC file inside the rpmbuild/SPECS in workdir.
         :param workdir: abs path to working directory with rpmbuild directory
-        structure, which will be used as HOME dir.
+                        structure, which will be used as HOME dir.
         :param results_dir: abs path to dir where the log should be placed.
         :param srpm_builder_options: list of additional options to rpmbuild.
         :return: If build process ends successfully returns abs path
-        to built SRPM, otherwise 'None'.
+                 to built SRPM, otherwise 'None'.
         """
         raise NotImplementedError()
 
