@@ -14,10 +14,10 @@ stages:
         - apk add make git python py-setuptools
         - make PYTEST_ADDOPTS="-m 'standard or functional'" test-docker
 
-test:f25:
+test:f26:
     <<: *test_definition
     variables:
-        DOCKER_IMAGE: fedora:25
+        DOCKER_IMAGE: fedora:26
 
 test:latest:
     <<: *test_definition
