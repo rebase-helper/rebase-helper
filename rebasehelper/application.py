@@ -349,8 +349,8 @@ class Application(object):
         try:
             archive = Archive(archive_path)
         except NotImplementedError as ni_e:
-            raise RebaseHelperError('%s. Supported archives are %s' % six.text_type(ni_e),
-                                    Archive.get_supported_archives())
+            raise RebaseHelperError('%s. Supported archives are %s' % (six.text_type(ni_e),
+                                    Archive.get_supported_archives()))
 
         try:
             archive.extract_archive(destination)
