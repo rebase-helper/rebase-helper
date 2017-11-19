@@ -28,6 +28,7 @@ import pytest
 import unidiff
 
 from rebasehelper.cli import CLI
+from rebasehelper.config import Conf
 from rebasehelper.application import Application
 from rebasehelper.settings import REBASE_HELPER_RESULTS_DIR
 
@@ -98,8 +99,10 @@ class TestRebase(object):
             '--color=always',
             version
         ])
-        execution_dir, results_dir, debug_log_file = Application.setup(cli)
-        app = Application(cli, execution_dir, results_dir, debug_log_file)
+        conf = Conf(getattr(cli, 'conf', None))
+        conf.merge(cli)
+        execution_dir, results_dir, debug_log_file = Application.setup(conf)
+        app = Application(conf, execution_dir, results_dir, debug_log_file)
         app.run()
         with open(os.path.join(REBASE_HELPER_RESULTS_DIR, 'report.json')) as f:
             report = json.load(f)
