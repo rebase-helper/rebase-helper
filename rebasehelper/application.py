@@ -482,8 +482,8 @@ class Application(object):
         try:
             builder = Builder(self.conf.buildtool)
         except NotImplementedError as ni_e:
-            raise RebaseHelperError('%s. Supported build tools are %s' % six.text_type(ni_e),
-                                    Builder.get_supported_tools())
+            raise RebaseHelperError('%s. Supported build tools are %s' % (six.text_type(ni_e),
+                                    Builder.get_supported_tools()))
 
         for version in ['old', 'new']:
             spec_object = self.spec_file if version == 'old' else self.rebase_spec_file
