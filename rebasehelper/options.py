@@ -189,6 +189,12 @@ OPTIONS = [
         "name": ("--conf",),
         "help": "custom path to configuration file",
     },
+    {
+        "name": ("--skip-version-check",),
+        "default": False,
+        "switch": True,
+        "help": "force rebase even if current version is newer than requested version",
+    },
 ]
 
 
