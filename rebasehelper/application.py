@@ -208,7 +208,8 @@ class Application(object):
             self.rebase_spec_file.set_extra_version_separator(separator)
             self.rebase_spec_file.set_extra_version(extra_version)
 
-        if parse_version(self.rebase_spec_file.get_version()) <= parse_version(self.spec_file.get_version()):
+        if not self.conf.skip_version_check and parse_version(self.rebase_spec_file.get_version()) \
+                <= parse_version(self.spec_file.get_version()):
             raise RebaseHelperError("Current version is equal to or newer than the requested version, nothing to do.")
 
         # run spec hooks
