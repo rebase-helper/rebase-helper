@@ -38,6 +38,8 @@ RUN dnf -y install \
   dnf-plugins-core \
   # needed by rpm-py-installer.
   rpm-devel \
+  # necessary for tests that are using rpmbuild. (missing make etc.)
+  @buildsys-build \
   && dnf clean all
 
 CMD ["/usr/bin/tox"]
