@@ -158,12 +158,6 @@ OPTIONS = [
                 "to pass more than one",
     },
     {
-        "name": ("--build-retries",),
-        "default": 2,
-        "help": "number of retries of a failed build, defaults to %(default)d",
-        "type": int,
-    },
-    {
         "name": ("--results-dir",),
         "help": "directory where rebase-helper output will be stored",
     },
