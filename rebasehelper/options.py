@@ -25,20 +25,40 @@ from rebasehelper.checker import checkers_runner
 from rebasehelper.output_tool import BaseOutputTool
 from rebasehelper.versioneer import versioneers_runner
 
+
 OPTIONS = [
+    # basic
     {
         "name": ["--version"],
         "default": False,
         "switch": True,
         "help": "show rebase-helper version and exit",
     },
+    # output control
     {
         "name": ["-v", "--verbose"],
         "default": False,
         "switch": True,
         "help": "be more verbose (recommended)",
     },
+    {
+        "name": ["--color"],
+        "choices": ["always", "never", "auto"],
+        "default": "auto",
+        "help": "colorize the output, defaults to %(default)s",
+    },
+    {
+        "name": ["--results-dir"],
+        "help": "directory where rebase-helper output will be stored",
+    },
+    # action control
     [
+        {
+            "name": ["-p", "--patch-only"],
+            "default": False,
+            "switch": True,
+            "help": "only apply patches",
+        },
         {
             "name": ["-b", "--build-only"],
             "default": False,
@@ -53,13 +73,15 @@ OPTIONS = [
             "help": "compare already built packages, %(metavar)s must be a directory "
                     "with the following structure: <dir_name>/{old,new}/RPM",
         },
-        {
-            "name": ["-p", "--patch-only"],
-            "default": False,
-            "switch": True,
-            "help": "only apply patches",
-        },
     ],
+    {
+        "name": ["-c", "--continue"],
+        "default": False,
+        "switch": True,
+        "dest": "cont",
+        "help": "continue previously interrupted rebase",
+    },
+    # tool selection
     {
         "name": ["--buildtool"],
         "choices": Builder.get_supported_tools(),
@@ -91,6 +113,14 @@ OPTIONS = [
         "default": None,
         "help": "tool to use for determining latest upstream version",
     },
+    # behavior control
+    {
+        "name": ["--non-interactive"],
+        "default": False,
+        "switch": True,
+        "dest": "non_interactive",
+        "help": "do not interact with user",
+    },
     {
         "name": ["--not-download-sources"],
         "default": False,
@@ -104,19 +134,6 @@ OPTIONS = [
         "help": "do not remove workspace directory after finishing",
     },
     {
-        "name": ["-c", "--continue"],
-        "default": False,
-        "switch": True,
-        "dest": "cont",
-        "help": "continue previously interrupted rebase",
-    },
-    {
-        "name": ["--color"],
-        "choices": ["always", "never", "auto"],
-        "default": "auto",
-        "help": "colorize the output, defaults to %(default)s",
-    },
-    {
         "name": ["--disable-inapplicable-patches"],
         "default": False,
         "switch": True,
@@ -124,11 +141,23 @@ OPTIONS = [
         "help": "disable inapplicable patches in rebased SPEC file",
     },
     {
-        "name": ["--non-interactive"],
+        "name": ["--get-old-build-from-koji"],
         "default": False,
         "switch": True,
-        "dest": "non_interactive",
-        "help": "do not interact with user",
+        "help": "do not build old sources, download latest build from Koji instead",
+    },
+    {
+        "name": ["--skip-version-check"],
+        "default": False,
+        "switch": True,
+        "help": "force rebase even if current version is newer than requested version",
+    },
+    # remote builder options
+    {
+        "name": ["--builds-nowait"],
+        "default": False,
+        "switch": True,
+        "help": "do not wait for remote builds to finish",
     },
     {
         "name": ["--build-tasks"],
@@ -137,12 +166,7 @@ OPTIONS = [
         "type": lambda s: s.split(','),
         "help": "comma-separated remote build task ids",
     },
-    {
-        "name": ["--builds-nowait"],
-        "default": False,
-        "switch": True,
-        "help": "do not wait for remote builds to finish",
-    },
+    # additional local builder options
     {
         "name": ["--builder-options"],
         "default": None,
@@ -157,23 +181,7 @@ OPTIONS = [
         "help": "enable arbitrary local srpm builder option(s), enclose %(metavar)s in quotes "
                 "to pass more than one",
     },
-    {
-        "name": ["--results-dir"],
-        "help": "directory where rebase-helper output will be stored",
-    },
-    {
-        "name": ["--get-old-build-from-koji"],
-        "default": False,
-        "switch": True,
-        "help": "do not build old sources, download latest build from Koji instead",
-    },
-    {
-        "name": ["sources"],
-        "metavar": "SOURCES",
-        "nargs": "?",
-        "default": None,
-        "help": "new upstream sources",
-    },
+    # misc
     {
         "name": ["--changelog-entry"],
         "default": "- New upstream release %{version}",
@@ -183,11 +191,13 @@ OPTIONS = [
         "name": ["--conf"],
         "help": "custom path to configuration file",
     },
+    # sources
     {
-        "name": ["--skip-version-check"],
-        "default": False,
-        "switch": True,
-        "help": "force rebase even if current version is newer than requested version",
+        "name": ["sources"],
+        "metavar": "SOURCES",
+        "nargs": "?",
+        "default": None,
+        "help": "new upstream sources",
     },
 ]
 
