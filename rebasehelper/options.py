@@ -39,7 +39,7 @@ OPTIONS = [
         "name": ["-v", "--verbose"],
         "default": False,
         "switch": True,
-        "help": "be more verbose (recommended)",
+        "help": "be more verbose",
     },
     {
         "name": ["--color"],
@@ -63,7 +63,7 @@ OPTIONS = [
             "name": ["-b", "--build-only"],
             "default": False,
             "switch": True,
-            "help": "only build SRPM and RPMs",
+            "help": "only build SRPMs and RPMs",
         },
         {
             "name": ["--comparepkgs-only"],
@@ -197,7 +197,7 @@ OPTIONS = [
         "metavar": "SOURCES",
         "nargs": "?",
         "default": None,
-        "help": "new upstream sources",
+        "help": "version number or filename of the new source archive",
     },
 ]
 
