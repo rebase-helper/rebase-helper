@@ -22,7 +22,6 @@
 
 import argparse
 import logging
-import re
 import sys
 
 import six
@@ -33,19 +32,11 @@ from rebasehelper.version import VERSION
 from rebasehelper.application import Application
 from rebasehelper.logger import logger, LoggerHelper
 from rebasehelper.exceptions import RebaseHelperError
-from rebasehelper.utils import KojiHelper, ConsoleHelper
+from rebasehelper.utils import ConsoleHelper
 from rebasehelper.config import Conf
 
 
 class CustomHelpFormatter(argparse.HelpFormatter):
-
-    def _format_actions_usage(self, actions, groups):
-        text = super(CustomHelpFormatter, self)._format_actions_usage(actions, groups)
-        return re.sub(r' ((SRPM_)?BUILDER_OPTIONS)', r'=\1', text)
-
-    def _format_action_invocation(self, action):
-        text = super(CustomHelpFormatter, self)._format_action_invocation(action)
-        return re.sub(r' ((SRPM_)?BUILDER_OPTIONS)', r'=\1', text)
 
     def _expand_help(self, action):
         action.default = getattr(action, 'actual_default', None)
@@ -142,6 +133,15 @@ class CLI(object):
 
     def __init__(self, args=None):
         """parse arguments"""
+        if args is None:
+            args = sys.argv[1:]
+        # sanitize builder options to prevent ArgumentParser from processing them
+        for opt in ['--builder-options', '--srpm-builder-options']:
+            try:
+                i = args.index(opt)
+                args[i:i+2] = ['='.join(args[i:i+2])]
+            except ValueError:
+                continue
         self.parser = CLI.build_parser()
         self.args = self.parser.parse_args(args)
 
@@ -160,9 +160,6 @@ class CliHelper(object):
         try:
             # be verbose until debug_log_file is created
             handler = LoggerHelper.add_stream_handler(logger, logging.DEBUG)
-            if "--builder-options" in sys.argv[1:]:
-                raise RebaseHelperError('Wrong format of --builder-options. It must be in the following form:'
-                                        ' --builder-options="--desired-builder-option".')
             cli = CLI()
             if hasattr(cli, 'version'):
                 logger.info(VERSION)

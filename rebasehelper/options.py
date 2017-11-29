@@ -148,14 +148,14 @@ OPTIONS = [
         "default": None,
         "metavar": "BUILDER_OPTIONS",
         "help": "enable arbitrary local builder option(s), enclose %(metavar)s in quotes "
-                "and note that = before it is mandatory",
+                "to pass more than one",
     },
     {
         "name": ("--srpm-builder-options",),
         "default": None,
         "metavar": "SRPM_BUILDER_OPTIONS",
         "help": "enable arbitrary local srpm builder option(s), enclose %(metavar)s in quotes "
-                "and note that = before it is mandatory",
+                "to pass more than one",
     },
     {
         "name": ("--build-retries",),
