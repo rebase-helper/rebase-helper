@@ -20,10 +20,13 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
+import os
+
 from rebasehelper.build_helper import Builder, SRPMBuilder
 from rebasehelper.checker import checkers_runner
 from rebasehelper.output_tool import BaseOutputTool
 from rebasehelper.versioneer import versioneers_runner
+from rebasehelper.constants import CONFIG_PATH, CONFIG_FILENAME
 
 
 OPTIONS = [
@@ -188,8 +191,9 @@ OPTIONS = [
         "help": "text to use as changelog entry, can contain RPM macros, which will be expanded",
     },
     {
-        "name": ["--conf"],
-        "help": "custom path to configuration file",
+        "name": ["--config-file"],
+        "default": os.path.join(CONFIG_PATH, CONFIG_FILENAME),
+        "help": "path to a configuration file, defaults to %(default)s",
     },
     # sources
     {
