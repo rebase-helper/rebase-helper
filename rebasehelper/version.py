@@ -20,4 +20,4 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
-VERSION = '0.11.0'
+VERSION = '0.12.0'

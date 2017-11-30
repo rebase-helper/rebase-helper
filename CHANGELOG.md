@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-## [0.12.0] - 2017-11-30
+## [0.12.0] - 2017-12-19
 ### Added
 - Added **npmjs** and **cpan** versioneers
 - Added possibility to specify custom py.test arguments
@@ -11,6 +11,8 @@
 - Added separate tox tasks for linting
 - Implemented **rpmbuild** and **mock** SRPM build tools
 - Added possibility to configure rebase-helper with configuration file
+- Added possibility to blacklist certain SPEC hooks or versioneers
+- Created `rebasehelper/rebase-helper` Docker Hub repository
 
 ### Changed
 - Made several speed optimizations in the test suite
@@ -22,6 +24,9 @@
 - Fixed reading username and e-mail from git configuration
 - Added missing dependencies to Dockerfile
 - Fixed processing of custom builder options
+- Added workarounds for RPM bugs related to `%sources` and `%patches`
+- Fixed several unhandled exceptions
+- Fixed parsing tarball filename containing certain characters
 
 ## [0.11.0] - 2017-10-04
 ### Added
