@@ -20,8 +20,10 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
+import shlex
 import shutil
 import os
+
 import six
 import pkg_resources
 
@@ -261,15 +263,15 @@ class BuildToolBase(object):
     @staticmethod
     def get_builder_options(**kwargs):
         builder_options = kwargs.get('builder_options')
-        if builder_options is not None:
-            return filter(None, kwargs['builder_options'].split(" "))
+        if builder_options:
+            return shlex.split(builder_options)
         return None
 
     @staticmethod
     def get_srpm_builder_options(**kwargs):
         srpm_builder_options = kwargs.get('srpm_builder_options')
-        if srpm_builder_options is not None:
-            return filter(None, kwargs['srpm_builder_options'].split(" "))
+        if srpm_builder_options:
+            return shlex.split(srpm_builder_options)
         return None
 
     @staticmethod
