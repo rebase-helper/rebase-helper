@@ -20,180 +20,188 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
+import os
+
 from rebasehelper.build_helper import Builder, SRPMBuilder
 from rebasehelper.checker import checkers_runner
 from rebasehelper.output_tool import BaseOutputTool
 from rebasehelper.versioneer import versioneers_runner
+from rebasehelper.constants import CONFIG_PATH, CONFIG_FILENAME
+
 
 OPTIONS = [
+    # basic
     {
-        "name": ("--version",),
+        "name": ["--version"],
         "default": False,
         "switch": True,
         "help": "show rebase-helper version and exit",
     },
+    # output control
     {
-        "name": ("-v", "--verbose"),
+        "name": ["-v", "--verbose"],
         "default": False,
         "switch": True,
-        "help": "be more verbose (recommended)",
+        "help": "be more verbose",
     },
+    {
+        "name": ["--color"],
+        "choices": ["always", "never", "auto"],
+        "default": "auto",
+        "help": "colorize the output, defaults to %(default)s",
+    },
+    {
+        "name": ["--results-dir"],
+        "help": "directory where rebase-helper output will be stored",
+    },
+    # action control
     [
         {
-            "name": ("-b", "--build-only"),
+            "name": ["-p", "--patch-only"],
             "default": False,
             "switch": True,
-            "help": "only build SRPM and RPMs",
+            "help": "only apply patches",
         },
         {
-            "name": ("--comparepkgs-only",),
+            "name": ["-b", "--build-only"],
+            "default": False,
+            "switch": True,
+            "help": "only build SRPMs and RPMs",
+        },
+        {
+            "name": ["--comparepkgs-only"],
             "default": False,
             "dest": "comparepkgs",
             "metavar": "COMPAREPKGS_DIR",
             "help": "compare already built packages, %(metavar)s must be a directory "
                     "with the following structure: <dir_name>/{old,new}/RPM",
         },
-        {
-            "name": ("-p", "--patch-only"),
-            "default": False,
-            "switch": True,
-            "help": "only apply patches",
-        },
     ],
     {
-        "name": ("--buildtool",),
+        "name": ["-c", "--continue"],
+        "default": False,
+        "switch": True,
+        "dest": "cont",
+        "help": "continue previously interrupted rebase",
+    },
+    # tool selection
+    {
+        "name": ["--buildtool"],
         "choices": Builder.get_supported_tools(),
         "default": Builder.get_default_tool(),
         "help": "build tool to use, defaults to %(default)s",
     },
     {
-        "name": ("--srpm-buildtool",),
+        "name": ["--srpm-buildtool"],
         "choices": SRPMBuilder.get_supported_tools(),
         "default": SRPMBuilder.get_default_tool(),
         "help": "SRPM build tool to use, defaults to %(default)s",
     },
     {
-        "name": ("--pkgcomparetool",),
+        "name": ["--pkgcomparetool"],
         "choices": checkers_runner.get_supported_tools(),
         "default": checkers_runner.get_default_tools(),
         "type": lambda s: s.split(','),
         "help": "set of tools to use for package comparison, defaults to %(default)s",
     },
     {
-        "name": ("--outputtool",),
+        "name": ["--outputtool"],
         "choices": BaseOutputTool.get_supported_tools(),
         "default": BaseOutputTool.get_default_tool(),
         "help": "tool to use for formatting rebase output, defaults to %(default)s",
     },
     {
-        "name": ("--versioneer",),
+        "name": ["--versioneer"],
         "choices": versioneers_runner.get_available_versioneers(),
         "default": None,
         "help": "tool to use for determining latest upstream version",
     },
+    # behavior control
     {
-        "name": ("--not-download-sources",),
-        "default": False,
-        "switch": True,
-        "help": "do not download sources",
-    },
-    {
-        "name": ("-w", "--keep-workspace"),
-        "default": False,
-        "switch": True,
-        "help": "do not remove workspace directory after finishing",
-    },
-    {
-        "name": ("-c", "--continue"),
-        "default": False,
-        "switch": True,
-        "dest": "cont",
-        "help": "continue previously interrupted rebase",
-    },
-    {
-        "name": ("--color",),
-        "choices": ["always", "never", "auto"],
-        "default": "auto",
-        "help": "colorize the output, defaults to %(default)s",
-    },
-    {
-        "name": ("--disable-inapplicable-patches",),
-        "default": False,
-        "switch": True,
-        "dest": "disable_inapplicable_patches",
-        "help": "disable inapplicable patches in rebased SPEC file",
-    },
-    {
-        "name": ("--non-interactive",),
+        "name": ["--non-interactive"],
         "default": False,
         "switch": True,
         "dest": "non_interactive",
         "help": "do not interact with user",
     },
     {
-        "name": ("--build-tasks",),
-        "dest": "build_tasks",
-        "metavar": "OLD_TASK,NEW_TASK",
-        "type": lambda s: s.split(','),
-        "help": "comma-separated remote build task ids",
+        "name": ["--not-download-sources"],
+        "default": False,
+        "switch": True,
+        "help": "do not download sources",
     },
     {
-        "name": ("--builds-nowait",),
+        "name": ["-w", "--keep-workspace"],
+        "default": False,
+        "switch": True,
+        "help": "do not remove workspace directory after finishing",
+    },
+    {
+        "name": ["--disable-inapplicable-patches"],
+        "default": False,
+        "switch": True,
+        "dest": "disable_inapplicable_patches",
+        "help": "disable inapplicable patches in rebased SPEC file",
+    },
+    {
+        "name": ["--get-old-build-from-koji"],
+        "default": False,
+        "switch": True,
+        "help": "do not build old sources, download latest build from Koji instead",
+    },
+    {
+        "name": ["--skip-version-check"],
+        "default": False,
+        "switch": True,
+        "help": "force rebase even if current version is newer than requested version",
+    },
+    # remote builder options
+    {
+        "name": ["--builds-nowait"],
         "default": False,
         "switch": True,
         "help": "do not wait for remote builds to finish",
     },
     {
-        "name": ("--builder-options",),
+        "name": ["--build-tasks"],
+        "dest": "build_tasks",
+        "metavar": "OLD_TASK,NEW_TASK",
+        "type": lambda s: s.split(','),
+        "help": "comma-separated remote build task ids",
+    },
+    # additional local builder options
+    {
+        "name": ["--builder-options"],
         "default": None,
         "metavar": "BUILDER_OPTIONS",
         "help": "enable arbitrary local builder option(s), enclose %(metavar)s in quotes "
                 "to pass more than one",
     },
     {
-        "name": ("--srpm-builder-options",),
+        "name": ["--srpm-builder-options"],
         "default": None,
         "metavar": "SRPM_BUILDER_OPTIONS",
         "help": "enable arbitrary local srpm builder option(s), enclose %(metavar)s in quotes "
                 "to pass more than one",
     },
+    # misc
     {
-        "name": ("--build-retries",),
-        "default": 2,
-        "help": "number of retries of a failed build, defaults to %(default)d",
-        "type": int,
-    },
-    {
-        "name": ("--results-dir",),
-        "help": "directory where rebase-helper output will be stored",
-    },
-    {
-        "name": ("--get-old-build-from-koji",),
-        "default": False,
-        "switch": True,
-        "help": "do not build old sources, download latest build from Koji instead",
-    },
-    {
-        "name": ("sources",),
-        "metavar": "SOURCES",
-        "nargs": "?",
-        "default": None,
-        "help": "new upstream sources",
-    },
-    {
-        "name": ("--changelog-entry",),
+        "name": ["--changelog-entry"],
         "default": "- New upstream release %{version}",
         "help": "text to use as changelog entry, can contain RPM macros, which will be expanded",
     },
     {
-        "name": ("--conf",),
-        "help": "custom path to configuration file",
+        "name": ["--config-file"],
+        "default": os.path.join(CONFIG_PATH, CONFIG_FILENAME),
+        "help": "path to a configuration file, defaults to %(default)s",
     },
+    # sources
     {
-        "name": ("--skip-version-check",),
-        "default": False,
-        "switch": True,
-        "help": "force rebase even if current version is newer than requested version",
+        "name": ["sources"],
+        "metavar": "SOURCES",
+        "nargs": "?",
+        "default": None,
+        "help": "version number or filename of the new source archive",
     },
 ]
 

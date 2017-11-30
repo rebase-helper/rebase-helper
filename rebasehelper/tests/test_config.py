@@ -21,28 +21,31 @@
 #          Tomas Hozza <thozza@redhat.com>
 
 import os
+
 import pytest
 import six
 
+from six.moves import configparser
+
 from rebasehelper.cli import CLI
-from rebasehelper.config import Conf
+from rebasehelper.config import Config
 
 
 class TestConfig(object):
-    CONF_FILE = 'test_conf.cfg'
+    CONFIG_FILE = 'test_config.cfg'
 
     @pytest.fixture
-    def config_file(self, conf_args):
-        config = six.moves.configparser.ConfigParser()
+    def config_file(self, config_args):
+        config = configparser.ConfigParser()
         config.add_section('Section1')
-        for key, value in six.iteritems(conf_args):
+        for key, value in six.iteritems(config_args):
             config.set('Section1', key, value)
-        with open(self.CONF_FILE, 'w') as configfile:
+        with open(self.CONFIG_FILE, 'w') as configfile:
             config.write(configfile)
 
-        return os.path.abspath(self.CONF_FILE)
+        return os.path.abspath(self.CONFIG_FILE)
 
-    @pytest.mark.parametrize('conf_args', [
+    @pytest.mark.parametrize('config_args', [
         {
             'changelog-entry': 'Updated to',
             'versioneer': 'pypi',
@@ -52,12 +55,12 @@ class TestConfig(object):
         'configured',
         'empty',
     ])
-    def test_get_config(self, conf_args, config_file):
-        conf = Conf(config_file)
-        expected_result = {k.replace('-', '_'): v for k, v in six.iteritems(conf_args)}
-        assert expected_result == conf.config
+    def test_get_config(self, config_args, config_file):
+        config = Config(config_file)
+        expected_result = {k.replace('-', '_'): v for k, v in six.iteritems(config_args)}
+        assert expected_result == config.config
 
-    @pytest.mark.parametrize('cli_args, conf_args, merged', [
+    @pytest.mark.parametrize('cli_args, config_args, merged', [
         (
             [
                 '--changelog-entry', 'Version set to',
@@ -80,7 +83,7 @@ class TestConfig(object):
     def test_merge(self, cli_args, merged, config_file):
         expected_result = {k.replace('-', '_'): v for k, v in six.iteritems(merged)}
         cli = CLI(cli_args)
-        conf = Conf(config_file)
-        conf.merge(cli)
+        config = Config(config_file)
+        config.merge(cli)
         # True if expected_result is a subset of conf.config
-        assert six.viewitems(expected_result) <= six.viewitems(conf.config)
+        assert six.viewitems(expected_result) <= six.viewitems(config.config)

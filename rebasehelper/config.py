@@ -20,26 +20,30 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
-import os.path
+import os
 
 from six.moves import configparser
 
 from rebasehelper.options import OPTIONS, traverse_options
-from rebasehelper.constants import CONFIG_FILE
+from rebasehelper.constants import CONFIG_PATH, CONFIG_FILENAME
 
 
-class Conf:
-    def __init__(self, config_file):
-        self.path_to_config = self.get_conf_path(config_file)
+class Config(object):
+
+    def __init__(self, config_file=None):
+        self.path_to_config = self.get_config_path(config_file)
         self.config = self.get_config()
 
+    def __getattr__(self, name):
+        return self.config.get(name)
+
     @staticmethod
-    def get_conf_path(config_file):
-        if not config_file:
-            path = os.environ.get('XDG_CONFIG_HOME', os.path.expandvars('$HOME/.config'))
-            config_file = os.path.join(path, CONFIG_FILE)
-            return config_file
-        return os.path.abspath(config_file)
+    def get_config_path(config_file):
+        # ensure XDG_CONFIG_HOME is set
+        if 'XDG_CONFIG_HOME' not in os.environ:
+            os.environ['XDG_CONFIG_HOME'] = os.path.join('$HOME', '.config')
+        path = os.path.expandvars(config_file or os.path.join(CONFIG_PATH, CONFIG_FILENAME))
+        return os.path.abspath(path)
 
     def get_config(self):
         conf = {}
@@ -61,6 +65,3 @@ class Conf:
 
             if dest and dest not in self.config:
                 self.config[dest] = option.get('default')
-
-    def __getattr__(self, name):
-        return self.config.get(name)

@@ -22,4 +22,6 @@
 
 PROGRAM_DESCRIPTION = "Tool to help package maintainers rebase their packages to the latest upstream version"
 NEW_ISSUE_LINK = 'https://github.com/rebase-helper/rebase-helper/issues/new'
-CONFIG_FILE = "rebase-helper.cfg"
+
+CONFIG_PATH = '$XDG_CONFIG_HOME'
+CONFIG_FILENAME = 'rebase-helper.cfg'

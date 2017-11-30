@@ -33,7 +33,7 @@ from rebasehelper.application import Application
 from rebasehelper.logger import logger, LoggerHelper
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.utils import ConsoleHelper
-from rebasehelper.config import Conf
+from rebasehelper.config import Config
 
 
 class CustomHelpFormatter(argparse.HelpFormatter):
@@ -165,13 +165,13 @@ class CliHelper(object):
                 logger.info(VERSION)
                 sys.exit(0)
 
-            conf = Conf(getattr(cli, 'conf', None))
-            conf.merge(cli)
-            ConsoleHelper.use_colors = ConsoleHelper.should_use_colors(conf)
-            execution_dir, results_dir, debug_log_file = Application.setup(conf)
-            if not conf.verbose:
+            config = Config(getattr(cli, 'config-file', None))
+            config.merge(cli)
+            ConsoleHelper.use_colors = ConsoleHelper.should_use_colors(config)
+            execution_dir, results_dir, debug_log_file = Application.setup(config)
+            if not config.verbose:
                 handler.setLevel(logging.INFO)
-            app = Application(conf, execution_dir, results_dir, debug_log_file)
+            app = Application(config, execution_dir, results_dir, debug_log_file)
             app.run()
         except KeyboardInterrupt:
             logger.info('\nInterrupted by user')

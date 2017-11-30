@@ -23,7 +23,7 @@
 import os
 
 from rebasehelper.cli import CLI
-from rebasehelper.config import Conf
+from rebasehelper.config import Config
 from rebasehelper.application import Application
 from rebasehelper import settings
 
@@ -99,10 +99,10 @@ class TestApplication(object):
             'results_dir': os.path.join(workdir, settings.REBASE_HELPER_RESULTS_DIR)}
 
         cli = CLI(self.cmd_line_args)
-        conf = Conf(getattr(cli, 'conf', None))
-        conf.merge(cli)
-        execution_dir, results_dir, debug_log_file = Application.setup(conf)
-        app = Application(conf, execution_dir, results_dir, debug_log_file)
+        config = Config()
+        config.merge(cli)
+        execution_dir, results_dir, debug_log_file = Application.setup(config)
+        app = Application(config, execution_dir, results_dir, debug_log_file)
         app.prepare_sources()
         for key, val in app.kwargs.items():
             if key in expected_dict:
