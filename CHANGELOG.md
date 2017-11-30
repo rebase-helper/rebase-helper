@@ -2,6 +2,27 @@
 
 ## [Unreleased]
 
+## [0.12.0] - 2017-11-30
+### Added
+- Added **npmjs** and **cpan** versioneers
+- Added possibility to specify custom py.test arguments
+- Added possibility to customize changelog entry
+- Added version check to abort rebase if requested version is not newer than current
+- Added separate tox tasks for linting
+- Implemented **rpmbuild** and **mock** SRPM build tools
+- Added possibility to configure rebase-helper with configuration file
+
+### Changed
+- Made several speed optimizations in the test suite
+- Tests requiring superuser privileges are now automatically skipped if necessary
+- Simplified build analysis and made related log messages more useful
+
+### Fixed
+- Fixed documentation builds on readthedocs.org broken by *rpm distribution* requirement
+- Fixed reading username and e-mail from git configuration
+- Added missing dependencies to Dockerfile
+- Fixed processing of custom builder options
+
 ## [0.11.0] - 2017-10-04
 ### Added
 - Added `rpm-py-installer` to install `rpm-python` from pip
