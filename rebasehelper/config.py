@@ -41,7 +41,7 @@ class Config(object):
     def get_config_path(config_file):
         # ensure XDG_CONFIG_HOME is set
         if 'XDG_CONFIG_HOME' not in os.environ:
-            os.environ['XDG_CONFIG_HOME'] = os.path.join('$HOME', '.config')
+            os.environ['XDG_CONFIG_HOME'] = os.path.expandvars(os.path.join('$HOME', '.config'))
         path = os.path.expandvars(config_file or os.path.join(CONFIG_PATH, CONFIG_FILENAME))
         return os.path.abspath(path)
 
