@@ -26,6 +26,7 @@ from rebasehelper.build_helper import Builder, SRPMBuilder
 from rebasehelper.checker import checkers_runner
 from rebasehelper.output_tool import BaseOutputTool
 from rebasehelper.versioneer import versioneers_runner
+from rebasehelper.specfile import spec_hooks_runner
 from rebasehelper.constants import CONFIG_PATH, CONFIG_FILENAME
 
 
@@ -115,6 +116,14 @@ OPTIONS = [
         "choices": versioneers_runner.get_available_versioneers(),
         "default": None,
         "help": "tool to use for determining latest upstream version",
+    },
+    # blacklists
+    {
+        "name": ["--spec-hook-blacklist"],
+        "choices": spec_hooks_runner.get_available_spec_hooks(),
+        "default": [],
+        "type": lambda s: s.split(","),
+        "help": "prevent specified spec hooks from being run",
     },
     # behavior control
     {

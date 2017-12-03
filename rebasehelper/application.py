@@ -91,6 +91,8 @@ class Application(object):
 
         self.kwargs['changelog_entry'] = self.conf.changelog_entry
 
+        self.kwargs['spec_hook_blacklist'] = self.conf.spec_hook_blacklist
+
         logger.debug("Rebase-helper version: %s" % version.VERSION)
 
         if self.conf.build_tasks is None:
