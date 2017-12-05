@@ -191,7 +191,9 @@ class SpecFile(object):
 
         :return: 
         """
-        # Load rpm information
+        # explicitly discard old instance to prevent rpm from destroying
+        # "sources" and "patches" lua tables after new instance is created
+        self.spc = None
         try:
             self.spc = rpm.spec(self.path)
         except ValueError:
