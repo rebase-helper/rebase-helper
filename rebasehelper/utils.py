@@ -699,7 +699,7 @@ class RpmHelper(object):
         macros = MacroHelper.dump()
         macros = [m for m in macros if m['name'] in ('ix86', 'arm', 'mips', 'sparc', 'alpha', 'power64')]
         for m in macros:
-            arches.extend(rpm.expandMacro(m['value']).split())
+            arches.extend(MacroHelper.expand(m['value'], '').split())
         return arches
 
     @classmethod
@@ -734,6 +734,13 @@ class RpmHelper(object):
 class MacroHelper(object):
 
     """Helper class for working with RPM macros """
+
+    @staticmethod
+    def expand(s, default=None):
+        try:
+            return rpm.expandMacro(s)
+        except rpm.error:
+            return default
 
     @staticmethod
     def dump():

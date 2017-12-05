@@ -23,12 +23,10 @@
 import os
 import re
 
-import rpm
-
 from six.moves import urllib
 
 from rebasehelper.specfile import BaseSpecHook
-from rebasehelper.utils import TemporaryEnvironment, ProcessHelper
+from rebasehelper.utils import TemporaryEnvironment, ProcessHelper, MacroHelper
 from rebasehelper.logger import logger
 
 
@@ -50,7 +48,8 @@ class RubyHelperHook(BaseSpecHook):
         """Extract instructions from comments, update version if necessary"""
         instructions = []
         for comment in comments:
-            comment = rpm.expandMacro(rpm.expandMacro(comment))
+            comment = MacroHelper.expand(comment, comment)
+            comment = MacroHelper.expand(comment, comment)
             comment = re.sub(r'^#\s*', '', comment)
             comment = comment.replace(old_version, new_version)
             instructions.append(comment)
