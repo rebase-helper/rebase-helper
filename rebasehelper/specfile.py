@@ -37,7 +37,7 @@ from operator import itemgetter
 
 from six.moves import urllib
 
-from rebasehelper.utils import DownloadHelper, DownloadError, MacroHelper, GitHelper
+from rebasehelper.utils import DownloadHelper, DownloadError, MacroHelper, GitHelper, RpmHelper
 from rebasehelper.utils import LookasideCacheHelper, LookasideCacheError, defenc
 from rebasehelper.logger import logger
 from rebasehelper import settings
@@ -195,7 +195,7 @@ class SpecFile(object):
         # "sources" and "patches" lua tables after new instance is created
         self.spc = None
         try:
-            self.spc = rpm.spec(self.path)
+            self.spc = RpmHelper.parse_spec(self.path)
         except ValueError:
             raise RebaseHelperError("Problem with parsing SPEC file '%s'" % self.path)
         self.category = self._guess_category()

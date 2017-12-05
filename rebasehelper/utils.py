@@ -730,6 +730,15 @@ class RpmHelper(object):
             return dict(name=name, epoch=epoch, version=version, release=release, arch=arch)
         raise RebaseHelperError('Unable to split string into NEVRA.')
 
+    @classmethod
+    def parse_spec(cls, path):
+        with open(path, 'rb') as orig:
+            with tempfile.NamedTemporaryFile() as tmp:
+                # remove BuildArch to workaround rpm bug
+                tmp.write(b''.join([l for l in orig.readlines() if not l.startswith(b'BuildArch')]))
+                tmp.flush()
+                return rpm.spec(tmp.name)
+
 
 class MacroHelper(object):
 
