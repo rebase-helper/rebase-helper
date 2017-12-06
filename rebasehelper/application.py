@@ -24,7 +24,6 @@ from __future__ import print_function
 import os
 import shutil
 import logging
-import rpm
 
 import git
 import six
@@ -36,7 +35,7 @@ from rebasehelper.specfile import SpecFile, get_rebase_name, spec_hooks_runner
 from rebasehelper.logger import logger, logger_report, LoggerHelper
 from rebasehelper import settings
 from rebasehelper.output_tool import output_tools_runner
-from rebasehelper.utils import PathHelper, ConsoleHelper, GitHelper, KojiHelper, FileHelper, ProcessHelper
+from rebasehelper.utils import PathHelper, GitHelper, KojiHelper, FileHelper, MacroHelper
 from rebasehelper.checker import checkers_runner
 from rebasehelper.build_helper import Builder, SourcePackageBuildError, BinaryPackageBuildError
 from rebasehelper.patch_helper import Patcher
@@ -454,7 +453,7 @@ class Application(object):
         # Generate patch
         self.rebased_repo.git.add(all=True)
         self.rebase_spec_file._update_data()
-        self.rebased_repo.index.commit(rpm.expandMacro(self.conf.changelog_entry))
+        self.rebased_repo.index.commit(MacroHelper.expand(self.conf.changelog_entry, self.conf.changelog_entry))
         patch = self.rebased_repo.git.format_patch('-1', stdout=True, stdout_as_string=False)
         with open(os.path.join(self.results_dir, 'changes.patch'), 'wb') as f:
             f.write(patch)

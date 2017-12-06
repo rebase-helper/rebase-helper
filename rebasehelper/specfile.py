@@ -37,7 +37,7 @@ from operator import itemgetter
 
 from six.moves import urllib
 
-from rebasehelper.utils import DownloadHelper, DownloadError, MacroHelper, GitHelper
+from rebasehelper.utils import DownloadHelper, DownloadError, MacroHelper, GitHelper, RpmHelper
 from rebasehelper.utils import LookasideCacheHelper, LookasideCacheError, defenc
 from rebasehelper.logger import logger
 from rebasehelper import settings
@@ -191,9 +191,11 @@ class SpecFile(object):
 
         :return: 
         """
-        # Load rpm information
+        # explicitly discard old instance to prevent rpm from destroying
+        # "sources" and "patches" lua tables after new instance is created
+        self.spc = None
         try:
-            self.spc = rpm.spec(self.path)
+            self.spc = RpmHelper.parse_spec(self.path)
         except ValueError:
             raise RebaseHelperError("Problem with parsing SPEC file '%s'" % self.path)
         self.category = self._guess_category()
@@ -479,7 +481,7 @@ class SpecFile(object):
         :return:
         """
         release = self.get_release()
-        dist = rpm.expandMacro('%{dist}')
+        dist = MacroHelper.expand('%{dist}')
         if dist:
             release = release.replace(dist, '')
         return re.sub(r'([0-9.]*[0-9]+).*', r'\1', release)
@@ -805,10 +807,10 @@ class SpecFile(object):
                         result.append(node[1])
                     elif node[0] == 'm':
                         m = '%{{{}}}'.format(node[1])
-                        if rpm.expandMacro(m):
+                        if MacroHelper.expand(m):
                             result.append(m)
                     elif node[0] == 'c':
-                        if rpm.expandMacro('%{{{}:1}}'.format(node[1])):
+                        if MacroHelper.expand('%{{{}:1}}'.format(node[1])):
                             result.extend(traverse(node[2]))
                 return result
 
@@ -822,10 +824,10 @@ class SpecFile(object):
             macros.update([m for m, _ in _find_macros(_expand_macros(s))])
             for macro in macros:
                 m = '%{{{}}}'.format(macro)
-                while rpm.expandMacro(m) != m:
+                while MacroHelper.expand(m, m) != m:
                     rpm.delMacro(macro)
                 value = _get_macro_value(macro)
-                if value and rpm.expandMacro(value):
+                if value and MacroHelper.expand(value):
                     rpm.addMacro(macro, value)
 
         def _process_value(curval, newval):
@@ -883,7 +885,7 @@ class SpecFile(object):
             result = ''.join(tokens)
             _sync_macros(curval + result)
             # only change value if necessary
-            if rpm.expandMacro(curval) == rpm.expandMacro(result):
+            if MacroHelper.expand(curval) == MacroHelper.expand(result):
                 return curval
             return result
 
@@ -962,7 +964,7 @@ class SpecFile(object):
             logger.debug('Using fallback regex to extract version from archive name.')
             regex_str = fallback_regex_str
         else:
-            regex_str = rpm.expandMacro(regex_str)
+            regex_str = MacroHelper.expand(regex_str, regex_str)
 
         logger.debug("Extracting version using regex '%s'", regex_str)
         regex = re.compile(regex_str)
@@ -1300,7 +1302,7 @@ class SpecFile(object):
                                                                       email=GitHelper.get_email(),
                                                                       evr=evr))
         self._update_data()
-        new_record.append(rpm.expandMacro(self.changelog_entry) + '\n')
+        new_record.append(MacroHelper.expand(self.changelog_entry, self.changelog_entry) + '\n')
         new_record.append('\n')
         return new_record
 
@@ -1322,7 +1324,7 @@ class SpecFile(object):
         :return: constructed ArgumentParser
         """
         parser = argparse.ArgumentParser()
-        parser.add_argument('-n', default=rpm.expandMacro('%{name}-%{version}'))
+        parser.add_argument('-n', default=MacroHelper.expand('%{name}-%{version}', '%{name}-%{version}'))
         parser.add_argument('-a', type=int, default=-1)
         parser.add_argument('-b', type=int, default=-1)
         parser.add_argument('-T', action='store_true')
@@ -1345,7 +1347,7 @@ class SpecFile(object):
 
         for index, line in enumerate(self.spec_content):
             if line.startswith('%setup') or line.startswith('%autosetup'):
-                line = rpm.expandMacro(line)
+                line = MacroHelper.expand(line, '')
 
                 # parse macro arguments
                 ns, _ = parser.parse_known_args(shlex.split(line)[1:])
@@ -1366,7 +1368,7 @@ class SpecFile(object):
 
         for index, line in enumerate(self.spec_content):
             if line.startswith('%setup') or line.startswith('%autosetup'):
-                line = rpm.expandMacro(line)
+                line = MacroHelper.expand(line, '')
 
                 args = shlex.split(line)
                 macro = args[0]
@@ -1448,7 +1450,7 @@ class SpecFile(object):
         unzip_parser.add_argument('-d', default='.', dest='target')
         prep = _sanitize_prep(self.get_prep_section(complete=True))
         archive = os.path.basename(archive)
-        builddir = rpm.expandMacro('%{_builddir}')
+        builddir = MacroHelper.expand('%{_builddir}', '')
         basedir = builddir
         for line in prep:
             tokens = shlex.split(line, comments=True)

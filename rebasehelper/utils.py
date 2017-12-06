@@ -699,7 +699,7 @@ class RpmHelper(object):
         macros = MacroHelper.dump()
         macros = [m for m in macros if m['name'] in ('ix86', 'arm', 'mips', 'sparc', 'alpha', 'power64')]
         for m in macros:
-            arches.extend(rpm.expandMacro(m['value']).split())
+            arches.extend(MacroHelper.expand(m['value'], '').split())
         return arches
 
     @classmethod
@@ -730,10 +730,26 @@ class RpmHelper(object):
             return dict(name=name, epoch=epoch, version=version, release=release, arch=arch)
         raise RebaseHelperError('Unable to split string into NEVRA.')
 
+    @classmethod
+    def parse_spec(cls, path):
+        with open(path, 'rb') as orig:
+            with tempfile.NamedTemporaryFile() as tmp:
+                # remove BuildArch to workaround rpm bug
+                tmp.write(b''.join([l for l in orig.readlines() if not l.startswith(b'BuildArch')]))
+                tmp.flush()
+                return rpm.spec(tmp.name)
+
 
 class MacroHelper(object):
 
     """Helper class for working with RPM macros """
+
+    @staticmethod
+    def expand(s, default=None):
+        try:
+            return rpm.expandMacro(s)
+        except rpm.error:
+            return default
 
     @staticmethod
     def dump():
