@@ -261,7 +261,7 @@ class SpecFile(object):
         :param source_num: number of the source of which to get the raw string
         :return: string of the source or None if there is no such source
         """
-        source_re_str = '^Source0?:[ \t]*(.*?)$' if source_num == 0 else '^Source{0}:[ \t]*(.*?)$'.format(source_num)
+        source_re_str = '^Source0?\s*:\s*(.*?)$' if source_num == 0 else '^Source{0}\s*:\s*(.*?)$'.format(source_num)
         source_re = re.compile(source_re_str)
 
         for line in self.spec_content:
@@ -556,7 +556,7 @@ class SpecFile(object):
         :param macro:
         :return:
         """
-        search_re = re.compile(r'^Release:\s*[0-9.]*[0-9]+\.{0}%{{\?dist}}\s*'.format(macro))
+        search_re = re.compile(r'^Release\s*:\s*[0-9.]*[0-9]+\.{0}%{{\?dist}}\s*'.format(macro))
 
         for index, line in enumerate(self.spec_content):
             match = search_re.search(line)
@@ -616,7 +616,7 @@ class SpecFile(object):
                 self.redefine_release_with_macro(extra_version_macro)
 
                 # change the Source0 definition
-                source0_re = re.compile(r'^Source0?:.+')
+                source0_re = re.compile(r'^Source0?\s*:.+')
                 for index, line in enumerate(self.spec_content):
                     if source0_re.search(line):
                         # comment out the original Source0 line
@@ -889,7 +889,7 @@ class SpecFile(object):
                 return curval
             return result
 
-        tag_re = re.compile(r'^(?P<name>\w+):\s*(?P<value>.+)$')
+        tag_re = re.compile(r'^(?P<name>\w+)\s*:\s*(?P<value>.+)$')
         for index, line in enumerate(self.spec_content):
             match = tag_re.match(line)
             if not match:
