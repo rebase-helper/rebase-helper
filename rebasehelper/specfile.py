@@ -1024,7 +1024,7 @@ class SpecFile(object):
         """
         # rpm-python does not provide any directive for getting %files section
         # Therefore we should do that workaround
-        section_headers_re = [re.compile('^{0}.*'.format(x)) for x in self.defined_sections]
+        section_headers_re = [re.compile('^{0}.*'.format(x), re.IGNORECASE) for x in self.defined_sections]
 
         section_starts = []
         # First of all we need to find beginning of all sections
@@ -1060,7 +1060,7 @@ class SpecFile(object):
         :return: list of lines contained in the selected section
         """
         for sec_name, section in six.itervalues(self.rpm_sections):
-            if sec_name == section_name:
+            if sec_name.lower() == section_name.lower():
                 return section
 
     def set_spec_section(self, section_name, new_section):
@@ -1071,7 +1071,7 @@ class SpecFile(object):
         :return: list of lines contained in the selected section
         """
         for key, val in six.iteritems(self.rpm_sections):
-            if section_name in val[0]:
+            if section_name.lower() in val[0].lower():
                 if isinstance(new_section, str):
                     self.rpm_sections[key] = (section_name, new_section.split('\n'))
                 else:
