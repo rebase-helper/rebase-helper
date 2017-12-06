@@ -70,20 +70,22 @@ class VersioneersRunner(object):
         """Returns a list of available versioneers"""
         return [k for k, v in six.iteritems(self.versioneers)]
 
-    def run(self, versioneer, package_name, category):
+    def run(self, versioneer, package_name, category, versioneer_blacklist=[]):
         """
         Runs specified versioneer or all versioneers subsequently until one of them succeeds.
 
         :param versioneer: Name of a versioneer
         :param package_name: Name of a package
         :param category: Package category
+        :param versioneer_blacklist: List of versioneers that will be skipped
         :return: Latest upstream version of a package
         """
         if versioneer:
             logger.info("Running '%s' versioneer", versioneer)
             return self.versioneers[versioneer].run(package_name)
-        # run all versioneers, categorized first
-        for versioneer in sorted(self.versioneers.values(), key=lambda v: not v.get_categories()):
+        # run all versioneers, except those disabled in config, categorized first
+        allowed_versioneers = [v for k, v in six.iteritems(self.versioneers) if k not in versioneer_blacklist]
+        for versioneer in sorted(allowed_versioneers, key=lambda v: not v.get_categories()):
             categories = versioneer.get_categories()
             if not categories or category in categories:
                 logger.info("Running '%s' versioneer", versioneer.get_name())

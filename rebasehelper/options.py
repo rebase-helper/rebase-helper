@@ -119,6 +119,13 @@ OPTIONS = [
     },
     # blacklists
     {
+        "name": ["--versioneer-blacklist"],
+        "choices": versioneers_runner.get_available_versioneers(),
+        "default": [],
+        "type": lambda s: s.split(","),
+        "help": "prevent specified versioneers from being run",
+    },
+    {
         "name": ["--spec-hook-blacklist"],
         "choices": spec_hooks_runner.get_available_spec_hooks(),
         "default": [],

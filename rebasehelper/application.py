@@ -188,7 +188,8 @@ class Application(object):
         if not self.conf.sources:
             self.conf.sources = versioneers_runner.run(self.conf.versioneer,
                                                        self.spec_file.get_package_name(),
-                                                       self.spec_file.category)
+                                                       self.spec_file.category,
+                                                       self.conf.versioneer_blacklist)
             if self.conf.sources:
                 logger.info("Determined latest upstream version '%s'", self.conf.sources)
             else:
