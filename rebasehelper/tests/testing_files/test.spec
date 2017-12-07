@@ -22,7 +22,7 @@ URL: http://testing.org
 # so look there if you fail to retrieve the version you want
 Source: ftp://ftp.test.org/%{name}-%{version}.tar.xz
 Source1: source-tests.sh
-Source2: ftp://test.com/test-source.sh
+Source2 : ftp://test.com/test-source.sh
 #Source3: source-tests.sh
 Source4: file.txt.bz2
 Source5: documentation.tar.xz
@@ -60,7 +60,7 @@ autoreconf -vi
 %configure
 make TEST
 
-%install
+%Install
 make DESTDIR=$RPM_BUILD_ROOT install
 
 %check
