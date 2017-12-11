@@ -1521,6 +1521,10 @@ class SpecHooksRunner(object):
                 # silently skip broken plugin
                 continue
 
+    def get_available_spec_hooks(self):
+        """Returns a list of all available spec hooks"""
+        return [v.__name__ for k, v in six.iteritems(self.spec_hooks)]
+
     def run_spec_hooks(self, spec_file, rebase_spec_file, **kwargs):
         """
         Runs all spec hooks.
@@ -1529,7 +1533,11 @@ class SpecHooksRunner(object):
         :param rebase_spec_file: Rebased spec file object
         :param kwargs: Keyword arguments from Application instance
         """
+        blacklist = kwargs.get("spec_hook_blacklist", [])
+
         for name, spec_hook in six.iteritems(self.spec_hooks):
+            if spec_hook.__name__ in blacklist:
+                continue
             categories = spec_hook.get_categories()
             if not categories or spec_file.category in categories:
                 logger.info("Running '%s' spec hook", name)
