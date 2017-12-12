@@ -26,6 +26,9 @@ import zipfile
 import bz2
 import os
 import shutil
+
+import six
+
 try:
     import lzma
 except ImportError:
@@ -236,7 +239,16 @@ class Archive(object):
 
         logger.debug("Extracting '%s' into '%s'", self._filename, path)
 
-        archive = self._archive_type.open(self._filename)
+        try:
+            LZMAError = lzma.LZMAError
+        except AttributeError:
+            LZMAError = lzma.error
+
+        try:
+            archive = self._archive_type.open(self._filename)
+        except (tarfile.ReadError, LZMAError) as e:
+            raise IOError(six.text_type(e))
+
         self._archive_type.extract(archive, self._filename, path)
         try:
             archive.close()

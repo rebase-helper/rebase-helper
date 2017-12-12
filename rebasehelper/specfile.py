@@ -261,7 +261,7 @@ class SpecFile(object):
         :param source_num: number of the source of which to get the raw string
         :return: string of the source or None if there is no such source
         """
-        source_re_str = '^Source0?:[ \t]*(.*?)$' if source_num == 0 else '^Source{0}:[ \t]*(.*?)$'.format(source_num)
+        source_re_str = '^Source0?\s*:\s*(.*?)$' if source_num == 0 else '^Source{0}\s*:\s*(.*?)$'.format(source_num)
         source_re = re.compile(source_re_str)
 
         for line in self.spec_content:
@@ -556,7 +556,7 @@ class SpecFile(object):
         :param macro:
         :return:
         """
-        search_re = re.compile(r'^Release:\s*[0-9.]*[0-9]+\.{0}%{{\?dist}}\s*'.format(macro))
+        search_re = re.compile(r'^Release\s*:\s*[0-9.]*[0-9]+\.{0}%{{\?dist}}\s*'.format(macro))
 
         for index, line in enumerate(self.spec_content):
             match = search_re.search(line)
@@ -616,7 +616,7 @@ class SpecFile(object):
                 self.redefine_release_with_macro(extra_version_macro)
 
                 # change the Source0 definition
-                source0_re = re.compile(r'^Source0?:.+')
+                source0_re = re.compile(r'^Source0?\s*:.+')
                 for index, line in enumerate(self.spec_content):
                     if source0_re.search(line):
                         # comment out the original Source0 line
@@ -889,7 +889,7 @@ class SpecFile(object):
                 return curval
             return result
 
-        tag_re = re.compile(r'^(?P<name>\w+):\s*(?P<value>.+)$')
+        tag_re = re.compile(r'^(?P<name>\w+)\s*:\s*(?P<value>.+)$')
         for index, line in enumerate(self.spec_content):
             match = tag_re.match(line)
             if not match:
@@ -957,10 +957,11 @@ class SpecFile(object):
 
         logger.debug("Extracting version from '%s' using '%s'", name, url_base)
         # expect that the version macro can be followed by another macros
-        regex_str = re.sub(r'%{version}(%{.+})?', version_regex_str, url_base, flags=re.IGNORECASE)
+        regex_str = re.sub(r'%{version}(%{.+})?', 'PLACEHOLDER', url_base, flags=re.IGNORECASE)
+        regex_str = re.escape(regex_str).replace('PLACEHOLDER', version_regex_str)
 
         # if no substitution was made, use the fallback regex
-        if regex_str == url_base:
+        if regex_str == re.escape(url_base):
             logger.debug('Using fallback regex to extract version from archive name.')
             regex_str = fallback_regex_str
         else:
@@ -1023,7 +1024,7 @@ class SpecFile(object):
         """
         # rpm-python does not provide any directive for getting %files section
         # Therefore we should do that workaround
-        section_headers_re = [re.compile('^{0}.*'.format(x)) for x in self.defined_sections]
+        section_headers_re = [re.compile('^{0}.*'.format(x), re.IGNORECASE) for x in self.defined_sections]
 
         section_starts = []
         # First of all we need to find beginning of all sections
@@ -1059,7 +1060,7 @@ class SpecFile(object):
         :return: list of lines contained in the selected section
         """
         for sec_name, section in six.itervalues(self.rpm_sections):
-            if sec_name == section_name:
+            if sec_name.lower() == section_name.lower():
                 return section
 
     def set_spec_section(self, section_name, new_section):
@@ -1070,7 +1071,7 @@ class SpecFile(object):
         :return: list of lines contained in the selected section
         """
         for key, val in six.iteritems(self.rpm_sections):
-            if section_name in val[0]:
+            if section_name.lower() in val[0].lower():
                 if isinstance(new_section, str):
                     self.rpm_sections[key] = (section_name, new_section.split('\n'))
                 else:

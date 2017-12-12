@@ -34,6 +34,8 @@ class TestArchive(object):
     TAR_BZ2 = 'archive.tar.bz2'
     ZIP = 'archive.zip'
     BZ2 = 'file.txt.bz2'
+    INVALID_TAR_BZ2 = 'archive-invalid.tar.bz2'
+    INVALID_TAR_XZ = 'archive-invalid.tar.xz'
 
     ARCHIVED_FILE = 'file.txt'
     ARCHIVED_FILE_CONTENT = 'simple testing file'
@@ -45,7 +47,9 @@ class TestArchive(object):
         TAR_XZ,
         TAR_BZ2,
         BZ2,
-        ZIP
+        ZIP,
+        INVALID_TAR_BZ2,
+        INVALID_TAR_XZ,
     ]
 
     @pytest.fixture
@@ -79,3 +83,16 @@ class TestArchive(object):
         #  check the content
         with open(extracted_file) as f:
             assert f.read().strip() == self.ARCHIVED_FILE_CONTENT
+
+    @pytest.mark.parametrize('archive', [
+        INVALID_TAR_BZ2,
+        INVALID_TAR_XZ,
+    ], ids=[
+        'tar.bz2',
+        'tar.xz',
+    ])
+    def test_invalid_archive(self, archive, workdir):
+        a = Archive(archive)
+        d = os.path.join(workdir, 'dir')
+        with pytest.raises(IOError):
+            a.extract_archive(d)

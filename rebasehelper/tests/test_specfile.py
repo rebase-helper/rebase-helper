@@ -213,6 +213,9 @@ class TestSpecFile(object):
         name = 'http://downloads.sourceforge.net/%{name}/%{name}-%{version}%{?prever:_%{prever}}.tar.xz'
         assert SpecFile.extract_version_from_archive_name('log4cplus-1.1.3_rc3.tar.xz',
                                                           name) == ('1.1.3', 'rc3', '_')
+        name = 'http://download.gnome.org/sources/libsigc++/%{release_version}/libsigc++-%{version}.tar.xz'
+        assert SpecFile.extract_version_from_archive_name('libsigc++-2.10.0.tar.xz',
+                                                          name) == ('2.10.0', '', '')
 
     def test__split_sections(self, spec_object):
         expected_sections = {
@@ -240,7 +243,7 @@ class TestSpecFile(object):
                             '# so look there if you fail to retrieve the version you want\n',
                             'Source: ftp://ftp.test.org/%{name}-%{version}.tar.xz\n',
                             'Source1: source-tests.sh\n',
-                            'Source2: ftp://test.com/test-source.sh\n',
+                            'Source2 : ftp://test.com/test-source.sh\n',
                             '#Source3: source-tests.sh\n',
                             'Source4: file.txt.bz2\n',
                             'Source5: documentation.tar.xz\n',
@@ -297,13 +300,17 @@ class TestSpecFile(object):
         }
         sections = spec_object._split_sections()
         for key, value in six.iteritems(expected_sections):
-            assert sections[key][0] == value[0]
+            assert sections[key][0].lower() == value[0].lower()
             assert sections[key][1] == value[1]
 
     def test_get_spec_section(self, spec_object):
         expected_section = ['%{_bindir}/file.txt\n',
                             '\n']
         section = spec_object.get_spec_section('%files')
+        assert section == expected_section
+        expected_section = ['make DESTDIR=$RPM_BUILD_ROOT install\n',
+                            '\n']
+        section = spec_object.get_spec_section('%install')
         assert section == expected_section
 
     def test_spec_missing_file(self, spec_object):
