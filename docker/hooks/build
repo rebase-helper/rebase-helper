@@ -1,0 +1,22 @@
+#!/bin/sh
+
+BUILDROOT="/src/${BUILD_CODE}"
+DOCKERFILE="${BUILDROOT}${BUILD_PATH}"
+
+if [ ! -f "${DOCKERFILE}" ]; then
+    DOCKERFILE="${DOCKERFILE}/Dockerfile"
+fi
+
+BASE_IMAGE=
+
+if [ "${DOCKER_REPO##*/}" = "base-image" ]; then
+    BASE_IMAGE="fedora:${DOCKER_TAG#fedora-}"
+fi
+
+ARGS="--tag=${IMAGE_NAME} --file=${DOCKERFILE}"
+
+if [ -n "${BASE_IMAGE}" ]; then
+    ARGS="${ARGS} --build-arg=BASE_IMAGE=${BASE_IMAGE}"
+fi
+
+docker build ${ARGS} "${BUILDROOT}"
