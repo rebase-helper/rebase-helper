@@ -1,4 +1,4 @@
-DOCKER_IMAGE ?= fedora:26 fedora:latest fedora:rawhide
+DISTRO ?= fedora-26 fedora-latest fedora-rawhide
 
 DOCKER := docker
 
@@ -9,18 +9,14 @@ ifeq (,$(findstring docker,$(shell groups)))
 endif
 endif
 
-# escaping colon is broken in older versions of make,
-# so rather replace it with placeholder
-TEST_IMAGE := $(subst :,_COLON_,$(DOCKER_IMAGE))
+.PHONY: test $(DISTRO)
 
-.PHONY: test $(TEST_IMAGE)
+test: $(DISTRO)
 
-test: $(TEST_IMAGE)
-
-$(TEST_IMAGE):
-	$(eval IMAGE := $(subst _COLON_,:,$@))
+$(DISTRO):
 	$(DOCKER) build \
-		--build-arg DOCKER_IMAGE="$(IMAGE)" \
+		--file docker/Dockerfile.test \
+		--build-arg DISTRO="$(DISTRO)" \
 		-t rebase-helper \
 		.
 	$(DOCKER) run \
