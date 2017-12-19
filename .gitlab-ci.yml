@@ -17,14 +17,14 @@ stages:
 test:f26:
     <<: *test_definition
     variables:
-        DOCKER_IMAGE: fedora:26
+        DISTRO: fedora-26
 
 test:latest:
     <<: *test_definition
     variables:
-        DOCKER_IMAGE: fedora:latest
+        DISTRO: fedora-latest
 
 test:rawhide:
     <<: *test_definition
     variables:
-        DOCKER_IMAGE: fedora:rawhide
+        DISTRO: fedora-rawhide
