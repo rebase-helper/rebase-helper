@@ -43,7 +43,7 @@ The following steps describe a rebase process:
 - **Getting sources**
 
     - old and new source tarballs are downloaded and extracted to *rebase-helper-workspace* directory
-    - old sources are downloded from lookaside cache if possible
+    - old sources are downloaded from lookaside cache if possible
 
 - **Downstream patches**
 
