@@ -59,6 +59,10 @@ completion: build
 	$(PYTHON) -m rebasehelper.completion rebase-helper.bash.in build/rebase-helper.bash
 
 
+sample_config: build
+	$(PYTHON) -m rebasehelper.sample_config build/rebase-helper.cfg
+
+
 test:
 	tox
 
