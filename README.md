@@ -40,10 +40,12 @@ The following steps describe a rebase process:
     - *rebase-helper-workspace* and *rebase-helper-results* directories are created
     - original SPEC file is copied to *rebase-helper-results/rebased-sources* directory and its Version tag is modified
 
+
 - **Getting sources**
 
     - old and new source tarballs are downloaded and extracted to *rebase-helper-workspace* directory
     - old sources are downloaded from lookaside cache if possible
+
 
 - **Downstream patches**
 
@@ -55,14 +57,17 @@ The following steps describe a rebase process:
     - resulting files are stored in *rebase-helper-results/rebased-sources*
     - diff against original files is saved to *rebase-helper-results/changes.patch*
 
+
 - **Build**
 
     - old and new source RPMs are created and built with selected build tool
     - old SRPM and RPMs can also be downloaded from Koji to speed up the rebase
 
+
 - **Comparison**
 
     - multiple checker tools are run against both sets of packages and their output is stored in *rebase-helper-results/checkers* directory
+
 
 - **Cleanup**
 
