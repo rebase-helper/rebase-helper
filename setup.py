@@ -51,6 +51,7 @@ def get_requirements():
         'copr',
         'pyquery',
         'requests',
+        'requests_ftp',
         'six',
         'GitPython',
         'ansicolors',
