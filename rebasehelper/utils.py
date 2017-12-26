@@ -37,6 +37,8 @@ import gzip
 import copr
 import pyquery
 import hashlib
+import requests
+import requests_ftp
 
 import git
 import six
@@ -285,61 +287,54 @@ class DownloadHelper(object):
         sys.stdout.flush()
 
     @staticmethod
-    def download_file(url, destination_path, timeout=10, blocksize=8192):
+    def download_file(url, destination_path, blocksize=8192):
         """
         Method for downloading file from HTTP, HTTPS and FTP URL.
 
         :param url: URL from which to download the file
         :param destination_path: path where to store downloaded file
-        :param timeout: timeout in seconds for blocking actions like connecting, etc.
         :param blocksize: size in Bytes of blocks used for downloading the file and reporting progress
         :return: None
         """
-        try:
-            response = urllib.request.urlopen(url, timeout=timeout)
-            file_size = int(response.info().get('Content-Length', -1))
+        session = requests_ftp.ftp.FTPSession()
+        r = session.get(url)
+        if not 200 <= r.status_code < 300:
+            raise DownloadError(r.reason)
 
-            # file exists, check the size
-            if os.path.exists(destination_path):
-                if file_size < 0 or file_size != os.path.getsize(destination_path):
-                    logger.debug("The destination file '%s' exists, but sizes don't match! Removing it.",
-                                 destination_path)
-                    os.remove(destination_path)
-                else:
-                    logger.debug("The destination file '%s' exists, and the size is correct! Skipping download.",
-                                 destination_path)
-                    return
-            try:
-                with open(destination_path, 'wb') as local_file:
-                    logger.info('Downloading file from URL %s', url)
-                    download_start = time.time()
-                    downloaded = 0
+        file_size = int(r.headers.get('content-length', -1))
+
+        # file exists, check the size
+        if os.path.exists(destination_path):
+            if file_size < 0 or file_size != os.path.getsize(destination_path):
+                logger.debug("The destination file '%s' exists, but sizes don't match! Removing it.",
+                             destination_path)
+                os.remove(destination_path)
+            else:
+                logger.debug("The destination file '%s' exists, and the size is correct! Skipping download.",
+                             destination_path)
+                return
+        try:
+            with open(destination_path, 'wb') as local_file:
+                logger.info('Downloading file from URL %s', url)
+                download_start = time.time()
+                downloaded = 0
+
+                # report progress
+                DownloadHelper.progress(file_size, downloaded, download_start)
+
+                # do the actual download
+                for chunk in r.iter_content(chunk_size=blocksize):
+                    downloaded += len(chunk)
+                    local_file.write(chunk)
 
                     # report progress
                     DownloadHelper.progress(file_size, downloaded, download_start)
 
-                    # do the actual download
-                    while True:
-                        buffer = response.read(blocksize)
-
-                        # no more data to read
-                        if not buffer:
-                            break
-
-                        downloaded += len(buffer)
-                        local_file.write(buffer)
-
-                        # report progress
-                        DownloadHelper.progress(file_size, downloaded, download_start)
-
-                    sys.stdout.write('\n')
-                    sys.stdout.flush()
-            except KeyboardInterrupt as e:
-                os.remove(destination_path)
-                raise e
-
-        except urllib.error.URLError as e:
-            raise DownloadError(str(e))
+                sys.stdout.write('\n')
+                sys.stdout.flush()
+        except KeyboardInterrupt as e:
+            os.remove(destination_path)
+            raise e
 
 
 class ProcessHelper(object):
