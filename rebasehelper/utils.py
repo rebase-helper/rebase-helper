@@ -1104,6 +1104,7 @@ class KojiHelper(object):
                 rpm_list.append(dest_path)
         return rpm_list, log_list
 
+
 class CoprHelper(object):
 
     @classmethod
@@ -1196,7 +1197,7 @@ class CoprHelper(object):
         logs = []
         for _, url in six.iteritems(result.data['results_by_chroot']):
             url = url if url.endswith('/') else url + '/'
-            d = pyquery.PyQuery(url, opener=lambda x: urllib.request.urlopen(x))
+            d = pyquery.PyQuery(url)
             d.make_links_absolute()
             for a in d('a[href$=\'.rpm\'], a[href$=\'.log.gz\']'):
                 fn = os.path.basename(urllib.parse.urlsplit(a.attrib['href']).path)
