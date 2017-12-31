@@ -113,15 +113,6 @@ class TestGitHelper(object):
 
 class TestConsoleHelper(object):
 
-    @pytest.yield_fixture
-    def fake_IO(self, answer):
-        # use StringIO to be able to write and read to STDIN and from STDOUT
-        stdin, sys.stdin = sys.stdin, StringIO(answer)
-        stdout, sys.stdout = sys.stdout, StringIO()
-        yield
-        sys.stdin = stdin
-        sys.stdout = stdout
-
     @pytest.mark.parametrize('suffix, answer, kwargs, expected_input', [
         (' [Y/n]? ', 'yes', None, True),
         (' [Y/n]? ', 'no', None, False),
@@ -139,12 +130,11 @@ class TestConsoleHelper(object):
         'any_input-default_yes',
         'any_input-default_no',
     ])
-    @pytest.mark.usefixtures('fake_IO')
-    def test_get_message(self, suffix, kwargs, expected_input):
+    def test_get_message(self, monkeypatch, capsys, suffix, answer, kwargs, expected_input):
         question = 'bla bla'
+        monkeypatch.setattr('sys.stdin', StringIO(answer))
         inp = ConsoleHelper.get_message(question, **(kwargs or {}))
-        sys.stdout.seek(0)
-        assert sys.stdout.readline().decode(sys.stdout.encoding) == question + suffix
+        assert capsys.readouterr()[0] == question + suffix
         assert inp is expected_input
 
     def test_capture_output(self):
