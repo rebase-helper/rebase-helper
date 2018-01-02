@@ -47,13 +47,14 @@ def get_rpm_distribution():
 
 def get_requirements():
     result = [
-       'backports.lzma;python_version<"3.3"',
-       'copr',
-       'pyquery',
-       'requests',
-       'six',
-       'GitPython',
-       'ansicolors',
+        'backports.lzma;python_version<"3.3"',
+        'copr',
+        'pyquery',
+        'requests',
+        'requests_ftp',
+        'six',
+        'GitPython',
+        'ansicolors',
     ]
     # there is no rpm inside RTD build environment
     if not os.getenv('READTHEDOCS'):
