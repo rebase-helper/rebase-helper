@@ -80,15 +80,36 @@ class MockBuildTool(BuildToolBase):
 
         ret = ProcessHelper.run_subprocess(cmd, output=output)
 
+        if ret == 0:
+            return [f for f in PathHelper.find_all_files(results_dir, '*.rpm') if not f.endswith('.src.rpm')]
+        else:
+            logfile = MockBuildTool.get_mock_logfile_path(ret, rpm_results_dir, tmp_path=results_dir)
+        cls.logs.extend([l for l in PathHelper.find_all_files(rpm_results_dir, '*.log')])
+        raise BinaryPackageBuildError("Building RPMs failed!", rpm_results_dir, logfile=logfile)
+
+    @staticmethod
+    def get_mock_logfile_path(ret, results_dir, tmp_path=None):
+        """
+        Get path to logfile containing the error message
+
+        :param ret: return code from mock
+        :param results_dir: directory where logs will be stored
+        :param tmp_path: temporary directory where logs are during build
+        :return:
+        """
         tmp_build_log_path = os.path.join(results_dir, 'build.log')
         tmp_mock_log_path = os.path.join(results_dir, 'mock_output.log')
 
-        build_log_path = os.path.join(rpm_results_dir, 'build.log')
-        mock_log_path = os.path.join(rpm_results_dir, 'mock_output.log')
-        root_log_path = os.path.join(rpm_results_dir, 'root.log')
+        if tmp_path:
+            # The logs are still located in the temporary build directory
+            tmp_build_log_path = os.path.join(tmp_path, 'build.log')
+            tmp_mock_log_path = os.path.join(tmp_path, 'mock_output.log')
 
-        if ret == 0:
-            return [f for f in PathHelper.find_all_files(results_dir, '*.rpm') if not f.endswith('.src.rpm')]
+        build_log_path = os.path.join(results_dir, 'build.log')
+        mock_log_path = os.path.join(results_dir, 'mock_output.log')
+        root_log_path = os.path.join(results_dir, 'root.log')
+
+        # Mock return code classification based on https://pagure.io/koji/blob/c496bf9/f/builder/kojid#_481
         if ret == 1:
             if not os.path.exists(tmp_build_log_path) and os.path.exists(tmp_mock_log_path):
                 logfile = mock_log_path
@@ -96,9 +117,7 @@ class MockBuildTool(BuildToolBase):
                 logfile = build_log_path
         else:
             logfile = root_log_path
-            # We need to be inform what directory to analyze and what spec file failed
-        cls.logs.extend([l for l in PathHelper.find_all_files(rpm_results_dir, '*.log')])
-        raise BinaryPackageBuildError("Building RPMs failed!", rpm_results_dir, logfile=logfile)
+        return logfile
 
     @classmethod
     def match(cls, cmd=None):

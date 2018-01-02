@@ -57,6 +57,8 @@ class BinaryPackageBuildError(RuntimeError):
         :param kwargs: dictionary containing path to the logfile that contains main errors
         """
         self.args = args
+        # Return code obtained from koji only at this time
+        self.return_code = kwargs.get('return_code')
         self.logfile = kwargs.get('logfile')
 
 
