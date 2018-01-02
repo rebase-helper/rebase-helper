@@ -297,7 +297,7 @@ class DownloadHelper(object):
         :return: None
         """
         session = requests_ftp.ftp.FTPSession()
-        r = session.get(url)
+        r = session.get(url, stream=True)
         if not 200 <= r.status_code < 300:
             raise DownloadError(r.reason)
 
