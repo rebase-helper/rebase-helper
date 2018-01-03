@@ -38,7 +38,6 @@ import copr
 import pyquery
 import hashlib
 import requests
-import requests_ftp
 
 import git
 import six
@@ -296,7 +295,31 @@ class DownloadHelper(object):
         :param blocksize: size in Bytes of blocks used for downloading the file and reporting progress
         :return: None
         """
-        session = requests_ftp.ftp.FTPSession()
+
+        class FTPAdapter(requests.adapters.BaseAdapter):
+
+            def send(self, request, **kwargs):
+                response = requests.models.Response()
+                response.request = request
+                response.connection = self
+                try:
+                    resp = urllib.request.urlopen(request.url)
+                except urllib.error.URLError as e:
+                    response.status_code = 400
+                    response.reason = e.reason
+                else:
+                    response.status_code = 200
+                    response.headers = requests.structures.CaseInsensitiveDict(getattr(resp, 'headers', {}))
+                    response.raw = resp
+                    response.url = resp.url
+                return response
+
+            def close(self):
+                pass
+
+        session = requests.Session()
+        session.mount('ftp://', FTPAdapter())
+
         r = session.get(url, stream=True)
         if not 200 <= r.status_code < 300:
             raise DownloadError(r.reason)
