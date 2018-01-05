@@ -558,6 +558,10 @@ class Application(object):
                     build_dict.pop(opt)
                 results_store.set_build_data(version, build_dict)
 
+            except RebaseHelperError:
+                # Proper RebaseHelperError instance was created already. Re-raise it.
+                raise
+
             except SourcePackageBuildError as e:
                 build_dict.update(builder.get_logs())
                 build_dict['source_package_build_error'] = six.text_type(e)
