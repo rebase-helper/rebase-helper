@@ -96,7 +96,7 @@ class TestGitHelper(object):
                 os.environ['GIT_CONFIG'] = config_file
                 self.write_config_file(config_file, name, email)
             else:
-               raise RuntimeError()
+                raise RuntimeError()
 
             assert name == GitHelper.get_user()
             assert email == GitHelper.get_email()
@@ -413,17 +413,17 @@ class TestPathHelper(object):
     def filelist(self):
         files = [
             'file',
-             'ffile',
-             'ppythooon',
-             'dir1/fileee',
-             'dir1/faa/pythooon',
-             'dir1/foo/pythooon',
-             'dir1/foo/bar/file',
-             'dir1/foo/baz/file',
-             'dir1/baz/ffile',
-             'dir1/bar/file',
-             'dir1/baz/bar/ffile',
-             'dir1/baz/bar/test.spec',
+            'ffile',
+            'ppythooon',
+            'dir1/fileee',
+            'dir1/faa/pythooon',
+            'dir1/foo/pythooon',
+            'dir1/foo/bar/file',
+            'dir1/foo/baz/file',
+            'dir1/baz/ffile',
+            'dir1/bar/file',
+            'dir1/baz/bar/ffile',
+            'dir1/baz/bar/test.spec',
         ]
 
         for f in files:

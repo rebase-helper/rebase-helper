@@ -56,15 +56,15 @@ class TestCLI(object):
         }
         arguments = [
             'test-1.0.3.tar.gz', '--verbose',
-             '--buildtool', 'rpmbuild', '--pkgcomparetool',
-             'rpmdiff', '--outputtool', 'json', '--keep-workspace', '--not-download-sources', '--continue',
-             '--non-interactive', '--comparepkgs-only', 'test_dir',
-             '--builds-nowait', '--build-tasks', '123456,654321',
-             '--results-dir', '/tmp/rebase-helper',
-             '--builder-options=\"-v\"',
-             '--changelog-entry', 'Update to %{version}',
-             '--srpm-builder-options=\"-r fedora-26-x86_64\"',
-             '--srpm-buildtool', 'mock',
+            '--buildtool', 'rpmbuild', '--pkgcomparetool',
+            'rpmdiff', '--outputtool', 'json', '--keep-workspace', '--not-download-sources', '--continue',
+            '--non-interactive', '--comparepkgs-only', 'test_dir',
+            '--builds-nowait', '--build-tasks', '123456,654321',
+            '--results-dir', '/tmp/rebase-helper',
+            '--builder-options=\"-v\"',
+            '--changelog-entry', 'Update to %{version}',
+            '--srpm-builder-options=\"-r fedora-26-x86_64\"',
+            '--srpm-buildtool', 'mock',
         ]
         cli = CLI(arguments)
         for key, value in cli.args.__dict__.items():

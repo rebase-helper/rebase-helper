@@ -179,5 +179,6 @@ class OutputToolRunner(object):
                 output_tool.run(logs, app=app)
                 output_tool.print_cli_summary(app)
 
+
 # Global instance of OutputToolRunner. It is enough to load it once per application run.
 output_tools_runner = OutputToolRunner()

@@ -243,7 +243,7 @@ class GitPatchTool(PatchBase):
             patch_dictionary['modified'] = modified_patches
         if inapplicable_patches:
             patch_dictionary['inapplicable'] = inapplicable_patches
-        #TODO correct settings for merge tool in ~/.gitconfig
+        # TODO correct settings for merge tool in ~/.gitconfig
         # currently now meld is not started
         return patch_dictionary
 
@@ -388,11 +388,7 @@ class Patcher(object):
         :param patches: old patches
         :param rebased_patches: rebased patches
         :param kwargs: --
-        :return: 
+        :return:
         """
         logger.debug("Patching source by patch tool %s", self._patch_tool_name)
         return self._tool.run_patch(old_dir, new_dir, rest_sources, patches, prep, **kwargs)
-
-
-
-

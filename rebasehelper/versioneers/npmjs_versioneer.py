@@ -65,4 +65,3 @@ class NPMJSVersioneer(BaseVersioneer):
         logger.error("Failed to determine latest upstream version!\n"
                      "Check that the package exists on %s.", cls.BASE_URL)
         return None
-

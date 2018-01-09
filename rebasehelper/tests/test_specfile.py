@@ -158,19 +158,20 @@ class TestSpecFile(object):
                      '/var/lock']
 
         expected_paths = {'%{_bindir}/binary1',
-                              '%{_sbindir}/binary2',
-                              '%{_includedir}/header.h',
-                              '%{_libdir}/library1.so',
-                              '%{_libdir}/library2.so',
-                              '%{_libexecdir}/script.sh',
-                              '%{_unitdir}/daemond.service',
-                              '%{_mandir}/man1/test.1.gz',
-                              '%{_infodir}/file.info',
-                              '%{_docdir}/RFC.pdf',
-                              '%{_datarootdir}/config.site',
-                              '%{_sharedstatedir}/libvirt',
-                              '%{_tmppath}/abrt',
-                              '%{_localstatedir}/lock'}
+                          '%{_sbindir}/binary2',
+                          '%{_includedir}/header.h',
+                          '%{_libdir}/library1.so',
+                          '%{_libdir}/library2.so',
+                          '%{_libexecdir}/script.sh',
+                          '%{_unitdir}/daemond.service',
+                          '%{_mandir}/man1/test.1.gz',
+                          '%{_infodir}/file.info',
+                          '%{_docdir}/RFC.pdf',
+                          '%{_datarootdir}/config.site',
+                          '%{_sharedstatedir}/libvirt',
+                          '%{_tmppath}/abrt',
+                          '%{_localstatedir}/lock'}
+
         paths = SpecFile.get_paths_with_rpm_macros(raw_paths)
         assert len(set(paths)) == len(expected_paths)
         assert len(expected_paths.intersection(set(paths))) == len(expected_paths)
@@ -466,7 +467,7 @@ class TestSpecFile(object):
         spec_object.update_paths_to_patches()
 
         line = [l for l in spec_object.spec_content if l.startswith('Patch5')][0]
-        assert not 'rebased-sources' in line
+        assert 'rebased-sources' not in line
 
     @pytest.mark.parametrize('preserve_macros', [
         False,

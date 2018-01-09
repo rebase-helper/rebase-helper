@@ -189,7 +189,7 @@ class SpecFile(object):
         """
         Function updates data from given SPEC file
 
-        :return: 
+        :return:
         """
         # explicitly discard old instance to prevent rpm from destroying
         # "sources" and "patches" lua tables after new instance is created
@@ -950,7 +950,7 @@ class SpecFile(object):
         # https://regexper.com/#(%5B.0-9%5D%2B%5B-_%5D%3F%5Cw*)
         version_regex_str = r'([.0-9]+[-_]?\w*)'
         fallback_regex_str = r'^\w+[-_]?v?{0}({1})'.format(version_regex_str,
-                                                          '|'.join(Archive.get_supported_archives()))
+                                                           '|'.join(Archive.get_supported_archives()))
         # match = re.search(regex, tarball_name)
         name = os.path.basename(archive_path)
         url_base = os.path.basename(source_string).strip()
@@ -1143,7 +1143,7 @@ class SpecFile(object):
         """
         Return only spec file path
 
-        :return: 
+        :return:
         """
         return self.path
 
@@ -1168,7 +1168,7 @@ class SpecFile(object):
         """
         Function returns a package name
 
-        :return: 
+        :return:
         """
         return self.hdr[rpm.RPMTAG_NAME].decode(defenc) if six.PY3 else self.hdr[rpm.RPMTAG_NAME]
 
@@ -1176,7 +1176,7 @@ class SpecFile(object):
         """
         Function returns a package requirements
 
-        :return: 
+        :return:
         """
         return [r.decode(defenc) if six.PY3 else r for r in self.hdr[rpm.RPMTAG_REQUIRES]]
 
@@ -1268,8 +1268,8 @@ class SpecFile(object):
         """
         Function repairs spec file according to new sources.
 
-        :param files: 
-        :return: 
+        :param files:
+        :return:
         """
         # Files which are missing in SPEC file.
         try:

@@ -75,4 +75,3 @@ class TestPkgDiff(object):
                                                                                  old_version='1.0.1',
                                                                                  new_version='1.0.2')
         assert res_dict == expected_dict
-

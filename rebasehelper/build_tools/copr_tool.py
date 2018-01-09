@@ -150,4 +150,3 @@ class CoprBuildTool(BuildToolBase):
                 logger.info('Copr build {} did not complete successfully'.format(build_id))
                 return None, None
             return rpm, logs
-
