@@ -901,9 +901,8 @@ class KojiHelper(object):
             return koji_session
         try:
             koji_session.krb_login()
-        except koji.krbV.Krb5Error:
-            # fall back to login using certificate
-            koji_session.ssl_login(cls.cert, cls.ca_cert, cls.ca_cert)
+        except koji.krbV.Krb5Error as e:
+            raise RebaseHelperError('Kerberos login failed. The error reported is: %s' % (six.text_type(e)))
         return koji_session
 
     @classmethod

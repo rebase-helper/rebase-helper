@@ -558,6 +558,10 @@ class Application(object):
                     build_dict.pop(opt)
                 results_store.set_build_data(version, build_dict)
 
+            except RebaseHelperError:
+                # Proper RebaseHelperError instance was created already. Re-raise it.
+                raise
+
             except SourcePackageBuildError as e:
                 build_dict.update(builder.get_logs())
                 build_dict['source_package_build_error'] = six.text_type(e)
@@ -584,9 +588,10 @@ class Application(object):
                     msg = 'Building {} RPM packages failed; see {} for more information'.format(version, e.logfile)
                 raise RebaseHelperError(msg, logfiles=builder.get_logs().get('logs'))
 
-            except Exception:
+            except Exception as e:
                 raise RebaseHelperError('Building package failed with unknown reason. '
-                                        'Check all available log files.')
+                                        'The error reported is "{}". '
+                                        'Check all available log files.'.format(six.text_type(e)))
 
         if self.conf.builds_nowait and not self.conf.build_tasks:
             if builder.creates_tasks():
