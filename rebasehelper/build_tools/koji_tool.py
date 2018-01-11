@@ -23,6 +23,7 @@
 import os
 import six
 import koji  # pylint: disable=import-error
+import re
 
 # unused import needed to prevent loading koji buildtool with Koji < 1.13
 import koji_cli.lib  # pylint: disable=import-error
@@ -90,8 +91,14 @@ class KojiBuildTool(BuildToolBase):
         task_dict = cls.koji_helper.watch_koji_tasks(session, [task_id])
         task_list = []
         package_failed = False
+        build_error = None
         for key in six.iterkeys(task_dict):
             if task_dict[key] == koji.TASK_STATES['FAILED']:
+                try:
+                    # call getTaskResult, as it raises an exception containing desired error message
+                    session.getTaskResult(key)
+                except koji.BuildError as e:
+                    build_error = six.text_type(e)
                 package_failed = True
             task_list.append(key)
         rpms, logs = cls.koji_helper.download_scratch_build(session,
@@ -102,9 +109,25 @@ class KojiBuildTool(BuildToolBase):
             logger.info('RPM build failed %s', weburl)
             logs.append(weburl)
             cls.logs.append(weburl)
-            raise BinaryPackageBuildError
+            cls.logs.extend(logs)
+            raise BinaryPackageBuildError(return_code=cls.get_mock_return_code(build_error))
         logs.append(weburl)
         return rpms, logs, task_id
+
+    @classmethod
+    def get_mock_return_code(cls, msg):
+        """
+        Parses koji status message for mock build return code
+
+        :param msg: mock status message
+        :return: returns mock build return code
+        """
+        match = re.search(r'mock exited with status (\d+)', msg)
+        if match:
+            # Example error message that can be parsed:
+            # BuildError: error building package (arch noarch),
+            # mock exited with status 1; see build.log for more information
+            return int(match.group(1))
 
     @classmethod
     def get_logs(cls):

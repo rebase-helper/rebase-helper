@@ -42,6 +42,7 @@ from rebasehelper.patch_helper import Patcher
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
 from rebasehelper.results_store import results_store
 from rebasehelper.versioneer import versioneers_runner
+from rebasehelper.build_tools.mock_tool import MockBuildTool
 from rebasehelper import version
 
 
@@ -580,12 +581,16 @@ class Application(object):
                 build_dict['binary_package_build_error'] = six.text_type(e)
                 results_store.set_build_data(version, build_dict)
 
-                if e.logfile is None:
+                if e.return_code:
+                    # koji was used for build therefore only status code is set
+                    e.logfile = MockBuildTool.get_mock_logfile_path(e.return_code,
+                                                                    os.path.join(results_dir, 'RPM'))
+                if e.logfile:
+                    msg = 'Building {} RPM packages failed; see {} for more information'.format(version, e.logfile)
+                else:
                     msg = 'Building {} RPM packages failed; see logs in {} for more information'.format(
                         version, os.path.join(results_dir, 'RPM')
                     )
-                else:
-                    msg = 'Building {} RPM packages failed; see {} for more information'.format(version, e.logfile)
                 raise RebaseHelperError(msg, logfiles=builder.get_logs().get('logs'))
 
             except Exception as e:
