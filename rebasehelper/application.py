@@ -172,7 +172,7 @@ class Application(object):
         """
         Prepare spec files and initialize objects
 
-        :return: 
+        :return:
         """
         self.rebase_spec_file_path = get_rebase_name(self.rebased_sources_dir, self.spec_file_path)
 
@@ -249,7 +249,7 @@ class Application(object):
         Function returns RPM packages stored in dirname/old and dirname/new directories
 
         :param dirname: directory where are stored old and new RPMS
-        :return: 
+        :return:
         """
         found = True
         for version in ['old', 'new']:
@@ -279,7 +279,7 @@ class Application(object):
         """
         Deletes the old and new result dir from previous build
 
-        :return: 
+        :return:
         """
         self._delete_new_results_dir()
         self._delete_old_results_dir()
@@ -288,7 +288,7 @@ class Application(object):
         """
         Deletes old result dir
 
-        :return: 
+        :return:
         """
         if os.path.isdir(os.path.join(self.results_dir, 'old')):
             shutil.rmtree(os.path.join(self.results_dir, 'old'))
@@ -297,7 +297,7 @@ class Application(object):
         """
         Deletes new result dir
 
-        :return: 
+        :return:
         """
         if os.path.isdir(os.path.join(self.results_dir, 'new')):
             shutil.rmtree(os.path.join(self.results_dir, 'new'))
@@ -306,7 +306,7 @@ class Application(object):
         """
         Deletes workspace directory and loggs message
 
-        :return: 
+        :return:
         """
         logger.debug("Removing the workspace directory '%s'", self.workspace_dir)
         if os.path.isdir(self.workspace_dir):
@@ -316,7 +316,7 @@ class Application(object):
         """
         Check if workspace dir exists, and removes it if yes.
 
-        :return: 
+        :return:
         """
         if os.path.exists(self.workspace_dir):
             logger.warning("Workspace directory '%s' exists, removing it", os.path.basename(self.workspace_dir))
@@ -328,7 +328,7 @@ class Application(object):
         """
         Check if  results dir exists, and removes it if yes.
 
-        :return: 
+        :return:
         """
         # TODO: We may not want to delete the directory in the future
         if os.path.exists(results_dir):
@@ -348,7 +348,7 @@ class Application(object):
 
         :param archive_path: path to the archive to be extracted
         :param destination: path to a destination, where the archive should be extracted to
-        :return: 
+        :return:
         """
         try:
             archive = Archive(archive_path)
@@ -385,7 +385,7 @@ class Application(object):
         """
         Function prepares a sources.
 
-        :return: 
+        :return:
         """
 
         old_sources_dir = os.path.join(self.execution_dir, settings.OLD_SOURCES_DIR)
@@ -629,7 +629,7 @@ class Application(object):
         Function returns all log_files created by rebase-helper
         First if debug log file and second is report summary log file
 
-        :return: 
+        :return:
         """
         log_list = []
         if FileHelper.file_available(self.debug_log_file):
@@ -773,7 +773,6 @@ class Application(object):
                     # Print summary and return error
                     self.print_summary(e)
                     raise
-
 
         build = False
         if not self.conf.patch_only:

@@ -75,9 +75,10 @@ class ArchiveTypeBase(object):
         Extracts the archive into the given path
 
         :param path: Path where to extract the archive to.
-        :return: 
+        :return:
         """
         raise NotImplementedError()
+
 
 @register_archive_type
 class TarXzArchiveType(ArchiveTypeBase):
@@ -99,6 +100,7 @@ class TarXzArchiveType(ArchiveTypeBase):
         if archive is None:
             raise TypeError("Expected argument 'archive' (pos 1) is missing")
         archive.extractall(path)
+
 
 @register_archive_type
 class Bz2ArchiveType(ArchiveTypeBase):
@@ -232,7 +234,7 @@ class Archive(object):
         Extracts the archive into the given path
 
         :param path: Path where to extract the archive to.
-        :return: 
+        :return:
         """
         if path is None:
             TypeError("Expected argument 'path' (pos 1) is missing")

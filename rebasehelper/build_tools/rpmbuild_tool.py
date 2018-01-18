@@ -133,7 +133,8 @@ class RpmbuildBuildTool(BuildToolBase):
             env = tmp_env.env()
             tmp_dir = tmp_env.path()
             tmp_results_dir = env.get(RpmbuildTemporaryEnvironment.TEMPDIR_RESULTS)
-            rpms = cls._build_rpm(srpm, tmp_dir, tmp_results_dir, rpm_results_dir, builder_options=cls.get_builder_options(**kwargs))
+            rpms = cls._build_rpm(srpm, tmp_dir, tmp_results_dir, rpm_results_dir,
+                                  builder_options=cls.get_builder_options(**kwargs))
 
         logger.info("Building RPMs finished successfully")
 
@@ -152,4 +153,3 @@ class RpmbuildBuildTool(BuildToolBase):
     @classmethod
     def get_logs(cls):
         return {'logs': cls.logs}
-

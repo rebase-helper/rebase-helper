@@ -85,7 +85,7 @@ def get_value_from_kwargs(kwargs, field, source='old'):
     """
     Function returns a part of self.kwargs dictionary
 
-    :param kwargs: 
+    :param kwargs:
     :param source: 'old' or 'new'
     :param field: like 'patches', 'source'
     :return: value from dictionary
@@ -114,7 +114,6 @@ class ConsoleHelper(object):
             return False
         return True
 
-
     @classmethod
     def cprint(cls, message, color=None):
         """
@@ -123,9 +122,7 @@ class ConsoleHelper(object):
         :param color: color to be used in the output
         :param message: string to be printed out
         """
-        if (cls.use_colors and
-            color is not None and
-            hasattr(colors, color)):
+        if cls.use_colors and color is not None and hasattr(colors, color):
                 print(getattr(colors, color)(message))
         else:
             print(message)
@@ -492,7 +489,7 @@ class ProcessHelper(object):
                 except TypeError:
                     out_file.write(line)
             # TODO: Need to figure out how to send output to stdout (without logger) and to logger
-            #else:
+            # else:
             #   logger.debug(line.rstrip("\n"))
 
         # we need to rewind the file object pointer to the beginning
@@ -671,7 +668,7 @@ class RpmHelper(object):
         Install all build requires for a package using PolicyKits
 
         :param spec_path: absolute path to SPEC file
-        :return: 
+        :return:
         """
         cmd = ['dnf', 'builddep', spec_path]
         if os.geteuid() != 0:
@@ -688,7 +685,7 @@ class RpmHelper(object):
         for later on analysis
 
         :param rpm_name:
-        :return: 
+        :return:
         """
         ts = rpm.TransactionSet()
         # disable signature checking
@@ -703,8 +700,8 @@ class RpmHelper(object):
         """
         Method returns a name of the package from RPM file format
 
-        :param pkg_name: 
-        :return: 
+        :param pkg_name:
+        :return:
         """
         h = RpmHelper.get_header_from_rpm(rpm_name)
         name = h[info].decode(defenc) if six.PY3 else h[info]
@@ -965,7 +962,7 @@ class KojiHelper(object):
                             rh_tasks = None
                     for child in session.getTaskChildren(task_id):
                         child_id = child['id']
-                        if not child_id in list(tasks.keys()):
+                        if child_id not in list(tasks.keys()):
                             tasks[child_id] = TaskWatcher(child_id, session, task.level + 1, quiet=False)
                             with ConsoleHelper.Capturer(stdout=True) as capturer:
                                 tasks[child_id].update()
@@ -1100,7 +1097,7 @@ class KojiHelper(object):
                 continue
             for logname in ['build.log', 'root.log', 'state.log']:
                 dest_path = os.path.join(destination, logname)
-                if not dest_path in log_list:
+                if dest_path not in log_list:
                     url = '/'.join([
                         cls.baseurl_pkg,
                         build['package_name'],
@@ -1114,7 +1111,7 @@ class KojiHelper(object):
                     log_list.append(dest_path)
             filename = '.'.join([rpm['nvr'], rpm['arch'], 'rpm'])
             dest_path = os.path.join(destination, filename)
-            if not dest_path in rpm_list:
+            if dest_path not in rpm_list:
                 url = '/'.join([
                     cls.baseurl_pkg,
                     build['package_name'],

@@ -190,4 +190,3 @@ class KojiBuildTool(BuildToolBase):
                 'rpm': rpms,
                 'logs': cls.logs,
                 'koji_task_id': koji_task_id}
-

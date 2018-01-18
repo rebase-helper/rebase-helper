@@ -110,7 +110,7 @@ class BuildTemporaryEnvironment(TemporaryEnvironment):
         It copies packages and logs into the results directory.
 
         :param results_dir: absolute path to results directory
-        :return: 
+        :return:
         """
         os.makedirs(results_dir)
         log_message = "Copying '%s' '%s' to '%s'"
@@ -189,7 +189,7 @@ class BuildToolBase(object):
     def prepare(cls, spec, conf):
         """
         Prepare for building.
-        
+
         :param spec: spec file object
         """
         # do nothing by default
@@ -228,7 +228,7 @@ class BuildToolBase(object):
     def wait_for_task(cls, build_dict, results_dir):
         """
         Waits until specified task is finished
-        
+
         :param build_dict: build data
         :param results_dir: path to DIR where results should be stored
         :return: tuple with:
@@ -242,7 +242,7 @@ class BuildToolBase(object):
     def get_task_info(cls, build_dict):
         """
         Gets information about detached remote task
-        
+
         :param build_dict: build data
         :return: task info
         """
@@ -252,7 +252,7 @@ class BuildToolBase(object):
     def get_detached_task(cls, task_id, results_dir):
         """
         Gets packages and logs for specified task
-        
+
         :param task_id: detached task id
         :param results_dir: path to DIR where results should be stored
         :return: tuple with:
@@ -260,7 +260,6 @@ class BuildToolBase(object):
             list of absolute paths to logs
         """
         raise NotImplementedError()
-
 
     @staticmethod
     def get_builder_options(**kwargs):
@@ -306,7 +305,7 @@ class BuildToolBase(object):
 
             srpm_builder = SRPMBuilder.srpm_build_tools[srpm_build_tool]
             srpm = srpm_builder.build_srpm(tmp_spec, tmp_dir, tmp_results_dir, srpm_results_dir,
-                                              srpm_builder_options=srpm_builder_options)
+                                           srpm_builder_options=srpm_builder_options)
 
         logger.info("Building SRPM finished successfully")
 
@@ -384,7 +383,6 @@ class SRPMBuilder(object):
         """Returns default build tool"""
         default = [k for k, v in six.iteritems(cls.srpm_build_tools) if v.is_default()]
         return default[0] if default else None
-
 
 
 class Builder(object):

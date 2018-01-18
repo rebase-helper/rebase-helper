@@ -106,5 +106,6 @@ class ResultsStore(object):
     def get_result_message(self):
         return self._data_store.get(self.RESULTS_SUCCESS, None)
 
+
 # global results store
 results_store = ResultsStore()
