@@ -44,8 +44,6 @@ from rebasehelper import settings
 from rebasehelper.archive import Archive
 from rebasehelper.exceptions import RebaseHelperError
 
-PATCH_PREFIX = '%patch'
-
 
 def get_rebase_name(dir_name, name):
     """
@@ -289,7 +287,7 @@ class SpecFile(object):
         patches_applied = []
         patches_not_used = []
         patches_list = [p for p in self.spc.sources if p[2] == 2]
-        patch_flags = self._get_patches_flags()
+        strip_options = self._get_patch_strip_options(patches_list)
 
         for filename, num, patch_type in patches_list:
             patch_path = os.path.join(self.sources_location, filename)
@@ -297,29 +295,34 @@ class SpecFile(object):
                 logger.error('Patch %s does not exist', filename)
                 continue
             patch_num = num
-            if patch_flags:
-                if num in patch_flags:
-                    patch_num, patch_option = patch_flags[num]
-                    patches_applied.append(PatchObject(patch_path, patch_num, patch_option))
-                else:
-                    patches_not_used.append(PatchObject(patch_path, patch_num, None))
+            if patch_num in strip_options:
+                patches_applied.append(PatchObject(patch_path, patch_num, strip_options[patch_num]))
             else:
-                patches_applied.append(PatchObject(patch_path, patch_num, None))
+                patches_not_used.append(PatchObject(patch_path, patch_num, None))
         patches_applied = sorted(patches_applied, key=lambda x: x.get_index())
         return {"applied": patches_applied, "not_applied": patches_not_used}
 
-    def get_patch_option(self, line):
+    def _get_patch_strip_options(self, patches):
         """
-        Function returns a patch options
+        Gets value of strip option of each used patch
 
-        :param line:
-        :return: patch options like -p1
+        This should work reliably in most cases except when a list of patches
+        is read from a file (netcf, libvirt).
         """
-        spl = line.strip().split()
-        if len(spl) == 1:
-            return spl[0], ''
-        else:
-            return spl[0], spl[1]
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-p', type=int, default=0)
+        result = {}
+        for line in self.get_prep_section():
+            tokens = shlex.split(line, comments=True)
+            if not tokens:
+                continue
+            args = tokens[1:]
+            ns, rest = parser.parse_known_args(args)
+            rest = [os.path.basename(a) for a in rest]
+            indexes = [p[1] for p in patches if p[0] in rest]
+            for idx in indexes:
+                result[idx] = ns.p
+        return result
 
     def _get_patch_number(self, fields):
         """
@@ -330,22 +333,6 @@ class SpecFile(object):
         """
         patch_num = fields[0].replace('Patch', '')[:-1]
         return patch_num
-
-    def _get_patches_flags(self):
-        """For all patches: get flags passed to %patch macro and index of application"""
-        patch_flags = {}
-        patches = [x for x in self.spec_content if x.startswith(PATCH_PREFIX)]
-        if not patches:
-            return None
-        for index, line in enumerate(patches):
-            num, option = self.get_patch_option(line)
-            num = num.replace(PATCH_PREFIX, '')
-            try:
-                patch_flags[int(num)] = (index, option)
-            except ValueError:
-                patch_flags[0] = (index, option)
-        # {num: index of application}
-        return patch_flags
 
     def get_patches(self):
         """
