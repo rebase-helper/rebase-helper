@@ -1088,19 +1088,17 @@ class SpecFile(object):
                 else:
                     self.rpm_sections[key] = (section_name, new_section)
 
-    def get_prep_section(self, complete=False):
+    def get_prep_section(self):
         """Function returns whole prep section"""
-        prep_section = []
-        start_prep_section = complete
-        for line in self.prep_section.split('\n'):
-            if start_prep_section:
-                prep_section.append(line)
-                continue
-            if line.startswith('/usr/bin/chmod -Rf a+rX') and not complete:
-                start_prep_section = True
-                continue
-
-        return prep_section
+        prep = self.prep_section.split('\n')
+        # join lines split by backslash
+        result = []
+        while prep:
+            if result and result[-1].endswith('\\'):
+                result[-1] = result[-1][:-1] + prep.pop(0)
+            else:
+                result.append(prep.pop(0))
+        return result
 
     #############################################
     # SPEC CONTENT MANIPULATION RELATED METHODS #
@@ -1445,26 +1443,16 @@ class SpecFile(object):
         :param archive: Path to archive
         :return: Target path relative to builddir or None if not determined
         """
-        def _sanitize_prep(prep):
-            # join lines split by backslash
-            result = []
-            while prep:
-                if result and result[-1].endswith('\\'):
-                    result[-1] = result[-1][:-1] + prep.pop(0)
-                else:
-                    result.append(prep.pop(0))
-            return result
         cd_parser = argparse.ArgumentParser()
         cd_parser.add_argument('dir', default=os.environ.get('HOME', ''))
         tar_parser = argparse.ArgumentParser()
         tar_parser.add_argument('-C', default='.', dest='target')
         unzip_parser = argparse.ArgumentParser()
         unzip_parser.add_argument('-d', default='.', dest='target')
-        prep = _sanitize_prep(self.get_prep_section(complete=True))
         archive = os.path.basename(archive)
         builddir = MacroHelper.expand('%{_builddir}', '')
         basedir = builddir
-        for line in prep:
+        for line in self.get_prep_section():
             tokens = shlex.split(line, comments=True)
             if not tokens:
                 continue
