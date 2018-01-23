@@ -75,13 +75,13 @@ class PatchObject(object):
 
     path = ''
     index = ''
-    option = ''
+    strip = ''
     git_generated = ''
 
-    def __init__(self, path, index, option):
+    def __init__(self, path, index, strip):
         self.path = path
         self.index = index
-        self.option = option
+        self.strip = strip
 
     def get_path(self):
         return self.path
@@ -95,8 +95,8 @@ class PatchObject(object):
     def get_patch_name(self):
         return os.path.basename(self.path)
 
-    def get_option(self):
-        return self.option
+    def get_strip(self):
+        return self.strip
 
 
 class SpecFile(object):

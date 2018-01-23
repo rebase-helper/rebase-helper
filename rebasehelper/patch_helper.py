@@ -28,7 +28,6 @@ import six
 
 from rebasehelper.logger import logger
 from rebasehelper.utils import ConsoleHelper
-from rebasehelper.utils import ProcessHelper
 from rebasehelper.utils import GitHelper
 
 
@@ -73,9 +72,6 @@ class GitPatchTool(PatchBase):
     new_repo = None
     non_interactive = False
     patches = None
-    prep_section = False
-    exec_prep_script = False
-    patch_sources_by_prep_script = False
 
     @classmethod
     def match(cls, cmd=None):
@@ -94,15 +90,15 @@ class GitPatchTool(PatchBase):
         logger.debug('Applying patch with am')
 
         patch_name = patch_object.get_path()
-        patch_option = patch_object.get_option()
+        patch_strip = patch_object.get_strip()
         try:
             repo.git.am(patch_name)
         except git.GitCommandError:
             logger.debug('Applying patch with git-am failed.')
             try:
-                repo.git.apply(patch_name, patch_option)
+                repo.git.apply(patch_name, p=patch_strip)
             except git.GitCommandError:
-                repo.git.apply(patch_name, patch_option, reject=True, whitespace='fix')
+                repo.git.apply(patch_name, p=patch_strip, reject=True, whitespace='fix')
             repo.git.add(all=True)
             repo.index.commit('Patch: {0}'.format(os.path.basename(patch_name)), skip_hooks=True)
         else:
@@ -149,7 +145,7 @@ class GitPatchTool(PatchBase):
             upstream = 'new_upstream'
             cls.old_repo.create_remote(upstream, url=cls.new_sources).fetch()
             root_commit = cls.old_repo.git.rev_list('HEAD', max_parents=0)
-            last_commit = cls.old_repo.commit('HEAD~{}'.format(1 if cls.prep_section else 0))
+            last_commit = cls.old_repo.commit('HEAD')
             try:
                 cls.output_data = cls.old_repo.git.rebase(root_commit, last_commit,
                                                           onto='{}/master'.format(upstream),
@@ -260,59 +256,6 @@ class GitPatchTool(PatchBase):
                 raise RuntimeError('Failed to patch old sources')
 
     @classmethod
-    def _prepare_prep_script(cls, sources, prep):
-        for src in sources:
-            file_name = os.path.join('SOURCES', os.path.basename(src))
-            for index, row in enumerate(prep):
-                if file_name in row:
-                    src_path = [x for x in row.split() if x.endswith(file_name)]
-                    prep[index] = row.replace(src_path[0], src)
-
-        return prep
-
-    @classmethod
-    def create_prep_script(cls, prep):
-        """Function abstract special things from prep section and apply them to old sources"""
-        logger.debug('Extract prep script')
-        # Check whether patch or git am is used inside %prep section
-        # If yes then execute whole %prep section
-        logger.debug("prep section '%s'", prep)
-        found_patching = [x for x in prep if ' patch ' in x]
-        if found_patching:
-            cls.exec_prep_script = True
-        found_git_am = [x for x in prep if 'git am' in x]
-        if found_git_am:
-            cls.patch_sources_by_prep_script = True
-
-        logger.debug('Fix %SOURCES tags in prep script')
-        prep = cls._prepare_prep_script(cls.rest_sources, prep)
-        logger.debug('Fix %PATCH tags in prep script')
-        prep = cls._prepare_prep_script([x.get_path() for x in cls.patches], prep)
-        prep_script_path = os.path.join(cls.kwargs['workspace_dir'], 'prep_script')
-        logger.debug("Writing Prep script '%s' to the disc", prep_script_path)
-        try:
-            with open(prep_script_path, "w") as f:
-                f.write("#!/bin/bash\n\n")
-                f.writelines('\n'.join(prep))
-            os.chmod(prep_script_path, 0o755)
-        except IOError:
-            logger.debug("Unable to write prep script file to '%s'", prep_script_path)
-            return None
-
-        return prep_script_path
-
-    @classmethod
-    def call_prep_script(cls, prep_script_path):
-        cwd = os.getcwd()
-        os.chdir(cls.old_sources)
-        ProcessHelper.run_subprocess(prep_script_path,
-                                     output=os.path.join(cls.kwargs['workspace_dir'], 'prep_script.log'))
-        if not cls.patch_sources_by_prep_script:
-            cls.old_repo.git.add(all=True)
-            cls.old_repo.index.commit('prep_script prep_corrections', skip_hooks=True)
-        os.chdir(cwd)
-
-    @classmethod
     def init_git(cls, directory):
         """Function initialize old and new Git repository"""
         repo = git.Repo.init(directory)
@@ -340,12 +283,7 @@ class GitPatchTool(PatchBase):
             cls.old_repo = cls.init_git(old_dir)
             cls.new_repo = cls.init_git(new_dir)
             cls.source_dir = cls.old_sources
-            prep_path = cls.create_prep_script(prep)
-            if not cls.patch_sources_by_prep_script:
-                cls.apply_old_patches()
-            if cls.exec_prep_script or cls.patch_sources_by_prep_script:
-                logger.info('Executing prep script')
-                cls.call_prep_script(prep_path)
+            cls.apply_old_patches()
             cls.cont = False
         else:
             cls.old_repo = git.Repo(old_dir)
