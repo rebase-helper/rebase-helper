@@ -131,7 +131,6 @@ class SpecFile(object):
         self.sources_location = sources_location
         self.changelog_entry = changelog_entry
         #  Read the content of the whole SPEC file
-        rpm.addMacro("_sourcedir", self.sources_location)
         self._read_spec_content()
         # Load rpm information
         self.set_extra_version_separator('')
@@ -191,13 +190,25 @@ class SpecFile(object):
 
         :return:
         """
+        def replace_macro(macro, value):
+            m = '%{{{}}}'.format(macro)
+            while MacroHelper.expand(m, m) != m:
+                rpm.delMacro(macro)
+            rpm.addMacro(macro, value)
+        # ensure that %{_sourcedir} macro is set to proper location
+        replace_macro('_sourcedir', self.sources_location)
         # explicitly discard old instance to prevent rpm from destroying
         # "sources" and "patches" lua tables after new instance is created
         self.spc = None
+        # load rpm information
         try:
-            self.spc = RpmHelper.parse_spec(self.path)
+            self.spc = RpmHelper.parse_spec(self.path, flags=rpm.RPMSPEC_ANYARCH)
         except ValueError:
-            raise RebaseHelperError("Problem with parsing SPEC file '%s'" % self.path)
+            try:
+                # try again with RPMSPEC_FORCE flag (the default)
+                self.spc = RpmHelper.parse_spec(self.path)
+            except ValueError:
+                raise RebaseHelperError("Problem with parsing SPEC file '%s'" % self.path)
         self.category = self._guess_category()
         self.sources = self._get_spec_sources_list(self.spc)
         self.prep_section = self.spc.prep
