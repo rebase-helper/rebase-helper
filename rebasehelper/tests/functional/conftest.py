@@ -30,14 +30,14 @@ from rebasehelper.settings import REBASE_HELPER_RESULTS_DIR, REBASE_HELPER_DEBUG
 def make_logs_report():
     logs = [
         REBASE_HELPER_DEBUG_LOG,
-        'old/SRPM/build.log',
-        'old/RPM/build.log',
-        'old/RPM/root.log',
-        'old/RPM/mock_output.log',
-        'new/SRPM/build.log',
-        'new/RPM/build.log',
-        'new/RPM/root.log',
-        'new/RPM/mock_output.log',
+        'old-build/SRPM/build.log',
+        'old-build/RPM/build.log',
+        'old-build/RPM/root.log',
+        'old-build/RPM/mock_output.log',
+        'new-build/SRPM/build.log',
+        'new-build/RPM/build.log',
+        'new-build/RPM/root.log',
+        'new-build/RPM/mock_output.log',
     ]
     report = []
     for log in logs:
