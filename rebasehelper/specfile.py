@@ -27,6 +27,8 @@ import shutil
 import rpm
 import argparse
 import shlex
+import itertools
+
 import pkg_resources
 
 import six
@@ -1443,21 +1445,23 @@ class SpecFile(object):
             tokens = shlex.split(line, comments=True)
             if not tokens:
                 continue
-            cmd, args = os.path.basename(tokens[0]), tokens[1:]
-            if cmd == 'cd':
-                # keep track of current directory
-                ns, _ = cd_parser.parse_known_args(args)
-                basedir = ns.dir if os.path.isabs(ns.dir) else os.path.join(basedir, ns.dir)
-            if archive in line:
-                if cmd == 'tar':
-                    parser = tar_parser
-                elif cmd == 'unzip':
-                    parser = unzip_parser
-                else:
-                    continue
-                ns, _ = parser.parse_known_args(args)
-                basedir = os.path.relpath(basedir, builddir)
-                return os.path.normpath(os.path.join(basedir, ns.target))
+            # split tokens by pipe
+            for tokens in [list(group) for k, group in itertools.groupby(tokens, lambda t: t == '|') if not k]:
+                cmd, args = os.path.basename(tokens[0]), tokens[1:]
+                if cmd == 'cd':
+                    # keep track of current directory
+                    ns, _ = cd_parser.parse_known_args(args)
+                    basedir = ns.dir if os.path.isabs(ns.dir) else os.path.join(basedir, ns.dir)
+                if archive in line:
+                    if cmd == 'tar':
+                        parser = tar_parser
+                    elif cmd == 'unzip':
+                        parser = unzip_parser
+                    else:
+                        continue
+                    ns, _ = parser.parse_known_args(args)
+                    basedir = os.path.relpath(basedir, builddir)
+                    return os.path.normpath(os.path.join(basedir, ns.target))
         return None
 
 
