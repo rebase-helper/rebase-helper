@@ -52,7 +52,14 @@ class TestSpecFile(object):
     BUILD_OBSOLETES_LOG = 'build_obsoletes.log'
 
     TEST_FILES = [
+        OLD_ARCHIVE,
         SPEC_FILE,
+        SOURCE_0,
+        SOURCE_1,
+        SOURCE_4,
+        SOURCE_5,
+        SOURCE_6,
+        SOURCE_7,
         PATCH_1,
         PATCH_2,
         PATCH_3,
@@ -127,10 +134,10 @@ class TestSpecFile(object):
         assert spec_object.get_archive() == 'test-1.0.2.tar.xz'
 
     def test_get_patches(self, workdir, spec_object):
-        expected_patches = {0: [os.path.join(workdir, self.PATCH_1), 0],
-                            1: [os.path.join(workdir, self.PATCH_2), 1],
-                            2: [os.path.join(workdir, self.PATCH_3), 2],
-                            3: [os.path.join(workdir, self.PATCH_4), 3]}
+        expected_patches = {0: [os.path.join(workdir, self.PATCH_1), 1],
+                            1: [os.path.join(workdir, self.PATCH_2), 2],
+                            2: [os.path.join(workdir, self.PATCH_3), 3],
+                            3: [os.path.join(workdir, self.PATCH_4), 4]}
         patches = {}
         for index, p in enumerate(spec_object.get_patches()):
             patches[index] = [p.get_path(), p.get_index()]
