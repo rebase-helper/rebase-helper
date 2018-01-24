@@ -16,7 +16,7 @@ test: $(DISTRO)
 $(DISTRO):
 	$(DOCKER) build \
 		--file docker/Dockerfile.test \
-		--build-arg DISTRO="$(DISTRO)" \
+		--build-arg DISTRO="$@" \
 		-t rebase-helper \
 		.
 	$(DOCKER) run \
