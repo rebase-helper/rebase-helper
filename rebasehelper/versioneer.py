@@ -70,7 +70,7 @@ class VersioneersRunner(object):
         """Returns a list of available versioneers"""
         return [k for k, v in six.iteritems(self.versioneers)]
 
-    def run(self, versioneer, package_name, category, versioneer_blacklist=[]):
+    def run(self, versioneer, package_name, category, versioneer_blacklist=None):
         """
         Runs specified versioneer or all versioneers subsequently until one of them succeeds.
 
@@ -80,6 +80,9 @@ class VersioneersRunner(object):
         :param versioneer_blacklist: List of versioneers that will be skipped
         :return: Latest upstream version of a package
         """
+        if versioneer_blacklist is None:
+            versioneer_blacklist = []
+
         if versioneer:
             logger.info("Running '%s' versioneer", versioneer)
             return self.versioneers[versioneer].run(package_name)
