@@ -27,6 +27,8 @@ import shutil
 import rpm
 import argparse
 import shlex
+import itertools
+
 import pkg_resources
 
 import six
@@ -43,8 +45,6 @@ from rebasehelper.logger import logger
 from rebasehelper import settings
 from rebasehelper.archive import Archive
 from rebasehelper.exceptions import RebaseHelperError
-
-PATCH_PREFIX = '%patch'
 
 
 def get_rebase_name(dir_name, name):
@@ -75,13 +75,13 @@ class PatchObject(object):
 
     path = ''
     index = ''
-    option = ''
+    strip = ''
     git_generated = ''
 
-    def __init__(self, path, index, option):
+    def __init__(self, path, index, strip):
         self.path = path
         self.index = index
-        self.option = option
+        self.strip = strip
 
     def get_path(self):
         return self.path
@@ -95,8 +95,8 @@ class PatchObject(object):
     def get_patch_name(self):
         return os.path.basename(self.path)
 
-    def get_option(self):
-        return self.option
+    def get_strip(self):
+        return self.strip
 
 
 class SpecFile(object):
@@ -131,7 +131,6 @@ class SpecFile(object):
         self.sources_location = sources_location
         self.changelog_entry = changelog_entry
         #  Read the content of the whole SPEC file
-        rpm.addMacro("_sourcedir", self.sources_location)
         self._read_spec_content()
         # Load rpm information
         self.set_extra_version_separator('')
@@ -191,13 +190,25 @@ class SpecFile(object):
 
         :return:
         """
+        def replace_macro(macro, value):
+            m = '%{{{}}}'.format(macro)
+            while MacroHelper.expand(m, m) != m:
+                rpm.delMacro(macro)
+            rpm.addMacro(macro, value)
+        # ensure that %{_sourcedir} macro is set to proper location
+        replace_macro('_sourcedir', self.sources_location)
         # explicitly discard old instance to prevent rpm from destroying
         # "sources" and "patches" lua tables after new instance is created
         self.spc = None
+        # load rpm information
         try:
-            self.spc = RpmHelper.parse_spec(self.path)
+            self.spc = RpmHelper.parse_spec(self.path, flags=rpm.RPMSPEC_ANYARCH)
         except ValueError:
-            raise RebaseHelperError("Problem with parsing SPEC file '%s'" % self.path)
+            try:
+                # try again with RPMSPEC_FORCE flag (the default)
+                self.spc = RpmHelper.parse_spec(self.path)
+            except ValueError:
+                raise RebaseHelperError("Problem with parsing SPEC file '%s'" % self.path)
         self.category = self._guess_category()
         self.sources = self._get_spec_sources_list(self.spc)
         self.prep_section = self.spc.prep
@@ -278,7 +289,7 @@ class SpecFile(object):
         patches_applied = []
         patches_not_used = []
         patches_list = [p for p in self.spc.sources if p[2] == 2]
-        patch_flags = self._get_patches_flags()
+        strip_options = self._get_patch_strip_options(patches_list)
 
         for filename, num, patch_type in patches_list:
             patch_path = os.path.join(self.sources_location, filename)
@@ -286,29 +297,34 @@ class SpecFile(object):
                 logger.error('Patch %s does not exist', filename)
                 continue
             patch_num = num
-            if patch_flags:
-                if num in patch_flags:
-                    patch_num, patch_option = patch_flags[num]
-                    patches_applied.append(PatchObject(patch_path, patch_num, patch_option))
-                else:
-                    patches_not_used.append(PatchObject(patch_path, patch_num, None))
+            if patch_num in strip_options:
+                patches_applied.append(PatchObject(patch_path, patch_num, strip_options[patch_num]))
             else:
-                patches_applied.append(PatchObject(patch_path, patch_num, None))
+                patches_not_used.append(PatchObject(patch_path, patch_num, None))
         patches_applied = sorted(patches_applied, key=lambda x: x.get_index())
         return {"applied": patches_applied, "not_applied": patches_not_used}
 
-    def get_patch_option(self, line):
+    def _get_patch_strip_options(self, patches):
         """
-        Function returns a patch options
+        Gets value of strip option of each used patch
 
-        :param line:
-        :return: patch options like -p1
+        This should work reliably in most cases except when a list of patches
+        is read from a file (netcf, libvirt).
         """
-        spl = line.strip().split()
-        if len(spl) == 1:
-            return spl[0], ''
-        else:
-            return spl[0], spl[1]
+        parser = argparse.ArgumentParser()
+        parser.add_argument('-p', type=int, default=0)
+        result = {}
+        for line in self.get_prep_section():
+            tokens = shlex.split(line, comments=True)
+            if not tokens:
+                continue
+            args = tokens[1:]
+            ns, rest = parser.parse_known_args(args)
+            rest = [os.path.basename(a) for a in rest]
+            indexes = [p[1] for p in patches if p[0] in rest]
+            for idx in indexes:
+                result[idx] = ns.p
+        return result
 
     def _get_patch_number(self, fields):
         """
@@ -319,22 +335,6 @@ class SpecFile(object):
         """
         patch_num = fields[0].replace('Patch', '')[:-1]
         return patch_num
-
-    def _get_patches_flags(self):
-        """For all patches: get flags passed to %patch macro and index of application"""
-        patch_flags = {}
-        patches = [x for x in self.spec_content if x.startswith(PATCH_PREFIX)]
-        if not patches:
-            return None
-        for index, line in enumerate(patches):
-            num, option = self.get_patch_option(line)
-            num = num.replace(PATCH_PREFIX, '')
-            try:
-                patch_flags[int(num)] = (index, option)
-            except ValueError:
-                patch_flags[0] = (index, option)
-        # {num: index of application}
-        return patch_flags
 
     def get_patches(self):
         """
@@ -1077,19 +1077,17 @@ class SpecFile(object):
                 else:
                     self.rpm_sections[key] = (section_name, new_section)
 
-    def get_prep_section(self, complete=False):
+    def get_prep_section(self):
         """Function returns whole prep section"""
-        prep_section = []
-        start_prep_section = complete
-        for line in self.prep_section.split('\n'):
-            if start_prep_section:
-                prep_section.append(line)
-                continue
-            if line.startswith('/usr/bin/chmod -Rf a+rX') and not complete:
-                start_prep_section = True
-                continue
-
-        return prep_section
+        prep = self.prep_section.split('\n')
+        # join lines split by backslash
+        result = []
+        while prep:
+            if result and result[-1].endswith('\\'):
+                result[-1] = result[-1][:-1] + prep.pop(0)
+            else:
+                result.append(prep.pop(0))
+        return result
 
     #############################################
     # SPEC CONTENT MANIPULATION RELATED METHODS #
@@ -1434,44 +1432,36 @@ class SpecFile(object):
         :param archive: Path to archive
         :return: Target path relative to builddir or None if not determined
         """
-        def _sanitize_prep(prep):
-            # join lines split by backslash
-            result = []
-            while prep:
-                if result and result[-1].endswith('\\'):
-                    result[-1] = result[-1][:-1] + prep.pop(0)
-                else:
-                    result.append(prep.pop(0))
-            return result
         cd_parser = argparse.ArgumentParser()
         cd_parser.add_argument('dir', default=os.environ.get('HOME', ''))
         tar_parser = argparse.ArgumentParser()
         tar_parser.add_argument('-C', default='.', dest='target')
         unzip_parser = argparse.ArgumentParser()
         unzip_parser.add_argument('-d', default='.', dest='target')
-        prep = _sanitize_prep(self.get_prep_section(complete=True))
         archive = os.path.basename(archive)
         builddir = MacroHelper.expand('%{_builddir}', '')
         basedir = builddir
-        for line in prep:
+        for line in self.get_prep_section():
             tokens = shlex.split(line, comments=True)
             if not tokens:
                 continue
-            cmd, args = os.path.basename(tokens[0]), tokens[1:]
-            if cmd == 'cd':
-                # keep track of current directory
-                ns, _ = cd_parser.parse_known_args(args)
-                basedir = ns.dir if os.path.isabs(ns.dir) else os.path.join(basedir, ns.dir)
-            if archive in line:
-                if cmd == 'tar':
-                    parser = tar_parser
-                elif cmd == 'unzip':
-                    parser = unzip_parser
-                else:
-                    continue
-                ns, _ = parser.parse_known_args(args)
-                basedir = os.path.relpath(basedir, builddir)
-                return os.path.normpath(os.path.join(basedir, ns.target))
+            # split tokens by pipe
+            for tokens in [list(group) for k, group in itertools.groupby(tokens, lambda t: t == '|') if not k]:
+                cmd, args = os.path.basename(tokens[0]), tokens[1:]
+                if cmd == 'cd':
+                    # keep track of current directory
+                    ns, _ = cd_parser.parse_known_args(args)
+                    basedir = ns.dir if os.path.isabs(ns.dir) else os.path.join(basedir, ns.dir)
+                if archive in line:
+                    if cmd == 'tar':
+                        parser = tar_parser
+                    elif cmd == 'unzip':
+                        parser = unzip_parser
+                    else:
+                        continue
+                    ns, _ = parser.parse_known_args(args)
+                    basedir = os.path.relpath(basedir, builddir)
+                    return os.path.normpath(os.path.join(basedir, ns.target))
         return None
 
 

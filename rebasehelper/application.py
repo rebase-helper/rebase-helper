@@ -223,6 +223,9 @@ class Application(object):
             if spec_file.download:
                 spec_file.download_remote_sources()
 
+        # parse spec again with sources downloaded to properly expand %prep section
+        spec_file._update_data()
+
     def _initialize_data(self):
         """Function fill dictionary with default data"""
         # Get all tarballs before self.kwargs initialization
