@@ -654,6 +654,7 @@ class TestLookasideCacheHelper(object):
         'man-pages',
     ])
     def test_download(self, package, filename, hashtype, hash):
+        # pylint: disable=protected-access
         target = os.path.basename(filename)
         LookasideCacheHelper._download_source('fedpkg',
                                               'https://src.fedoraproject.org/repo/pkgs',

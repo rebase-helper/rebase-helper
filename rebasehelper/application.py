@@ -223,7 +223,7 @@ class Application(object):
             if spec_file.download:
                 spec_file.download_remote_sources()
                 # parse spec again with sources downloaded to properly expand %prep section
-                spec_file._update_data()
+                spec_file._update_data()  # pylint: disable=protected-access
 
     def _initialize_data(self):
         """Function fill dictionary with default data"""
@@ -458,7 +458,7 @@ class Application(object):
 
         # Generate patch
         self.rebased_repo.git.add(all=True)
-        self.rebase_spec_file._update_data()
+        self.rebase_spec_file._update_data()  # pylint: disable=protected-access
         self.rebased_repo.index.commit(MacroHelper.expand(self.conf.changelog_entry, self.conf.changelog_entry))
         patch = self.rebased_repo.git.format_patch('-1', stdout=True, stdout_as_string=False)
         with open(os.path.join(self.results_dir, 'changes.patch'), 'wb') as f:
@@ -617,7 +617,7 @@ class Application(object):
                     if not ConsoleHelper.get_message('Do you want to continue with the rebuild now'):
                         raise KeyboardInterrupt
                     # Update rebase spec file content after potential manual modifications
-                    self.rebase_spec_file._update_data()
+                    self.rebase_spec_file._update_data()  # pylint: disable=protected-access
                     # clear current version output directories
                     if os.path.exists(os.path.join(results_dir, 'RPM')):
                         shutil.rmtree(os.path.join(results_dir, 'RPM'))

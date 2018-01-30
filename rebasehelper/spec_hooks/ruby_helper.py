@@ -96,7 +96,7 @@ class RubyHelperHook(BaseSpecHook):
                             break
                     break
             # update data so that RPM macros are populated correctly
-            rebase_spec_file._update_data()
+            rebase_spec_file._update_data()  # pylint: disable=protected-access
             instructions = cls._get_instructions(comments,
                                                  spec_file.get_version(),
                                                  rebase_spec_file.get_version())

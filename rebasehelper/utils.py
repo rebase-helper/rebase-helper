@@ -695,11 +695,9 @@ class RpmHelper(object):
         """
         ts = rpm.TransactionSet()
         # disable signature checking
-        ts.setVSFlags(rpm._RPMVSF_NOSIGNATURES)
-        h = None
+        ts.setVSFlags(rpm._RPMVSF_NOSIGNATURES)  # pylint: disable=protected-access
         with open(rpm_name, "r") as f:
-            h = ts.hdrFromFdno(f)
-        return h
+            return ts.hdrFromFdno(f)
 
     @staticmethod
     def get_info_from_rpm(rpm_name, info):
