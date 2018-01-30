@@ -611,11 +611,6 @@ class Application(object):
                 if try_build_again:
                     successful_builds = 0
                     try_build_again = False
-                    # clear current version output directories
-                    if os.path.exists(os.path.join(results_dir, 'RPM')):
-                        shutil.rmtree(os.path.join(results_dir, 'RPM'))
-                    if os.path.exists(os.path.join(results_dir, 'SRPM')):
-                        shutil.rmtree(os.path.join(results_dir, 'SRPM'))
 
                     # Save current rebase spec file content
                     self.rebase_spec_file.save()
@@ -624,6 +619,11 @@ class Application(object):
                         raise KeyboardInterrupt
                     # Update rebase spec file content after potential manual modifications
                     self.rebase_spec_file._update_data()
+                    # clear current version output directories
+                    if os.path.exists(os.path.join(results_dir, 'RPM')):
+                        shutil.rmtree(os.path.join(results_dir, 'RPM'))
+                    if os.path.exists(os.path.join(results_dir, 'SRPM')):
+                        shutil.rmtree(os.path.join(results_dir, 'SRPM'))
 
         if self.conf.builds_nowait and not self.conf.build_tasks:
             if builder.creates_tasks():
