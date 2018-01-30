@@ -222,9 +222,8 @@ class Application(object):
         for spec_file in [self.spec_file, self.rebase_spec_file]:
             if spec_file.download:
                 spec_file.download_remote_sources()
-
-        # parse spec again with sources downloaded to properly expand %prep section
-        spec_file._update_data()
+                # parse spec again with sources downloaded to properly expand %prep section
+                spec_file._update_data()
 
     def _initialize_data(self):
         """Function fill dictionary with default data"""
