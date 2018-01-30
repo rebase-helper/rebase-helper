@@ -360,7 +360,7 @@ class SpecFile(object):
         """
         return self.patches['not_applied']
 
-    def _process_patches(self, comment_out=[], remove_patches=[], disable_inapplicable_patches=None):
+    def _process_patches(self, comment_out=None, remove_patches=None, disable_inapplicable_patches=None):
         """
         Comment out and delete patches from SPEC file
 
@@ -368,6 +368,11 @@ class SpecFile(object):
         :var remove_patches: list with patch numbers to delete
         :var disable_inapplicable_patches: boolean value deciding if the inapplicable patches should be commented out
         """
+        if comment_out is None:
+            comment_out = []
+        if remove_patches is None:
+            remove_patches = []
+
         for index, line in enumerate(self.spec_content):
             #  if patch is applied on the line, try to check if it should be commented out
             if line.startswith('%patch'):
