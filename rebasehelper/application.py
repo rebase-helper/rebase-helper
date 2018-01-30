@@ -42,8 +42,7 @@ from rebasehelper.patch_helper import Patcher
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
 from rebasehelper.results_store import results_store
 from rebasehelper.versioneer import versioneers_runner
-from rebasehelper.build_tools.mock_tool import MockBuildTool
-from rebasehelper import version
+from rebasehelper.version import VERSION
 
 
 class Application(object):
@@ -94,7 +93,7 @@ class Application(object):
 
         self.kwargs['spec_hook_blacklist'] = self.conf.spec_hook_blacklist
 
-        logger.debug("Rebase-helper version: %s" % version.VERSION)
+        logger.debug("Rebase-helper version: %s", VERSION)
 
         if self.conf.build_tasks is None:
             # check the workspace dir
