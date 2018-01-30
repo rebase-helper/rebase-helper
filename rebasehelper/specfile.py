@@ -866,10 +866,34 @@ class SpecFile(object):
                     continue
                 if token == values[index]:
                     continue
-                for i in range(index, 0, -1):
+                for i in range(index - 1, 0, -1):
                     if tokens[i][0] == '%' and not values[i]:
                         values[i] = values[index]
                         values[index] = None
+                        break
+            # try to make values of identical macros equal
+            for index, token in enumerate(tokens):
+                if token[0] != '%':
+                    continue
+                for i in range(index - 1, 0, -1):
+                    if tokens[i] == token:
+                        idx = values[index].find(values[i])
+                        if idx >= 0:
+                            prefix = values[index][:idx]
+                            for j in range(index - 1, i + 1, -1):
+                                # first non-macro token
+                                if tokens[j][0] != '%':
+                                    if prefix.endswith(values[j]):
+                                        # move token from the end of prefix to the beginning
+                                        prefix = values[j] + prefix[:prefix.find(values[j])]
+                                    else:
+                                        # no match with prefix, cannot continue
+                                        break
+                                else:
+                                    # remove prefix from the original value and append it to the value of this macro
+                                    values[index] = values[index][idx:]
+                                    values[j] += prefix
+                                    break
                         break
             # redefine macros and update tokens
             for index, token in enumerate(tokens):

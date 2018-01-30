@@ -10,6 +10,9 @@
 %global release 34
 %global release_str %{release}%{?dist}
 
+%global project rebase-helper
+%global commit d70cb5a2f523db5b6088427563531f43b7703859
+
 Summary: %{summary}
 Name: test
 Version: %{version}
@@ -28,6 +31,7 @@ Source4: file.txt.bz2
 Source5: documentation.tar.xz
 Source6: misc.zip
 Source7: https://pypi.python.org/packages/source/p/positional/positional-1.1.0.tar.gz
+Source8: https://github.com/%{project}/%{project}/archive/%{commit}/%{project}-%{commit}.tar.gz
 Patch1: test-testing.patch
 Patch2: test-testing2.patch
 Patch3: test-testing3.patch

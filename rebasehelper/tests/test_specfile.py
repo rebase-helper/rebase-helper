@@ -239,6 +239,9 @@ class TestSpecFile(object):
                             '%global release 34\n',
                             '%global release_str %{release}%{?dist}\n',
                             '\n',
+                            '%global project rebase-helper\n',
+                            '%global commit d70cb5a2f523db5b6088427563531f43b7703859\n',
+                            '\n',
                             'Summary: %{summary}\n',
                             'Name: test\n',
                             'Version: %{version}\n',
@@ -257,6 +260,8 @@ class TestSpecFile(object):
                             'Source5: documentation.tar.xz\n',
                             'Source6: misc.zip\n',
                             'Source7: https://pypi.python.org/packages/source/p/positional/positional-1.1.0.tar.gz\n',
+                            'Source8: https://github.com/%{project}/%{project}/archive/%{commit}/'
+                            '%{project}-%{commit}.tar.gz\n',
                             'Patch1: test-testing.patch\n',
                             'Patch2: test-testing2.patch\n',
                             'Patch3: test-testing3.patch\n',
@@ -532,10 +537,29 @@ class TestSpecFile(object):
                 'Release: %{release_str}\n',
             ],
         ),
+        (
+            'Source8',
+            'https://github.com/rebase-helper/rebase-helper/archive/'
+            'b0ed0b235bd5ea295fc897e1e2e8e6b6637f2c2d/'
+            'rebase-helper-b0ed0b235bd5ea295fc897e1e2e8e6b6637f2c2d.tar.gz',
+            [
+                '%global project rebase-helper\n',
+                '%global commit d70cb5a2f523db5b6088427563531f43b7703859\n',
+                'Source8: https://github.com/rebase-helper/rebase-helper/archive/'
+                'b0ed0b235bd5ea295fc897e1e2e8e6b6637f2c2d/'
+                'rebase-helper-b0ed0b235bd5ea295fc897e1e2e8e6b6637f2c2d.tar.gz\n',
+            ],
+            [
+                '%global project rebase-helper\n',
+                '%global commit b0ed0b235bd5ea295fc897e1e2e8e6b6637f2c2d\n',
+                'Source8: https://github.com/%{project}/%{project}/archive/%{commit}/%{project}-%{commit}.tar.gz\n',
+            ],
+        ),
     ], ids=[
         'Summary=>"A testing SPEC file..."',
         'Version=>"1.1.8"',
         'Release=>"42%{?dist}"',
+        'Source8=>"https://github.com/rebase-helper/rebase-helper/archive/..."',
     ])
     def test_set_tag(self, spec_object, preserve_macros, tag, value, lines, lines_preserve):
         spec_object.set_tag(tag, value, preserve_macros=preserve_macros)

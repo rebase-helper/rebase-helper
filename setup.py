@@ -105,6 +105,7 @@ setup(
             'typo_fix = rebasehelper.spec_hooks.typo_fix:TypoFixHook',
             'pypi_url_fix = rebasehelper.spec_hooks.pypi_url_fix:PyPIURLFixHook',
             'ruby_helper = rebasehelper.spec_hooks.ruby_helper:RubyHelperHook',
+            'commit_hash_updater = rebasehelper.spec_hooks.commit_hash_updater:CommitHashUpdaterHook',
         ],
         'rebasehelper.versioneers': [
             'anitya = rebasehelper.versioneers.anitya_versioneer:AnityaVersioneer',
