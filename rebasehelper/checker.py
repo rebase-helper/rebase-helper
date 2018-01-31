@@ -77,7 +77,7 @@ class CheckersRunner(object):
                 # silently skip broken plugin
                 continue
 
-    def run_checker(self, results_dir, checker_name):
+    def run_checker(self, results_dir, checker_name, **kwargs):
         """
         Runs a particular checker and returns the results.
 
@@ -99,7 +99,7 @@ class CheckersRunner(object):
             raise NotImplementedError("Unsupported checking tool '{}'".format(checker_name))
 
         logger.info("Running tests on packages using '%s'", checker_name)
-        return checker.run_check(results_dir)
+        return checker.run_check(results_dir, **kwargs)
 
     def get_supported_tools(self):
         """Return list of supported tools"""

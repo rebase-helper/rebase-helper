@@ -105,13 +105,14 @@ class RpmDiffTool(BaseChecker):
         return results_dict
 
     @classmethod
-    def run_check(cls, results_dir):
+    def run_check(cls, results_dir, **kwargs):
         """Compares old and new RPMs using rpmdiff"""
         results_dict = {}
 
         for tag in settings.CHECKER_TAGS:
             results_dict[tag] = []
         cls.results_dir = results_dir
+        cls.workspace_dir = kwargs['workspace_dir']
 
         # Only S (size), M(mode) and 5 (checksum) are now important
         not_catched_flags = ['T', 'F', 'G', 'U', 'V', 'L', 'D', 'N']
@@ -140,7 +141,7 @@ class RpmDiffTool(BaseChecker):
             results_dict = cls._analyze_logs(output, results_dict)
 
         results_dict = cls.update_added_removed(results_dict)
-        results_dict = dict((k, v) for k, v in six.iteritems(results_dict) if v)
+        cls.results_dict = {k: v for k, v in six.iteritems(results_dict) if v}
         lines = []
         for key, val in six.iteritems(results_dict):
             if val:
