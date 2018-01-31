@@ -37,20 +37,16 @@ from rebasehelper.checker import BaseChecker
 class RpmDiffTool(BaseChecker):
     """rpmdiff compare tool"""
 
-    CMD = "rpmdiff"
+    NAME = "rpmdiff"
     DEFAULT = True
     category = "RPM"
 
     @classmethod
     def match(cls, cmd=None):
-        if cmd == cls.CMD:
+        if cmd == cls.NAME:
             return True
         else:
             return False
-
-    @classmethod
-    def get_checker_name(cls):
-        return cls.CMD
 
     @classmethod
     def is_default(cls):
@@ -112,8 +108,9 @@ class RpmDiffTool(BaseChecker):
 
         for tag in settings.CHECKER_TAGS:
             results_dict[tag] = []
-        cls.results_dir = results_dir
-        cls.workspace_dir = kwargs['workspace_dir']
+
+        cls.results_dir = os.path.join(results_dir, cls.NAME)
+        os.makedirs(cls.results_dir)
 
         # Only S (size), M(mode) and 5 (checksum) are now important
         not_catched_flags = ['T', 'F', 'G', 'U', 'V', 'L', 'D', 'N']
@@ -123,7 +120,7 @@ class RpmDiffTool(BaseChecker):
             if 'debuginfo' in key or 'debugsource' in key:
                 # skip debug{info,source} packages
                 continue
-            cmd = [cls.CMD]
+            cmd = [cls.NAME]
             # TODO modify to online command
             for x in not_catched_flags:
                 cmd.extend(['-i', x])
@@ -138,9 +135,8 @@ class RpmDiffTool(BaseChecker):
             try:
                 ProcessHelper.run_subprocess(cmd, output_file=output)
             except OSError:
-                raise CheckerNotFoundError("Checker '%s' was not found or installed." % cls.CMD)
+                raise CheckerNotFoundError("Checker '{}' was not found or installed.".format(cls.NAME))
             results_dict = cls._analyze_logs(output, results_dict)
-
         results_dict = cls.update_added_removed(results_dict)
         cls.results_dict = {k: v for k, v in six.iteritems(results_dict) if v}
         lines = []
@@ -148,14 +144,35 @@ class RpmDiffTool(BaseChecker):
             if val:
                 if lines:
                     lines.append('')
-                lines.append('Following files were %s:' % key)
+                lines.append('Following files were {}:'.format(key))
                 lines.extend(val)
 
-        rpmdiff_report = os.path.join(cls.results_dir, 'report-' + cls.CMD + '.log')
+        rpmdiff_report = os.path.join(cls.results_dir, 'report.txt')
+
+        counts = {k: len(v) for k, v in six.iteritems(results_dict)}
+
         try:
             with open(rpmdiff_report, "w") as f:
                 f.write('\n'.join(lines))
         except IOError:
-            raise RebaseHelperError("Unable to write result from %s to '%s'" % (cls.CMD, rpmdiff_report))
+            raise RebaseHelperError("Unable to write result from {} to '{}'".format(cls.NAME, rpmdiff_report))
 
-        return {rpmdiff_report: None}
+        return {'path': cls.get_checker_output_dir_short(), 'files_changes': counts}
+
+    @classmethod
+    def format(cls, data):
+        """
+        Format rpmdiff output for outputtool
+        :param data: rpmdiff output data dictionary
+        :return: formated rpmdiff output list of strings
+        """
+        output_lines = [cls.get_underlined_title("rpmdiff")]
+
+        output_lines.append(" - {} added files".format(data['files_changes']['added']))
+        output_lines.append(" - {} changed files".format(data['files_changes']['changed']))
+        output_lines.append(" - {} removed files".format(data['files_changes']['removed']))
+
+        output_lines.append("Details in {}:".format(data['path']))
+        output_lines.append(" - report.txt")
+
+        return output_lines
