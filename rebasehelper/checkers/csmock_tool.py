@@ -35,6 +35,7 @@ class CsmockTool(BaseChecker):
     """ Csmock compare tool."""
 
     CMD = "csmock"
+    category = "SRPM"
 
     @classmethod
     def match(cls, cmd=None):

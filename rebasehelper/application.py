@@ -424,6 +424,7 @@ class Application(object):
                     if dest_dir:
                         Application.extract_sources(rest, os.path.join(self.execution_dir, sources_dir, dest_dir))
 
+        self.run_package_checkers(self.results_dir, category="SOURCE")
         return [old_dir, new_dir]
 
     def patch_sources(self, sources):
@@ -629,20 +630,26 @@ class Application(object):
 
         return True
 
-    def run_package_checkers(self, results_dir):
+    def run_package_checkers(self, results_dir, category=None):
         """
         Runs checkers on packages and stores results in a given directory.
 
         :param results_dir: Path to directory in which to store the results.
         :type results_dir: str
+        :param category: checker type(SOURCE/SRPM/RPM)
+        :type category: str
         :return: None
         """
         results = dict()
 
         for checker_name in self.conf.pkgcomparetool:
             try:
-                results[checker_name] = checkers_runner.run_checker(os.path.join(results_dir, 'checkers'),
-                                                                    checker_name)
+                data = checkers_runner.run_checker(os.path.join(results_dir, 'checkers'),
+                                                   checker_name,
+                                                   workspace_dir=self.workspace_dir,
+                                                   category=category)
+                if data:
+                    results[checker_name] = data
             except CheckerNotFoundError:
                 logger.error("Rebase-helper did not find checker '%s'.", checker_name)
 
@@ -813,7 +820,8 @@ class Application(object):
                 # Therefore return 1
             if build:
                 try:
-                    self.run_package_checkers(self.results_dir)
+                    self.run_package_checkers(self.results_dir, category="SRPM")
+                    self.run_package_checkers(self.results_dir, category="RPM")
                 # Print summary and return error
                 except RebaseHelperError as e:
                     self.print_summary(e)

@@ -40,6 +40,7 @@ class AbiCheckerTool(BaseChecker):
     DEFAULT = True
     results_dir = ''
     log_name = 'abipkgdiff.log'
+    category = 'RPM'
 
     # Example
     # abipkgdiff --d1 dbus-glib-debuginfo-0.80-3.fc12.x86_64.rpm \
@@ -86,7 +87,7 @@ class AbiCheckerTool(BaseChecker):
         return None
 
     @classmethod
-    def run_check(cls, results_dir):
+    def run_check(cls, results_dir, **kwargs):
         """Compares old and new RPMs using abipkgdiff"""
         debug_old, rest_pkgs_old = cls._get_packages_for_abipkgdiff(results_store.get_build('old'))
         debug_new, rest_pkgs_new = cls._get_packages_for_abipkgdiff(results_store.get_build('new'))

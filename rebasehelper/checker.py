@@ -30,6 +30,7 @@ class BaseChecker(object):
     """ Base class used for testing tool run on final pkgs. """
 
     DEFAULT = False
+    category = None
 
     @classmethod
     def match(cls, cmd):
@@ -50,9 +51,13 @@ class BaseChecker(object):
         raise NotImplementedError()
 
     @classmethod
-    def run_check(cls, results_dir):
+    def run_check(cls, results_dir, **kwargs):
         """Perform the check itself and return results."""
         raise NotImplementedError()
+
+    @classmethod
+    def get_category(cls):
+        return cls.category
 
 
 class CheckersRunner(object):
@@ -90,13 +95,16 @@ class CheckersRunner(object):
         """
         checker = None
         for check_tool in six.itervalues(self.plugin_classes):
+            if check_tool.get_category() != kwargs.get('category'):
+                continue
             if check_tool.match(checker_name):
                 # we found the checker we are looking for
                 checker = check_tool
                 break
 
         if checker is None:
-            raise NotImplementedError("Unsupported checking tool '{}'".format(checker_name))
+            # Appropriate checker not found
+            return None
 
         logger.info("Running tests on packages using '%s'", checker_name)
         return checker.run_check(results_dir, **kwargs)

@@ -39,6 +39,7 @@ class RpmDiffTool(BaseChecker):
 
     CMD = "rpmdiff"
     DEFAULT = True
+    category = "RPM"
 
     @classmethod
     def match(cls, cmd=None):
