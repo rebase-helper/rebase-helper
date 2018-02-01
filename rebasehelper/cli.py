@@ -54,9 +54,9 @@ class CustomAction(argparse.Action):
                  default=None,
                  nargs=None,
                  required=False,
-                 type=None,
+                 type=None,  # pylint: disable=redefined-builtin
                  metavar=None,
-                 help=None,
+                 help=None,  # pylint: disable=redefined-builtin
                  choices=None):
 
         super(CustomAction, self).__init__(
