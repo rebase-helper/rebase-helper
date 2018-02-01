@@ -41,7 +41,6 @@ import requests
 
 import git
 import six
-from six import StringIO
 from six.moves import input
 from six.moves import urllib
 from six.moves import configparser

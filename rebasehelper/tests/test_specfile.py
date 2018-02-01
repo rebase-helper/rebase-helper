@@ -21,7 +21,6 @@
 #          Tomas Hozza <thozza@redhat.com>
 
 import os
-import shutil
 import six
 import re
 
