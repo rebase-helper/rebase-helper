@@ -1128,7 +1128,7 @@ class SpecFile(object):
             with open(self.path) as f:
                 lines = f.readlines()
         except IOError:
-            raise RebaseHelperError("Unable to open and read SPEC file '%s'", self.path)
+            raise RebaseHelperError("Unable to open and read SPEC file '%s'" % self.path)
         #  Complete SPEC file content
         self.spec_content = lines
 
@@ -1139,7 +1139,7 @@ class SpecFile(object):
             with open(self.path, "w") as f:
                 f.writelines(self.spec_content)
         except IOError:
-            raise RebaseHelperError("Unable to write updated data to SPEC file '%s'", self.path)
+            raise RebaseHelperError("Unable to write updated data to SPEC file '%s'" % self.path)
 
     def copy(self, new_path=None):
         """

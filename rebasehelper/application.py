@@ -274,7 +274,7 @@ class Application(object):
         """Function gets the spec file from the execution_dir directory"""
         self.spec_file_path = PathHelper.find_first_file(self.execution_dir, '*.spec', 0)
         if not self.spec_file_path:
-            raise RebaseHelperError("Could not find any SPEC file in the current directory '%s'", self.execution_dir)
+            raise RebaseHelperError("Could not find any SPEC file in the current directory '%s'" % self.execution_dir)
 
     def _delete_old_builds(self):
         """
@@ -768,10 +768,9 @@ class Application(object):
             if self.conf.builds_nowait is True:
                 options_used.append('--builds-nowait')
             if options_used:
-                raise RebaseHelperError("%s can be used only with the following build tools: %s",
+                raise RebaseHelperError("{} can be used only with the following build tools: {}".format(
                                         " and ".join(options_used),
-                                        ", ".join(tools_creating_tasks)
-                                        )
+                                        ", ".join(tools_creating_tasks)))
         elif self.conf.builds_nowait and self.conf.get_old_build_from_koji:
             raise RebaseHelperError("%s can't be used with: %s" %
                                     ('--builds-nowait', '--get-old-build-from-koji')
@@ -783,10 +782,9 @@ class Application(object):
             if self.conf.builder_options is not None:
                 options_used.append('--builder-options')
             if options_used:
-                raise RebaseHelperError("%s can be used only with the following build tools: %s",
+                raise RebaseHelperError("{} can be used only with the following build tools: {}".format(
                                         " and ".join(options_used),
-                                        ", ".join(tools_accepting_options)
-                                        )
+                                        ", ".join(tools_accepting_options)))
 
         if self.conf.build_tasks is None:
             sources = self.prepare_sources()
