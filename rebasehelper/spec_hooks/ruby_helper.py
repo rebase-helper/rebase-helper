@@ -66,7 +66,7 @@ class RubyHelperHook(BaseSpecHook):
                 f.write(''.join(instructions))
                 f.write('cp "{}" "{}"\n'.format(source, os.getcwd()))
             os.chmod(script, 0o755)
-            result = ProcessHelper.run_subprocess_cwd(script, tmp.path(), output=logfile, shell=True)
+            result = ProcessHelper.run_subprocess_cwd(script, tmp.path(), output_file=logfile, shell=True)
         if result == 0 and os.path.isfile(source):
             logger.info('Source creation succeeded.')
         else:
@@ -96,7 +96,7 @@ class RubyHelperHook(BaseSpecHook):
                             break
                     break
             # update data so that RPM macros are populated correctly
-            rebase_spec_file._update_data()
+            rebase_spec_file._update_data()  # pylint: disable=protected-access
             instructions = cls._get_instructions(comments,
                                                  spec_file.get_version(),
                                                  rebase_spec_file.get_version())

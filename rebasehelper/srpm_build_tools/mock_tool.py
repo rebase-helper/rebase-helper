@@ -56,7 +56,7 @@ class MockSRPMBuildTool(SRPMBuildToolBase):
         :return:  abs path to built SRPM.
         """
         logger.info("Building SRPM")
-        spec_loc, spec_name = os.path.split(spec)
+        spec_loc = os.path.dirname(spec)
         output = os.path.join(results_dir, "build.log")
 
         path_to_sources = os.path.join(workdir, 'rpmbuild', 'SOURCES')
@@ -71,7 +71,7 @@ class MockSRPMBuildTool(SRPMBuildToolBase):
         ret = ProcessHelper.run_subprocess_cwd_env(cmd,
                                                    cwd=spec_loc,
                                                    env={'HOME': workdir},
-                                                   output=output)
+                                                   output_file=output)
 
         build_log_path = os.path.join(srpm_results_dir, 'build.log')
         mock_log_path = os.path.join(srpm_results_dir, 'mock_output.log')

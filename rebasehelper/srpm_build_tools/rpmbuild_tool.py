@@ -67,7 +67,7 @@ class RpmbuildSRPMBuildTool(SRPMBuildToolBase):
         ret = ProcessHelper.run_subprocess_cwd_env(cmd,
                                                    cwd=spec_loc,
                                                    env={'HOME': workdir},
-                                                   output=output)
+                                                   output_file=output)
 
         build_log_path = os.path.join(srpm_results_dir, 'build.log')
 

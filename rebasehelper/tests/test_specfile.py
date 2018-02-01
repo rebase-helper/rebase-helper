@@ -21,7 +21,6 @@
 #          Tomas Hozza <thozza@redhat.com>
 
 import os
-import shutil
 import six
 import re
 
@@ -107,6 +106,7 @@ class TestSpecFile(object):
         assert spec_object.get_package_name() == self.NAME
 
     def test__write_spec_file_to_disc(self, spec_object):
+        # pylint: disable=protected-access
         new_content = [
             'testing line 1\n',
             'testing line 2\n'
@@ -117,6 +117,7 @@ class TestSpecFile(object):
             assert new_content == spec.readlines()
 
     def test__get_raw_source_string(self, spec_object):
+        # pylint: disable=protected-access
         assert spec_object._get_raw_source_string(0) == 'ftp://ftp.test.org/%{name}-%{version}.tar.xz'
         assert spec_object._get_raw_source_string(1) == 'source-tests.sh'
         assert spec_object._get_raw_source_string(2) == 'ftp://test.com/test-source.sh'
@@ -311,7 +312,7 @@ class TestSpecFile(object):
                                 '- Initial version\n',
                                 '\n']]
         }
-        sections = spec_object._split_sections()
+        sections = spec_object._split_sections()  # pylint: disable=protected-access
         for key, value in six.iteritems(expected_sections):
             assert sections[key][0].lower() == value[0].lower()
             assert sections[key][1] == value[1]
@@ -462,6 +463,7 @@ class TestSpecFile(object):
         assert '- This is changelog entry with some intentional typos\n' in spec_object.spec_content
 
     def test_pypi_to_python_hosted_url_trans(self, spec_object):
+        # pylint: disable=protected-access
         assert PyPIURLFixHook.get_name() in spec_hooks_runner.spec_hooks
         assert 'https://pypi.python.org/' in spec_object._get_raw_source_string(7)
         spec_object.category = 'python'

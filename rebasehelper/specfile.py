@@ -148,7 +148,7 @@ class SpecFile(object):
             LookasideCacheHelper.download('fedpkg', os.path.dirname(self.path), self.get_package_name())
         except LookasideCacheError as e:
             logger.debug("Downloading sources from lookaside cache failed. "
-                         "Reason: '{}'.".format(str(e)))
+                         "Reason: %s.", six.text_type(e))
 
         # filter out only sources with URL
         remote_files = [source for source in self.sources if bool(urllib.parse.urlparse(source).scheme)]
@@ -272,7 +272,7 @@ class SpecFile(object):
         :param source_num: number of the source of which to get the raw string
         :return: string of the source or None if there is no such source
         """
-        source_re_str = '^Source0?\s*:\s*(.*?)$' if source_num == 0 else '^Source{0}\s*:\s*(.*?)$'.format(source_num)
+        source_re_str = r'^Source0?\s*:\s*(.*?)$' if source_num == 0 else r'^Source{0}\s*:\s*(.*?)$'.format(source_num)
         source_re = re.compile(source_re_str)
 
         for line in self.spec_content:
@@ -291,7 +291,7 @@ class SpecFile(object):
         patches_list = [p for p in self.spc.sources if p[2] == 2]
         strip_options = self._get_patch_strip_options(patches_list)
 
-        for filename, num, patch_type in patches_list:
+        for filename, num, _ in patches_list:
             patch_path = os.path.join(self.sources_location, filename)
             if not os.path.exists(patch_path):
                 logger.error('Patch %s does not exist', filename)
@@ -1031,7 +1031,7 @@ class SpecFile(object):
         new_spec_file = []
 
         try:
-            for key, value in sorted(six.iteritems(self.rpm_sections)):
+            for _, value in sorted(six.iteritems(self.rpm_sections)):
                 sec_name, section = value
                 if '%header' in sec_name:
                     new_spec_file.extend(section)
@@ -1128,7 +1128,7 @@ class SpecFile(object):
             with open(self.path) as f:
                 lines = f.readlines()
         except IOError:
-            raise RebaseHelperError("Unable to open and read SPEC file '%s'", self.path)
+            raise RebaseHelperError("Unable to open and read SPEC file '%s'" % self.path)
         #  Complete SPEC file content
         self.spec_content = lines
 
@@ -1139,7 +1139,7 @@ class SpecFile(object):
             with open(self.path, "w") as f:
                 f.writelines(self.spec_content)
         except IOError:
-            raise RebaseHelperError("Unable to write updated data to SPEC file '%s'", self.path)
+            raise RebaseHelperError("Unable to write updated data to SPEC file '%s'" % self.path)
 
     def copy(self, new_path=None):
         """
@@ -1284,11 +1284,10 @@ class SpecFile(object):
                 if not f_exists:
                     continue
                 for f in f_exists:
-                    index = 0
                     for index, row in enumerate(sec_content):
                         if f in row:
+                            sec_content[index: index+1] = SpecFile.construct_string_with_comment('#' + row)
                             break
-                    sec_content[index: index+1] = SpecFile.construct_string_with_comment('#' + row)
                 self.rpm_sections[key] = (sec_name, sec_content)
 
     def modify_spec_files_section(self, files):
@@ -1373,7 +1372,7 @@ class SpecFile(object):
         """
         parser = self._get_setup_parser()
 
-        for index, line in enumerate(self.spec_content):
+        for line in self.spec_content:
             if line.startswith('%setup') or line.startswith('%autosetup'):
                 line = MacroHelper.expand(line, '')
 
@@ -1543,7 +1542,7 @@ class SpecHooksRunner(object):
 
     def get_available_spec_hooks(self):
         """Returns a list of all available spec hooks"""
-        return [v.__name__ for k, v in six.iteritems(self.spec_hooks)]
+        return [v.__name__ for v in six.itervalues(self.spec_hooks)]
 
     def run_spec_hooks(self, spec_file, rebase_spec_file, **kwargs):
         """

@@ -26,7 +26,7 @@ import koji  # pylint: disable=import-error
 import re
 
 # unused import needed to prevent loading koji buildtool with Koji < 1.13
-import koji_cli.lib  # pylint: disable=import-error
+import koji_cli.lib  # pylint: disable=import-error,unused-import
 
 from rebasehelper.utils import KojiHelper
 from rebasehelper.logger import logger
@@ -86,7 +86,7 @@ class KojiBuildTool(BuildToolBase):
         if kwargs['builds_nowait']:
             return None, None, task_id
         weburl = cls.weburl + '/taskinfo?taskID=%i' % task_id
-        logger.info('Koji task_id is here:\n' + weburl)
+        logger.info('Koji task_id is here: %s\n', weburl)
         session.logout()
         task_dict = cls.koji_helper.watch_koji_tasks(session, [task_id])
         task_list = []

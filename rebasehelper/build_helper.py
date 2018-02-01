@@ -42,6 +42,7 @@ class SourcePackageBuildError(RuntimeError):
         :param args: tuple of arguments stored in the exception instance
         :param kwargs: dictionary containing path to the logfile that contains main errors
         """
+        super(SourcePackageBuildError, self).__init__()
         self.args = args
         self.logfile = kwargs.get('logfile')
 
@@ -56,6 +57,7 @@ class BinaryPackageBuildError(RuntimeError):
         :param args: tuple of arguments stored in the exception instance
         :param kwargs: dictionary containing path to the logfile that contains main errors
         """
+        super(BinaryPackageBuildError, self).__init__()
         self.args = args
         # Return code obtained from koji only at this time
         self.return_code = kwargs.get('return_code')
@@ -161,7 +163,7 @@ class BuildToolBase(object):
     DEFAULT = False
 
     @classmethod
-    def match(cls, cmd=None, *args, **kwargs):
+    def match(cls, cmd=None):
         """Checks if tool name matches the desired one."""
         raise NotImplementedError()
 
@@ -196,7 +198,7 @@ class BuildToolBase(object):
         pass
 
     @classmethod
-    def build(cls, *args, **kwargs):
+    def build(cls, spec, sources, patches, results_dir, **kwargs):
         """
         Build binaries from the sources.
 
@@ -225,7 +227,7 @@ class BuildToolBase(object):
         raise NotImplementedError()
 
     @classmethod
-    def wait_for_task(cls, build_dict, results_dir):
+    def wait_for_task(cls, build_dict, results_dir):  # pylint: disable=unused-argument
         """
         Waits until specified task is finished
 
@@ -337,7 +339,7 @@ class SRPMBuildToolBase(object):
         return NotImplementedError()
 
     @classmethod
-    def build_srpm(cls, spec, workdir, results_dir, srpm_builder_options):
+    def build_srpm(cls, spec, workdir, results_dir, srpm_results_dir, srpm_builder_options):
         """
         Build SRPM with chosen SRPM Build Tool
 
@@ -345,6 +347,7 @@ class SRPMBuildToolBase(object):
         :param workdir: abs path to working directory with rpmbuild directory
                         structure, which will be used as HOME dir.
         :param results_dir: abs path to dir where the log should be placed.
+        :param srpm_results_dir: path to directory where SRPM will be placed.
         :param srpm_builder_options: list of additional options to rpmbuild.
         :return: If build process ends successfully returns abs path
                  to built SRPM, otherwise 'None'.

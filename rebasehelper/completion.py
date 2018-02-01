@@ -39,8 +39,8 @@ class Completion(object):
         def get_delimiter(parser, action):
             if action.nargs == 0:
                 return None
-            fmt = parser._get_formatter()
-            usage = fmt._format_actions_usage([action], [])
+            fmt = parser._get_formatter()  # pylint: disable=protected-access
+            usage = fmt._format_actions_usage([action], [])  # pylint: disable=protected-access
             option_string = action.option_strings[0]
             idx = usage.find(option_string)
             if idx == -1:
@@ -48,7 +48,8 @@ class Completion(object):
             return usage[idx + len(option_string)]
         parser = CLI.build_parser()
         result = []
-        for action in parser._get_optional_actions() + parser._get_positional_actions():
+        actions = parser._get_optional_actions() + parser._get_positional_actions()  # pylint: disable=protected-access
+        for action in actions:
             if not action.option_strings:
                 continue
             delimiter = get_delimiter(parser, action) or ''

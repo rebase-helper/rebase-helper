@@ -42,8 +42,7 @@ from rebasehelper.patch_helper import Patcher
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
 from rebasehelper.results_store import results_store
 from rebasehelper.versioneer import versioneers_runner
-from rebasehelper.build_tools.mock_tool import MockBuildTool
-from rebasehelper import version
+from rebasehelper.version import VERSION
 
 
 class Application(object):
@@ -94,7 +93,7 @@ class Application(object):
 
         self.kwargs['spec_hook_blacklist'] = self.conf.spec_hook_blacklist
 
-        logger.debug("Rebase-helper version: %s" % version.VERSION)
+        logger.debug("Rebase-helper version: %s", VERSION)
 
         if self.conf.build_tasks is None:
             # check the workspace dir
@@ -223,7 +222,7 @@ class Application(object):
             if spec_file.download:
                 spec_file.download_remote_sources()
                 # parse spec again with sources downloaded to properly expand %prep section
-                spec_file._update_data()
+                spec_file._update_data()  # pylint: disable=protected-access
 
     def _initialize_data(self):
         """Function fill dictionary with default data"""
@@ -275,7 +274,7 @@ class Application(object):
         """Function gets the spec file from the execution_dir directory"""
         self.spec_file_path = PathHelper.find_first_file(self.execution_dir, '*.spec', 0)
         if not self.spec_file_path:
-            raise RebaseHelperError("Could not find any SPEC file in the current directory '%s'", self.execution_dir)
+            raise RebaseHelperError("Could not find any SPEC file in the current directory '%s'" % self.execution_dir)
 
     def _delete_old_builds(self):
         """
@@ -436,7 +435,6 @@ class Application(object):
                                                sources[1],
                                                self.old_rest_sources,
                                                self.spec_file.get_applied_patches(),
-                                               self.spec_file.get_prep_section(),
                                                **self.kwargs)
         except RuntimeError:
             raise RebaseHelperError('Patching failed')
@@ -458,7 +456,7 @@ class Application(object):
 
         # Generate patch
         self.rebased_repo.git.add(all=True)
-        self.rebase_spec_file._update_data()
+        self.rebase_spec_file._update_data()  # pylint: disable=protected-access
         self.rebased_repo.index.commit(MacroHelper.expand(self.conf.changelog_entry, self.conf.changelog_entry))
         patch = self.rebased_repo.git.format_patch('-1', stdout=True, stdout_as_string=False)
         with open(os.path.join(self.results_dir, 'changes.patch'), 'wb') as f:
@@ -613,11 +611,11 @@ class Application(object):
 
                     # Save current rebase spec file content
                     self.rebase_spec_file.save()
-                    logger.info('Now it is time to make changes to  %s if necessary.' % self.rebase_spec_file.path)
+                    logger.info('Now it is time to make changes to  %s if necessary.', self.rebase_spec_file.path)
                     if not ConsoleHelper.get_message('Do you want to continue with the rebuild now'):
                         raise KeyboardInterrupt
                     # Update rebase spec file content after potential manual modifications
-                    self.rebase_spec_file._update_data()
+                    self.rebase_spec_file._update_data()  # pylint: disable=protected-access
                     # clear current version output directories
                     if os.path.exists(os.path.join(results_dir, 'RPM')):
                         shutil.rmtree(os.path.join(results_dir, 'RPM'))
@@ -645,7 +643,7 @@ class Application(object):
                 results[checker_name] = checkers_runner.run_checker(os.path.join(results_dir, 'checkers'),
                                                                     checker_name)
             except CheckerNotFoundError:
-                logger.error("Rebase-helper did not find checker '%s'." % checker_name)
+                logger.error("Rebase-helper did not find checker '%s'.", checker_name)
 
         for diff_name, result in six.iteritems(results):
             results_store.set_checker_output(diff_name, result)
@@ -769,10 +767,9 @@ class Application(object):
             if self.conf.builds_nowait is True:
                 options_used.append('--builds-nowait')
             if options_used:
-                raise RebaseHelperError("%s can be used only with the following build tools: %s",
+                raise RebaseHelperError("{} can be used only with the following build tools: {}".format(
                                         " and ".join(options_used),
-                                        ", ".join(tools_creating_tasks)
-                                        )
+                                        ", ".join(tools_creating_tasks)))
         elif self.conf.builds_nowait and self.conf.get_old_build_from_koji:
             raise RebaseHelperError("%s can't be used with: %s" %
                                     ('--builds-nowait', '--get-old-build-from-koji')
@@ -784,12 +781,10 @@ class Application(object):
             if self.conf.builder_options is not None:
                 options_used.append('--builder-options')
             if options_used:
-                raise RebaseHelperError("%s can be used only with the following build tools: %s",
+                raise RebaseHelperError("{} can be used only with the following build tools: {}".format(
                                         " and ".join(options_used),
-                                        ", ".join(tools_accepting_options)
-                                        )
+                                        ", ".join(tools_accepting_options)))
 
-        sources = None
         if self.conf.build_tasks is None:
             sources = self.prepare_sources()
             if not self.conf.build_only and not self.conf.comparepkgs:
@@ -800,7 +795,6 @@ class Application(object):
                     self.print_summary(e)
                     raise
 
-        build = False
         if not self.conf.patch_only:
             if not self.conf.comparepkgs:
                 # Build packages

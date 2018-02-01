@@ -33,7 +33,7 @@ from rebasehelper.build_helper import BinaryPackageBuildError
 from rebasehelper.exceptions import RebaseHelperError
 
 
-class RpmbuildBuildTool(BuildToolBase):
+class RpmbuildBuildTool(BuildToolBase):  # pylint: disable=abstract-method
     """
     Class representing rpmbuild build tool.
     """
@@ -61,7 +61,7 @@ class RpmbuildBuildTool(BuildToolBase):
             cmd.extend(builder_options)
         ret = ProcessHelper.run_subprocess_cwd_env(cmd,
                                                    env={'HOME': workdir},
-                                                   output=output)
+                                                   output_file=output)
 
         build_log_path = os.path.join(rpm_results_dir, 'build.log')
 

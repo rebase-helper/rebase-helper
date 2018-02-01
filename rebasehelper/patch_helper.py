@@ -47,12 +47,12 @@ class PatchBase(object):
     """
 
     @classmethod
-    def match(cls, cmd=None, *args, **kwargs):
+    def match(cls, cmd=None):  # pylint: disable=unused-argument
         """Method checks whether it is usefull patch method"""
         return NotImplementedError()
 
     @classmethod
-    def run_patch(cls, old_dir, new_dir, rest_sources, git_helper, patches, *args, **kwargs):
+    def run_patch(cls, old_dir, new_dir, rest_sources, patches, **kwargs):  # pylint: disable=unused-argument
         """Method will check all patches in relevant package"""
         return NotImplementedError()
 
@@ -181,17 +181,17 @@ class GitPatchTool(PatchBase):
                         f.write(b'\n')
                     modified_patches.append(base_name)
             if ret_code != 0:
-                # Take the patch which failed from .git/rebase-apply/next file
+                # get name of the current patch using .git/rebase-apply/next
                 try:
                     with open(os.path.join(cls.old_sources, '.git', 'rebase-apply', 'next')) as f:
-                        failed_patch = cls.patches[int(f.readline()) - 1].get_patch_name()
+                        patch_name = cls.patches[int(f.readline()) - 1].get_patch_name()
                 except IOError:
                     raise RuntimeError('Git rebase failed with unknown reason. Please check log file')
                 if not cls.non_interactive:
-                    logger.info("Git has problems with rebasing patch %s", failed_patch)
+                    logger.info("Git has problems with rebasing patch %s", patch_name)
                     GitHelper.run_mergetool(cls.old_repo)
                 else:
-                    inapplicable_patches.append(failed_patch)
+                    inapplicable_patches.append(patch_name)
                     try:
                         cls.output_data = cls.old_repo.git.rebase(skip=True, stdout_as_string=six.PY3)
                     except git.GitCommandError as e:
@@ -211,7 +211,7 @@ class GitPatchTool(PatchBase):
                     try:
                         commit = cls.old_repo.index.commit(patch_name, skip_hooks=True)
                     except git.UnmergedEntriesError:
-                        inapplicable_patches.append(failed_patch)
+                        inapplicable_patches.append(patch_name)
                     else:
                         diff = cls.old_repo.git.diff(commit.parents[0], commit, stdout_as_string=False)
                         with open(base_name, 'wb') as f:
@@ -266,7 +266,7 @@ class GitPatchTool(PatchBase):
         return repo
 
     @classmethod
-    def run_patch(cls, old_dir, new_dir, rest_sources, patches, prep, **kwargs):
+    def run_patch(cls, old_dir, new_dir, rest_sources, patches, **kwargs):
         """
         The function can be used for patching one
         directory against another
@@ -317,7 +317,7 @@ class Patcher(object):
         if self._tool is None:
             raise NotImplementedError("Unsupported patch tool")
 
-    def patch(self, old_dir, new_dir, rest_sources, patches, prep, **kwargs):
+    def patch(self, old_dir, new_dir, rest_sources, patches, **kwargs):
         """
         Apply patches and generate rebased patches if needed
 
@@ -329,4 +329,4 @@ class Patcher(object):
         :return:
         """
         logger.debug("Patching source by patch tool %s", self._patch_tool_name)
-        return self._tool.run_patch(old_dir, new_dir, rest_sources, patches, prep, **kwargs)
+        return self._tool.run_patch(old_dir, new_dir, rest_sources, patches, **kwargs)

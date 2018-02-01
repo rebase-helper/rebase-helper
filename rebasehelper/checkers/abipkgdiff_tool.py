@@ -86,7 +86,7 @@ class AbiCheckerTool(BaseChecker):
         return None
 
     @classmethod
-    def run_check(cls, result_dir):
+    def run_check(cls, results_dir):
         """Compares old and new RPMs using abipkgdiff"""
         debug_old, rest_pkgs_old = cls._get_packages_for_abipkgdiff(results_store.get_build('old'))
         debug_new, rest_pkgs_new = cls._get_packages_for_abipkgdiff(results_store.get_build('new'))
@@ -111,9 +111,9 @@ class AbiCheckerTool(BaseChecker):
             command.append(pkg)
             command.append(new_pkg)
             logger.debug('Package name for ABI comparison %s', old_name)
-            output = os.path.join(cls.results_dir, result_dir, old_name + '-' + cls.log_name)
+            output = os.path.join(cls.results_dir, results_dir, old_name + '-' + cls.log_name)
             try:
-                ret_code = ProcessHelper.run_subprocess(command, output=output)
+                ret_code = ProcessHelper.run_subprocess(command, output_file=output)
             except OSError:
                 raise CheckerNotFoundError("Checker '%s' was not found or installed." % cls.CMD)
 

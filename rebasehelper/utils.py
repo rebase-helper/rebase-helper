@@ -41,7 +41,6 @@ import requests
 
 import git
 import six
-from six import StringIO
 from six.moves import input
 from six.moves import urllib
 from six.moves import configparser
@@ -123,7 +122,7 @@ class ConsoleHelper(object):
         :param message: string to be printed out
         """
         if cls.use_colors and color is not None and hasattr(colors, color):
-                print(getattr(colors, color)(message))
+            print(getattr(colors, color)(message))
         else:
             print(message)
 
@@ -172,10 +171,16 @@ class ConsoleHelper(object):
             self.capture_stderr = stderr
             self.stdout = None
             self.stderr = None
+            self._stdout_fileno = None
+            self._stderr_fileno = None
+            self._stdout_tmp = None
+            self._stderr_tmp = None
+            self._stdout_copy = None
+            self._stderr_copy = None
 
         def __enter__(self):
-            self._stdout_fileno = sys.__stdout__.fileno()  # pylint:disable=no-member
-            self._stderr_fileno = sys.__stderr__.fileno()  # pylint:disable=no-member
+            self._stdout_fileno = sys.__stdout__.fileno()  # pylint: disable=no-member
+            self._stderr_fileno = sys.__stderr__.fileno()  # pylint: disable=no-member
 
             self._stdout_tmp = tempfile.TemporaryFile(mode='w+b') if self.capture_stdout else None
             self._stderr_tmp = tempfile.TemporaryFile(mode='w+b') if self.capture_stderr else None
@@ -295,7 +300,8 @@ class DownloadHelper(object):
 
         class FTPAdapter(requests.adapters.BaseAdapter):
 
-            def send(self, request, **kwargs):
+            def send(self, request, stream=False, timeout=None, verify=True,  # pylint: disable=unused-argument
+                     cert=None, proxies=None):  # pylint: disable=unused-argument
                 response = requests.models.Response()
                 response.request = request
                 response.connection = self
@@ -364,47 +370,55 @@ class ProcessHelper(object):
     DEV_NULL = os.devnull
 
     @staticmethod
-    def run_subprocess(cmd, input=None, output=None):
+    def run_subprocess(cmd, input_file=None, output_file=None):
         """
         Runs the passed command as a subprocess.
 
         :param cmd: command with arguments to be run
-        :param input: file to read the input from. If None, read from STDIN
-        :param output: file to write the output of the command. If None, write to STDOUT
+        :param input_file: file to read the input from. If None, read from STDIN
+        :param output_file: file to write the output of the command. If None, write to STDOUT
         :return: exit code of the process
         """
-        return ProcessHelper.run_subprocess_cwd(cmd, input=input, output=output)
+        return ProcessHelper.run_subprocess_cwd(cmd, input_file=input_file, output_file=output_file)
 
     @staticmethod
-    def run_subprocess_cwd(cmd, cwd=None, input=None, output=None, shell=False):
+    def run_subprocess_cwd(cmd, cwd=None, input_file=None, output_file=None, shell=False):
         """
         Runs the passed command as a subprocess in different working directory.
 
         :param cmd: command with arguments to be run
         :param cwd: the directory to change the working dir to
-        :param input: file to read the input from. If None, read from STDIN
-        :param output: file to write the output of the command. If None, write to STDOUT
+        :param input_file: file to read the input from. If None, read from STDIN
+        :param output_file: file to write the output of the command. If None, write to STDOUT
         :param shell: if to run the command as shell command (default: False)
         :return: exit code of the process
         """
-        return ProcessHelper.run_subprocess_cwd_env(cmd, cwd=cwd, input=input, output=output, shell=shell)
+        return ProcessHelper.run_subprocess_cwd_env(cmd,
+                                                    cwd=cwd,
+                                                    input_file=input_file,
+                                                    output_file=output_file,
+                                                    shell=shell)
 
     @staticmethod
-    def run_subprocess_env(cmd, env=None, input=None, output=None, shell=False):
+    def run_subprocess_env(cmd, env=None, input_file=None, output_file=None, shell=False):
         """
         Runs the passed command as a subprocess with possibly changed ENVIRONMENT VARIABLES.
 
         :param cmd: command with arguments to be run
         :param env: dictionary with ENVIRONMENT VARIABLES to define
-        :param input: file to read the input from. If None, read from STDIN
-        :param output: file to write the output of the command. If None, write to STDOUT
+        :param input_file: file to read the input from. If None, read from STDIN
+        :param output_file: file to write the output of the command. If None, write to STDOUT
         :param shell: if to run the command as shell command (default: False)
         :return: exit code of the process
         """
-        return ProcessHelper.run_subprocess_cwd_env(cmd, env=env, input=input, output=output, shell=shell)
+        return ProcessHelper.run_subprocess_cwd_env(cmd,
+                                                    env=env,
+                                                    input_file=input_file,
+                                                    output_file=output_file,
+                                                    shell=shell)
 
     @staticmethod
-    def run_subprocess_cwd_env(cmd, cwd=None, env=None, input=None, output=None, shell=False):
+    def run_subprocess_cwd_env(cmd, cwd=None, env=None, input_file=None, output_file=None, shell=False):
         """
         Runs the passed command as a subprocess in different
         working directory with possibly changed ENVIRONMENT VARIABLES.
@@ -412,30 +426,30 @@ class ProcessHelper(object):
         :param cmd: command with arguments to be run
         :param cwd: the directory to change the working dir to
         :param env: dictionary with ENVIRONMENT VARIABLES to define
-        :param input: file to read the input from. If None, read from STDIN
-        :param output: file to write the output of the command. If None, write to STDOUT
+        :param input_file: file to read the input from. If None, read from STDIN
+        :param output_file: file to write the output of the command. If None, write to STDOUT
         :param shell: if to run the command as shell command (default: False)
         :return: exit code of the process
         """
         close_out_file = False
         close_in_file = False
 
-        logger.debug("cmd=%s, cwd=%s, env=%s, input=%s, output=%s, shell=%s",
-                     str(cmd), str(cwd), str(env), str(input), str(output), str(shell))
+        logger.debug("cmd=%s, cwd=%s, env=%s, input_file=%s, output_file=%s, shell=%s",
+                     str(cmd), str(cwd), str(env), str(input_file), str(output_file), str(shell))
 
         # write the output to a file/file-like object?
         try:
-            out_file = open(output, 'wb')
+            out_file = open(output_file, 'wb')
         except TypeError:
-            out_file = output
+            out_file = output_file
         else:
             close_out_file = True
 
         # read the input from a file/file-like object?
         try:
-            in_file = open(input, 'r')
+            in_file = open(input_file, 'r')
         except TypeError:
-            in_file = input
+            in_file = input_file
         else:
             close_in_file = True
 
@@ -449,7 +463,7 @@ class ProcessHelper(object):
         # check if in_file has fileno() method - which is needed for Popen
         try:
             in_file.fileno()
-        except:
+        except (AttributeError, OSError):
             spooled_in_file = tempfile.SpooledTemporaryFile(mode='w+b')
             try:
                 in_data = in_file.read()
@@ -590,7 +604,7 @@ class TemporaryEnvironment(object):
 
     TEMPDIR = 'TEMPDIR'
 
-    def __init__(self, exit_callback=None, **kwargs):
+    def __init__(self, exit_callback=None):
         self._env = {}
         self._exit_callback = exit_callback
 
@@ -599,7 +613,7 @@ class TemporaryEnvironment(object):
         logger.debug("Created environment in '%s'", self.path())
         return self
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, *args):
         # run callback before removing the environment
         try:
             self._exit_callback(**self.env())
@@ -689,11 +703,9 @@ class RpmHelper(object):
         """
         ts = rpm.TransactionSet()
         # disable signature checking
-        ts.setVSFlags(rpm._RPMVSF_NOSIGNATURES)
-        h = None
+        ts.setVSFlags(rpm._RPMVSF_NOSIGNATURES)  # pylint: disable=protected-access
         with open(rpm_name, "r") as f:
-            h = ts.hdrFromFdno(f)
-        return h
+            return ts.hdrFromFdno(f)
 
     @staticmethod
     def get_info_from_rpm(rpm_name, info):
@@ -718,7 +730,7 @@ class RpmHelper(object):
         return arches
 
     @classmethod
-    def split_nevra(cls, string):
+    def split_nevra(cls, s):
         """Splits string into name, epoch, version, release and arch components"""
         regexps = [
             ('NEVRA', re.compile(r'^([^:]+)-(([0-9]+):)?([^-:]+)-(.+)\.([^.]+)$')),
@@ -729,7 +741,7 @@ class RpmHelper(object):
         if not cls.ARCHES:
             cls.ARCHES = cls.get_arches()
         for pattern, regexp in regexps:
-            match = regexp.match(string)
+            match = regexp.match(s)
             if not match:
                 continue
             name = match.group(1) or None
@@ -891,7 +903,7 @@ class KojiHelper(object):
 
     @classmethod
     def _unique_path(cls, prefix):
-        suffix = ''.join([random.choice(string.ascii_letters) for i in range(8)])
+        suffix = ''.join([random.choice(string.ascii_letters) for _ in range(8)])
         return '%s/%r.%s' % (prefix, time.time(), suffix)
 
     @classmethod
@@ -1029,7 +1041,7 @@ class KojiHelper(object):
         if task['state'] in (koji.TASK_STATES['FREE'], koji.TASK_STATES['OPEN']):
             return None, None
         elif task['state'] != koji.TASK_STATES['CLOSED']:
-            logger.info('Task %i did not complete successfully' % task_id)
+            logger.info('Task %i did not complete successfully', task_id)
 
         if task['method'] == 'build':
             logger.info('Getting rpms for chilren of task %i: %s',
@@ -1094,11 +1106,11 @@ class KojiHelper(object):
         """
         session = cls.session_maker(baseurl=cls.server)
         build = session.getBuild(build_id)
-        rpms = session.listRPMs(buildID=build_id)
+        packages = session.listRPMs(buildID=build_id)
         rpm_list = []
         log_list = []
-        for rpm in rpms:
-            if rpm['arch'] not in ['noarch', 'x86_64']:
+        for pkg in packages:
+            if pkg['arch'] not in ['noarch', 'x86_64']:
                 continue
             for logname in ['build.log', 'root.log', 'state.log']:
                 dest_path = os.path.join(destination, logname)
@@ -1110,11 +1122,11 @@ class KojiHelper(object):
                         build['release'],
                         'data',
                         'logs',
-                        rpm['arch'],
+                        pkg['arch'],
                         logname])
                     DownloadHelper.download_file(url, dest_path)
                     log_list.append(dest_path)
-            filename = '.'.join([rpm['nvr'], rpm['arch'], 'rpm'])
+            filename = '.'.join([pkg['nvr'], pkg['arch'], 'rpm'])
             dest_path = os.path.join(destination, filename)
             if dest_path not in rpm_list:
                 url = '/'.join([
@@ -1122,7 +1134,7 @@ class KojiHelper(object):
                     build['package_name'],
                     build['version'],
                     build['release'],
-                    rpm['arch'],
+                    pkg['arch'],
                     filename])
                 DownloadHelper.download_file(url, dest_path)
                 rpm_list.append(dest_path)
@@ -1288,8 +1300,8 @@ class LookasideCacheHelper(object):
                         d = m.groupdict()
                     else:
                         # fall back to old format of sources file
-                        hash, file = line.split()
-                        d = dict(hash=hash, file=file, hashtype='md5')
+                        hsh, filename = line.split()
+                        d = dict(hash=hsh, filename=filename, hashtype='md5')
                     d['hashtype'] = d['hashtype'].lower()
                     sources.append(d)
         return sources
@@ -1297,30 +1309,30 @@ class LookasideCacheHelper(object):
     @classmethod
     def _hash(cls, filename, hashtype):
         try:
-            sum = hashlib.new(hashtype)
+            chksum = hashlib.new(hashtype)
         except ValueError:
             raise LookasideCacheError('Unsupported hash type \'{}\''.format(hashtype))
         with open(filename, 'rb') as f:
             chunk = f.read(8192)
             while chunk:
-                sum.update(chunk)
+                chksum.update(chunk)
                 chunk = f.read(8192)
-        return sum.hexdigest()
+        return chksum.hexdigest()
 
     @classmethod
-    def _download_source(cls, tool, url, package, filename, hashtype, hash, target=None):
+    def _download_source(cls, tool, url, package, filename, hashtype, hsh, target=None):
         if target is None:
             target = os.path.basename(filename)
         if os.path.exists(target):
-            if cls._hash(target, hashtype) == hash:
+            if cls._hash(target, hashtype) == hsh:
                 # nothing to do
                 return
             else:
                 os.unlink(target)
         if tool == 'fedpkg':
-            url = '{}/{}/{}/{}/{}/{}'.format(url, package, filename, hashtype, hash, filename)
+            url = '{}/{}/{}/{}/{}/{}'.format(url, package, filename, hashtype, hsh, filename)
         else:
-            url = '{}/{}/{}/{}/{}'.format(url, package, filename, hash, filename)
+            url = '{}/{}/{}/{}/{}'.format(url, package, filename, hsh, filename)
         try:
             DownloadHelper.download_file(url, target)
         except DownloadError as e:
@@ -1334,4 +1346,4 @@ class LookasideCacheHelper(object):
         except (configparser.Error, KeyError):
             raise LookasideCacheError('Failed to read rpkg configuration')
         for source in cls._read_sources(basepath):
-            cls._download_source(tool, url, package, source['file'], source['hashtype'], source['hash'])
+            cls._download_source(tool, url, package, source['filename'], source['hashtype'], source['hash'])

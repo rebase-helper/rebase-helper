@@ -48,10 +48,10 @@ class SampleConfig(object):
         result = cls.DESCRIPTION + ['']
         parser = CLI.build_parser()
         result.append('[general]')
-        for action in parser._get_optional_actions():
+        for action in parser._get_optional_actions():  # pylint: disable=protected-access
             if action.help is SUPPRESS:
                 continue
-            fmt = parser._get_formatter()
+            fmt = parser._get_formatter()  # pylint: disable=protected-access
             opts = action.option_strings
             if len(opts) > 1:
                 opts.pop(0)
@@ -61,9 +61,9 @@ class SampleConfig(object):
             value = getattr(action, 'actual_default', None)
             if isinstance(value, list):
                 value = ','.join(value)
-            args = fmt._format_args(action, action.dest.upper())
+            args = fmt._format_args(action, action.dest.upper())  # pylint: disable=protected-access
             result.append('')
-            result.append('# {}'.format(fmt._expand_help(action)))
+            result.append('# {}'.format(fmt._expand_help(action)))  # pylint: disable=protected-access
             if args:
                 result.append('# synopsis: {} = {}'.format(name, args))
             result.append('{} = {}'.format(name, value if value is not None else ''))

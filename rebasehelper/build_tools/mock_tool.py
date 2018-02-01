@@ -45,7 +45,7 @@ class MockTemporaryEnvironment(BuildTemporaryEnvironment):
             os.makedirs(self._env[self.TEMPDIR + '_' + dir_name])
 
 
-class MockBuildTool(BuildToolBase):
+class MockBuildTool(BuildToolBase):  # pylint: disable=abstract-method
     """
     Class representing Mock build tool.
     """
@@ -78,7 +78,7 @@ class MockBuildTool(BuildToolBase):
         if builder_options is not None:
             cmd.extend(builder_options)
 
-        ret = ProcessHelper.run_subprocess(cmd, output=output)
+        ret = ProcessHelper.run_subprocess(cmd, output_file=output)
 
         if ret == 0:
             return [f for f in PathHelper.find_all_files(results_dir, '*.rpm') if not f.endswith('.src.rpm')]
@@ -143,7 +143,7 @@ class MockBuildTool(BuildToolBase):
         return False
 
     @classmethod
-    def build(cls, spec, sources, patches, results_dir, root=None, arch=None, **kwargs):
+    def build(cls, spec, sources, patches, results_dir, **kwargs):
         """
         Builds the SRPM and RPM using mock
 

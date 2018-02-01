@@ -20,6 +20,8 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
+import six
+
 from rebasehelper.cli import CLI
 
 
@@ -67,5 +69,5 @@ class TestCLI(object):
             '--srpm-buildtool', 'mock',
         ]
         cli = CLI(arguments)
-        for key, value in cli.args.__dict__.items():
-            assert cli.args.__dict__[key] == conf[key]
+        for key, value in six.iteritems(cli.args.__dict__):
+            assert value == conf[key]

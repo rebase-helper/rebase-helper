@@ -69,7 +69,7 @@ class CsmockTool(BaseChecker):
             cmd.extend(['-o', csmock_dir])
             output = StringIO()
             try:
-                ProcessHelper.run_subprocess(cmd, output=output)
+                ProcessHelper.run_subprocess(cmd, output_file=output)
             except OSError:
                 raise CheckerNotFoundError("Checker '%s' was not found or installed." % cls.CMD)
         csmock_report['error'] = PathHelper.find_all_files_current_dir(csmock_dir, '*.err')

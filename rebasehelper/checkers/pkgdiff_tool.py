@@ -221,16 +221,14 @@ class PkgDiffTool(BaseChecker):
         cmd.append('-report-path')
         cmd.append(cls.pkgdiff_results_full_path)
         try:
-            ret_code = ProcessHelper.run_subprocess(cmd, output=ProcessHelper.DEV_NULL)
+            ret_code = ProcessHelper.run_subprocess(cmd, output_file=ProcessHelper.DEV_NULL)
         except OSError:
             raise CheckerNotFoundError("Checker '%s' was not found or installed." % cls.CMD)
 
-        """
-         From pkgdiff source code:
-         ret_code 0 means unchanged
-         ret_code 1 means Changed
-         other return codes means error
-        """
+        # From pkgdiff source code:
+        # ret_code 0 means unchanged
+        # ret_code 1 means Changed
+        # other return codes means error
         if int(ret_code) != 0 and int(ret_code) != 1:
             raise RebaseHelperError('Execution of %s failed.\nCommand line is: %s' % (cls.CMD, cmd))
         results_dict = cls.process_xml_results(cls.results_dir)

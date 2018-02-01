@@ -139,9 +139,9 @@ class TestConsoleHelper(object):
 
     def test_capture_output(self):
         def write():
-            with os.fdopen(sys.__stdout__.fileno(), 'w') as f:  # pylint:disable=no-member
+            with os.fdopen(sys.__stdout__.fileno(), 'w') as f:  # pylint: disable=no-member
                 f.write('test stdout')
-            with os.fdopen(sys.__stderr__.fileno(), 'w') as f:  # pylint:disable=no-member
+            with os.fdopen(sys.__stderr__.fileno(), 'w') as f:  # pylint: disable=no-member
                 f.write('test stderr')
 
         with ConsoleHelper.Capturer(stdout=True, stderr=True) as capturer:
@@ -163,7 +163,7 @@ class TestDownloadHelper(object):
         KNOWN_URL = 'https://ftp.isc.org/isc/bind9/9.10.4-P1/srcid'
         LOCAL_FILE = os.path.basename(KNOWN_URL)
 
-        def interrupter(*args, **kwargs):
+        def interrupter():
             raise KeyboardInterrupt
 
         # make sure that some function call inside tha actual download section raises the KeyboardInterrupt exception.
@@ -187,11 +187,11 @@ class TestDownloadHelper(object):
         """
         Test that progress of a download is shown correctly. Test the case when size parameters are passed as integers.
         """
-        buffer = StringIO()
-        monkeypatch.setattr('sys.stdout', buffer)
+        buf = StringIO()
+        monkeypatch.setattr('sys.stdout', buf)
         monkeypatch.setattr('time.time', lambda: 10.0)
         DownloadHelper.progress(total, downloaded, 0.0)
-        assert buffer.getvalue() == output
+        assert buf.getvalue() == output
 
     @pytest.mark.parametrize('url, content', [
         ('http://fedoraproject.org/static/hotspot.txt', 'OK'),
@@ -254,7 +254,7 @@ class TestProcessHelper(object):
 
         def test_simple_cmd_with_redirected_output_path(self):
             ret = ProcessHelper.run_subprocess(self.ECHO_COMMAND,
-                                               output=self.OUT_FILE)
+                                               output_file=self.OUT_FILE)
             assert ret == 0
             assert os.path.exists(self.OUT_FILE)
             assert open(self.OUT_FILE).readline().strip('\n') == self.PHRASE
@@ -262,7 +262,7 @@ class TestProcessHelper(object):
         def test_simple_cmd_with_redirected_output_fileobject(self):
             buff = StringIO()
             ret = ProcessHelper.run_subprocess(self.ECHO_COMMAND,
-                                               output=buff)
+                                               output_file=buff)
             assert ret == 0
             assert not os.path.exists(self.OUT_FILE)
             assert buff.readline().strip('\n') == self.PHRASE
@@ -276,8 +276,8 @@ class TestProcessHelper(object):
             assert open(self.IN_FILE).readline().strip('\n') == self.PHRASE
 
             ret = ProcessHelper.run_subprocess(self.CAT_COMMAND,
-                                               input=self.IN_FILE,
-                                               output=self.OUT_FILE)
+                                               input_file=self.IN_FILE,
+                                               output_file=self.OUT_FILE)
             assert ret == 0
             assert os.path.exists(self.OUT_FILE)
             assert open(self.OUT_FILE).readline().strip('\n') == self.PHRASE
@@ -291,8 +291,8 @@ class TestProcessHelper(object):
             assert in_buff.readline().strip('\n') == self.PHRASE
 
             ret = ProcessHelper.run_subprocess(self.CAT_COMMAND,
-                                               input=in_buff,
-                                               output=self.OUT_FILE)
+                                               input_file=in_buff,
+                                               output_file=self.OUT_FILE)
             in_buff.close()
             assert ret == 0
             assert os.path.exists(self.OUT_FILE)
@@ -307,8 +307,8 @@ class TestProcessHelper(object):
             assert open(self.IN_FILE).readline().strip('\n') == self.PHRASE
 
             ret = ProcessHelper.run_subprocess(self.CAT_COMMAND,
-                                               input=self.IN_FILE,
-                                               output=out_buff)
+                                               input_file=self.IN_FILE,
+                                               output_file=out_buff)
             assert ret == 0
             assert not os.path.exists(self.OUT_FILE)
             out_buff.seek(0)
@@ -325,8 +325,8 @@ class TestProcessHelper(object):
             assert in_buff.readline().strip('\n') == self.PHRASE
 
             ret = ProcessHelper.run_subprocess(self.CAT_COMMAND,
-                                               input=in_buff,
-                                               output=out_buff)
+                                               input_file=in_buff,
+                                               output_file=out_buff)
             in_buff.close()
             assert ret == 0
             assert not os.path.exists(self.OUT_FILE)
@@ -356,7 +356,7 @@ class TestProcessHelper(object):
             self.test_simple_cmd_changed_work_dir()
             ret = ProcessHelper.run_subprocess_cwd(self.LS_COMMAND,
                                                    self.TEMP_DIR,
-                                                   output=self.OUT_FILE)
+                                                   output_file=self.OUT_FILE)
             assert ret == 0
             assert os.path.exists(os.path.join(self.TEMP_DIR, self.TEMP_FILE))
             assert os.path.exists(self.OUT_FILE)
@@ -380,7 +380,7 @@ class TestProcessHelper(object):
             cmd = 'echo "$' + rand_name + '"'
             ret = ProcessHelper.run_subprocess_cwd_env(cmd,
                                                        env={rand_name: self.PHRASE},
-                                                       output=self.OUT_FILE,
+                                                       output_file=self.OUT_FILE,
                                                        shell=True)
             assert ret == 0
             assert os.path.exists(self.OUT_FILE)
@@ -399,7 +399,7 @@ class TestProcessHelper(object):
             cmd = 'echo "$' + en_variables[0] + '"'
             ret = ProcessHelper.run_subprocess_cwd_env(cmd,
                                                        env={en_variables[0]: self.PHRASE},
-                                                       output=self.OUT_FILE,
+                                                       output_file=self.OUT_FILE,
                                                        shell=True)
             assert ret == 0
             assert os.path.exists(self.OUT_FILE)
@@ -588,7 +588,7 @@ class TestRpmHelper(object):
     def test_all_packages_installed_one_non_existing(self):
         assert RpmHelper.all_packages_installed(['glibc', 'coreutils', 'non-existing-package']) is False
 
-    @pytest.mark.parametrize('string, name, epoch, version, release, arch', [
+    @pytest.mark.parametrize('nevra, name, epoch, version, release, arch', [
         ('libtiff-static-4.0.7-5.fc26.x86_64', 'libtiff-static', None, '4.0.7', '5.fc26', 'x86_64'),
         ('libtiff-debuginfo-4.0.8-1.fc25', 'libtiff-debuginfo', None, '4.0.8', '1.fc25', None),
         ('libtiff-tools.i686', 'libtiff-tools', None, None, None, 'i686'),
@@ -619,9 +619,9 @@ class TestRpmHelper(object):
         'python-genmsg-0.3.10-14.20130617git95ca00d.fc28',
         'golang-github-MakeNowJust-heredoc-devel-0-0.9.gitbb23615.fc28.noarch',
     ])
-    def test_split_nevra(self, string, name, epoch, version, release, arch):
-        assert RpmHelper.split_nevra(string) == dict(name=name, epoch=epoch, version=version,
-                                                     release=release, arch=arch)
+    def test_split_nevra(self, nevra, name, epoch, version, release, arch):
+        assert RpmHelper.split_nevra(nevra) == dict(name=name, epoch=epoch, version=version,
+                                                    release=release, arch=arch)
 
 
 class TestMacroHelper(object):
@@ -638,7 +638,7 @@ class TestMacroHelper(object):
 
 class TestLookasideCacheHelper(object):
 
-    @pytest.mark.parametrize('package, filename, hashtype, hash', [
+    @pytest.mark.parametrize('package, filename, hashtype, hsh', [
         ('vim-go', 'v1.6.tar.gz', 'md5', '847d3e3577982a9515ad0aec6d5111b2'),
         ('rebase-helper', '0.8.0.tar.gz', 'md5', '91de540caef64cb8aa7fd250f2627a93'),
         (
@@ -653,14 +653,15 @@ class TestLookasideCacheHelper(object):
         'rebase-helper',
         'man-pages',
     ])
-    def test_download(self, package, filename, hashtype, hash):
+    def test_download(self, package, filename, hashtype, hsh):
+        # pylint: disable=protected-access
         target = os.path.basename(filename)
         LookasideCacheHelper._download_source('fedpkg',
                                               'https://src.fedoraproject.org/repo/pkgs',
                                               package,
                                               filename,
                                               hashtype,
-                                              hash,
+                                              hsh,
                                               target)
         assert os.path.isfile(target)
-        assert LookasideCacheHelper._hash(target, hashtype) == hash
+        assert LookasideCacheHelper._hash(target, hashtype) == hsh
