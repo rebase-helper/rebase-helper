@@ -143,7 +143,7 @@ class MockBuildTool(BuildToolBase):
         return False
 
     @classmethod
-    def build(cls, spec, sources, patches, results_dir, root=None, arch=None, **kwargs):
+    def build(cls, spec, sources, patches, results_dir, **kwargs):
         """
         Builds the SRPM and RPM using mock
 

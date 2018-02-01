@@ -51,7 +51,7 @@ class ArchiveTypeBase(object):
     EXTENSION = ""
 
     @classmethod
-    def match(cls, filename=None, *args, **kwargs):
+    def match(cls, filename=None):
         """
         Checks if the filename matches the archive type. If yes, returns
         True, otherwise returns False.
@@ -62,7 +62,7 @@ class ArchiveTypeBase(object):
             return False
 
     @classmethod
-    def open(cls, filename=None, *args, **kwargs):
+    def open(cls, filename=None):
         """
         Opens archive with the given filename and returns the proper
         archive type object.
@@ -96,7 +96,7 @@ class TarXzArchiveType(ArchiveTypeBase):
         return tarfile.open(mode='r', fileobj=xz_file)
 
     @classmethod
-    def extract(cls, archive=None, filename=None, path=None, *args, **kwargs):
+    def extract(cls, archive=None, filename=None, path=None):
         if archive is None:
             raise TypeError("Expected argument 'archive' (pos 1) is missing")
         archive.extractall(path)
@@ -120,7 +120,7 @@ class Bz2ArchiveType(ArchiveTypeBase):
             return bz2.BZ2File(filename)
 
     @classmethod
-    def extract(cls, archive=None, filename=None, path=None, *args, **kwargs):
+    def extract(cls, archive=None, filename=None, path=None):
         if archive is None:
             raise TypeError("Expected argument 'archive' (pos 1) is missing")
         if filename.endswith('tar.bz2'):
@@ -156,7 +156,7 @@ class TarGzArchiveType(TarBz2ArchiveType):
         return tarfile.TarFile.open(filename)
 
     @classmethod
-    def extract(cls, archive=None, filename=None, path=None, *args, **kwargs):
+    def extract(cls, archive=None, filename=None, path=None):
         if archive is None:
             raise TypeError("Expected argument 'archive' (pos 1) is missing")
         archive.extractall(path)
@@ -188,7 +188,7 @@ class ZipArchiveType(ArchiveTypeBase):
         return zipfile.ZipFile(filename, "r")
 
     @classmethod
-    def extract(cls, archive=None, filename=None, path=None, *args, **kwargs):
+    def extract(cls, archive=None, filename=None, path=None):
         if archive is None:
             raise TypeError("Expected argument 'archive' (pos 1) is missing")
         archive.extractall(path)
@@ -204,7 +204,7 @@ class GemPseudoArchiveType(ArchiveTypeBase):
         pass
 
     @classmethod
-    def extract(cls, archive=None, filename=None, path=None, *args, **kwargs):
+    def extract(cls, archive=None, filename=None, path=None):
         if archive is not None:
             raise RuntimeError("In Gem pseudo file types, the archive (pos 1) argument is not used, but passed.")
         final_dir = os.path.join(path, os.path.basename(filename.rstrip(cls.EXTENSION)))

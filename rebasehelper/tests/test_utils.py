@@ -163,7 +163,7 @@ class TestDownloadHelper(object):
         KNOWN_URL = 'https://ftp.isc.org/isc/bind9/9.10.4-P1/srcid'
         LOCAL_FILE = os.path.basename(KNOWN_URL)
 
-        def interrupter(*args, **kwargs):
+        def interrupter():
             raise KeyboardInterrupt
 
         # make sure that some function call inside tha actual download section raises the KeyboardInterrupt exception.

@@ -161,7 +161,7 @@ class BuildToolBase(object):
     DEFAULT = False
 
     @classmethod
-    def match(cls, cmd=None, *args, **kwargs):
+    def match(cls, cmd=None):
         """Checks if tool name matches the desired one."""
         raise NotImplementedError()
 
@@ -225,7 +225,7 @@ class BuildToolBase(object):
         raise NotImplementedError()
 
     @classmethod
-    def wait_for_task(cls, build_dict, results_dir):
+    def wait_for_task(cls, build_dict, results_dir):  # pylint: disable=unused-argument
         """
         Waits until specified task is finished
 

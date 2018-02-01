@@ -294,7 +294,8 @@ class DownloadHelper(object):
 
         class FTPAdapter(requests.adapters.BaseAdapter):
 
-            def send(self, request, **kwargs):
+            def send(self, request, stream=False, timeout=None, verify=True,  # pylint: disable=unused-argument
+                     cert=None, proxies=None):  # pylint: disable=unused-argument
                 response = requests.models.Response()
                 response.request = request
                 response.connection = self
@@ -589,7 +590,7 @@ class TemporaryEnvironment(object):
 
     TEMPDIR = 'TEMPDIR'
 
-    def __init__(self, exit_callback=None, **kwargs):
+    def __init__(self, exit_callback=None):
         self._env = {}
         self._exit_callback = exit_callback
 
@@ -598,7 +599,7 @@ class TemporaryEnvironment(object):
         logger.debug("Created environment in '%s'", self.path())
         return self
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, *args):
         # run callback before removing the environment
         try:
             self._exit_callback(**self.env())
