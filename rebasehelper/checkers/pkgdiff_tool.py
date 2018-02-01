@@ -221,7 +221,7 @@ class PkgDiffTool(BaseChecker):
         cmd.append('-report-path')
         cmd.append(cls.pkgdiff_results_full_path)
         try:
-            ret_code = ProcessHelper.run_subprocess(cmd, output=ProcessHelper.DEV_NULL)
+            ret_code = ProcessHelper.run_subprocess(cmd, output_file=ProcessHelper.DEV_NULL)
         except OSError:
             raise CheckerNotFoundError("Checker '%s' was not found or installed." % cls.CMD)
 

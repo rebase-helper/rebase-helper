@@ -370,47 +370,55 @@ class ProcessHelper(object):
     DEV_NULL = os.devnull
 
     @staticmethod
-    def run_subprocess(cmd, input=None, output=None):
+    def run_subprocess(cmd, input_file=None, output_file=None):
         """
         Runs the passed command as a subprocess.
 
         :param cmd: command with arguments to be run
-        :param input: file to read the input from. If None, read from STDIN
-        :param output: file to write the output of the command. If None, write to STDOUT
+        :param input_file: file to read the input from. If None, read from STDIN
+        :param output_file: file to write the output of the command. If None, write to STDOUT
         :return: exit code of the process
         """
-        return ProcessHelper.run_subprocess_cwd(cmd, input=input, output=output)
+        return ProcessHelper.run_subprocess_cwd(cmd, input_file=input_file, output_file=output_file)
 
     @staticmethod
-    def run_subprocess_cwd(cmd, cwd=None, input=None, output=None, shell=False):
+    def run_subprocess_cwd(cmd, cwd=None, input_file=None, output_file=None, shell=False):
         """
         Runs the passed command as a subprocess in different working directory.
 
         :param cmd: command with arguments to be run
         :param cwd: the directory to change the working dir to
-        :param input: file to read the input from. If None, read from STDIN
-        :param output: file to write the output of the command. If None, write to STDOUT
+        :param input_file: file to read the input from. If None, read from STDIN
+        :param output_file: file to write the output of the command. If None, write to STDOUT
         :param shell: if to run the command as shell command (default: False)
         :return: exit code of the process
         """
-        return ProcessHelper.run_subprocess_cwd_env(cmd, cwd=cwd, input=input, output=output, shell=shell)
+        return ProcessHelper.run_subprocess_cwd_env(cmd,
+                                                    cwd=cwd,
+                                                    input_file=input_file,
+                                                    output_file=output_file,
+                                                    shell=shell)
 
     @staticmethod
-    def run_subprocess_env(cmd, env=None, input=None, output=None, shell=False):
+    def run_subprocess_env(cmd, env=None, input_file=None, output_file=None, shell=False):
         """
         Runs the passed command as a subprocess with possibly changed ENVIRONMENT VARIABLES.
 
         :param cmd: command with arguments to be run
         :param env: dictionary with ENVIRONMENT VARIABLES to define
-        :param input: file to read the input from. If None, read from STDIN
-        :param output: file to write the output of the command. If None, write to STDOUT
+        :param input_file: file to read the input from. If None, read from STDIN
+        :param output_file: file to write the output of the command. If None, write to STDOUT
         :param shell: if to run the command as shell command (default: False)
         :return: exit code of the process
         """
-        return ProcessHelper.run_subprocess_cwd_env(cmd, env=env, input=input, output=output, shell=shell)
+        return ProcessHelper.run_subprocess_cwd_env(cmd,
+                                                    env=env,
+                                                    input_file=input_file,
+                                                    output_file=output_file,
+                                                    shell=shell)
 
     @staticmethod
-    def run_subprocess_cwd_env(cmd, cwd=None, env=None, input=None, output=None, shell=False):
+    def run_subprocess_cwd_env(cmd, cwd=None, env=None, input_file=None, output_file=None, shell=False):
         """
         Runs the passed command as a subprocess in different
         working directory with possibly changed ENVIRONMENT VARIABLES.
@@ -418,30 +426,30 @@ class ProcessHelper(object):
         :param cmd: command with arguments to be run
         :param cwd: the directory to change the working dir to
         :param env: dictionary with ENVIRONMENT VARIABLES to define
-        :param input: file to read the input from. If None, read from STDIN
-        :param output: file to write the output of the command. If None, write to STDOUT
+        :param input_file: file to read the input from. If None, read from STDIN
+        :param output_file: file to write the output of the command. If None, write to STDOUT
         :param shell: if to run the command as shell command (default: False)
         :return: exit code of the process
         """
         close_out_file = False
         close_in_file = False
 
-        logger.debug("cmd=%s, cwd=%s, env=%s, input=%s, output=%s, shell=%s",
-                     str(cmd), str(cwd), str(env), str(input), str(output), str(shell))
+        logger.debug("cmd=%s, cwd=%s, env=%s, input_file=%s, output_file=%s, shell=%s",
+                     str(cmd), str(cwd), str(env), str(input_file), str(output_file), str(shell))
 
         # write the output to a file/file-like object?
         try:
-            out_file = open(output, 'wb')
+            out_file = open(output_file, 'wb')
         except TypeError:
-            out_file = output
+            out_file = output_file
         else:
             close_out_file = True
 
         # read the input from a file/file-like object?
         try:
-            in_file = open(input, 'r')
+            in_file = open(input_file, 'r')
         except TypeError:
-            in_file = input
+            in_file = input_file
         else:
             close_in_file = True
 

@@ -134,7 +134,7 @@ class RpmDiffTool(BaseChecker):
                 continue
             output = StringIO()
             try:
-                ProcessHelper.run_subprocess(cmd, output=output)
+                ProcessHelper.run_subprocess(cmd, output_file=output)
             except OSError:
                 raise CheckerNotFoundError("Checker '%s' was not found or installed." % cls.CMD)
             results_dict = cls._analyze_logs(output, results_dict)

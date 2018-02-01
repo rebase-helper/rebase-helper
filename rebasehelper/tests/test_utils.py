@@ -254,7 +254,7 @@ class TestProcessHelper(object):
 
         def test_simple_cmd_with_redirected_output_path(self):
             ret = ProcessHelper.run_subprocess(self.ECHO_COMMAND,
-                                               output=self.OUT_FILE)
+                                               output_file=self.OUT_FILE)
             assert ret == 0
             assert os.path.exists(self.OUT_FILE)
             assert open(self.OUT_FILE).readline().strip('\n') == self.PHRASE
@@ -262,7 +262,7 @@ class TestProcessHelper(object):
         def test_simple_cmd_with_redirected_output_fileobject(self):
             buff = StringIO()
             ret = ProcessHelper.run_subprocess(self.ECHO_COMMAND,
-                                               output=buff)
+                                               output_file=buff)
             assert ret == 0
             assert not os.path.exists(self.OUT_FILE)
             assert buff.readline().strip('\n') == self.PHRASE
@@ -276,8 +276,8 @@ class TestProcessHelper(object):
             assert open(self.IN_FILE).readline().strip('\n') == self.PHRASE
 
             ret = ProcessHelper.run_subprocess(self.CAT_COMMAND,
-                                               input=self.IN_FILE,
-                                               output=self.OUT_FILE)
+                                               input_file=self.IN_FILE,
+                                               output_file=self.OUT_FILE)
             assert ret == 0
             assert os.path.exists(self.OUT_FILE)
             assert open(self.OUT_FILE).readline().strip('\n') == self.PHRASE
@@ -291,8 +291,8 @@ class TestProcessHelper(object):
             assert in_buff.readline().strip('\n') == self.PHRASE
 
             ret = ProcessHelper.run_subprocess(self.CAT_COMMAND,
-                                               input=in_buff,
-                                               output=self.OUT_FILE)
+                                               input_file=in_buff,
+                                               output_file=self.OUT_FILE)
             in_buff.close()
             assert ret == 0
             assert os.path.exists(self.OUT_FILE)
@@ -307,8 +307,8 @@ class TestProcessHelper(object):
             assert open(self.IN_FILE).readline().strip('\n') == self.PHRASE
 
             ret = ProcessHelper.run_subprocess(self.CAT_COMMAND,
-                                               input=self.IN_FILE,
-                                               output=out_buff)
+                                               input_file=self.IN_FILE,
+                                               output_file=out_buff)
             assert ret == 0
             assert not os.path.exists(self.OUT_FILE)
             out_buff.seek(0)
@@ -325,8 +325,8 @@ class TestProcessHelper(object):
             assert in_buff.readline().strip('\n') == self.PHRASE
 
             ret = ProcessHelper.run_subprocess(self.CAT_COMMAND,
-                                               input=in_buff,
-                                               output=out_buff)
+                                               input_file=in_buff,
+                                               output_file=out_buff)
             in_buff.close()
             assert ret == 0
             assert not os.path.exists(self.OUT_FILE)
@@ -356,7 +356,7 @@ class TestProcessHelper(object):
             self.test_simple_cmd_changed_work_dir()
             ret = ProcessHelper.run_subprocess_cwd(self.LS_COMMAND,
                                                    self.TEMP_DIR,
-                                                   output=self.OUT_FILE)
+                                                   output_file=self.OUT_FILE)
             assert ret == 0
             assert os.path.exists(os.path.join(self.TEMP_DIR, self.TEMP_FILE))
             assert os.path.exists(self.OUT_FILE)
@@ -380,7 +380,7 @@ class TestProcessHelper(object):
             cmd = 'echo "$' + rand_name + '"'
             ret = ProcessHelper.run_subprocess_cwd_env(cmd,
                                                        env={rand_name: self.PHRASE},
-                                                       output=self.OUT_FILE,
+                                                       output_file=self.OUT_FILE,
                                                        shell=True)
             assert ret == 0
             assert os.path.exists(self.OUT_FILE)
@@ -399,7 +399,7 @@ class TestProcessHelper(object):
             cmd = 'echo "$' + en_variables[0] + '"'
             ret = ProcessHelper.run_subprocess_cwd_env(cmd,
                                                        env={en_variables[0]: self.PHRASE},
-                                                       output=self.OUT_FILE,
+                                                       output_file=self.OUT_FILE,
                                                        shell=True)
             assert ret == 0
             assert os.path.exists(self.OUT_FILE)

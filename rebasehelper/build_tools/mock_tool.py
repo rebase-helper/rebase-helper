@@ -78,7 +78,7 @@ class MockBuildTool(BuildToolBase):  # pylint: disable=abstract-method
         if builder_options is not None:
             cmd.extend(builder_options)
 
-        ret = ProcessHelper.run_subprocess(cmd, output=output)
+        ret = ProcessHelper.run_subprocess(cmd, output_file=output)
 
         if ret == 0:
             return [f for f in PathHelper.find_all_files(results_dir, '*.rpm') if not f.endswith('.src.rpm')]

@@ -113,7 +113,7 @@ class AbiCheckerTool(BaseChecker):
             logger.debug('Package name for ABI comparison %s', old_name)
             output = os.path.join(cls.results_dir, results_dir, old_name + '-' + cls.log_name)
             try:
-                ret_code = ProcessHelper.run_subprocess(command, output=output)
+                ret_code = ProcessHelper.run_subprocess(command, output_file=output)
             except OSError:
                 raise CheckerNotFoundError("Checker '%s' was not found or installed." % cls.CMD)
 
