@@ -122,7 +122,7 @@ class ConsoleHelper(object):
         :param message: string to be printed out
         """
         if cls.use_colors and color is not None and hasattr(colors, color):
-                print(getattr(colors, color)(message))
+            print(getattr(colors, color)(message))
         else:
             print(message)
 
