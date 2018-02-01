@@ -1,8 +1,7 @@
-strictness: high
+strictness: veryhigh
 python-targets:
     - 2
     - 3
-pep8: true
 doc-warnings: true
 test-warnings: true
 max-line-length: 120
