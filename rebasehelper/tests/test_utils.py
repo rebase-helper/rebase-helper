@@ -187,11 +187,11 @@ class TestDownloadHelper(object):
         """
         Test that progress of a download is shown correctly. Test the case when size parameters are passed as integers.
         """
-        buffer = StringIO()
-        monkeypatch.setattr('sys.stdout', buffer)
+        buf = StringIO()
+        monkeypatch.setattr('sys.stdout', buf)
         monkeypatch.setattr('time.time', lambda: 10.0)
         DownloadHelper.progress(total, downloaded, 0.0)
-        assert buffer.getvalue() == output
+        assert buf.getvalue() == output
 
     @pytest.mark.parametrize('url, content', [
         ('http://fedoraproject.org/static/hotspot.txt', 'OK'),
@@ -588,7 +588,7 @@ class TestRpmHelper(object):
     def test_all_packages_installed_one_non_existing(self):
         assert RpmHelper.all_packages_installed(['glibc', 'coreutils', 'non-existing-package']) is False
 
-    @pytest.mark.parametrize('string, name, epoch, version, release, arch', [
+    @pytest.mark.parametrize('nevra, name, epoch, version, release, arch', [
         ('libtiff-static-4.0.7-5.fc26.x86_64', 'libtiff-static', None, '4.0.7', '5.fc26', 'x86_64'),
         ('libtiff-debuginfo-4.0.8-1.fc25', 'libtiff-debuginfo', None, '4.0.8', '1.fc25', None),
         ('libtiff-tools.i686', 'libtiff-tools', None, None, None, 'i686'),
@@ -619,9 +619,9 @@ class TestRpmHelper(object):
         'python-genmsg-0.3.10-14.20130617git95ca00d.fc28',
         'golang-github-MakeNowJust-heredoc-devel-0-0.9.gitbb23615.fc28.noarch',
     ])
-    def test_split_nevra(self, string, name, epoch, version, release, arch):
-        assert RpmHelper.split_nevra(string) == dict(name=name, epoch=epoch, version=version,
-                                                     release=release, arch=arch)
+    def test_split_nevra(self, nevra, name, epoch, version, release, arch):
+        assert RpmHelper.split_nevra(nevra) == dict(name=name, epoch=epoch, version=version,
+                                                    release=release, arch=arch)
 
 
 class TestMacroHelper(object):
@@ -638,7 +638,7 @@ class TestMacroHelper(object):
 
 class TestLookasideCacheHelper(object):
 
-    @pytest.mark.parametrize('package, filename, hashtype, hash', [
+    @pytest.mark.parametrize('package, filename, hashtype, hsh', [
         ('vim-go', 'v1.6.tar.gz', 'md5', '847d3e3577982a9515ad0aec6d5111b2'),
         ('rebase-helper', '0.8.0.tar.gz', 'md5', '91de540caef64cb8aa7fd250f2627a93'),
         (
@@ -653,7 +653,7 @@ class TestLookasideCacheHelper(object):
         'rebase-helper',
         'man-pages',
     ])
-    def test_download(self, package, filename, hashtype, hash):
+    def test_download(self, package, filename, hashtype, hsh):
         # pylint: disable=protected-access
         target = os.path.basename(filename)
         LookasideCacheHelper._download_source('fedpkg',
@@ -661,7 +661,7 @@ class TestLookasideCacheHelper(object):
                                               package,
                                               filename,
                                               hashtype,
-                                              hash,
+                                              hsh,
                                               target)
         assert os.path.isfile(target)
-        assert LookasideCacheHelper._hash(target, hashtype) == hash
+        assert LookasideCacheHelper._hash(target, hashtype) == hsh

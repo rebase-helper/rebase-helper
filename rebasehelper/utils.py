@@ -722,7 +722,7 @@ class RpmHelper(object):
         return arches
 
     @classmethod
-    def split_nevra(cls, string):
+    def split_nevra(cls, s):
         """Splits string into name, epoch, version, release and arch components"""
         regexps = [
             ('NEVRA', re.compile(r'^([^:]+)-(([0-9]+):)?([^-:]+)-(.+)\.([^.]+)$')),
@@ -733,7 +733,7 @@ class RpmHelper(object):
         if not cls.ARCHES:
             cls.ARCHES = cls.get_arches()
         for pattern, regexp in regexps:
-            match = regexp.match(string)
+            match = regexp.match(s)
             if not match:
                 continue
             name = match.group(1) or None
@@ -1098,11 +1098,11 @@ class KojiHelper(object):
         """
         session = cls.session_maker(baseurl=cls.server)
         build = session.getBuild(build_id)
-        rpms = session.listRPMs(buildID=build_id)
+        packages = session.listRPMs(buildID=build_id)
         rpm_list = []
         log_list = []
-        for rpm in rpms:
-            if rpm['arch'] not in ['noarch', 'x86_64']:
+        for pkg in packages:
+            if pkg['arch'] not in ['noarch', 'x86_64']:
                 continue
             for logname in ['build.log', 'root.log', 'state.log']:
                 dest_path = os.path.join(destination, logname)
@@ -1114,11 +1114,11 @@ class KojiHelper(object):
                         build['release'],
                         'data',
                         'logs',
-                        rpm['arch'],
+                        pkg['arch'],
                         logname])
                     DownloadHelper.download_file(url, dest_path)
                     log_list.append(dest_path)
-            filename = '.'.join([rpm['nvr'], rpm['arch'], 'rpm'])
+            filename = '.'.join([pkg['nvr'], pkg['arch'], 'rpm'])
             dest_path = os.path.join(destination, filename)
             if dest_path not in rpm_list:
                 url = '/'.join([
@@ -1126,7 +1126,7 @@ class KojiHelper(object):
                     build['package_name'],
                     build['version'],
                     build['release'],
-                    rpm['arch'],
+                    pkg['arch'],
                     filename])
                 DownloadHelper.download_file(url, dest_path)
                 rpm_list.append(dest_path)
@@ -1292,8 +1292,8 @@ class LookasideCacheHelper(object):
                         d = m.groupdict()
                     else:
                         # fall back to old format of sources file
-                        hash, file = line.split()
-                        d = dict(hash=hash, file=file, hashtype='md5')
+                        hsh, filename = line.split()
+                        d = dict(hash=hsh, filename=filename, hashtype='md5')
                     d['hashtype'] = d['hashtype'].lower()
                     sources.append(d)
         return sources
@@ -1301,30 +1301,30 @@ class LookasideCacheHelper(object):
     @classmethod
     def _hash(cls, filename, hashtype):
         try:
-            sum = hashlib.new(hashtype)
+            chksum = hashlib.new(hashtype)
         except ValueError:
             raise LookasideCacheError('Unsupported hash type \'{}\''.format(hashtype))
         with open(filename, 'rb') as f:
             chunk = f.read(8192)
             while chunk:
-                sum.update(chunk)
+                chksum.update(chunk)
                 chunk = f.read(8192)
-        return sum.hexdigest()
+        return chksum.hexdigest()
 
     @classmethod
-    def _download_source(cls, tool, url, package, filename, hashtype, hash, target=None):
+    def _download_source(cls, tool, url, package, filename, hashtype, hsh, target=None):
         if target is None:
             target = os.path.basename(filename)
         if os.path.exists(target):
-            if cls._hash(target, hashtype) == hash:
+            if cls._hash(target, hashtype) == hsh:
                 # nothing to do
                 return
             else:
                 os.unlink(target)
         if tool == 'fedpkg':
-            url = '{}/{}/{}/{}/{}/{}'.format(url, package, filename, hashtype, hash, filename)
+            url = '{}/{}/{}/{}/{}/{}'.format(url, package, filename, hashtype, hsh, filename)
         else:
-            url = '{}/{}/{}/{}/{}'.format(url, package, filename, hash, filename)
+            url = '{}/{}/{}/{}/{}'.format(url, package, filename, hsh, filename)
         try:
             DownloadHelper.download_file(url, target)
         except DownloadError as e:
@@ -1338,4 +1338,4 @@ class LookasideCacheHelper(object):
         except (configparser.Error, KeyError):
             raise LookasideCacheError('Failed to read rpkg configuration')
         for source in cls._read_sources(basepath):
-            cls._download_source(tool, url, package, source['file'], source['hashtype'], source['hash'])
+            cls._download_source(tool, url, package, source['filename'], source['hashtype'], source['hash'])
