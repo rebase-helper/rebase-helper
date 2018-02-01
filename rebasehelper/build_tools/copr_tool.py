@@ -126,13 +126,13 @@ class CoprBuildTool(BuildToolBase):
         return {'logs': cls.logs}
 
     @classmethod
-    def get_task_info(cls, data):
+    def get_task_info(cls, build_dict):
         if not cls.copr_helper:
             cls.copr_helper = CoprHelper()
         client = cls.copr_helper.get_client()
-        build_url = cls.copr_helper.get_build_url(client, data['copr_build_id'])
+        build_url = cls.copr_helper.get_build_url(client, build_dict['copr_build_id'])
         message = "Copr build for '%s' version is: %s"
-        return message % (data['version'], build_url)
+        return message % (build_dict['version'], build_url)
 
     @classmethod
     def get_detached_task(cls, task_id, results_dir):
