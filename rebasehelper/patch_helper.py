@@ -181,17 +181,17 @@ class GitPatchTool(PatchBase):
                         f.write(b'\n')
                     modified_patches.append(base_name)
             if ret_code != 0:
-                # Take the patch which failed from .git/rebase-apply/next file
+                # get name of the current patch using .git/rebase-apply/next
                 try:
                     with open(os.path.join(cls.old_sources, '.git', 'rebase-apply', 'next')) as f:
-                        failed_patch = cls.patches[int(f.readline()) - 1].get_patch_name()
+                        patch_name = cls.patches[int(f.readline()) - 1].get_patch_name()
                 except IOError:
                     raise RuntimeError('Git rebase failed with unknown reason. Please check log file')
                 if not cls.non_interactive:
-                    logger.info("Git has problems with rebasing patch %s", failed_patch)
+                    logger.info("Git has problems with rebasing patch %s", patch_name)
                     GitHelper.run_mergetool(cls.old_repo)
                 else:
-                    inapplicable_patches.append(failed_patch)
+                    inapplicable_patches.append(patch_name)
                     try:
                         cls.output_data = cls.old_repo.git.rebase(skip=True, stdout_as_string=six.PY3)
                     except git.GitCommandError as e:
@@ -211,7 +211,7 @@ class GitPatchTool(PatchBase):
                     try:
                         commit = cls.old_repo.index.commit(patch_name, skip_hooks=True)
                     except git.UnmergedEntriesError:
-                        inapplicable_patches.append(failed_patch)
+                        inapplicable_patches.append(patch_name)
                     else:
                         diff = cls.old_repo.git.diff(commit.parents[0], commit, stdout_as_string=False)
                         with open(base_name, 'wb') as f:
