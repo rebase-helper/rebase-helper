@@ -449,7 +449,7 @@ class ProcessHelper(object):
         # check if in_file has fileno() method - which is needed for Popen
         try:
             in_file.fileno()
-        except:
+        except (AttributeError, OSError):
             spooled_in_file = tempfile.SpooledTemporaryFile(mode='w+b')
             try:
                 in_data = in_file.read()
