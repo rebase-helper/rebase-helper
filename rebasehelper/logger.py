@@ -37,43 +37,43 @@ class LoggerHelper(object):
         :param level: severity level
         :return: created logger
         """
-        logger = logging.getLogger(logger_name)
-        logger.setLevel(level)
-        return logger
+        basic_logger = logging.getLogger(logger_name)
+        basic_logger.setLevel(level)
+        return basic_logger
 
     @staticmethod
-    def add_stream_handler(logger, level=None):
+    def add_stream_handler(logger_object, level=None):
         """
         Adds console handler with given severity.
 
-        :param logger: logger object to add the handler to
+        :param logger_object: logger object to add the handler to
         :param level: severity level
         :return: created handler object
         """
         console_handler = logging.StreamHandler()
         if level:
             console_handler.setLevel(level)
-        logger.addHandler(console_handler)
+        logger_object.addHandler(console_handler)
         return console_handler
 
     @staticmethod
-    def add_file_handler(logger, path, formatter=None, level=None):
+    def add_file_handler(logger_object, path, formatter_object=None, level=None):
         """
         Adds FileHandler to a given logger
 
-        :param logger: Logger object to which the file handler will be added
+        :param logger_object: Logger object to which the file handler will be added
         :param path: Path to file where the debug log will be written
         :return: None
         """
         file_handler = logging.FileHandler(path, 'w')
         if level:
             file_handler.setLevel(level)
-        if formatter:
-            file_handler.setFormatter(formatter)
-        logger.addHandler(file_handler)
+        if formatter_object:
+            file_handler.setFormatter(formatter_object)
+        logger_object.addHandler(file_handler)
 
 
-#  the main Rebase-Helper logger
+#  the main rebase-helper logger
 logger = LoggerHelper.get_basic_logger('rebase-helper')
 #  logger for output tool
 logger_output = LoggerHelper.get_basic_logger('output-tool', logging.INFO)
