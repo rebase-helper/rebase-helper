@@ -47,12 +47,12 @@ class PatchBase(object):
     """
 
     @classmethod
-    def match(cls, cmd=None, *args, **kwargs):
+    def match(cls, cmd=None):  # pylint: disable=unused-argument
         """Method checks whether it is usefull patch method"""
         return NotImplementedError()
 
     @classmethod
-    def run_patch(cls, old_dir, new_dir, rest_sources, git_helper, patches, *args, **kwargs):
+    def run_patch(cls, old_dir, new_dir, rest_sources, patches, **kwargs):  # pylint: disable=unused-argument
         """Method will check all patches in relevant package"""
         return NotImplementedError()
 
@@ -266,7 +266,7 @@ class GitPatchTool(PatchBase):
         return repo
 
     @classmethod
-    def run_patch(cls, old_dir, new_dir, rest_sources, patches, prep, **kwargs):
+    def run_patch(cls, old_dir, new_dir, rest_sources, patches, **kwargs):
         """
         The function can be used for patching one
         directory against another
@@ -317,7 +317,7 @@ class Patcher(object):
         if self._tool is None:
             raise NotImplementedError("Unsupported patch tool")
 
-    def patch(self, old_dir, new_dir, rest_sources, patches, prep, **kwargs):
+    def patch(self, old_dir, new_dir, rest_sources, patches, **kwargs):
         """
         Apply patches and generate rebased patches if needed
 
@@ -329,4 +329,4 @@ class Patcher(object):
         :return:
         """
         logger.debug("Patching source by patch tool %s", self._patch_tool_name)
-        return self._tool.run_patch(old_dir, new_dir, rest_sources, patches, prep, **kwargs)
+        return self._tool.run_patch(old_dir, new_dir, rest_sources, patches, **kwargs)

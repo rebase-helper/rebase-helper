@@ -70,7 +70,7 @@ class ArchiveTypeBase(object):
         raise NotImplementedError()
 
     @classmethod
-    def extract(cls, filename=None, *args, **kwargs):
+    def extract(cls, archive=None, filename=None, path=None):
         """
         Extracts the archive into the given path
 

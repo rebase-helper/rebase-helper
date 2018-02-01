@@ -198,7 +198,7 @@ class BuildToolBase(object):
         pass
 
     @classmethod
-    def build(cls, *args, **kwargs):
+    def build(cls, spec, sources, patches, results_dir, **kwargs):
         """
         Build binaries from the sources.
 
@@ -339,7 +339,7 @@ class SRPMBuildToolBase(object):
         return NotImplementedError()
 
     @classmethod
-    def build_srpm(cls, spec, workdir, results_dir, srpm_builder_options):
+    def build_srpm(cls, spec, workdir, results_dir, srpm_results_dir, srpm_builder_options):
         """
         Build SRPM with chosen SRPM Build Tool
 
@@ -347,6 +347,7 @@ class SRPMBuildToolBase(object):
         :param workdir: abs path to working directory with rpmbuild directory
                         structure, which will be used as HOME dir.
         :param results_dir: abs path to dir where the log should be placed.
+        :param srpm_results_dir: path to directory where SRPM will be placed.
         :param srpm_builder_options: list of additional options to rpmbuild.
         :return: If build process ends successfully returns abs path
                  to built SRPM, otherwise 'None'.

@@ -435,7 +435,6 @@ class Application(object):
                                                sources[1],
                                                self.old_rest_sources,
                                                self.spec_file.get_applied_patches(),
-                                               self.spec_file.get_prep_section(),
                                                **self.kwargs)
         except RuntimeError:
             raise RebaseHelperError('Patching failed')

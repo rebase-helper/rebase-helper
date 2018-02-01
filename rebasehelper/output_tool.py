@@ -120,7 +120,7 @@ class BaseOutputTool(object):
                 ConsoleHelper.cprint(patch, color=color)
 
     @classmethod
-    def run(cls):
+    def run(cls, logs, app):  # pylint: disable=unused-argument
         raise NotImplementedError()
 
     @classmethod
