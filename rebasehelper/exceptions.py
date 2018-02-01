@@ -28,6 +28,7 @@ class RebaseHelperError(Exception):
     """
     def __init__(self, *args, **kwargs):
         """Constructor of RebaseHelperError"""
+        super(RebaseHelperError, self).__init__()
         if not args:
             self.msg = None
         elif len(args) > 1:

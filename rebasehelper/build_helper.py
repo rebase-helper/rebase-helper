@@ -42,6 +42,7 @@ class SourcePackageBuildError(RuntimeError):
         :param args: tuple of arguments stored in the exception instance
         :param kwargs: dictionary containing path to the logfile that contains main errors
         """
+        super(SourcePackageBuildError, self).__init__()
         self.args = args
         self.logfile = kwargs.get('logfile')
 
@@ -56,6 +57,7 @@ class BinaryPackageBuildError(RuntimeError):
         :param args: tuple of arguments stored in the exception instance
         :param kwargs: dictionary containing path to the logfile that contains main errors
         """
+        super(BinaryPackageBuildError, self).__init__()
         self.args = args
         # Return code obtained from koji only at this time
         self.return_code = kwargs.get('return_code')
