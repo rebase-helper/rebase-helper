@@ -171,6 +171,12 @@ class ConsoleHelper(object):
             self.capture_stderr = stderr
             self.stdout = None
             self.stderr = None
+            self._stdout_fileno = None
+            self._stderr_fileno = None
+            self._stdout_tmp = None
+            self._stderr_tmp = None
+            self._stdout_copy = None
+            self._stderr_copy = None
 
         def __enter__(self):
             self._stdout_fileno = sys.__stdout__.fileno()  # pylint:disable=no-member
