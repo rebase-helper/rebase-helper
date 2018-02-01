@@ -173,7 +173,7 @@ class OutputToolRunner(object):
         :param log: Log that probably contains the important message concerning the rebase fail
         :param app: Application class instance
         """
-        for name, output_tool in six.iteritems(self.output_tools):
+        for output_tool in six.itervalues(self.output_tools):
             if output_tool.match(app.conf.outputtool):
                 logger.info("Running '%s' output tool." % output_tool.get_name())
                 output_tool.run(logs, app=app)

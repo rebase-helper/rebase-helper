@@ -789,7 +789,6 @@ class Application(object):
                                         ", ".join(tools_accepting_options)
                                         )
 
-        sources = None
         if self.conf.build_tasks is None:
             sources = self.prepare_sources()
             if not self.conf.build_only and not self.conf.comparepkgs:
@@ -800,7 +799,6 @@ class Application(object):
                     self.print_summary(e)
                     raise
 
-        build = False
         if not self.conf.patch_only:
             if not self.conf.comparepkgs:
                 # Build packages

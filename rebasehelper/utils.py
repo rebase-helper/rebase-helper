@@ -891,7 +891,7 @@ class KojiHelper(object):
 
     @classmethod
     def _unique_path(cls, prefix):
-        suffix = ''.join([random.choice(string.ascii_letters) for i in range(8)])
+        suffix = ''.join([random.choice(string.ascii_letters) for _ in range(8)])
         return '%s/%r.%s' % (prefix, time.time(), suffix)
 
     @classmethod

@@ -291,7 +291,7 @@ class SpecFile(object):
         patches_list = [p for p in self.spc.sources if p[2] == 2]
         strip_options = self._get_patch_strip_options(patches_list)
 
-        for filename, num, patch_type in patches_list:
+        for filename, num, _ in patches_list:
             patch_path = os.path.join(self.sources_location, filename)
             if not os.path.exists(patch_path):
                 logger.error('Patch %s does not exist', filename)
@@ -1031,7 +1031,7 @@ class SpecFile(object):
         new_spec_file = []
 
         try:
-            for key, value in sorted(six.iteritems(self.rpm_sections)):
+            for _, value in sorted(six.iteritems(self.rpm_sections)):
                 sec_name, section = value
                 if '%header' in sec_name:
                     new_spec_file.extend(section)
@@ -1373,7 +1373,7 @@ class SpecFile(object):
         """
         parser = self._get_setup_parser()
 
-        for index, line in enumerate(self.spec_content):
+        for line in self.spec_content:
             if line.startswith('%setup') or line.startswith('%autosetup'):
                 line = MacroHelper.expand(line, '')
 
@@ -1543,7 +1543,7 @@ class SpecHooksRunner(object):
 
     def get_available_spec_hooks(self):
         """Returns a list of all available spec hooks"""
-        return [v.__name__ for k, v in six.iteritems(self.spec_hooks)]
+        return [v.__name__ for v in six.itervalues(self.spec_hooks)]
 
     def run_spec_hooks(self, spec_file, rebase_spec_file, **kwargs):
         """

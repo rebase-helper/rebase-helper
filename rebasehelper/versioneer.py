@@ -68,7 +68,7 @@ class VersioneersRunner(object):
 
     def get_available_versioneers(self):
         """Returns a list of available versioneers"""
-        return [k for k, v in six.iteritems(self.versioneers)]
+        return self.versioneers.keys()
 
     def run(self, versioneer, package_name, category, versioneer_blacklist=None):
         """
