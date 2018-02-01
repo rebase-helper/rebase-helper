@@ -45,7 +45,7 @@ class MockTemporaryEnvironment(BuildTemporaryEnvironment):
             os.makedirs(self._env[self.TEMPDIR + '_' + dir_name])
 
 
-class MockBuildTool(BuildToolBase):
+class MockBuildTool(BuildToolBase):  # pylint: disable=abstract-method
     """
     Class representing Mock build tool.
     """

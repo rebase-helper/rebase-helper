@@ -33,7 +33,7 @@ from rebasehelper.build_helper import BinaryPackageBuildError
 from rebasehelper.exceptions import RebaseHelperError
 
 
-class RpmbuildBuildTool(BuildToolBase):
+class RpmbuildBuildTool(BuildToolBase):  # pylint: disable=abstract-method
     """
     Class representing rpmbuild build tool.
     """
