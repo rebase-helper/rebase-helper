@@ -272,7 +272,7 @@ class SpecFile(object):
         :param source_num: number of the source of which to get the raw string
         :return: string of the source or None if there is no such source
         """
-        source_re_str = '^Source0?\s*:\s*(.*?)$' if source_num == 0 else '^Source{0}\s*:\s*(.*?)$'.format(source_num)
+        source_re_str = r'^Source0?\s*:\s*(.*?)$' if source_num == 0 else r'^Source{0}\s*:\s*(.*?)$'.format(source_num)
         source_re = re.compile(source_re_str)
 
         for line in self.spec_content:
