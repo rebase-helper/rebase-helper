@@ -139,9 +139,9 @@ class TestConsoleHelper(object):
 
     def test_capture_output(self):
         def write():
-            with os.fdopen(sys.__stdout__.fileno(), 'w') as f:  # pylint:disable=no-member
+            with os.fdopen(sys.__stdout__.fileno(), 'w') as f:  # pylint: disable=no-member
                 f.write('test stdout')
-            with os.fdopen(sys.__stderr__.fileno(), 'w') as f:  # pylint:disable=no-member
+            with os.fdopen(sys.__stderr__.fileno(), 'w') as f:  # pylint: disable=no-member
                 f.write('test stderr')
 
         with ConsoleHelper.Capturer(stdout=True, stderr=True) as capturer:
