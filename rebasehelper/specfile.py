@@ -1284,11 +1284,10 @@ class SpecFile(object):
                 if not f_exists:
                     continue
                 for f in f_exists:
-                    index = 0
                     for index, row in enumerate(sec_content):
                         if f in row:
+                            sec_content[index: index+1] = SpecFile.construct_string_with_comment('#' + row)
                             break
-                    sec_content[index: index+1] = SpecFile.construct_string_with_comment('#' + row)
                 self.rpm_sections[key] = (sec_name, sec_content)
 
     def modify_spec_files_section(self, files):
