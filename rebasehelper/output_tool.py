@@ -175,7 +175,7 @@ class OutputToolRunner(object):
         """
         for output_tool in six.itervalues(self.output_tools):
             if output_tool.match(app.conf.outputtool):
-                logger.info("Running '%s' output tool." % output_tool.get_name())
+                logger.info("Running '%s' output tool.", output_tool.get_name())
                 output_tool.run(logs, app=app)
                 output_tool.print_cli_summary(app)
 

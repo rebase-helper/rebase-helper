@@ -77,14 +77,14 @@ class CoprBuildTool(BuildToolBase):
         if kwargs['builds_nowait']:
             return None, None, build_id
         build_url = cls.copr_helper.get_build_url(client, build_id)
-        logger.info('Copr build is here:\n' + build_url)
+        logger.info('Copr build is here: %s\n', build_url)
         failed = not cls.copr_helper.watch_build(client, build_id)
         destination = os.path.dirname(srpm).replace('SRPM', 'RPM')
         rpms, logs = cls.copr_helper.download_build(client,
                                                     build_id,
                                                     destination)
         if failed:
-            logger.info('Copr build failed {}'.format(build_url))
+            logger.info('Copr build failed %s', build_url)
             logs.append(build_url)
             cls.logs.append(build_url)
             raise BinaryPackageBuildError
@@ -147,6 +147,6 @@ class CoprBuildTool(BuildToolBase):
         else:
             rpm, logs = cls.copr_helper.download_build(client, build_id, results_dir)
             if status not in ['succeeded', 'skipped']:
-                logger.info('Copr build {} did not complete successfully'.format(build_id))
+                logger.info('Copr build %d did not complete successfully', build_id)
                 return None, None
             return rpm, logs

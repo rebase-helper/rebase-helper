@@ -148,7 +148,7 @@ class SpecFile(object):
             LookasideCacheHelper.download('fedpkg', os.path.dirname(self.path), self.get_package_name())
         except LookasideCacheError as e:
             logger.debug("Downloading sources from lookaside cache failed. "
-                         "Reason: '{}'.".format(str(e)))
+                         "Reason: %s.", six.text_type(e))
 
         # filter out only sources with URL
         remote_files = [source for source in self.sources if bool(urllib.parse.urlparse(source).scheme)]

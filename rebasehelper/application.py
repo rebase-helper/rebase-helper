@@ -612,7 +612,7 @@ class Application(object):
 
                     # Save current rebase spec file content
                     self.rebase_spec_file.save()
-                    logger.info('Now it is time to make changes to  %s if necessary.' % self.rebase_spec_file.path)
+                    logger.info('Now it is time to make changes to  %s if necessary.', self.rebase_spec_file.path)
                     if not ConsoleHelper.get_message('Do you want to continue with the rebuild now'):
                         raise KeyboardInterrupt
                     # Update rebase spec file content after potential manual modifications
@@ -644,7 +644,7 @@ class Application(object):
                 results[checker_name] = checkers_runner.run_checker(os.path.join(results_dir, 'checkers'),
                                                                     checker_name)
             except CheckerNotFoundError:
-                logger.error("Rebase-helper did not find checker '%s'." % checker_name)
+                logger.error("Rebase-helper did not find checker '%s'.", checker_name)
 
         for diff_name, result in six.iteritems(results):
             results_store.set_checker_output(diff_name, result)

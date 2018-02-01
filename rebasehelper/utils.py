@@ -1033,7 +1033,7 @@ class KojiHelper(object):
         if task['state'] in (koji.TASK_STATES['FREE'], koji.TASK_STATES['OPEN']):
             return None, None
         elif task['state'] != koji.TASK_STATES['CLOSED']:
-            logger.info('Task %i did not complete successfully' % task_id)
+            logger.info('Task %i did not complete successfully', task_id)
 
         if task['method'] == 'build':
             logger.info('Getting rpms for chilren of task %i: %s',
