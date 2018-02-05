@@ -1288,7 +1288,7 @@ class LookasideCacheHelper(object):
 
     @classmethod
     def _read_sources(cls, basepath):
-        line_re = re.compile(r'^(?P<hashtype>[^ ]+?) \((?P<file>[^ )]+?)\) = (?P<hash>[^ ]+?)$')
+        line_re = re.compile(r'^(?P<hashtype>[^ ]+?) \((?P<filename>[^ )]+?)\) = (?P<hash>[^ ]+?)$')
         sources = []
         path = os.path.join(basepath, 'sources')
         if os.path.exists(path):
