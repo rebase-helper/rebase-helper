@@ -20,10 +20,9 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
-import requests
-
 from rebasehelper.versioneer import BaseVersioneer
 from rebasehelper.logger import logger
+from rebasehelper.utils import DownloadHelper
 
 
 class CPANVersioneer(BaseVersioneer):
@@ -48,8 +47,9 @@ class CPANVersioneer(BaseVersioneer):
             package_name = package_name.replace('perl-', '', 1)
         package_name = package_name.replace('-', '::')
 
-        r = requests.get('{}/download_url/{}'.format(cls.API_URL, package_name))
-        if not r.ok:
+        r = DownloadHelper.request('{}/download_url/{}'.format(cls.API_URL, package_name))
+
+        if r is None or not r.ok:
             return None
         data = r.json()
         if data.get('status') == 'latest':

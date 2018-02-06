@@ -22,10 +22,9 @@
 
 import re
 
-import requests
-
 from rebasehelper.specfile import BaseSpecHook
 from rebasehelper.logger import logger
+from rebasehelper.utils import DownloadHelper
 
 
 class CommitHashUpdaterHook(BaseSpecHook):
@@ -55,7 +54,10 @@ class CommitHashUpdaterHook(BaseSpecHook):
             return None
         baseurl = 'https://api.github.com/repos/{owner}/{project}'.format(**m.groupdict())
         # try to get tag name from a release matching version
-        r = requests.get('{}/releases'.format(baseurl))
+        r = DownloadHelper.request('{}/releases'.format(baseurl))
+        if r is None:
+            return None
+
         if not r.ok:
             if r.status_code == 403 and r.headers.get('X-RateLimit-Remaining') == '0':
                 logger.warning("Rate limit exceeded on Github API! Try again later.")
@@ -67,7 +69,10 @@ class CommitHashUpdaterHook(BaseSpecHook):
             if version in release.get('name'):
                 tag_name = release.get('tag_name')
                 break
-        r = requests.get('{}/tags'.format(baseurl))
+
+        r = DownloadHelper.request('{}/tags'.format(baseurl))
+        if r is None:
+            return None
         if not r.ok:
             if r.status_code == 403 and r.headers.get('X-RateLimit-Remaining') == '0':
                 logger.warning("Rate limit exceeded on Github API! Try again later.")

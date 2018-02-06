@@ -22,10 +22,9 @@
 
 import re
 
-import requests
-
 from rebasehelper.versioneer import BaseVersioneer
 from rebasehelper.logger import logger
+from rebasehelper.utils import DownloadHelper
 
 
 class PyPIVersioneer(BaseVersioneer):
@@ -46,13 +45,14 @@ class PyPIVersioneer(BaseVersioneer):
 
     @classmethod
     def _get_version(cls, package_name):
-        r = requests.get('{}/{}/json'.format(cls.API_URL, package_name))
-        if not r.ok:
+        r = DownloadHelper.request('{}/{}/json'.format(cls.API_URL, package_name))
+        if r is None or not r.ok:
             # try to strip python prefix
             package_name = re.sub(r'^python[23]?-', '', package_name)
-            r = requests.get('{}/{}/json'.format(cls.API_URL, package_name))
-            if not r.ok:
+            r = DownloadHelper.request('{}/{}/json'.format(cls.API_URL, package_name))
+            if r is None or not r.ok:
                 return None
+
         data = r.json()
         try:
             return data['info']['version']

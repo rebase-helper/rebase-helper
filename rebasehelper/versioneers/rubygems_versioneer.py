@@ -22,10 +22,9 @@
 
 import re
 
-import requests
-
 from rebasehelper.versioneer import BaseVersioneer
 from rebasehelper.logger import logger
+from rebasehelper.utils import DownloadHelper
 
 
 class RubyGemsVersioneer(BaseVersioneer):
@@ -49,13 +48,14 @@ class RubyGemsVersioneer(BaseVersioneer):
         # special-case "ruby", as https://rubygems.org/api/v1/gems/ruby.json returns nonsense
         if package_name == 'ruby':
             return None
-        r = requests.get('{}/{}.json'.format(cls.API_URL, package_name))
-        if not r.ok:
+        r = DownloadHelper.request('{}/{}.json'.format(cls.API_URL, package_name))
+        if r is None or not r.ok:
             # try to strip rubygem prefix
             package_name = re.sub(r'^rubygem-', '', package_name)
-            r = requests.get('{}/{}.json'.format(cls.API_URL, package_name))
-            if not r.ok:
+            r = DownloadHelper.request('{}/{}.json'.format(cls.API_URL, package_name))
+            if r is None or not r.ok:
                 return None
+
         data = r.json()
         return data.get('version')
 
