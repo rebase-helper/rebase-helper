@@ -68,39 +68,51 @@ class TestOutputTool(object):
 
         return rs
 
-    def get_expected_text_output(self):
+    def get_expected_text_output(self, workdir):
         expected_output = """\
 Success
+All result files are stored in {workdir}
 
-Summary information about patches:
-Patch mytest2.patch [deleted]
+Downstream Patches
+==================
+Rebased patches are located in rebase-helper-results/rebased-sources
+Legend:
+[-] = already applied, patch removed
+[*] = merged, patch modified
+[!] = conflicting or inapplicable, patch skipped
+[ ] = patch untouched
+* mytest2.patch                            [-]
 
-Old (S)RPM packages:
----------------------
-SRPM package(s): are in directory . :
+RPMS
+====
+
+Old packages
+------------
+
+Source packages and logs are in directory rebase-helper-results/old-build/SRPM:
 - test-1.2.0-1.src.rpm
-RPM package(s): are in directory . :
-- test-1.2.0-1.x86_64.rpm
-- test-devel-1.2.0-1.x86_64.rpm
-Available Old logs:
 - logfile1.log
 - logfile2.log
 
-New (S)RPM packages:
----------------------
-SRPM package(s): are in directory . :
+Binary packages and logs are in directory rebase-helper-results/old-build/RPM:
+- test-1.2.0-1.x86_64.rpm
+- test-devel-1.2.0-1.x86_64.rpm
+- logfile1.log
+- logfile2.log
+
+New packages
+------------
+
+Source packages and logs are in directory rebase-helper-results/new-build/SRPM:
 - test-1.2.2-1.src.rpm
-RPM package(s): are in directory . :
-- test-1.2.2-1.x86_64.rpm
-- test-devel-1.2.2-1.x86_64.rpm
-Available New logs:
 - logfile3.log
 - logfile4.log
-=== Checker Results from checker(s) results ===
-Following files were moved
-/usr/sbin/test
-/usr/sbin/test2
-See for more details pkgdiff"""
+
+Binary packages and logs are in directory rebase-helper-results/new-build/RPM:
+- test-1.2.2-1.x86_64.rpm
+- test-devel-1.2.2-1.x86_64.rpm
+- logfile3.log
+- logfile4.log""".format(workdir=workdir)
         return expected_output
 
     @staticmethod
@@ -150,7 +162,7 @@ See for more details pkgdiff"""
 
         with open(results_file_path) as f:
             lines = [y.strip() for y in f.readlines()]
-            assert lines == self.get_expected_text_output().split('\n')
+            assert lines == self.get_expected_text_output(os.path.dirname(results_file_path)).split('\n')
 
     def test_json_output_tool(self, results_file_path, results_store):
         assert JSONOutputTool.get_name() in output_tools_runner.output_tools
