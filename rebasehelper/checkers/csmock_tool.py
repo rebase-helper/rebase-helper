@@ -22,7 +22,8 @@
 
 from __future__ import print_function
 import os
-from six import StringIO
+
+import six
 
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.utils import PathHelper
@@ -34,19 +35,19 @@ from rebasehelper.checker import BaseChecker
 class CsmockTool(BaseChecker):
     """ Csmock compare tool."""
 
-    CMD = "csmock"
+    NAME = "csmock"
     category = "SRPM"
 
     @classmethod
     def match(cls, cmd=None):
-        if cmd == cls.CMD:
+        if cmd == cls.NAME:
             return True
         else:
             return False
 
     @classmethod
     def get_checker_name(cls):
-        return cls.CMD
+        return cls.NAME
 
     @classmethod
     def is_default(cls):
@@ -59,21 +60,38 @@ class CsmockTool(BaseChecker):
 
         old_pkgs = results_store.get_old_build().get('srpm', None)
         new_pkgs = results_store.get_new_build().get('srpm', None)
-        csmock_dir = os.path.join(results_dir, cls.CMD)
-        os.makedirs(csmock_dir)
+        results_dir = os.path.join(results_dir, cls.NAME)
+        os.makedirs(results_dir)
         arguments = ['--force', '-a', '-r', 'fedora-rawhide-x86_64', '--base-srpm']
         if old_pkgs and new_pkgs:
-            cmd = [cls.CMD]
+            cmd = [cls.NAME]
             cmd.extend(arguments)
             cmd.append(old_pkgs)
             cmd.append(new_pkgs)
-            cmd.extend(['-o', csmock_dir])
-            output = StringIO()
+            cmd.extend(['-o', results_dir])
+            output = six.StringIO()
             try:
                 ProcessHelper.run_subprocess(cmd, output_file=output)
             except OSError:
-                raise CheckerNotFoundError("Checker '%s' was not found or installed." % cls.CMD)
-        csmock_report['error'] = PathHelper.find_all_files_current_dir(csmock_dir, '*.err')
-        csmock_report['txt'] = PathHelper.find_all_files_current_dir(csmock_dir, '*.txt')
-        csmock_report['log'] = PathHelper.find_all_files_current_dir(csmock_dir, '*.log')
+                raise CheckerNotFoundError("Checker '{}' was not found or installed.".format(cls.NAME))
+        csmock_report['error'] = PathHelper.find_all_files_current_dir(results_dir, '*.err')
+        csmock_report['txt'] = PathHelper.find_all_files_current_dir(results_dir, '*.txt')
+        csmock_report['log'] = PathHelper.find_all_files_current_dir(results_dir, '*.log')
+        csmock_report['path'] = cls.get_checker_output_dir_short()
         return csmock_report
+
+    @classmethod
+    def format(cls, data):
+        """
+        Formats csmock data to string
+        :param data: csmock data dictionary
+        :return: string formated output
+        """
+        output_lines = [cls.get_underlined_title("csmock")]
+        output_lines.append("Details in {}:".format(data['path']))
+        for key, files_list in six.iteritems(data):
+            if key in ['error', 'txt', 'log'] and files_list:
+                for f in files_list:
+                    output_lines.append(" - {}".format(os.path.basename(f)))
+
+        return output_lines
