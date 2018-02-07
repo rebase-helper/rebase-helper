@@ -20,12 +20,11 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
-import requests
-
 from pkg_resources import parse_version
 
 from rebasehelper.versioneer import BaseVersioneer
 from rebasehelper.logger import logger
+from rebasehelper.utils import DownloadHelper
 
 
 class AnityaVersioneer(BaseVersioneer):
@@ -46,16 +45,18 @@ class AnityaVersioneer(BaseVersioneer):
 
     @classmethod
     def _get_version_using_distro_api(cls, package_name):
-        r = requests.get('{}/project/Fedora/{}'.format(cls.API_URL, package_name))
-        if not r.ok:
+        r = DownloadHelper.request('{}/project/Fedora/{}'.format(cls.API_URL, package_name))
+
+        if r is None or not r.ok:
             return None
         data = r.json()
         return data.get('version')
 
     @classmethod
     def _get_version_using_pattern_api(cls, package_name):
-        r = requests.get('{}/projects'.format(cls.API_URL), params=dict(pattern=package_name))
-        if not r.ok:
+        r = DownloadHelper.request('{}/projects'.format(cls.API_URL), params=dict(pattern=package_name))
+
+        if r is None or not r.ok:
             return None
         data = r.json()
         try:

@@ -20,10 +20,9 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
-import requests
-
 from rebasehelper.versioneer import BaseVersioneer
 from rebasehelper.logger import logger
+from rebasehelper.utils import DownloadHelper
 
 
 class NPMJSVersioneer(BaseVersioneer):
@@ -47,9 +46,9 @@ class NPMJSVersioneer(BaseVersioneer):
         # gets the package name format needed in npm registry
         if package_name.startswith('nodejs-'):
             package_name = package_name.replace('nodejs-', '')
+        r = DownloadHelper.request('{}/{}'.format(cls.API_URL, package_name))
 
-        r = requests.get('{}/{}'.format(cls.API_URL, package_name))
-        if not r.ok:
+        if r is None or not r.ok:
             return None
         data = r.json()
         try:

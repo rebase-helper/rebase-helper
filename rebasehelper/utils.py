@@ -288,14 +288,13 @@ class DownloadHelper(object):
         sys.stdout.flush()
 
     @staticmethod
-    def download_file(url, destination_path, blocksize=8192):
+    def request(url, **kwargs):
         """
-        Method for downloading file from HTTP, HTTPS and FTP URL.
+        Method to get a Response object from HTTP, HTTPS or FTP URL
 
-        :param url: URL from which to download the file
-        :param destination_path: path where to store downloaded file
-        :param blocksize: size in Bytes of blocks used for downloading the file and reporting progress
-        :return: None
+        :param url: URL from which the Response is obtained
+        :param kwargs: optional arguments used to get Response object
+        :return: Response object
         """
 
         class FTPAdapter(requests.adapters.BaseAdapter):
@@ -323,7 +322,26 @@ class DownloadHelper(object):
         session = requests.Session()
         session.mount('ftp://', FTPAdapter())
 
-        r = session.get(url, stream=True)
+        try:
+            return session.get(url, **kwargs)
+        except requests.exceptions.RequestException as e:
+            logger.error('%s: %s', type(e).__name__, six.text_type(e))
+            return None
+
+    @staticmethod
+    def download_file(url, destination_path, blocksize=8192):
+        """
+        Method for downloading file from HTTP, HTTPS and FTP URL.
+
+        :param url: URL from which to download the file
+        :param destination_path: path where to store downloaded file
+        :param blocksize: size in Bytes of blocks used for downloading the file and reporting progress
+        :return: None
+        """
+        r = DownloadHelper.request(url, stream=True)
+        if r is None:
+            raise DownloadError("An unexpected error occurred during the download.")
+
         if not 200 <= r.status_code < 300:
             raise DownloadError(r.reason)
 
