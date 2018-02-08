@@ -60,7 +60,6 @@ class Application(object):
     debug_log_file = None
     report_log_file = None
     rebased_patches = {}
-    upstream_monitoring = False
     rebased_repo = None
 
     def __init__(self, cli_conf, execution_dir, results_dir, debug_log_file):
@@ -749,37 +748,12 @@ class Application(object):
         for version in ['old', 'new']:
             logger.info(builder.get_task_info(logs[version]))
 
-    def set_upstream_monitoring(self):
-        # This function is used by the-new-hotness, do not remove it!
-        self.upstream_monitoring = True
-
     def get_rebasehelper_data(self):
         rh_stuff = {}
         rh_stuff['build_logs'] = self.get_new_build_logs()
         rh_stuff['patches'] = self.get_rebased_patches()
         rh_stuff['checkers'] = self.get_checker_outputs()
         rh_stuff['logs'] = self.get_all_log_files()
-        return rh_stuff
-
-    def run_download_compare(self, tasks_dict, dir_name):
-        # TODO: Add doc text with explanation
-        self.set_upstream_monitoring()
-        kh = KojiHelper()
-        for version in ['old', 'new']:
-            rh_dict = {}
-            compare_dirname = os.path.join(dir_name, version)
-            if not os.path.exists(compare_dirname):
-                os.mkdir(compare_dirname, 0o777)
-            (task, upstream_version, package) = tasks_dict[version]
-            rh_dict['rpm'], rh_dict['logs'] = kh.get_koji_tasks([task], compare_dirname)
-            rh_dict['version'] = upstream_version
-            rh_dict['name'] = package
-            results_store.set_build_data(version, rh_dict)
-        if tasks_dict['status'] == 'CLOSED':
-            self.run_package_checkers(dir_name)
-        self.print_summary()
-        rh_stuff = self.get_rebasehelper_data()
-        logger.info(rh_stuff)
         return rh_stuff
 
     def run(self):
