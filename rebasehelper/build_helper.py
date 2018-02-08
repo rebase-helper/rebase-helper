@@ -285,56 +285,6 @@ class BuildToolBase(object):
             return shlex.split(builder_options)
         return None
 
-    @staticmethod
-    def get_srpm_builder_options(**kwargs):
-        srpm_builder_options = kwargs.get('srpm_builder_options')
-        if srpm_builder_options:
-            return shlex.split(srpm_builder_options)
-        return None
-
-    @staticmethod
-    def get_srpm_buildtool(**kwargs):
-        return kwargs.get('srpm_buildtool')
-
-    @classmethod
-    def _build_srpm(cls, spec, sources, patches, results_dir, **kwargs):
-        """
-        Builds the SRPM using chosen SRPM builder tool
-
-        :param spec: absolute path to the SPEC file.
-        :param sources: list with absolute paths to SOURCES
-        :param patches: list with absolute paths to PATCHES
-        :param results_dir: absolute path to DIR where results should be stored
-        :return: absolute path to SRPM, list with absolute paths to logs
-        """
-        # build SRPM
-        srpm_results_dir = os.path.join(results_dir, "SRPM")
-        with RpmbuildTemporaryEnvironment(sources, patches, spec,
-                                          srpm_results_dir) as tmp_env:
-            srpm_builder_options = cls.get_srpm_builder_options(**kwargs)
-            srpm_build_tool = cls.get_srpm_buildtool(**kwargs)
-
-            env = tmp_env.env()
-            tmp_dir = tmp_env.path()
-            tmp_spec = env.get(RpmbuildTemporaryEnvironment.TEMPDIR_SPEC)
-            tmp_results_dir = env.get(
-                RpmbuildTemporaryEnvironment.TEMPDIR_RESULTS)
-
-            srpm_builder = SRPMBuilder.srpm_build_tools[srpm_build_tool]
-            srpm = srpm_builder.build_srpm(tmp_spec, tmp_dir, tmp_results_dir, srpm_results_dir,
-                                           srpm_builder_options=srpm_builder_options)
-
-        logger.info("Building SRPM finished successfully")
-
-        # srpm path in results_dir
-        srpm = os.path.join(srpm_results_dir, os.path.basename(srpm))
-        logger.debug("Successfully built SRPM: '%s'", str(srpm))
-        # gather logs
-        logs = [l for l in PathHelper.find_all_files(srpm_results_dir, '*.log')]
-        logger.debug("logs: '%s'", str(logs))
-
-        return srpm, logs
-
 
 class SRPMBuildToolBase(object):
     """
@@ -353,19 +303,31 @@ class SRPMBuildToolBase(object):
         """Returns true if the SRPM Build Tool is set to be default"""
         return NotImplementedError()
 
+    @staticmethod
+    def get_srpm_builder_options(**kwargs):
+        srpm_builder_options = kwargs.get('srpm_builder_options')
+        if srpm_builder_options:
+            return shlex.split(srpm_builder_options)
+        return None
+
     @classmethod
-    def build_srpm(cls, spec, workdir, results_dir, srpm_results_dir, srpm_builder_options):
+    def get_logs(cls):
+        """
+        Get logs from previously failed build
+        Returns:
+        dict with
+        'logs' -> list of absolute paths to logs
+        """
+        return dict(logs=getattr(cls, 'logs', None))
+
+    @classmethod
+    def build(cls, spec, results_dir, **kwargs):
         """
         Build SRPM with chosen SRPM Build Tool
 
-        :param spec: abs path to SPEC file inside the rpmbuild/SPECS in workdir.
-        :param workdir: abs path to working directory with rpmbuild directory
-                        structure, which will be used as HOME dir.
-        :param results_dir: abs path to dir where the log should be placed.
-        :param srpm_results_dir: path to directory where SRPM will be placed.
-        :param srpm_builder_options: list of additional options to rpmbuild.
-        :return: If build process ends successfully returns abs path
-                 to built SRPM, otherwise 'None'.
+        :param spec: SpecFile object
+        :param results_dir: absolute path to DIR where results should be stored
+        :return: absolute path to SRPM, list with absolute paths to logs
         """
         raise NotImplementedError()
 
@@ -376,6 +338,22 @@ class SRPMBuilder(object):
     """
 
     srpm_build_tools = {}
+
+    def __init__(self, tool=None):
+        if tool is None:
+            raise TypeError("Expected argument 'tool' (pos 1) is missing")
+        self._tool_name = tool
+        self._tool = None
+
+        for build_tool in self.srpm_build_tools.values():
+            if build_tool.get_build_tool_name() == self._tool_name:
+                self._tool = build_tool
+
+        if self._tool is None:
+            raise NotImplementedError("Unsupported SRPM build tool")
+
+    def __str__(self):
+        return "<SRPM Builder tool_name='{_tool_name}' tool='{_tool}'>".format(**vars(self))
 
     @classmethod
     def load_srpm_build_tools(cls):
@@ -390,6 +368,15 @@ class SRPMBuilder(object):
             except (AttributeError, NotImplementedError):
                 # silently skip broken plugin
                 continue
+
+    def get_logs(self):
+        """Get logs."""
+        logger.debug("Getting logs '%s'", self._tool_name)
+        return self._tool.get_logs()
+
+    def build(self, *args, **kwargs):
+        logger.debug("Building SRPM using '%s'", self._tool_name)
+        return self._tool.build(*args, **kwargs)
 
     @classmethod
     def get_supported_tools(cls):
