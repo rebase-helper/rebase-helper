@@ -155,6 +155,21 @@ class RpmbuildTemporaryEnvironment(BuildTemporaryEnvironment):
             os.makedirs(self._env[self.TEMPDIR + '_' + dir_name])
 
 
+class MockTemporaryEnvironment(BuildTemporaryEnvironment):
+    """
+    Class representing temporary environment for MockBuildTool.
+    """
+
+    def _create_directory_structure(self):
+        # create directory structure
+        for dir_name in ['SOURCES', 'SPECS', 'RESULTS']:
+            self._env[self.TEMPDIR + '_' + dir_name] = os.path.join(
+                self._env[self.TEMPDIR], dir_name)
+            logger.debug("Creating '%s'",
+                         self._env[self.TEMPDIR + '_' + dir_name])
+            os.makedirs(self._env[self.TEMPDIR + '_' + dir_name])
+
+
 class BuildToolBase(object):
     """
     Base class for various build tools
