@@ -23,7 +23,7 @@
 import os
 
 from rebasehelper.logger import logger
-from rebasehelper.build_helper import SRPMBuildToolBase, SourcePackageBuildError
+from rebasehelper.build_helper import SRPMBuildToolBase, SourcePackageBuildError, MockTemporaryEnvironment
 from rebasehelper.utils import PathHelper
 from rebasehelper.utils import ProcessHelper
 
@@ -43,7 +43,7 @@ class MockSRPMBuildTool(SRPMBuildToolBase):
         return cls.DEFAULT
 
     @classmethod
-    def build_srpm(cls, spec, workdir, results_dir, srpm_results_dir, srpm_builder_options):
+    def _build_srpm(cls, spec, workdir, results_dir, srpm_results_dir, srpm_builder_options):
         """
         Build SRPM using mock.
 
@@ -59,7 +59,7 @@ class MockSRPMBuildTool(SRPMBuildToolBase):
         spec_loc = os.path.dirname(spec)
         output = os.path.join(results_dir, "build.log")
 
-        path_to_sources = os.path.join(workdir, 'rpmbuild', 'SOURCES')
+        path_to_sources = os.path.join(workdir, 'SOURCES')
 
         cmd = ['mock', '--old-chroot', '--buildsrpm']
         if srpm_builder_options is not None:
@@ -88,3 +88,39 @@ class MockSRPMBuildTool(SRPMBuildToolBase):
             logfile = root_log_path
         cls.logs = [l for l in PathHelper.find_all_files(srpm_results_dir, '*.log')]
         raise SourcePackageBuildError("Building SRPM failed!", logfile=logfile)
+
+    @classmethod
+    def build(cls, spec, results_dir, **kwargs):
+        """
+        Build SRPM with chosen SRPM Build Tool
+
+        :param spec: SpecFile object
+        :param results_dir: absolute path to DIR where results should be stored
+        :return: absolute path to SRPM, list with absolute paths to logs
+        """
+        srpm_results_dir = os.path.join(results_dir, "SRPM")
+        sources = spec.get_sources()
+        patches = [p.get_path() for p in spec.get_patches()]
+        with MockTemporaryEnvironment(sources, patches, spec.get_path(),
+                                      srpm_results_dir) as tmp_env:
+            srpm_builder_options = cls.get_srpm_builder_options(**kwargs)
+
+            env = tmp_env.env()
+            tmp_dir = tmp_env.path()
+            tmp_spec = env.get(MockTemporaryEnvironment.TEMPDIR_SPEC)
+            tmp_results_dir = env.get(
+                MockTemporaryEnvironment.TEMPDIR_RESULTS)
+
+            srpm = cls._build_srpm(tmp_spec, tmp_dir, tmp_results_dir, srpm_results_dir,
+                                   srpm_builder_options=srpm_builder_options)
+
+        logger.info("Building SRPM finished successfully")
+
+        # srpm path in results_dir
+        srpm = os.path.join(srpm_results_dir, os.path.basename(srpm))
+        logger.debug("Successfully built SRPM: '%s'", str(srpm))
+        # gather logs
+        logs = [l for l in PathHelper.find_all_files(srpm_results_dir, '*.log')]
+        logger.debug("logs: '%s'", str(logs))
+
+        return dict(srpm=srpm, logs=logs)
