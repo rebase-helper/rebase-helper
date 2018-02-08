@@ -37,7 +37,7 @@ from rebasehelper import settings
 from rebasehelper.output_tool import output_tools_runner
 from rebasehelper.utils import PathHelper, GitHelper, KojiHelper, FileHelper, MacroHelper, ConsoleHelper
 from rebasehelper.checker import checkers_runner
-from rebasehelper.build_helper import Builder, SourcePackageBuildError, BinaryPackageBuildError
+from rebasehelper.build_helper import SRPMBuilder, Builder, SourcePackageBuildError, BinaryPackageBuildError
 from rebasehelper.patch_helper import Patcher
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
 from rebasehelper.results_store import results_store
@@ -482,65 +482,105 @@ class Application(object):
         repo.index.commit('Initial commit', skip_hooks=True)
         return repo
 
-    def build_packages(self):
+    @staticmethod
+    def _sanitize_build_dict(build_dict):
+        blacklist = [
+            'builds_nowait',
+            'build_tasks',
+            'builder_options',
+            'srpm_builder_options',
+        ]
+        return {k: v for k, v in six.iteritems(build_dict) if k not in blacklist}
+
+    def build_source_packages(self):
+        try:
+            builder = SRPMBuilder(self.conf.srpm_buildtool)
+        except NotImplementedError as e:
+            raise RebaseHelperError('{}. Supported SRPM build tools are {}'.format(
+                six.text_type(e), SRPMBuilder.get_supported_tools()))
+
+        for version in ['old', 'new']:
+            results_dir = '{}-build'.format(os.path.join(self.results_dir, version))
+            spec = self.spec_file if version == 'old' else self.rebase_spec_file
+            package_name = spec.get_package_name()
+            package_version = spec.get_version()
+            package_full_version = spec.get_full_version()
+            logger.info('Building source package for %s version %s', package_name, package_full_version)
+            build_dict = dict(
+                name=package_name,
+                version=package_version,
+                srpm_buildtool=self.conf.srpm_buildtool,
+                srpm_builder_options=self.conf.srpm_builder_options)
+            try:
+                build_dict.update(builder.build(spec, results_dir, **build_dict))
+                build_dict = self._sanitize_build_dict(build_dict)
+                results_store.set_build_data(version, build_dict)
+            except RebaseHelperError:
+                raise
+            except SourcePackageBuildError as e:
+                build_dict.update(builder.get_logs())
+                build_dict['source_package_build_error'] = six.text_type(e)
+                build_dict = self._sanitize_build_dict(build_dict)
+                results_store.set_build_data(version, build_dict)
+                if e.logfile:
+                    msg = 'Building {} SRPM packages failed; see {} for more information'.format(version, e.logfile)
+                else:
+                    msg = 'Building {} SRPM packages failed; see logs in {} for more information'.format(
+                        version, os.path.join(results_dir, 'SRPM'))
+                raise RebaseHelperError(msg, logfiles=builder.get_logs().get('logs'))
+            except Exception:
+                raise RebaseHelperError('Building package failed with unknown reason. '
+                                        'Check all available log files.')
+
+    def build_binary_packages(self):
         """Function calls build class for building packages"""
         try:
             builder = Builder(self.conf.buildtool)
-        except NotImplementedError as ni_e:
-            raise RebaseHelperError('%s. Supported build tools are %s' % (six.text_type(ni_e),
-                                    Builder.get_supported_tools()))
+        except NotImplementedError as e:
+            raise RebaseHelperError('{}. Supported build tools are {}'.format(
+                six.text_type(e), Builder.get_supported_tools()))
 
         for version in ['old', 'new']:
             successful_builds = 0
             try_build_again = False
-
             while successful_builds < 1:
-
-                spec_object = self.spec_file if version == 'old' else self.rebase_spec_file
-                build_dict = {}
+                results_dir = '{}-build'.format(os.path.join(self.results_dir, version))
+                spec = self.spec_file if version == 'old' else self.rebase_spec_file
+                package_name = spec.get_package_name()
+                package_version = spec.get_version()
+                package_full_version = spec.get_full_version()
                 task_id = None
                 koji_build_id = None
 
                 if self.conf.build_tasks is None:
-                    pkg_name = spec_object.get_package_name()
-                    pkg_version = spec_object.get_version()
-                    pkg_full_version = spec_object.get_full_version()
-
                     if version == 'old' and self.conf.get_old_build_from_koji:
                         if KojiHelper.functional:
-                            koji_version, koji_build_id = KojiHelper.get_latest_build(pkg_name)
+                            koji_version, koji_build_id = KojiHelper.get_latest_build(package_name)
                             if koji_version:
-                                if koji_version != pkg_version:
+                                if koji_version != package_version:
                                     logger.warning('Version of the latest Koji build (%s) with id (%s) '
                                                    'differs from version in SPEC file (%s)!',
-                                                   koji_version, koji_build_id, pkg_version)
-                                pkg_version = pkg_full_version = koji_version
+                                                   koji_version, koji_build_id, package_version)
+                                package_version = package_full_version = koji_version
                             else:
                                 logger.warning('Unable to find the latest Koji build!')
                         else:
                             logger.warning('Unable to get the latest Koji build!')
 
+                    build_dict = dict(
+                        name=package_name,
+                        version=package_version,
+                        builds_nowait=self.conf.builds_nowait,
+                        build_tasks=self.conf.build_tasks,
+                        builder_options=self.conf.builder_options,
+                        srpm=results_store.get_build(version).get('srpm'))
+
                     # prepare for building
-                    builder.prepare(spec_object, self.conf)
+                    builder.prepare(spec, self.conf)
 
-                    build_dict['name'] = pkg_name
-                    build_dict['version'] = pkg_version
-                    build_dict['builds_nowait'] = self.conf.builds_nowait
-                    build_dict['build_tasks'] = self.conf.build_tasks
-                    build_dict['builder_options'] = self.conf.builder_options
-                    build_dict['srpm_builder_options'] = self.conf.srpm_builder_options
-                    build_dict['srpm_buildtool'] = self.conf.srpm_buildtool
-
-                    patches = [x.get_path() for x in spec_object.get_patches()]
-                    spec = spec_object.get_path()
-                    sources = spec_object.get_sources()
-                    logger.info('Building packages for %s version %s', pkg_name, pkg_full_version)
+                    logger.info('Building binary packages for %s version %s', package_name, package_full_version)
                 else:
-                    if version == 'old':
-                        task_id = self.conf.build_tasks[0]
-                    else:
-                        task_id = self.conf.build_tasks[1]
-                results_dir = os.path.join(self.results_dir, version) + '-build'
+                    task_id = self.conf.build_tasks[0] if version == 'old' else self.conf.build_tasks[1]
 
                 try:
                     if self.conf.build_tasks is None:
@@ -548,7 +588,7 @@ class Application(object):
                             build_dict['rpm'], build_dict['logs'] = KojiHelper.download_build(koji_build_id,
                                                                                               results_dir)
                         else:
-                            build_dict.update(builder.build(spec, sources, patches, results_dir, **build_dict))
+                            build_dict.update(builder.build(spec, results_dir, **build_dict))
                     if builder.creates_tasks() and not koji_build_id:
                         if not self.conf.builds_nowait:
                             build_dict['rpm'], build_dict['logs'] = builder.wait_for_task(build_dict, results_dir)
@@ -558,34 +598,16 @@ class Application(object):
                             build_dict['rpm'], build_dict['logs'] = builder.get_detached_task(task_id, results_dir)
                             if build_dict['rpm'] is None:
                                 return False
-
-                    # Do not store rebase-helper internal data to the results
-                    for opt in ['builds_nowait', 'build_tasks', 'builder_options',
-                                'srpm_builder_options', 'srpm_buildtool']:
-                        build_dict.pop(opt)
+                    build_dict = self._sanitize_build_dict(build_dict)
                     results_store.set_build_data(version, build_dict)
                     successful_builds += 1
-
                 except RebaseHelperError:
                     # Proper RebaseHelperError instance was created already. Re-raise it.
                     raise
-
-                except SourcePackageBuildError as e:
-                    build_dict.update(builder.get_logs())
-                    build_dict['source_package_build_error'] = six.text_type(e)
-                    results_store.set_build_data(version, build_dict)
-
-                    if e.logfile is None:
-                        msg = 'Building {} SRPM packages failed; see logs in {} for more information'.format(
-                            version, os.path.join(results_dir, 'SRPM')
-                        )
-                    else:
-                        msg = 'Building {} SRPM packages failed; see {} for more information'.format(version, e.logfile)
-                    raise RebaseHelperError(msg, logfiles=builder.get_logs().get('logs'))
-
                 except BinaryPackageBuildError as e:
                     build_dict.update(builder.get_logs())
                     build_dict['binary_package_build_error'] = six.text_type(e)
+                    build_dict = self._sanitize_build_dict(build_dict)
                     results_store.set_build_data(version, build_dict)
 
                     if e.logfile is None:
@@ -603,7 +625,6 @@ class Application(object):
                         try_build_again = True
                     else:
                         raise RebaseHelperError(msg, logfiles=builder.get_logs().get('logs'))
-
                 except Exception:
                     raise RebaseHelperError('Building package failed with unknown reason. '
                                             'Check all available log files.')
@@ -621,16 +642,12 @@ class Application(object):
                     # clear current version output directories
                     if os.path.exists(os.path.join(results_dir, 'RPM')):
                         shutil.rmtree(os.path.join(results_dir, 'RPM'))
-                    if os.path.exists(os.path.join(results_dir, 'SRPM')):
-                        shutil.rmtree(os.path.join(results_dir, 'SRPM'))
 
         if self.conf.builds_nowait and not self.conf.build_tasks:
             if builder.creates_tasks():
                 self.print_task_info(builder)
 
-        return True
-
-    def run_package_checkers(self, results_dir, category=None):
+    def run_package_checkers(self, results_dir, category):
         """
         Runs checkers on packages and stores results in a given directory.
 
@@ -807,29 +824,20 @@ class Application(object):
             if not self.conf.comparepkgs:
                 # Build packages
                 try:
-                    build = self.build_packages()
+                    self.build_source_packages()
+                    self.run_package_checkers(self.results_dir, 'SRPM')
+                    self.build_binary_packages()
                     if self.conf.builds_nowait and not self.conf.build_tasks:
                         return
+                    self.run_package_checkers(self.results_dir, 'RPM')
                 # Print summary and return error
                 except RebaseHelperError as e:
                     self.print_summary(e)
                     raise
             else:
-                build = self.get_rpm_packages(self.conf.comparepkgs)
-                # We don't care dirname doesn't contain any RPM packages
-                # Therefore return 1
-            if build:
-                try:
-                    self.run_package_checkers(self.results_dir, category="SRPM")
-                    self.run_package_checkers(self.results_dir, category="RPM")
-                # Print summary and return error
-                except RebaseHelperError as e:
-                    self.print_summary(e)
-                    raise
-            else:
-                if not self.upstream_monitoring:
-                    # TODO: This should be an ERROR
-                    logger.info('Rebase package to %s FAILED. See for more details', self.conf.sources)
+                if self.get_rpm_packages(self.conf.comparepkgs):
+                    self.run_package_checkers(self.results_dir, 'SRPM')
+                    self.run_package_checkers(self.results_dir, 'RPM')
 
         if not self.conf.keep_workspace:
             self._delete_workspace_dir()
