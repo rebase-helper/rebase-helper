@@ -213,7 +213,7 @@ class BuildToolBase(object):
         pass
 
     @classmethod
-    def build(cls, spec, sources, patches, results_dir, **kwargs):
+    def build(cls, spec, results_dir, srpm, **kwargs):
         """
         Build binaries from the sources.
 
@@ -239,7 +239,7 @@ class BuildToolBase(object):
         dict with
         'logs' -> list of absolute paths to logs
         """
-        raise NotImplementedError()
+        return dict(logs=getattr(cls, 'logs', None))
 
     @classmethod
     def wait_for_task(cls, build_dict, results_dir):  # pylint: disable=unused-argument
@@ -441,7 +441,7 @@ class Builder(object):
 
     def build(self, *args, **kwargs):
         """Build sources."""
-        logger.debug("Building sources using '%s'", self._tool_name)
+        logger.debug("Building RPMs using '%s'", self._tool_name)
         return self._tool.build(*args, **kwargs)
 
     def get_logs(self):

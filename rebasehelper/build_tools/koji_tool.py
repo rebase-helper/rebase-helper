@@ -130,10 +130,6 @@ class KojiBuildTool(BuildToolBase):
             return int(match.group(1))
 
     @classmethod
-    def get_logs(cls):
-        return {'logs': cls.logs}
-
-    @classmethod
     def wait_for_task(cls, build_dict, results_dir):
         if not cls.koji_helper:
             cls.koji_helper = KojiHelper()
@@ -161,24 +157,19 @@ class KojiBuildTool(BuildToolBase):
             return None, None
 
     @classmethod
-    def build(cls, spec, sources, patches, results_dir, **kwargs):
+    def build(cls, spec, results_dir, srpm, **kwargs):
         """
-        Builds the SRPM using rpmbuild
         Builds the RPMs using koji
 
-        :param spec: absolute path to the SPEC file.
-        :param sources: list with absolute paths to SOURCES
-        :param patches: list with absolute paths to PATCHES
+        :param spec: SpecFile object
         :param results_dir: absolute path to DIR where results should be stored
+        :param srpm: absolute path to SRPM
         :param upstream_monitoring: specify if build is handled by upstream monitoring
         :return: dict with:
-                 'srpm' -> absolute path to SRPM
                  'rpm' -> list with absolute paths to RPMs
                  'logs' -> list with absolute paths to build_logs
+                 'koji_task_id' -> ID of koji task
         """
-        # build SRPM
-        srpm, cls.logs = cls._build_srpm(spec, sources, patches, results_dir, **kwargs)
-        # build RPMs
         rpm_results_dir = os.path.join(results_dir, "RPM")
         os.makedirs(rpm_results_dir)
         if not cls.koji_helper:
@@ -186,7 +177,4 @@ class KojiBuildTool(BuildToolBase):
         rpms, rpm_logs, koji_task_id = cls._scratch_build(srpm, **kwargs)
         if rpm_logs:
             cls.logs.extend(rpm_logs)
-        return {'srpm': srpm,
-                'rpm': rpms,
-                'logs': cls.logs,
-                'koji_task_id': koji_task_id}
+        return dict(rpm=rpms, logs=cls.logs, koji_task_id=koji_task_id)
