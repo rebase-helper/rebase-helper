@@ -1,7 +1,10 @@
-include MANIFEST.in
-include Makefile
-include LICENSE
-include ChangeLog
-include *requirements.txt
-include rebase-helper.bash
-include tox.ini pylintrc .coveragerc
+recursive-include rebasehelper/tests/testing_files *
+include Makefile.docker
+recursive-include docker *
+include Makefile.docs
+recursive-include docs *
+include rebase-helper.bash.in
+include CHANGELOG.md
+include .gitlab-ci.yml
+include .travis.yml
+include .landscape.yml
