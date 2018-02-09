@@ -79,6 +79,7 @@ setup(
         'rebasehelper.output_tools',
         'rebasehelper.versioneers',
         'rebasehelper.tests',
+        'rebasehelper.tests.functional',
     ],
     include_package_data=True,
     entry_points={
