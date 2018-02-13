@@ -595,6 +595,8 @@ class Application(object):
                         msg = 'Building {} RPM packages failed; see {} for more information'.format(version, e.logfile)
 
                     logger.info(msg)
+                    # Save current rebase spec file content
+                    self.rebase_spec_file.save()
                     if not self.conf.non_interactive and \
                             ConsoleHelper.get_message('Do you want to try it one more time'):
                         try_build_again = True
@@ -609,8 +611,6 @@ class Application(object):
                     successful_builds = 0
                     try_build_again = False
 
-                    # Save current rebase spec file content
-                    self.rebase_spec_file.save()
                     logger.info('Now it is time to make changes to  %s if necessary.', self.rebase_spec_file.path)
                     if not ConsoleHelper.get_message('Do you want to continue with the rebuild now'):
                         raise KeyboardInterrupt
