@@ -615,6 +615,7 @@ class Application(object):
                     if not ConsoleHelper.get_message('Do you want to continue with the rebuild now'):
                         raise KeyboardInterrupt
                     # Update rebase spec file content after potential manual modifications
+                    self.rebase_spec_file._read_spec_content()  # pylint: disable=protected-access
                     self.rebase_spec_file._update_data()  # pylint: disable=protected-access
                     # clear current version output directories
                     if os.path.exists(os.path.join(results_dir, 'RPM')):
