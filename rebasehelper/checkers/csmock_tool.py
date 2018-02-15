@@ -35,6 +35,7 @@ class CsmockTool(BaseChecker):
     """ Csmock compare tool."""
 
     CMD = "csmock"
+    category = "SRPM"
 
     @classmethod
     def match(cls, cmd=None):
@@ -52,7 +53,7 @@ class CsmockTool(BaseChecker):
         return cls.DEFAULT
 
     @classmethod
-    def run_check(cls, results_dir):
+    def run_check(cls, results_dir, **kwargs):
         """Compares old and new RPMs using pkgdiff"""
         csmock_report = {}
 

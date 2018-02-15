@@ -42,6 +42,7 @@ class PkgDiffTool(BaseChecker):
     files_xml = "files.xml"
     results_dir = ''
     results_dict = {}
+    category = "RPM"
 
     @classmethod
     def match(cls, cmd=None):
@@ -201,7 +202,7 @@ class PkgDiffTool(BaseChecker):
         return dict((k, v) for k, v in six.iteritems(cls.results_dict) if v)
 
     @classmethod
-    def run_check(cls, results_dir):
+    def run_check(cls, results_dir, **kwargs):
         """
         Compares old and new RPMs using pkgdiff
         :param results_dir result dir where are stored results
