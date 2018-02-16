@@ -25,24 +25,9 @@ import os
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.logger import logger
 from rebasehelper.utils import PathHelper
-from rebasehelper.build_helper import BuildTemporaryEnvironment
 from rebasehelper.build_helper import BuildToolBase
 from rebasehelper.build_helper import BinaryPackageBuildError
-
-
-class MockTemporaryEnvironment(BuildTemporaryEnvironment):
-    """
-    Class representing temporary environment for MockBuildTool.
-    """
-
-    def _create_directory_structure(self):
-        # create directory structure
-        for dir_name in ['SOURCES', 'SPECS', 'RESULTS']:
-            self._env[self.TEMPDIR + '_' + dir_name] = os.path.join(
-                self._env[self.TEMPDIR], dir_name)
-            logger.debug("Creating '%s'",
-                         self._env[self.TEMPDIR + '_' + dir_name])
-            os.makedirs(self._env[self.TEMPDIR + '_' + dir_name])
+from rebasehelper.build_helper import MockTemporaryEnvironment
 
 
 class MockBuildTool(BuildToolBase):  # pylint: disable=abstract-method
@@ -143,27 +128,23 @@ class MockBuildTool(BuildToolBase):  # pylint: disable=abstract-method
         return False
 
     @classmethod
-    def build(cls, spec, sources, patches, results_dir, **kwargs):
+    def build(cls, spec, results_dir, srpm, **kwargs):
         """
-        Builds the SRPM and RPM using mock
+        Builds the RPMs using mock
 
-        :param spec: absolute path to a SPEC file
-        :param sources: list with absolute paths to SOURCES
-        :param patches: list with absolute paths to PATCHES
+        :param spec: SpecFile object
         :param results_dir: absolute path to directory where results will be stored
+        :param srpm: absolute path to SRPM
         :param root: mock root used for building
         :param arch: architecture to build the RPM for
         :return: dict with:
-                 'srpm' -> absolute path to SRPM
                  'rpm' -> list with absolute paths to RPMs
                  'logs' -> list with absolute paths to logs
         """
-        # build SRPM
-        srpm, cls.logs = cls._build_srpm(spec, sources, patches, results_dir, **kwargs)
-
-        # build RPMs
         rpm_results_dir = os.path.join(results_dir, "RPM")
-        with MockTemporaryEnvironment(sources, patches, spec, rpm_results_dir) as tmp_env:
+        sources = spec.get_sources()
+        patches = [p.get_path() for p in spec.get_patches()]
+        with MockTemporaryEnvironment(sources, patches, spec.get_path(), rpm_results_dir) as tmp_env:
             env = tmp_env.env()
             tmp_results_dir = env.get(MockTemporaryEnvironment.TEMPDIR_RESULTS)
             rpms = cls._build_rpm(srpm, tmp_results_dir, rpm_results_dir,
@@ -182,10 +163,4 @@ class MockBuildTool(BuildToolBase):  # pylint: disable=abstract-method
         cls.logs.extend([l for l in PathHelper.find_all_files(rpm_results_dir, '*.log')])
         logger.debug("logs: '%s'", str(cls.logs))
 
-        return {'srpm': srpm,
-                'rpm': rpms,
-                'logs': cls.logs}
-
-    @classmethod
-    def get_logs(cls):
-        return {'logs': cls.logs}
+        return dict(rpm=rpms, logs=cls.logs)

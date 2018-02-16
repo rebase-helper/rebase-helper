@@ -92,23 +92,18 @@ class CoprBuildTool(BuildToolBase):
         return rpms, logs, build_id
 
     @classmethod
-    def build(cls, spec, sources, patches, results_dir, **kwargs):
+    def build(cls, spec, results_dir, srpm, **kwargs):
         """
-        Builds the SRPM using rpmbuild
         Builds the RPMs using copr
 
-        :param spec: absolute path to the SPEC file.
-        :param sources: list with absolute paths to SOURCES
-        :param patches: list with absolute paths to PATCHES
+        :param spec: SpecFile object
         :param results_dir: absolute path to DIR where results should be stored
+        :param srpm: absolute path to SRPM
         :return: dict with:
-                 'srpm' -> absolute path to SRPM
                  'rpm' -> list with absolute paths to RPMs
                  'logs' -> list with absolute paths to build_logs
+                 'copr_build_id' -> ID of copr build
         """
-        # build SRPM
-        srpm, cls.logs = cls._build_srpm(spec, sources, patches, results_dir, **kwargs)
-        # build RPMs
         rpm_results_dir = os.path.join(results_dir, "RPM")
         os.makedirs(rpm_results_dir)
         if not cls.copr_helper:
@@ -116,14 +111,7 @@ class CoprBuildTool(BuildToolBase):
         rpms, rpm_logs, build_id = cls._build_rpms(srpm, **kwargs)
         if rpm_logs:
             cls.logs.extend(rpm_logs)
-        return {'srpm': srpm,
-                'rpm': rpms,
-                'logs': cls.logs,
-                'copr_build_id': build_id}
-
-    @classmethod
-    def get_logs(cls):
-        return {'logs': cls.logs}
+        return dict(rpm=rpms, logs=cls.logs, copr_build_id=build_id)
 
     @classmethod
     def get_task_info(cls, build_dict):

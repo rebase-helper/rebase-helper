@@ -111,25 +111,21 @@ class RpmbuildBuildTool(BuildToolBase):  # pylint: disable=abstract-method
                     raise RebaseHelperError('Failed to install build dependencies')
 
     @classmethod
-    def build(cls, spec, sources, patches, results_dir, **kwargs):
+    def build(cls, spec, results_dir, srpm, **kwargs):
         """
-        Builds the SRPM and RPMs using rpmbuild
+        Builds the RPMs using rpmbuild
 
-        :param spec: absolute path to the SPEC file.
-        :param sources: list with absolute paths to SOURCES
-        :param patches: list with absolute paths to PATCHES
+        :param spec: SpecFile object
         :param results_dir: absolute path to DIR where results should be stored
+        :param srpm: absolute path to SRPM
         :return: dict with:
-                 'srpm' -> absolute path to SRPM
                  'rpm' -> list with absolute paths to RPMs
                  'logs' -> list with absolute paths to build_logs
         """
-        # build SRPM
-        srpm, cls.logs = cls._build_srpm(spec, sources, patches, results_dir, **kwargs)
-
-        # build RPMs
         rpm_results_dir = os.path.join(results_dir, "RPM")
-        with RpmbuildTemporaryEnvironment(sources, patches, spec, rpm_results_dir) as tmp_env:
+        sources = spec.get_sources()
+        patches = [p.get_path() for p in spec.get_patches()]
+        with RpmbuildTemporaryEnvironment(sources, patches, spec.get_path(), rpm_results_dir) as tmp_env:
             env = tmp_env.env()
             tmp_dir = tmp_env.path()
             tmp_results_dir = env.get(RpmbuildTemporaryEnvironment.TEMPDIR_RESULTS)
@@ -146,10 +142,4 @@ class RpmbuildBuildTool(BuildToolBase):  # pylint: disable=abstract-method
         cls.logs.extend([l for l in PathHelper.find_all_files(rpm_results_dir, '*.log')])
         logger.debug("logs: '%s'", str(cls.logs))
 
-        return {'srpm': srpm,
-                'rpm': rpms,
-                'logs': cls.logs}
-
-    @classmethod
-    def get_logs(cls):
-        return {'logs': cls.logs}
+        return dict(rpm=rpms, logs=cls.logs)
