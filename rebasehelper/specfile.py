@@ -174,6 +174,7 @@ class SpecFile(object):
             'ruby': re.compile(r'^rubygem-'),
             'nodejs': re.compile(r'^nodejs-'),
             'php': re.compile(r'^php-'),
+            'haskell': re.compile(r'^ghc-'),
         }
         for pkg in self.spc.packages:
             for category, regexp in six.iteritems(categories):
