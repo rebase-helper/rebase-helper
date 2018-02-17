@@ -29,6 +29,7 @@ from rebasehelper.versioneers.anitya_versioneer import AnityaVersioneer
 from rebasehelper.versioneers.pypi_versioneer import PyPIVersioneer
 from rebasehelper.versioneers.npmjs_versioneer import NPMJSVersioneer
 from rebasehelper.versioneers.cpan_versioneer import CPANVersioneer
+from rebasehelper.versioneers.haskell_versioneer import HaskellVersioneer
 
 
 class TestVersioneer(object):
@@ -79,4 +80,16 @@ class TestVersioneer(object):
     def test_cpan_versioneer(self, package, min_version):
         assert CPANVersioneer.get_name() in versioneers_runner.versioneers
         version = versioneers_runner.run(CPANVersioneer.get_name(), package, None)
+        assert parse_version(version) >= parse_version(min_version)
+
+    @pytest.mark.parametrize('package, min_version', [
+        ('ghc-clock', '0.2.0.0'),
+        ('cab', '0.2.17')
+    ], ids=[
+        'ghc-clock>=0.2.0.0',
+        'cab>=0.2.17'
+    ])
+    def test_haskell_versioneer(self, package, min_version):
+        assert HaskellVersioneer.get_name() in versioneers_runner.versioneers
+        version = versioneers_runner.run(HaskellVersioneer.get_name(), package, None)
         assert parse_version(version) >= parse_version(min_version)
