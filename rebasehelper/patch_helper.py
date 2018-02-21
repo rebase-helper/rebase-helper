@@ -107,14 +107,13 @@ class GitPatchTool(PatchBase):
             repo.index.commit('Patch: {0}'.format(os.path.basename(patch_name)), skip_hooks=True)
 
     @classmethod
-    def _update_deleted_patches(cls, deleted_patches, inapplicable_patches):
+    def _update_deleted_patches(cls, inapplicable_patches):
         """Function checks patches against rebase-patches"""
         commits = list(cls.old_repo.iter_commits())
         updated_patches = []
         for patch in cls.patches:
             patch_name = patch.get_patch_name()
             if (not [c for c in commits if c.summary.endswith(patch_name)] and
-                    patch_name not in deleted_patches and
                     patch_name not in inapplicable_patches):
                 updated_patches.append(patch_name)
         return updated_patches
@@ -167,7 +166,6 @@ class GitPatchTool(PatchBase):
         logger.debug(cls.output_data)
         patch_dictionary = {}
         modified_patches = []
-        deleted_patches = []
         inapplicable_patches = []
         while True:
             automerged_patches = cls._get_automerged_patches(cls.output_data)
@@ -179,7 +177,7 @@ class GitPatchTool(PatchBase):
                     with open(base_name, 'wb') as f:
                         f.write(diff)
                         f.write(b'\n')
-                    modified_patches.append(base_name)
+                    modified_patches.append(patch_name)
             if ret_code != 0:
                 # get name of the current patch using .git/rebase-apply/next
                 try:
@@ -217,9 +215,7 @@ class GitPatchTool(PatchBase):
                         with open(base_name, 'wb') as f:
                             f.write(diff)
                             f.write(b'\n')
-                        modified_patches.append(base_name)
-                else:
-                    deleted_patches.append(base_name)
+                        modified_patches.append(patch_name)
                 if not cls.non_interactive:
                     if not ConsoleHelper.get_message('Do you want to continue with another patch'):
                         raise KeyboardInterrupt
@@ -232,7 +228,7 @@ class GitPatchTool(PatchBase):
                     ret_code = 0
             else:
                 break
-        deleted_patches = cls._update_deleted_patches(deleted_patches, inapplicable_patches)
+        deleted_patches = cls._update_deleted_patches(inapplicable_patches)
         if deleted_patches:
             patch_dictionary['deleted'] = deleted_patches
         if modified_patches:
