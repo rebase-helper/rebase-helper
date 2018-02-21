@@ -235,6 +235,10 @@ class GitPatchTool(PatchBase):
             patch_dictionary['modified'] = modified_patches
         if inapplicable_patches:
             patch_dictionary['inapplicable'] = inapplicable_patches
+        patches = [os.path.basename(p.path) for p in cls.patches]
+        untouched_patches = [p for p in patches if p not in deleted_patches + modified_patches + inapplicable_patches]
+        if untouched_patches:
+            patch_dictionary['untouched'] = untouched_patches
         # TODO correct settings for merge tool in ~/.gitconfig
         # currently now meld is not started
         return patch_dictionary
