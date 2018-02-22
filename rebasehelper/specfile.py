@@ -40,7 +40,7 @@ from operator import itemgetter
 from six.moves import urllib
 
 from rebasehelper.utils import DownloadHelper, DownloadError, MacroHelper, GitHelper, RpmHelper
-from rebasehelper.utils import LookasideCacheHelper, LookasideCacheError, defenc
+from rebasehelper.utils import LookasideCacheHelper, LookasideCacheError, SilentArgumentParser, ParseError, defenc
 from rebasehelper.logger import logger
 from rebasehelper import settings
 from rebasehelper.archive import Archive
@@ -312,7 +312,7 @@ class SpecFile(object):
         This should work reliably in most cases except when a list of patches
         is read from a file (netcf, libvirt).
         """
-        parser = argparse.ArgumentParser()
+        parser = SilentArgumentParser()
         parser.add_argument('-p', type=int, default=0)
         result = {}
         for line in self.get_prep_section():
@@ -320,7 +320,10 @@ class SpecFile(object):
             if not tokens:
                 continue
             args = tokens[1:]
-            ns, rest = parser.parse_known_args(args)
+            try:
+                ns, rest = parser.parse_known_args(args)
+            except ParseError:
+                continue
             rest = [os.path.basename(a) for a in rest]
             indexes = [p[1] for p in patches if p[0] in rest]
             for idx in indexes:
@@ -1351,7 +1354,7 @@ class SpecFile(object):
 
         :return: constructed ArgumentParser
         """
-        parser = argparse.ArgumentParser()
+        parser = SilentArgumentParser()
         parser.add_argument('-n', default=MacroHelper.expand('%{name}-%{version}', '%{name}-%{version}'))
         parser.add_argument('-a', type=int, default=-1)
         parser.add_argument('-b', type=int, default=-1)
@@ -1378,7 +1381,10 @@ class SpecFile(object):
                 line = MacroHelper.expand(line, '')
 
                 # parse macro arguments
-                ns, _ = parser.parse_known_args(shlex.split(line)[1:])
+                try:
+                    ns, _ = parser.parse_known_args(shlex.split(line)[1:])
+                except ParseError:
+                    continue
 
                 # check if this macro instance is extracting Source0
                 if not ns.T or ns.a == 0 or ns.b == 0:
@@ -1402,7 +1408,10 @@ class SpecFile(object):
                 macro = args[0]
 
                 # parse macro arguments
-                ns, unknown = parser.parse_known_args(args[1:])
+                try:
+                    ns, unknown = parser.parse_known_args(args[1:])
+                except ParseError:
+                    continue
 
                 # check if this macro instance is extracting Source0
                 if ns.T and ns.a != 0 and ns.b != 0:
@@ -1461,7 +1470,7 @@ class SpecFile(object):
         :param archive: Path to archive
         :return: Target path relative to builddir or None if not determined
         """
-        cd_parser = argparse.ArgumentParser()
+        cd_parser = SilentArgumentParser()
         cd_parser.add_argument('dir', default=os.environ.get('HOME', ''))
         tar_parser = argparse.ArgumentParser()
         tar_parser.add_argument('-C', default='.', dest='target')
@@ -1479,8 +1488,12 @@ class SpecFile(object):
                 cmd, args = os.path.basename(tokens[0]), tokens[1:]
                 if cmd == 'cd':
                     # keep track of current directory
-                    ns, _ = cd_parser.parse_known_args(args)
-                    basedir = ns.dir if os.path.isabs(ns.dir) else os.path.join(basedir, ns.dir)
+                    try:
+                        ns, _ = cd_parser.parse_known_args(args)
+                    except ParseError:
+                        pass
+                    else:
+                        basedir = ns.dir if os.path.isabs(ns.dir) else os.path.join(basedir, ns.dir)
                 if archive in line:
                     if cmd == 'tar':
                         parser = tar_parser
@@ -1488,7 +1501,10 @@ class SpecFile(object):
                         parser = unzip_parser
                     else:
                         continue
-                    ns, _ = parser.parse_known_args(args)
+                    try:
+                        ns, _ = parser.parse_known_args(args)
+                    except ParseError:
+                        continue
                     basedir = os.path.relpath(basedir, builddir)
                     return os.path.normpath(os.path.join(basedir, ns.target))
         return None
