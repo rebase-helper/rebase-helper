@@ -277,7 +277,7 @@ class TestSpecFile(object):
                                    '\n']],
             3: ['%description devel', ['Testing devel spec file\n',
                                        '\n']],
-            4: ['%prep', ['%setup -q -a 5\n',
+            4: ['%prep', ['%setup -q -c -a 5\n',
                           '%patch1\n',
                           '%patch2 -p1\n',
                           '%patch3 -p1 -b .testing3\n',
