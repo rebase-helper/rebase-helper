@@ -26,6 +26,8 @@ import pkg_resources
 
 from rebasehelper.logger import logger, logger_output
 from rebasehelper.results_store import results_store
+from rebasehelper.checkers.abipkgdiff_tool import AbiCheckerTool
+from rebasehelper.settings import REBASE_HELPER_RESULTS_DIR
 
 
 class BaseOutputTool(object):
@@ -47,6 +49,10 @@ class BaseOutputTool(object):
         raise NotImplementedError
 
     @classmethod
+    def prepend_results_dir_name(cls, *path_members):
+        return os.path.join(REBASE_HELPER_RESULTS_DIR, *path_members)
+
+    @classmethod
     def print_cli_summary(cls, app):
         """
         Print report of the rebase
@@ -55,24 +61,31 @@ class BaseOutputTool(object):
         """
         cls.app = app
         cls.print_patches_cli()
+        result = results_store.get_result_message()
+        checkers = results_store.get_checkers()
+
+        if 'abipkgdiff' in checkers:
+            if AbiCheckerTool.abi_changes:
+                logger_output.warning('\nABI changes occured. Check abipkgdiff output')
 
         logger_output.heading('\nAvailable logs:')
-        logger_output.info('%s:\n%s', 'Debug log', app.debug_log_file)
+        logger_output.info('%s:\n%s', 'Debug log', cls.prepend_results_dir_name(os.path.relpath(app.debug_log_file,
+                                                                                app.results_dir)))
         if results_store.get_old_build() is not None:
-            logger_output.info('%s:\n%s', 'Old build logs and (S)RPMs', os.path.join(app.results_dir, 'old-build'))
+            logger_output.info('%s:\n%s', 'Old build logs and (S)RPMs', cls.prepend_results_dir_name('old-build'))
         if results_store.get_new_build() is not None:
-            logger_output.info('%s:\n%s', 'New build logs and (S)RPMs', os.path.join(app.results_dir, 'new-build'))
+            logger_output.info('%s:\n%s', 'New build logs and (S)RPMs', cls.prepend_results_dir_name('old-build'))
         logger_output.info('')
 
         logger_output.heading('%s:', 'Rebased sources')
-        logger_output.info("%s", app.rebased_sources_dir)
+        logger_output.info("%s", cls.prepend_results_dir_name(os.path.relpath(app.debug_log_file, app.results_dir)))
 
-        logger_output.heading('%s:', 'Generated patch')
-        logger_output.info("%s\n", os.path.join(app.results_dir, 'changes.patch'))
+        patch = results_store.get_changes_patch()
+        if 'changes_patch' in patch:
+            logger_output.heading('%s:', 'Generated patch')
+            logger_output.info("%s\n", cls.prepend_results_dir_name(os.path.basename(patch['changes_patch'])))
 
         cls.print_report_file_path()
-
-        result = results_store.get_result_message()
 
         if not app.conf.patch_only:
             if 'success' in result:
@@ -88,7 +101,7 @@ class BaseOutputTool(object):
     def print_report_file_path(cls):
         """Print path to the report file"""
         logger_output.heading('%s report:' % cls.NAME)
-        logger_output.info('%s', os.path.join(cls.app.results_dir, 'report.' + cls.get_extension()))
+        logger_output.info('%s', cls.prepend_results_dir_name('report.' + cls.get_extension()))
 
     @classmethod
     def print_patches_cli(cls):
@@ -116,7 +129,7 @@ class BaseOutputTool(object):
 
         if patch_type in patches:
             logger_output.info('\n%s patches:', patch_type)
-            for patch in patches[patch_type]:
+            for patch in sorted(patches[patch_type]):
                 logger_method(patch)
 
     @classmethod
