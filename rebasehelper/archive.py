@@ -169,6 +169,12 @@ class TgzArchiveType(TarGzArchiveType):
 
 
 @register_archive_type
+class TarArchiveType(TarGzArchiveType):
+    """ .tar archive type """
+    EXTENSION = ".tar"
+
+
+@register_archive_type
 class ZipArchiveType(ArchiveTypeBase):
     """ .zip archive type """
     EXTENSION = ".zip"

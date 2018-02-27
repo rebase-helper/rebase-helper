@@ -20,6 +20,7 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
+import argparse
 import io
 import os
 import re
@@ -1365,3 +1366,14 @@ class LookasideCacheHelper(object):
             raise LookasideCacheError('Failed to read rpkg configuration')
         for source in cls._read_sources(basepath):
             cls._download_source(tool, url, package, source['filename'], source['hashtype'], source['hash'])
+
+
+class ParseError(Exception):
+
+    pass
+
+
+class SilentArgumentParser(argparse.ArgumentParser):
+
+    def error(self, message):
+        raise ParseError(message)

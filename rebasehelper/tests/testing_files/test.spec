@@ -50,7 +50,7 @@ Summary: A testing devel package
 Testing devel spec file
 
 %prep
-%setup -q -a 5
+%setup -q -c -a 5
 %patch1
 %patch2 -p1
 %patch3 -p1 -b .testing3
