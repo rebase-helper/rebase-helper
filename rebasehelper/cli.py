@@ -30,7 +30,7 @@ from rebasehelper.options import OPTIONS, traverse_options
 from rebasehelper.constants import PROGRAM_DESCRIPTION, NEW_ISSUE_LINK
 from rebasehelper.version import VERSION
 from rebasehelper.application import Application
-from rebasehelper.logger import logger, LoggerHelper
+from rebasehelper.logger import logger, handler
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.utils import ConsoleHelper
 from rebasehelper.config import Config
@@ -159,7 +159,6 @@ class CliHelper(object):
         debug_log_file = None
         try:
             # be verbose until debug_log_file is created
-            handler = LoggerHelper.add_stream_handler(logger, logging.DEBUG)
             cli = CLI()
             if hasattr(cli, 'version'):
                 logger.info(VERSION)
