@@ -799,7 +799,8 @@ class Application(object):
             if not self.conf.comparepkgs:
                 # Build packages
                 try:
-                    self.build_source_packages()
+                    if self.conf.build_tasks is None:
+                        self.build_source_packages()
                     self.run_package_checkers(self.results_dir, 'SRPM')
                     self.build_binary_packages()
                     if self.conf.builds_nowait and not self.conf.build_tasks:
