@@ -554,7 +554,8 @@ class Application(object):
                 if self.conf.build_tasks is None:
                     if version == 'old' and self.conf.get_old_build_from_koji:
                         if KojiHelper.functional:
-                            koji_version, koji_build_id = KojiHelper.get_latest_build(package_name)
+                            session = KojiHelper.create_session()
+                            koji_version, koji_build_id = KojiHelper.get_latest_build(session, package_name)
                             if koji_version:
                                 if koji_version != package_version:
                                     logger.warning('Version of the latest Koji build (%s) with id (%s) '
@@ -584,19 +585,19 @@ class Application(object):
                 try:
                     if self.conf.build_tasks is None:
                         if koji_build_id:
-                            build_dict['rpm'], build_dict['logs'] = KojiHelper.download_build(koji_build_id,
+                            session = KojiHelper.create_session()
+                            build_dict['rpm'], build_dict['logs'] = KojiHelper.download_build(session,
+                                                                                              koji_build_id,
                                                                                               results_dir)
                         else:
                             build_dict.update(builder.build(spec, results_dir, **build_dict))
-                    if builder.creates_tasks() and not koji_build_id:
+                    if builder.creates_tasks() and task_id and not koji_build_id:
                         if not self.conf.builds_nowait:
-                            build_dict['rpm'], build_dict['logs'] = builder.wait_for_task(build_dict, results_dir)
-                            if build_dict['rpm'] is None:
-                                return False
+                            build_dict['rpm'], build_dict['logs'] = builder.wait_for_task(build_dict,
+                                                                                          task_id,
+                                                                                          results_dir)
                         elif self.conf.build_tasks:
                             build_dict['rpm'], build_dict['logs'] = builder.get_detached_task(task_id, results_dir)
-                            if build_dict['rpm'] is None:
-                                return False
                     build_dict = self._sanitize_build_dict(build_dict)
                     results_store.set_build_data(version, build_dict)
                     successful_builds += 1

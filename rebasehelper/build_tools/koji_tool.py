@@ -30,6 +30,7 @@ import koji_cli.lib  # pylint: disable=import-error,unused-import
 
 from rebasehelper.utils import KojiHelper
 from rebasehelper.logger import logger
+from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.build_helper import BuildToolBase
 from rebasehelper.build_helper import BinaryPackageBuildError
 
@@ -42,18 +43,8 @@ class KojiBuildTool(BuildToolBase):
     CMD = "koji"
     LOCAL = False
     logs = []
-    koji_helper = None
 
-    # Taken from https://github.com/fedora-infra/the-new-hotness/blob/develop/fedmsg.d/hotness-example.py
-    koji_web = "koji.fedoraproject.org"
-    server = "https://%s/kojihub" % koji_web
-    weburl = "http://%s/koji" % koji_web
-    git_url = 'http://pkgs.fedoraproject.org/cgit/{package}.git'
-    opts = {'scratch': True}
     target_tag = 'rawhide'
-    priority = 30
-
-    # Taken from  https://github.com/fedora-infra/the-new-hotness/blob/develop/hotness/buildsys.py#L78-L123
 
     @classmethod
     def match(cls, cmd=None):
@@ -79,82 +70,77 @@ class KojiBuildTool(BuildToolBase):
         return True
 
     @classmethod
-    def _scratch_build(cls, source, **kwargs):
-        session = cls.koji_helper.session_maker()
-        remote = cls.koji_helper.upload_srpm(session, source)
-        task_id = session.build(remote, cls.target_tag, cls.opts, priority=cls.priority)
+    def _verify_tasks(cls, session, task_dict):
+        """Checks if any of the tasks failed and tries to extract mock exit code from it.
+
+        Args:
+            session (koji.ClientSession): Active Koji session instance.
+            task_dict (dict): Dict mapping Koji task ID to its state.
+
+        Returns:
+            int: Mock exit code or -1 if any task failed, otherwise None.
+
+        """
+        for task_id, state in six.iteritems(task_dict):
+            if state == koji.TASK_STATES['FAILED']:
+                try:
+                    session.getTaskResult(task_id)
+                except koji.BuildError as e:
+                    # typical error message:
+                    #   BuildError: error building package (arch noarch),
+                    #   mock exited with status 1; see build.log for more information
+                    match = re.search(r'mock exited with status (\d+)', six.text_type(e))
+                    if match:
+                        return int(match.group(1))
+                    else:
+                        return -1
+        return None
+
+    @classmethod
+    def _scratch_build(cls, srpm, **kwargs):
+        session = KojiHelper.create_session()
+        remote = KojiHelper.upload_srpm(session, srpm)
+        task_id = session.build(remote, cls.target_tag, dict(scratch=True))
         if kwargs['builds_nowait']:
             return None, None, task_id
-        weburl = cls.weburl + '/taskinfo?taskID=%i' % task_id
-        logger.info('Koji task_id is here: %s\n', weburl)
+        url = KojiHelper.get_task_url(session, task_id)
+        logger.info('Koji task is here: %s\n', url)
         session.logout()
-        task_dict = cls.koji_helper.watch_koji_tasks(session, [task_id])
-        task_list = []
-        package_failed = False
-        build_error = None
-        for key in six.iterkeys(task_dict):
-            if task_dict[key] == koji.TASK_STATES['FAILED']:
-                try:
-                    # call getTaskResult, as it raises an exception containing desired error message
-                    session.getTaskResult(key)
-                except koji.BuildError as e:
-                    build_error = six.text_type(e)
-                package_failed = True
-            task_list.append(key)
-        rpms, logs = cls.koji_helper.download_scratch_build(session,
-                                                            task_list,
-                                                            os.path.dirname(source).replace('SRPM', 'RPM'))
-        if package_failed:
-            weburl = '%s/taskinfo?taskID=%i' % (cls.weburl, task_list[0])
-            logger.info('RPM build failed %s', weburl)
-            logs.append(weburl)
-            cls.logs.append(weburl)
-            cls.logs.extend(logs)
-            raise BinaryPackageBuildError(return_code=cls.get_mock_return_code(build_error))
-        logs.append(weburl)
+        task_dict = KojiHelper.watch_koji_tasks(session, [task_id])
+        path = os.path.dirname(srpm).replace('SRPM', 'RPM')
+        rpms, logs = KojiHelper.download_task_results(session, list(task_dict), path)
+        exit_code = cls._verify_tasks(session, task_dict)
+        if exit_code:
+            raise BinaryPackageBuildError(exit_code=exit_code)
         return rpms, logs, task_id
 
     @classmethod
-    def get_mock_return_code(cls, msg):
-        """
-        Parses koji status message for mock build return code
-
-        :param msg: mock status message
-        :return: returns mock build return code
-        """
-        match = re.search(r'mock exited with status (\d+)', msg)
-        if match:
-            # Example error message that can be parsed:
-            # BuildError: error building package (arch noarch),
-            # mock exited with status 1; see build.log for more information
-            return int(match.group(1))
-
-    @classmethod
-    def wait_for_task(cls, build_dict, results_dir):
-        if not cls.koji_helper:
-            cls.koji_helper = KojiHelper()
-        task_id = build_dict.get('koji_task_id')
-        if not task_id:
-            return None, None
-        rpm, logs = build_dict.get('rpm'), build_dict.get('logs')
-        while not rpm:
-            rpm, logs = cls.koji_helper.get_koji_tasks(task_id, results_dir)
-        return rpm, logs
+    def wait_for_task(cls, build_dict, task_id, results_dir):
+        session = KojiHelper.create_session()
+        task_dict = KojiHelper.watch_koji_tasks(session, [task_id])
+        rpms, logs = KojiHelper.download_task_results(session, list(task_dict), results_dir)
+        exit_code = cls._verify_tasks(session, task_dict)
+        if exit_code:
+            raise BinaryPackageBuildError(exit_code=exit_code)
+        return rpms, logs
 
     @classmethod
     def get_task_info(cls, build_dict):
-        message = "Scratch build for '%s' version is: http://koji.fedoraproject.org/koji/taskinfo?taskID=%s"
-        return message % (build_dict['version'], build_dict['koji_task_id'])
+        session = KojiHelper.create_session()
+        url = KojiHelper.get_task_url(session, build_dict['koji_task_id'])
+        return 'Scratch build for {} version is: {}'.format(build_dict['version'], url)
 
     @classmethod
     def get_detached_task(cls, task_id, results_dir):
-        if not cls.koji_helper:
-            cls.koji_helper = KojiHelper()
-        try:
-            return cls.koji_helper.get_koji_tasks(task_id, results_dir)
-        except TypeError:
-            logger.info('Koji tasks are not finished yet. Try again later')
-            return None, None
+        session = KojiHelper.create_session()
+        rpms, logs = KojiHelper.download_task_results(session, [task_id], results_dir)
+        task = session.getTaskInfo(task_id)
+        exit_code = cls._verify_tasks(session, {task_id: task['state']})
+        if exit_code:
+            raise BinaryPackageBuildError(exit_code=exit_code)
+        if not rpms:
+            raise RebaseHelperError('Koji tasks are not finished yet. Try again later.')
+        return rpms, logs
 
     @classmethod
     def build(cls, spec, results_dir, srpm, **kwargs):
@@ -172,8 +158,6 @@ class KojiBuildTool(BuildToolBase):
         """
         rpm_results_dir = os.path.join(results_dir, "RPM")
         os.makedirs(rpm_results_dir)
-        if not cls.koji_helper:
-            cls.koji_helper = KojiHelper()
         rpms, rpm_logs, koji_task_id = cls._scratch_build(srpm, **kwargs)
         if rpm_logs:
             cls.logs.extend(rpm_logs)
