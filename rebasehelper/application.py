@@ -544,14 +544,17 @@ class Application(object):
             try_build_again = False
             while successful_builds < 1:
                 results_dir = '{}-build'.format(os.path.join(self.results_dir, version))
-                spec = self.spec_file if version == 'old' else self.rebase_spec_file
-                package_name = spec.get_package_name()
-                package_version = spec.get_version()
-                package_full_version = spec.get_full_version()
+                spec = None
                 task_id = None
                 koji_build_id = None
+                build_dict = {}
 
                 if self.conf.build_tasks is None:
+                    spec = self.spec_file if version == 'old' else self.rebase_spec_file
+                    package_name = spec.get_package_name()
+                    package_version = spec.get_version()
+                    package_full_version = spec.get_full_version()
+
                     if version == 'old' and self.conf.get_old_build_from_koji:
                         if KojiHelper.functional:
                             session = KojiHelper.create_session()
@@ -618,8 +621,9 @@ class Application(object):
                         msg = 'Building {} RPM packages failed; see {} for more information'.format(version, e.logfile)
 
                     logger.info(msg)
-                    # Save current rebase spec file content
-                    self.rebase_spec_file.save()
+                    if self.rebase_spec_file:
+                        # Save current rebase spec file content
+                        self.rebase_spec_file.save()
                     if not self.conf.non_interactive and \
                             ConsoleHelper.get_message('Do you want to try it one more time'):
                         try_build_again = True
@@ -740,8 +744,10 @@ class Application(object):
             result = "Rebase to %s SUCCEEDED" % self.conf.sources
             results_store.set_result_message('success', result)
 
-        self.rebase_spec_file.update_paths_to_patches()
-        self.generate_patch()
+        if self.rebase_spec_file:
+            self.rebase_spec_file.update_paths_to_patches()
+            self.generate_patch()
+
         output_tools_runner.run_output_tools(logs, self)
 
     def print_task_info(self, builder):
