@@ -20,17 +20,22 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
-import six
 import pkg_resources
+import os
+
+import six
 
 from rebasehelper.logger import logger
+from rebasehelper.settings import REBASE_HELPER_RESULTS_DIR
 
 
 class BaseChecker(object):
     """ Base class used for testing tool run on final pkgs. """
 
+    NAME = None
     DEFAULT = False
     category = None
+    results_dir = None
 
     @classmethod
     def match(cls, cmd):
@@ -41,9 +46,14 @@ class BaseChecker(object):
         raise NotImplementedError()
 
     @classmethod
+    def get_checker_output_dir_short(cls):
+        """Return short version of checker output directory"""
+        return os.path.join(REBASE_HELPER_RESULTS_DIR, 'checkers', cls.NAME)
+
+    @classmethod
     def get_checker_name(cls):
         """Returns a name of the checker"""
-        raise NotImplementedError()
+        return cls.NAME
 
     @classmethod
     def is_default(cls):
@@ -58,6 +68,10 @@ class BaseChecker(object):
     @classmethod
     def get_category(cls):
         return cls.category
+
+    @classmethod
+    def get_underlined_title(cls, text, separator='='):
+        return "\n{}\n{}".format(text, separator * len(text))
 
 
 class CheckersRunner(object):
