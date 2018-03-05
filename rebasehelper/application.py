@@ -544,17 +544,21 @@ class Application(object):
             try_build_again = False
             while successful_builds < 1:
                 results_dir = '{}-build'.format(os.path.join(self.results_dir, version))
-                spec = self.spec_file if version == 'old' else self.rebase_spec_file
-                package_name = spec.get_package_name()
-                package_version = spec.get_version()
-                package_full_version = spec.get_full_version()
+                spec = None
                 task_id = None
                 koji_build_id = None
+                build_dict = {}
 
                 if self.conf.build_tasks is None:
+                    spec = self.spec_file if version == 'old' else self.rebase_spec_file
+                    package_name = spec.get_package_name()
+                    package_version = spec.get_version()
+                    package_full_version = spec.get_full_version()
+
                     if version == 'old' and self.conf.get_old_build_from_koji:
                         if KojiHelper.functional:
-                            koji_version, koji_build_id = KojiHelper.get_latest_build(package_name)
+                            session = KojiHelper.create_session()
+                            koji_version, koji_build_id = KojiHelper.get_latest_build(session, package_name)
                             if koji_version:
                                 if koji_version != package_version:
                                     logger.warning('Version of the latest Koji build (%s) with id (%s) '
@@ -584,19 +588,19 @@ class Application(object):
                 try:
                     if self.conf.build_tasks is None:
                         if koji_build_id:
-                            build_dict['rpm'], build_dict['logs'] = KojiHelper.download_build(koji_build_id,
+                            session = KojiHelper.create_session()
+                            build_dict['rpm'], build_dict['logs'] = KojiHelper.download_build(session,
+                                                                                              koji_build_id,
                                                                                               results_dir)
                         else:
                             build_dict.update(builder.build(spec, results_dir, **build_dict))
-                    if builder.creates_tasks() and not koji_build_id:
+                    if builder.creates_tasks() and task_id and not koji_build_id:
                         if not self.conf.builds_nowait:
-                            build_dict['rpm'], build_dict['logs'] = builder.wait_for_task(build_dict, results_dir)
-                            if build_dict['rpm'] is None:
-                                return False
+                            build_dict['rpm'], build_dict['logs'] = builder.wait_for_task(build_dict,
+                                                                                          task_id,
+                                                                                          results_dir)
                         elif self.conf.build_tasks:
                             build_dict['rpm'], build_dict['logs'] = builder.get_detached_task(task_id, results_dir)
-                            if build_dict['rpm'] is None:
-                                return False
                     build_dict = self._sanitize_build_dict(build_dict)
                     results_store.set_build_data(version, build_dict)
                     successful_builds += 1
@@ -617,8 +621,9 @@ class Application(object):
                         msg = 'Building {} RPM packages failed; see {} for more information'.format(version, e.logfile)
 
                     logger.info(msg)
-                    # Save current rebase spec file content
-                    self.rebase_spec_file.save()
+                    if self.rebase_spec_file:
+                        # Save current rebase spec file content
+                        self.rebase_spec_file.save()
                     if not self.conf.non_interactive and \
                             ConsoleHelper.get_message('Do you want to try it one more time'):
                         try_build_again = True
@@ -739,8 +744,10 @@ class Application(object):
             result = "Rebase to %s SUCCEEDED" % self.conf.sources
             results_store.set_result_message('success', result)
 
-        self.rebase_spec_file.update_paths_to_patches()
-        self.generate_patch()
+        if self.rebase_spec_file:
+            self.rebase_spec_file.update_paths_to_patches()
+            self.generate_patch()
+
         output_tools_runner.run_output_tools(logs, self)
 
     def print_task_info(self, builder):
@@ -798,7 +805,8 @@ class Application(object):
             if not self.conf.comparepkgs:
                 # Build packages
                 try:
-                    self.build_source_packages()
+                    if self.conf.build_tasks is None:
+                        self.build_source_packages()
                     self.run_package_checkers(self.results_dir, 'SRPM')
                     self.build_binary_packages()
                     if self.conf.builds_nowait and not self.conf.build_tasks:

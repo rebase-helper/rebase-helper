@@ -242,7 +242,7 @@ class BuildToolBase(object):
         return dict(logs=getattr(cls, 'logs', None))
 
     @classmethod
-    def wait_for_task(cls, build_dict, results_dir):  # pylint: disable=unused-argument
+    def wait_for_task(cls, build_dict, task_id, results_dir):  # pylint: disable=unused-argument
         """
         Waits until specified task is finished
 
@@ -449,10 +449,10 @@ class Builder(object):
         logger.debug("Getting logs '%s'", self._tool_name)
         return self._tool.get_logs()
 
-    def wait_for_task(self, build_dict, results_dir):
+    def wait_for_task(self, build_dict, task_id, results_dir):
         """Wait for task"""
         logger.debug("Waiting for task using '%s'", self._tool_name)
-        return self._tool.wait_for_task(build_dict, results_dir)
+        return self._tool.wait_for_task(build_dict, task_id, results_dir)
 
     def get_task_info(self, build_dict):
         """Get task info"""

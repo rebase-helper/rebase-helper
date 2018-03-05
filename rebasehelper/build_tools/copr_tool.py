@@ -24,6 +24,7 @@ import os
 
 from rebasehelper.utils import CoprHelper
 from rebasehelper.logger import logger
+from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.build_helper import BuildToolBase
 from rebasehelper.build_helper import BinaryPackageBuildError
 
@@ -130,11 +131,10 @@ class CoprBuildTool(BuildToolBase):
         build_id = int(task_id)
         status = cls.copr_helper.get_build_status(client, build_id)
         if status in ['importing', 'pending', 'starting', 'running']:
-            logger.info('Copr build is not finished yet. Try again later')
-            return None, None
+            raise RebaseHelperError('Copr build is not finished yet. Try again later')
         else:
             rpm, logs = cls.copr_helper.download_build(client, build_id, results_dir)
             if status not in ['succeeded', 'skipped']:
                 logger.info('Copr build %d did not complete successfully', build_id)
-                return None, None
+                raise BinaryPackageBuildError
             return rpm, logs
