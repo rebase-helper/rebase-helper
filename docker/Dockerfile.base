@@ -1,10 +1,9 @@
 ARG BASE_IMAGE=fedora:latest
 FROM ${BASE_IMAGE}
 
-COPY docker/getkey.sh /getkey.sh
-RUN /getkey.sh && rm -f /getkey.sh
-
 RUN echo -e "deltarpm=0\ninstall_weak_deps=0\ntsflags=nodocs" >> /etc/dnf/dnf.conf \
+  # update GPG keys first in case some of them are missing
+  && dnf -y --nogpgcheck update fedora-gpg-keys || true \
   && dnf -y update \
   && dnf -y install \
     python2 \
