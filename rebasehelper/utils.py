@@ -101,7 +101,15 @@ class ConsoleHelper(object):
 
     @classmethod
     def should_use_colors(cls, conf):
-        """Determine whether ansi colors should be used for CLI output"""
+        """Determines whether ANSI colors should be used for CLI output.
+
+        Args:
+            conf (rebasehelper.config.Config): Configuration object with arguments from the command line.
+
+        Returns:
+            bool: Whether colors should be used.
+
+        """
         if os.environ.get('PY_COLORS') == '1':
             return True
         if os.environ.get('PY_COLORS') == '0':
@@ -115,27 +123,39 @@ class ConsoleHelper(object):
         return True
 
     @classmethod
-    def cprint(cls, message, color=None):
-        """
-        Print colored output if possible
+    def cprint(cls, message, fg=None, bg=None, style=None):
+        """Prints colored output if possible.
 
-        :param color: color to be used in the output
-        :param message: string to be printed out
+        Args:
+            message (str): String to be printed out.
+            fg (str): Foreground color.
+            bg (str): Background color.
+            style (str): Style to be applied to the printed message.
+                Possible styles: bold, faint, italic, underline, blink, blink2, negative, concealed, crossed.
+                Some styles may not be supported by every terminal, e.g. 'blink'.
+                Multiple styles should be connected with a '+', e.g. 'bold+italic'.
+
         """
-        if cls.use_colors and color is not None and hasattr(colors, color):
-            print(getattr(colors, color)(message))
+        if cls.use_colors:
+            try:
+                print(colors.color(message, fg=fg, bg=bg, style=style))
+            except ValueError:
+                print(message)
         else:
             print(message)
 
     @staticmethod
     def get_message(message, default_yes=True, any_input=False):
-        """
-        Function for command line messages
+        """Prompts a user with yes/no message and gets the response.
 
-        :param message: prompt string
-        :param default_yes: If the default value is YES
-        :param any_input: if True, return input without checking it first
-        :return: True or False, based on user's input
+        Args:
+            message (str): Prompt string.
+            default_yes (bool): If the default value should be YES.
+            any_input (bool): Whether to return default value regardless of input.
+
+        Returns:
+            bool: True or False, based on user's input.
+
         """
         if default_yes:
             choice = '[Y/n]'
