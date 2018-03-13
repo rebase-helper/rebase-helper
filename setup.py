@@ -123,6 +123,11 @@ setup(
     },
     install_requires=get_requirements(),
     setup_requires=[],
+    # this is only a temporary change until the PR adding bright colors support isn't merged to upstream
+    # link to the PR: https://github.com/jonathaneunice/colors/pull/1
+    dependency_links=[
+        'git+https://github.com/FrNecas/colors.git@#egg=ansicolors'
+    ],
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Console',
