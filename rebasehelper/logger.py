@@ -21,8 +21,40 @@
 #          Tomas Hozza <thozza@redhat.com>
 
 import logging
+import six
 
 import rebasehelper.utils
+
+
+class CustomLogger(logging.Logger):
+
+    SUCCESS = logging.INFO + 5
+    HEADING = logging.INFO + 6
+    IMPORTANT = logging.INFO + 7
+
+    _nameToLevel = {
+        'SUCCESS': SUCCESS,
+        'HEADING': HEADING,
+        'IMPORTANT': IMPORTANT,
+    }
+
+    def __init__(self, name, level=logging.NOTSET):
+        super(CustomLogger, self).__init__(name, level)
+
+        for lev, severity in six.iteritems(self._nameToLevel):
+            logging.addLevelName(severity, lev)
+
+    def __getattr__(self, level):
+        severity = self._nameToLevel.get(level.upper())
+
+        def log(message, *args, **kwargs):
+            if self.isEnabledFor(severity):
+                self._log(severity, message, args, **kwargs)
+
+        if severity:
+            return log
+
+        raise AttributeError
 
 
 class LoggerHelper(object):
@@ -94,6 +126,9 @@ class ColorizingStreamHandler(logging.StreamHandler):
     level_map = {
         logging.DEBUG: {'fg': 'brightblack', 'bg': 'default', 'style': None},
         logging.INFO: {'fg': 'default', 'bg': 'default', 'style': None},
+        CustomLogger.SUCCESS: {'fg': 'green', 'bg': 'default', 'style': None},
+        CustomLogger.HEADING: {'fg': 'yellow', 'bg': 'default', 'style': None},
+        CustomLogger.IMPORTANT: {'fg': 'red', 'bg': 'default', 'style': None},
         logging.WARNING: {'fg': 'yellow', 'bg': 'default', 'style': None},
         logging.ERROR: {'fg': 'red', 'bg': 'default', 'style': 'bold'},
         logging.CRITICAL: {'fg': 'white', 'bg': 'red', 'style': 'bold'},
@@ -108,6 +143,7 @@ class ColorizingStreamHandler(logging.StreamHandler):
             self.handleError(record)
 
 
+logging.setLoggerClass(CustomLogger)
 #  the main rebase-helper logger
 logger = LoggerHelper.get_basic_logger('rebase-helper')
 #  logger for output tool
