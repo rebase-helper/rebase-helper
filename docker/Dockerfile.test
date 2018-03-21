@@ -1,9 +1,0 @@
-ARG DISTRO=fedora-latest
-FROM rebasehelper/base-image:${DISTRO}
-
-WORKDIR /build
-COPY . .
-
-ENV PY_COLORS=1
-
-CMD ["/usr/bin/tox"]

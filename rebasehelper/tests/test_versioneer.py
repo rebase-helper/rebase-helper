@@ -41,8 +41,10 @@ class TestVersioneer(object):
         'vim-go>=v1.13',
         'libtiff>=4.0.8',
     ])
+    @pytest.mark.integration
     def test_anitya_versioneer(self, package, min_version):
         assert AnityaVersioneer.get_name() in versioneers_runner.versioneers
+        AnityaVersioneer.API_URL = 'https://integration:4430/versioneers'
         version = versioneers_runner.run(AnityaVersioneer.get_name(), package, None)
         assert parse_version(version) >= parse_version(min_version)
 
@@ -53,8 +55,10 @@ class TestVersioneer(object):
         'python-m2r>=0.1.7',
         'pyodbc>=4.0.17',
     ])
+    @pytest.mark.integration
     def test_pypi_versioneer(self, package, min_version):
         assert PyPIVersioneer.get_name() in versioneers_runner.versioneers
+        PyPIVersioneer.API_URL = 'https://integration:4430/versioneers'
         version = versioneers_runner.run(PyPIVersioneer.get_name(), package, None)
         assert parse_version(version) >= parse_version(min_version)
 
@@ -65,8 +69,10 @@ class TestVersioneer(object):
         'nodejs-read-pkg>=1.1.0',
         'uglify-js>=1.2.1'
     ])
+    @pytest.mark.integration
     def test_npmjs_versioneer(self, package, min_version):
         assert NPMJSVersioneer.get_name() in versioneers_runner.versioneers
+        NPMJSVersioneer.API_URL = 'https://integration:4430/versioneers'
         version = versioneers_runner.run(NPMJSVersioneer.get_name(), package, None)
         assert parse_version(version) >= parse_version(min_version)
 
@@ -77,8 +83,10 @@ class TestVersioneer(object):
         'perl-Task-Kensho-Toolchain>=0.39',
         'perl-Data-GUID>=0.049'
     ])
+    @pytest.mark.integration
     def test_cpan_versioneer(self, package, min_version):
         assert CPANVersioneer.get_name() in versioneers_runner.versioneers
+        CPANVersioneer.API_URL = 'https://integration:4430/versioneers'
         version = versioneers_runner.run(CPANVersioneer.get_name(), package, None)
         assert parse_version(version) >= parse_version(min_version)
 
@@ -89,7 +97,9 @@ class TestVersioneer(object):
         'ghc-clock>=0.2.0.0',
         'cab>=0.2.17'
     ])
+    @pytest.mark.integration
     def test_haskell_versioneer(self, package, min_version):
         assert HaskellVersioneer.get_name() in versioneers_runner.versioneers
+        HaskellVersioneer.API_URL = 'https://integration:4430/versioneers'
         version = versioneers_runner.run(HaskellVersioneer.get_name(), package, None)
         assert parse_version(version) >= parse_version(min_version)

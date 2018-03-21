@@ -1,0 +1,15 @@
+ARG DISTRO=fedora-latest
+FROM rebasehelper/base-image:${DISTRO}
+
+COPY docker/cert.pem /etc/pki/ca-trust/source/anchors/cert.pem
+RUN update-ca-trust
+
+WORKDIR /build
+COPY . .
+
+RUN make clean
+
+ENV REQUESTS_CA_BUNDLE=/etc/pki/tls/cert.pem
+ENV PY_COLORS=1
+
+CMD ["/usr/bin/tox"]

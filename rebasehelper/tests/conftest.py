@@ -44,9 +44,7 @@ def pytest_collection_modifyitems(items):
     for item in items:
         # item is an instance of Function class.
         # https://github.com/pytest-dev/pytest/blob/master/_pytest/python.py
-        if 'functional_long_running' in item.keywords:
-            pass
-        elif 'functional' in item.fspath.strpath:
+        if 'functional' in item.fspath.strpath:
             item.add_marker(pytest.mark.functional)
         else:
             item.add_marker(pytest.mark.standard)

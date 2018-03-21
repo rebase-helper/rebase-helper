@@ -1,11 +1,15 @@
 DISTRO ?= fedora-26 fedora-latest fedora-rawhide
 
-DOCKER := docker
+PYTEST_ADDOPTS ?= -m 'standard and not long_running'
+
+CONFIG := docker/docker-compose.yml
+
+DOCKER_COMPOSE := docker-compose
 
 ifeq (,$(CI))
 # sudo is needed in case user is not member of docker group
 ifeq (,$(findstring docker,$(shell groups)))
-	DOCKER := sudo docker
+	DOCKER_COMPOSE := sudo docker-compose
 endif
 endif
 
@@ -14,13 +18,5 @@ endif
 test: $(DISTRO)
 
 $(DISTRO):
-	$(DOCKER) build \
-		--file docker/Dockerfile.test \
-		--build-arg DISTRO="$@" \
-		-t rebase-helper \
-		.
-	$(DOCKER) run \
-		--cap-add=SYS_ADMIN \
-		-e TOXENV="$(TOXENV)" \
-		-e PYTEST_ADDOPTS="$(PYTEST_ADDOPTS)" \
-		-t rebase-helper
+	$(DOCKER_COMPOSE) -f $(CONFIG) build --build-arg DISTRO="$@" tests
+	$(DOCKER_COMPOSE) -f $(CONFIG) run -e PYTEST_ADDOPTS="$(PYTEST_ADDOPTS)" tests

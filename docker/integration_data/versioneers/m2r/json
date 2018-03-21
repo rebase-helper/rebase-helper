@@ -1,0 +1,273 @@
+{
+    "info": {
+        "maintainer": "", 
+        "docs_url": null, 
+        "requires_python": "", 
+        "maintainer_email": "", 
+        "cheesecake_code_kwalitee_id": null, 
+        "keywords": "Markdown reStructuredText sphinx-extension", 
+        "package_url": "http://pypi.python.org/pypi/m2r", 
+        "author": "Hiroyuki Takagi", 
+        "author_email": "miyako.dev@gmail.com", 
+        "download_url": "", 
+        "platform": "", 
+        "version": "0.1.13", 
+        "cheesecake_documentation_id": null, 
+        "_pypi_hidden": false, 
+        "description": "\nM2R\n===\n\n\n.. image:: https://img.shields.io/pypi/v/m2r.svg\n   :target: https://pypi.python.org/pypi/m2r\n   :alt: PyPI\n\n\n.. image:: https://img.shields.io/pypi/pyversions/m2r.svg\n   :target: https://pypi.python.org/pypi/m2r\n   :alt: PyPI version\n\n\n.. image:: https://img.shields.io/badge/docs-latest-brightgreen.svg\n   :target: https://miyakogi.github.io/m2r\n   :alt: Documentation\n\n\n.. image:: https://travis-ci.org/miyakogi/m2r.svg?branch=master\n   :target: https://travis-ci.org/miyakogi/m2r\n   :alt: Build Status\n\n\n.. image:: https://codecov.io/gh/miyakogi/m2r/branch/master/graph/badge.svg\n   :target: https://codecov.io/gh/miyakogi/m2r\n   :alt: codecov\n\n\n----\n\nM2R converts a markdown file including reStructuredText (rst) markups to a valid\nrst format.\n\nWhy another converter?\n----------------------\n\nI wanted to write sphinx document in markdown, since it's widely used now and\neasy to write code blocks and lists. However, converters using pandoc or\nrecommonmark do not support many rst markups and sphinx extensions. For\nexample, rst's reference link like ``see `ref`_`` (this is very convenient in\nlong document in which same link appears multiple times) will be converted to\na code block in HTML like ``see <code>ref</code>_``\\ , which is not expected.\n\nFeatures\n--------\n\n\n* Basic markdown and some extensions (see below)\n\n  * inline/block-level raw html\n  * fenced-code block\n  * tables\n  * footnotes (\\ ``[^1]``\\ )\n\n* Inline- and Block-level rst markups\n\n  * single- and multi-line directives (\\ ``.. directive::``\\ )\n  * inline-roles (\\ ``:code:`print(1)` ...``\\ )\n  * ref-link (\\ ``see `ref`_``\\ )\n  * footnotes (\\ ``[#fn]_``\\ )\n  * math extension inspired by `recommonmark <https://recommonmark.readthedocs.io/en/latest/index.html>`_\n\n* Sphinx extension\n\n  * add markdown support for sphinx\n  * ``mdinclude`` directive to include markdown from md or rst files\n\n* Pure python implementation\n\n  * pandoc is not required\n\nInstallation\n------------\n\nPython 2.7 or Python 3.4+ is required.\n\n.. code-block::\n\n   pip install m2r\n\nOr,\n\n.. code-block::\n\n   python3 -m pip install m2r\n\nUsage\n-----\n\nCommand Line\n^^^^^^^^^^^^\n\n``m2r`` command converts markdown file to rst format.\n\n.. code-block::\n\n   m2r your_document.md [your_document2.md ...]\n\nThen you will find ``your_document.rst`` in the same directory.\n\nProgrammatic Use\n^^^^^^^^^^^^^^^^\n\nImport ``m2r.convert`` function and call it with markdown text.\nThen it will return converted text.\n\n.. code-block:: python\n\n   from m2r import convert\n   rst = convert('# Title\\n\\nSentence.')\n   print(rst)\n   # Title\n   # =====\n   #\n   # Sentence.\n\nOr, use ``parse_from_file`` function to load markdown file and obtain converted\ntext.\n\n.. code-block:: python\n\n   from m2r import parse_from_file\n   output = parse_from_file('markdown_file.md')\n\nThis is an example of setup.py to write README in markdown, and publish it to\nPyPI as rst format.\n\n.. code-block:: python\n\n   readme_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'README.md')\n   try:\n       from m2r import parse_from_file\n       readme = parse_from_file(readme_file)\n   except ImportError:\n       # m2r may not be installed in user environment\n       with open(readme_file) as f:\n           readme = f.read()\n   setup(\n       ...,\n       long_description=readme,\n       ...,\n   )\n\nSphinx Integration\n^^^^^^^^^^^^^^^^^^\n\nIn your conf.py, add the following lines.\n\n.. code-block:: python\n\n   extensions = [\n       ...,\n       'm2r',\n   ]\n\n   # source_suffix = '.rst'\n   source_suffix = ['.rst', '.md']\n\nWrite index.md and run ``make html``.\n\nWhen ``m2r`` extension is enabled on sphinx and ``.md`` file is loaded, m2r\nconverts to rst and pass to sphinx, not making new ``.rst`` file.\n\nmdinclude directive\n~~~~~~~~~~~~~~~~~~~\n\nLike ``.. include:: file`` directive, ``.. mdinclude:: file`` directive inserts\nmarkdown file at the line.\n\nNote: do not use ``.. include:: file`` directive to include markdown file even if\nin the markdown file, please use ``.. mdinclude:: file`` instead.\n\nRestrictions\n------------\n\n\n* In the rst's directives, markdown is not available. Please write in rst.\n* Column alignment of tables is not supported. (rst does not support this feature)\n* Heading with overline-and-underline is not supported.\n\n  * Heading with underline is OK\n\n* Rst heading marks are currently hard-coded and unchangeable.\n\n  * H1: ``=``\\ , H2: ``-``\\ , H3: ``^``\\ , H4: ``~``\\ , H5: ``\"``\\ , H6: ``#``\n\nIf you find any bug or unexpected behaviour, please report it to\n`Issues <https://github.com/miyakogi/m2r/issues>`_.\n\nExample\n-------\n\nSee `example document <https://miyakogi.github.io/m2r/example.html>`_ and `its\nsource code <https://github.com/miyakogi/m2r/blob/master/docs/example.md>`_.\n\nI'm using m2r for writing user guide of `WDOM <https://github.com/miyakogi/wdom>`_.\nSo you can see it as another example. Its `HTML is\nhere <http://wdom-py.readthedocs.io/en/latest/guide/index.html>`_\\ , and `its\nsource code is here <https://github.com/miyakogi/wdom/tree/dev/docs/guide>`_.\n\nDemo editor\n^^^^^^^^^^^\n\nDemo editor of m2r is available.\nIf you are interested in m2r, please try it.\n\n`https://github.com/miyakogi/m2rdemo <https://github.com/miyakogi/m2rdemo>`_\n\nAcknowledgement\n---------------\n\nm2r is written as an extension of\n`mistune <http://mistune.readthedocs.io/en/latest/>`_\\ , which is highly extensible\npure-python markdown parser.\nWithout the mistune, I couldn't write this. Thank you!\n\nLicence\n-------\n\n`MIT <https://github.com/miyakogi/m2r/blob/master/LICENSE>`_\n", 
+        "release_url": "http://pypi.python.org/pypi/m2r/0.1.13", 
+        "downloads": {
+            "last_month": 0, 
+            "last_week": 0, 
+            "last_day": 0
+        }, 
+        "_pypi_ordering": 13, 
+        "classifiers": [
+            "Development Status :: 4 - Beta", 
+            "Framework :: Sphinx :: Extension", 
+            "Intended Audience :: Developers", 
+            "License :: OSI Approved :: MIT License", 
+            "Natural Language :: English", 
+            "Programming Language :: Python :: 2", 
+            "Programming Language :: Python :: 2.7", 
+            "Programming Language :: Python :: 3", 
+            "Programming Language :: Python :: 3.4", 
+            "Programming Language :: Python :: 3.5", 
+            "Programming Language :: Python :: 3.6", 
+            "Topic :: Text Processing"
+        ], 
+        "bugtrack_url": null, 
+        "name": "m2r", 
+        "license": "MIT", 
+        "summary": "Markdown and reStructuredText in a single file.", 
+        "home_page": "https://github.com/miyakogi/m2r", 
+        "cheesecake_installability_id": null
+    }, 
+    "releases": {
+        "0.1.12": [
+            {
+                "has_sig": false, 
+                "upload_time": "2017-09-11T08:53:58", 
+                "comment_text": "", 
+                "python_version": "source", 
+                "url": "https://pypi.python.org/packages/a0/95/7273d54664e74c3100d07206fe6b30247be046b39676972fc90ae04376a1/m2r-0.1.12.tar.gz", 
+                "md5_digest": "906eb6dabb0295c93881f32d0a1c0919", 
+                "downloads": 0, 
+                "filename": "m2r-0.1.12.tar.gz", 
+                "packagetype": "sdist", 
+                "path": "a0/95/7273d54664e74c3100d07206fe6b30247be046b39676972fc90ae04376a1/m2r-0.1.12.tar.gz", 
+                "size": 15358
+            }
+        ], 
+        "0.1.13": [
+            {
+                "has_sig": false, 
+                "upload_time": "2018-02-14T07:07:44", 
+                "comment_text": "", 
+                "python_version": "source", 
+                "url": "https://pypi.python.org/packages/ef/5e/e69b229aa3c8ffb8a0e5987c25168308c06a6a11f3d3f415d0b92af1c8ed/m2r-0.1.13.tar.gz", 
+                "md5_digest": "155b1b14a7c5b702524a2d4e4e7d38a6", 
+                "downloads": 0, 
+                "filename": "m2r-0.1.13.tar.gz", 
+                "packagetype": "sdist", 
+                "path": "ef/5e/e69b229aa3c8ffb8a0e5987c25168308c06a6a11f3d3f415d0b92af1c8ed/m2r-0.1.13.tar.gz", 
+                "size": 15882
+            }
+        ], 
+        "0.1.10": [
+            {
+                "has_sig": false, 
+                "upload_time": "2017-08-15T08:26:41", 
+                "comment_text": "", 
+                "python_version": "source", 
+                "url": "https://pypi.python.org/packages/73/45/f9fc58275b7bf4b272eefc1e128a799fce3ef58cbfb976d87002e7ce266e/m2r-0.1.10.tar.gz", 
+                "md5_digest": "f9510695bccd94c76063eab3a1240a0e", 
+                "downloads": 0, 
+                "filename": "m2r-0.1.10.tar.gz", 
+                "packagetype": "sdist", 
+                "path": "73/45/f9fc58275b7bf4b272eefc1e128a799fce3ef58cbfb976d87002e7ce266e/m2r-0.1.10.tar.gz", 
+                "size": 14970
+            }
+        ], 
+        "0.1.11": [
+            {
+                "has_sig": false, 
+                "upload_time": "2017-08-29T21:42:40", 
+                "comment_text": "", 
+                "python_version": "source", 
+                "url": "https://pypi.python.org/packages/42/60/455be136af665178ebaddef255aac7cd8ead3b271aa7312ada847bb1355c/m2r-0.1.11.tar.gz", 
+                "md5_digest": "f053a286e073249b794929d6afbd20f2", 
+                "downloads": 0, 
+                "filename": "m2r-0.1.11.tar.gz", 
+                "packagetype": "sdist", 
+                "path": "42/60/455be136af665178ebaddef255aac7cd8ead3b271aa7312ada847bb1355c/m2r-0.1.11.tar.gz", 
+                "size": 15155
+            }
+        ], 
+        "0.1.8": [
+            {
+                "has_sig": false, 
+                "upload_time": "2017-08-11T08:03:55", 
+                "comment_text": "", 
+                "python_version": "source", 
+                "url": "https://pypi.python.org/packages/b1/cc/271e20737e97ab3a34f8f7ea9b1d2b6a73aefe332b0fa7e283eca260efad/m2r-0.1.8.tar.gz", 
+                "md5_digest": "181f6d5c5c8254084bedd2570210a990", 
+                "downloads": 0, 
+                "filename": "m2r-0.1.8.tar.gz", 
+                "packagetype": "sdist", 
+                "path": "b1/cc/271e20737e97ab3a34f8f7ea9b1d2b6a73aefe332b0fa7e283eca260efad/m2r-0.1.8.tar.gz", 
+                "size": 13983
+            }
+        ], 
+        "0.1.9": [
+            {
+                "has_sig": false, 
+                "upload_time": "2017-08-12T06:11:57", 
+                "comment_text": "", 
+                "python_version": "source", 
+                "url": "https://pypi.python.org/packages/98/79/9ed5edae14650fb3dde6fcdd30db593bd4d90b74a0fb27d778938dec529f/m2r-0.1.9.tar.gz", 
+                "md5_digest": "1d96eba90cdc317c13e1bfb6d00406aa", 
+                "downloads": 0, 
+                "filename": "m2r-0.1.9.tar.gz", 
+                "packagetype": "sdist", 
+                "path": "98/79/9ed5edae14650fb3dde6fcdd30db593bd4d90b74a0fb27d778938dec529f/m2r-0.1.9.tar.gz", 
+                "size": 14269
+            }
+        ], 
+        "0.1.0": [
+            {
+                "has_sig": false, 
+                "upload_time": "2016-05-30T16:15:19", 
+                "comment_text": "", 
+                "python_version": "source", 
+                "url": "https://pypi.python.org/packages/26/bf/f7f8742ad5081500a1b39017ccc6ef571c957464b54ab2776c56c5e3012e/m2r-0.1.0.tar.gz", 
+                "md5_digest": "34347990e6d1f586242a2c3cdc7d5110", 
+                "downloads": 409, 
+                "filename": "m2r-0.1.0.tar.gz", 
+                "packagetype": "sdist", 
+                "path": "26/bf/f7f8742ad5081500a1b39017ccc6ef571c957464b54ab2776c56c5e3012e/m2r-0.1.0.tar.gz", 
+                "size": 10979
+            }
+        ], 
+        "0.1.1": [
+            {
+                "has_sig": false, 
+                "upload_time": "2016-05-30T16:37:43", 
+                "comment_text": "", 
+                "python_version": "source", 
+                "url": "https://pypi.python.org/packages/7f/3f/8e6214f24906d7819786f5e143be19129b858a47c69b469d9058ef94c164/m2r-0.1.1.tar.gz", 
+                "md5_digest": "dcb853f2da5d9703f9dd0f980f73bd9b", 
+                "downloads": 128, 
+                "filename": "m2r-0.1.1.tar.gz", 
+                "packagetype": "sdist", 
+                "path": "7f/3f/8e6214f24906d7819786f5e143be19129b858a47c69b469d9058ef94c164/m2r-0.1.1.tar.gz", 
+                "size": 10970
+            }
+        ], 
+        "0.1.2": [
+            {
+                "has_sig": false, 
+                "upload_time": "2016-05-31T22:13:31", 
+                "comment_text": "", 
+                "python_version": "source", 
+                "url": "https://pypi.python.org/packages/29/ab/19db3a1c918429d53a02b198567da98e98c4c48e9934293300cb670bfca2/m2r-0.1.2.tar.gz", 
+                "md5_digest": "935d2b9d7c88bfd6e8b7efe768ea9e75", 
+                "downloads": 122, 
+                "filename": "m2r-0.1.2.tar.gz", 
+                "packagetype": "sdist", 
+                "path": "29/ab/19db3a1c918429d53a02b198567da98e98c4c48e9934293300cb670bfca2/m2r-0.1.2.tar.gz", 
+                "size": 11678
+            }
+        ], 
+        "0.1.3": [
+            {
+                "has_sig": false, 
+                "upload_time": "2016-06-08T19:34:36", 
+                "comment_text": "", 
+                "python_version": "source", 
+                "url": "https://pypi.python.org/packages/c4/b3/3978a081894461eb5883aff682afeb4656f1a794ec417b97294fbb665dd4/m2r-0.1.3.tar.gz", 
+                "md5_digest": "344f677d81d717a32493df0f7dd1ff3f", 
+                "downloads": 112, 
+                "filename": "m2r-0.1.3.tar.gz", 
+                "packagetype": "sdist", 
+                "path": "c4/b3/3978a081894461eb5883aff682afeb4656f1a794ec417b97294fbb665dd4/m2r-0.1.3.tar.gz", 
+                "size": 12357
+            }
+        ], 
+        "0.1.4": [
+            {
+                "has_sig": false, 
+                "upload_time": "2016-06-08T19:35:02", 
+                "comment_text": "", 
+                "python_version": "source", 
+                "url": "https://pypi.python.org/packages/39/b9/e5d85a5c915bd4116afa41c0e227aeb382bd214b64a14ecf34fae2e40d3b/m2r-0.1.4.tar.gz", 
+                "md5_digest": "0e24f1bb5fd28e1080311b7ac8922475", 
+                "downloads": 146, 
+                "filename": "m2r-0.1.4.tar.gz", 
+                "packagetype": "sdist", 
+                "path": "39/b9/e5d85a5c915bd4116afa41c0e227aeb382bd214b64a14ecf34fae2e40d3b/m2r-0.1.4.tar.gz", 
+                "size": 12360
+            }
+        ], 
+        "0.1.5": [
+            {
+                "has_sig": false, 
+                "upload_time": "2016-06-21T16:39:52", 
+                "comment_text": "", 
+                "python_version": "source", 
+                "url": "https://pypi.python.org/packages/9b/10/ed0ca851c44034167eabbecf2c23e33e57fe0c270e83339259ec52d682e7/m2r-0.1.5.tar.gz", 
+                "md5_digest": "9873ec4bab2c27580f3ffeb25d98a3db", 
+                "downloads": 2473, 
+                "filename": "m2r-0.1.5.tar.gz", 
+                "packagetype": "sdist", 
+                "path": "9b/10/ed0ca851c44034167eabbecf2c23e33e57fe0c270e83339259ec52d682e7/m2r-0.1.5.tar.gz", 
+                "size": 13202
+            }
+        ], 
+        "0.1.6": [
+            {
+                "has_sig": false, 
+                "upload_time": "2017-06-03T03:18:29", 
+                "comment_text": "", 
+                "python_version": "source", 
+                "url": "https://pypi.python.org/packages/8d/74/558f9aba132bb34cd661fad9e17d42bfa1332363466ff314e600096f78c3/m2r-0.1.6.tar.gz", 
+                "md5_digest": "aac67f2167a3d81c8ccd7615e9c2cb7a", 
+                "downloads": 0, 
+                "filename": "m2r-0.1.6.tar.gz", 
+                "packagetype": "sdist", 
+                "path": "8d/74/558f9aba132bb34cd661fad9e17d42bfa1332363466ff314e600096f78c3/m2r-0.1.6.tar.gz", 
+                "size": 13615
+            }
+        ], 
+        "0.1.7": [
+            {
+                "has_sig": false, 
+                "upload_time": "2017-07-20T11:53:36", 
+                "comment_text": "", 
+                "python_version": "source", 
+                "url": "https://pypi.python.org/packages/b4/57/f566b18d38c203ce0fdaa652edfd5053d96a4d653c957afa4f8d4b964f17/m2r-0.1.7.tar.gz", 
+                "md5_digest": "96fb9d5e93873a1b50307252f175ffde", 
+                "downloads": 0, 
+                "filename": "m2r-0.1.7.tar.gz", 
+                "packagetype": "sdist", 
+                "path": "b4/57/f566b18d38c203ce0fdaa652edfd5053d96a4d653c957afa4f8d4b964f17/m2r-0.1.7.tar.gz", 
+                "size": 13895
+            }
+        ]
+    }, 
+    "urls": [
+        {
+            "has_sig": false, 
+            "upload_time": "2018-02-14T07:07:44", 
+            "comment_text": "", 
+            "python_version": "source", 
+            "url": "https://pypi.python.org/packages/ef/5e/e69b229aa3c8ffb8a0e5987c25168308c06a6a11f3d3f415d0b92af1c8ed/m2r-0.1.13.tar.gz", 
+            "md5_digest": "155b1b14a7c5b702524a2d4e4e7d38a6", 
+            "downloads": 0, 
+            "filename": "m2r-0.1.13.tar.gz", 
+            "packagetype": "sdist", 
+            "path": "ef/5e/e69b229aa3c8ffb8a0e5987c25168308c06a6a11f3d3f415d0b92af1c8ed/m2r-0.1.13.tar.gz", 
+            "size": 15882
+        }
+    ]
+}
