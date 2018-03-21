@@ -1,0 +1,15 @@
+version: "3"
+services:
+    integration:
+        image: rebasehelper/integration
+    tests:
+        build:
+            context: ..
+            dockerfile: docker/Dockerfile.tests
+        cap_add:
+            - SYS_ADMIN
+        environment:
+            - PYTEST_ADDOPTS
+            - TOXENV
+        depends_on:
+            - integration
