@@ -9,9 +9,9 @@ install: true
 before_script:
     - |
         if [ "${TRAVIS_EVENT_TYPE}" = "cron" ]; then
-            PYTEST_ADDOPTS="-m 'standard or functional or functional_long_running'"
+            PYTEST_ADDOPTS="-m 1"
         else
-            PYTEST_ADDOPTS="-m 'standard or functional'"
+            PYTEST_ADDOPTS="-m 'not long_running'"
         fi
 script:
     - make PYTEST_ADDOPTS="${PYTEST_ADDOPTS}" test-docker
