@@ -3,15 +3,13 @@ stages:
 
 .test_template: &test_definition
     stage: test
-    image: docker:latest
+    image: rebasehelper/gitlab-ci
     variables:
         DOCKER_HOST: tcp://docker:2375
         DOCKER_DRIVER: overlay
     services:
         - docker:dind
     script:
-        - apk update
-        - apk add make git python py-setuptools
         - make PYTEST_ADDOPTS="-m 'not long_running'" test-docker
 
 test:f26:
