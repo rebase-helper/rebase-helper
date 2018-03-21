@@ -1,0 +1,43 @@
+{
+  "backend": "custom", 
+  "created_on": 1412175003.0, 
+  "homepage": "http://www.simplesystems.org/libtiff/", 
+  "id": 1738, 
+  "name": "tiff", 
+  "packages": [
+    {
+      "distro": "Fedora", 
+      "package_name": "libtiff"
+    }, 
+    {
+      "distro": "Alpine", 
+      "package_name": "tiff"
+    }, 
+    {
+      "distro": "Fedora", 
+      "package_name": "mingw-libtiff"
+    }, 
+    {
+      "distro": "Cygwin", 
+      "package_name": "tiff"
+    }, 
+    {
+      "distro": "Cygwin", 
+      "package_name": "mingw-tiff"
+    }
+  ], 
+  "regex": null, 
+  "updated_on": 1511051154.0, 
+  "version": "4.0.9", 
+  "version_url": "ftp://download.osgeo.org/libtiff", 
+  "versions": [
+    "4.0.9", 
+    "4.0.8", 
+    "4.0.7", 
+    "4.0.6", 
+    "4.0.5", 
+    "4.0.4", 
+    "4.0.4beta", 
+    "4.0.3"
+  ]
+}
