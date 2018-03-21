@@ -154,8 +154,6 @@ class TestConsoleHelper(object):
 class TestDownloadHelper(object):
     """ DownloadHelper tests """
 
-    COMMIT = 'cf5ae2989a32c391d7769933e0267e6fbfae8e14'
-
     def test_keyboard_interrupt_situation(self, monkeypatch):
         """
         Test that the local file is deleted in case KeyboardInterrupt is raised during the download
@@ -194,21 +192,21 @@ class TestDownloadHelper(object):
         assert buf.getvalue() == output
 
     @pytest.mark.parametrize('url, content', [
-        ('http://fedoraproject.org/static/hotspot.txt', 'OK'),
-        ('https://ftp.isc.org/isc/bind9/9.10.4-P1/srcid', 'SRCID=adfc588'),
-        ('ftp://ftp.isc.org/isc/bind9/9.10.4-P1/srcid', 'SRCID=adfc588'),
-        (
-            'https://git.kernel.org/cgit/linux/kernel/git/stable/linux-stable.git/patch/?id={}'.format(COMMIT),
-            'From {} Mon Sep 17 00:00:00 2001'.format(COMMIT),
-        ),
-        ('ftp://ftp.gnupg.org/README', 'Welcome hacker!'),
+        ('http://integration:8000/existing_file.txt', 'content'),
+        ('https://integration:4430/existing_file.txt', 'content'),
+        ('ftp://integration:2100/existing_file.txt', 'content'),
+        ('http://integration:8001/existing_file.txt', 'content'),
+        ('https://integration:4431/existing_file.txt', 'content'),
+        ('ftp://integration:2101/existing_file.txt', 'content'),
     ], ids=[
         'HTTP',
         'HTTPS',
         'FTP',
+        'HTTP-unknown_size',
         'HTTPS-unknown_size',
         'FTP-unknown_size',
     ])
+    @pytest.mark.integration
     def test_download_existing_file(self, url, content):
         """Test downloading existing file"""
         local_file = 'local_file'
@@ -218,12 +216,15 @@ class TestDownloadHelper(object):
             assert f.readline().strip() == content
 
     @pytest.mark.parametrize('url', [
-        'https://ftp.isc.org/isc/bind9/9.10.3-P5/srcid',
-        'ftp://ftp.isc.org/isc/bind9/9.10.3-P5/srcid',
+        'http://integration:8000/non_existing_file.txt',
+        'https://integration:4430/non_existing_file.txt',
+        'ftp://integration:2100/non_existing_file.txt',
     ], ids=[
+        'HTTP',
         'HTTPS',
         'FTP',
     ])
+    @pytest.mark.integration
     def test_download_non_existing_file(self, url):
         """Test downloading NON existing file"""
         local_file = 'local_file'
@@ -653,11 +654,12 @@ class TestLookasideCacheHelper(object):
         'rebase-helper',
         'man-pages',
     ])
+    @pytest.mark.integration
     def test_download(self, package, filename, hashtype, hsh):
         # pylint: disable=protected-access
         target = os.path.basename(filename)
         LookasideCacheHelper._download_source('fedpkg',
-                                              'https://src.fedoraproject.org/repo/pkgs',
+                                              'https://integration:4430/pkgs',
                                               package,
                                               filename,
                                               hashtype,
