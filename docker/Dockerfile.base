@@ -22,6 +22,7 @@ RUN echo -e "deltarpm=0\ninstall_weak_deps=0\ntsflags=nodocs" >> /etc/dnf/dnf.co
     libxml2-devel \
     libxslt-devel \
     xz-devel \
+    krb5-devel \
     git \
     rpm-build \
     mock \

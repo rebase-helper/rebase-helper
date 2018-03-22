@@ -36,6 +36,7 @@ from rebasehelper.logger import logger, logger_report, LoggerHelper
 from rebasehelper import settings
 from rebasehelper.output_tool import output_tools_runner
 from rebasehelper.utils import PathHelper, GitHelper, KojiHelper, FileHelper, MacroHelper, ConsoleHelper
+from rebasehelper.utils import LookasideCacheHelper
 from rebasehelper.checker import checkers_runner
 from rebasehelper.build_helper import SRPMBuilder, Builder, SourcePackageBuildError, BinaryPackageBuildError
 from rebasehelper.patch_helper import Patcher
@@ -101,6 +102,13 @@ class Application(object):
 
             self._get_spec_file()
             self._prepare_spec_objects()
+
+            if self.conf.update_sources:
+                LookasideCacheHelper.update_sources('fedpkg', self.rebased_sources_dir,
+                                                    self.rebase_spec_file.get_package_name(),
+                                                    [os.path.basename(s) for s in self.spec_file.sources],
+                                                    [os.path.basename(s) for s in self.rebase_spec_file.sources])
+                # TODO: also update .gitignore
 
             # TODO: Remove the value from kwargs and use only CLI attribute!
             self.kwargs['continue'] = self.conf.cont
@@ -196,7 +204,8 @@ class Application(object):
                                         'and no SOURCES argument specified!')
 
         # Prepare rebased_sources_dir
-        self.rebased_repo = self._prepare_rebased_repository(self.spec_file.patches, self.rebased_sources_dir)
+        sources = os.path.join(self.execution_dir, 'sources')
+        self.rebased_repo = self._prepare_rebased_repository(self.spec_file.patches, sources, self.rebased_sources_dir)
 
         # check if argument passed as new source is a file or just a version
         if [True for ext in Archive.get_supported_archives() if self.conf.sources.endswith(ext)]:
@@ -466,13 +475,16 @@ class Application(object):
         results_store.set_changes_patch('changes_patch', os.path.join(self.results_dir, 'changes.patch'))
 
     @classmethod
-    def _prepare_rebased_repository(cls, patches, rebased_sources_dir):
+    def _prepare_rebased_repository(cls, patches, sources, rebased_sources_dir):
         """
         Initialize git repository in the rebased directory
         :return: git.Repo instance of rebased_sources
         """
         for patch in patches['applied'] + patches['not_applied']:
             shutil.copy(patch.path, rebased_sources_dir)
+
+        if os.path.isfile(sources):
+            shutil.copy(sources, rebased_sources_dir)
 
         repo = git.Repo.init(rebased_sources_dir)
         repo.git.config('user.name', GitHelper.get_user(), local=True)

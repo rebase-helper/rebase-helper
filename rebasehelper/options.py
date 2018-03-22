@@ -177,6 +177,12 @@ OPTIONS = [
         "switch": True,
         "help": "force rebase even if current version is newer than requested version",
     },
+    {
+        "name": ["--update-sources"],
+        "default": False,
+        "switch": True,
+        "help": "update \"sources\" file and upload new sources to lookaside cache",
+    },
     # remote builder options
     {
         "name": ["--builds-nowait"],
