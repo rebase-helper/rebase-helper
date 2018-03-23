@@ -67,5 +67,5 @@ test:
 	tox
 
 
-test-docker: clean
+test-docker:
 	make -f Makefile.docker test
