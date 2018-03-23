@@ -125,22 +125,41 @@ class LoggerHelper(object):
 
 
 class ColorizingStreamHandler(logging.StreamHandler):
-    level_map = {
-        logging.DEBUG: {'fg': 'brightblack', 'bg': 'default', 'style': None},
-        CustomLogger.TRACE: {'fg': 'red', 'bg': 'default', 'style': None},
-        logging.INFO: {'fg': 'default', 'bg': 'default', 'style': None},
-        CustomLogger.SUCCESS: {'fg': 'green', 'bg': 'default', 'style': None},
-        CustomLogger.HEADING: {'fg': 'yellow', 'bg': 'default', 'style': None},
-        CustomLogger.IMPORTANT: {'fg': 'red', 'bg': 'default', 'style': None},
-        logging.WARNING: {'fg': 'yellow', 'bg': 'default', 'style': None},
-        logging.ERROR: {'fg': 'red', 'bg': 'default', 'style': 'bold'},
-        logging.CRITICAL: {'fg': 'white', 'bg': 'red', 'style': 'bold'},
+    colors = {
+        'dark': {
+            logging.DEBUG: {'fg': 'brightblack', 'bg': 'default', 'style': None},
+            CustomLogger.TRACE: {'fg': 'red', 'bg': 'default', 'style': None},
+            logging.INFO: {'fg': 'default', 'bg': 'default', 'style': None},
+            CustomLogger.SUCCESS: {'fg': 'green', 'bg': 'default', 'style': None},
+            CustomLogger.HEADING: {'fg': 'yellow', 'bg': 'default', 'style': None},
+            CustomLogger.IMPORTANT: {'fg': 'red', 'bg': 'default', 'style': None},
+            logging.WARNING: {'fg': 'yellow', 'bg': 'default', 'style': None},
+            logging.ERROR: {'fg': 'red', 'bg': 'default', 'style': 'bold'},
+            logging.CRITICAL: {'fg': 'white', 'bg': 'red', 'style': 'bold'},
+        },
+        'light': {
+            logging.DEBUG: {'fg': 'brightblack', 'bg': 'default', 'style': None},
+            CustomLogger.TRACE: {'fg': 'red', 'bg': 'default', 'style': None},
+            logging.INFO: {'fg': 'default', 'bg': 'default', 'style': None},
+            CustomLogger.SUCCESS: {'fg': 'green', 'bg': 'default', 'style': None},
+            CustomLogger.HEADING: {'fg': 'blue', 'bg': 'default', 'style': None},
+            CustomLogger.IMPORTANT: {'fg': 'red', 'bg': 'default', 'style': None},
+            logging.WARNING: {'fg': 'blue', 'bg': 'default', 'style': None},
+            logging.ERROR: {'fg': 'red', 'bg': 'default', 'style': 'bold'},
+            logging.CRITICAL: {'fg': 'white', 'bg': 'red', 'style': 'bold'},
+        },
     }
+
+    terminal_background = 'dark'
+
+    def set_terminal_background(self):
+        self.terminal_background = rebasehelper.utils.ConsoleHelper.detect_background()
 
     def emit(self, record):
         try:
             message = self.format(record)
-            rebasehelper.utils.ConsoleHelper.cprint(message, **self.level_map.get(record.levelno, {}))
+            level_settings = self.colors[self.terminal_background].get(record.levelno, {})
+            rebasehelper.utils.ConsoleHelper.cprint(message, **level_settings)
             self.flush()
         except Exception:  # pylint: disable=broad-except
             self.handleError(record)
@@ -153,6 +172,6 @@ logger = LoggerHelper.get_basic_logger('rebase-helper')
 logger_output = LoggerHelper.get_basic_logger('output-tool', logging.INFO)
 logger_report = LoggerHelper.get_basic_logger('rebase-helper-report', logging.INFO)
 logger_upstream = LoggerHelper.get_basic_logger('rebase-helper-upstream')
-LoggerHelper.add_stream_handler(logger_output)
+output_tool_handler = LoggerHelper.add_stream_handler(logger_output)
 formatter = logging.Formatter("%(levelname)s: %(message)s")
-handler = LoggerHelper.add_stream_handler(logger, logging.DEBUG, formatter)
+main_handler = LoggerHelper.add_stream_handler(logger, logging.DEBUG, formatter)

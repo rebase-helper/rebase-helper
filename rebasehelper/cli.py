@@ -30,7 +30,7 @@ from rebasehelper.options import OPTIONS, traverse_options
 from rebasehelper.constants import PROGRAM_DESCRIPTION, NEW_ISSUE_LINK
 from rebasehelper.version import VERSION
 from rebasehelper.application import Application
-from rebasehelper.logger import logger, handler
+from rebasehelper.logger import logger, main_handler, output_tool_handler
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.utils import ConsoleHelper
 from rebasehelper.config import Config
@@ -166,10 +166,13 @@ class CliHelper(object):
 
             config = Config(getattr(cli, 'config-file', None))
             config.merge(cli)
+            for handler in [main_handler, output_tool_handler]:
+                handler.set_terminal_background()
+
             ConsoleHelper.use_colors = ConsoleHelper.should_use_colors(config)
             execution_dir, results_dir, debug_log_file = Application.setup(config)
             if not config.verbose:
-                handler.setLevel(logging.INFO)
+                main_handler.setLevel(logging.INFO)
             app = Application(config, execution_dir, results_dir, debug_log_file)
             app.run()
         except KeyboardInterrupt:

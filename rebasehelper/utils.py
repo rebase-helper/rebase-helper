@@ -21,27 +21,32 @@
 #          Tomas Hozza <thozza@redhat.com>
 
 import argparse
-import io
-import os
-import re
-import sys
+import datetime
+import fcntl
 import fnmatch
-import subprocess
-import tempfile
-import shutil
-import rpm
-import locale
-import time
-import random
-import string
+import io
 import gzip
-import copr
-import pyquery
 import hashlib
-import requests
+import locale
+import os
+import random
+import re
+import shutil
+import string
+import subprocess
+import sys
+import tempfile
+import termios
+import time
+import tty
 
+import copr
 import git
+import pyquery
+import requests
+import rpm
 import six
+
 from six.moves import input
 from six.moves import urllib
 from six.moves import configparser
@@ -143,6 +148,103 @@ class ConsoleHelper(object):
                 print(message)
         else:
             print(message)
+
+    @staticmethod
+    def parse_rgb_device_specification(specification):
+        """Parses RGB device specification.
+
+        Args:
+            specification(str): RGB device specification.
+
+        Returns:
+            tuple: If the specification follows correct format, the first element is RGB tuple and the second is
+            bit width of the RGB. Otherwise, both elements are None.
+
+        """
+        match = re.match(r'^rgb:([A-Fa-f0-9]{1,4})/([A-Fa-f0-9]{1,4})/([A-Fa-f0-9]{1,4})$', str(specification))
+        if match:
+            rgb = match.groups()
+            bit_width = max([len(str(x)) for x in rgb]) * 4
+            return tuple(int(x, 16) for x in rgb), bit_width
+        return None, None
+
+    @staticmethod
+    def color_is_light(rgb, bit_width):
+        """Determines whether a color is light or dark.
+
+        Args:
+            rgb(tuple): RGB tuple.
+            bit_width: Number of bits defining the RGB.
+
+        Returns:
+            bool: Whether a color is light or dark.
+
+        """
+        brightness = 1 - (0.299 * rgb[0] + 0.587 * rgb[1] + 0.114 * rgb[2]) / (1 << bit_width - 1)
+        return brightness < 0.5
+
+    @staticmethod
+    def detect_background():
+        """Detects terminal background color and decides whether it is light or dark.
+
+        Returns:
+            str: Whether to use dark or light color scheme.
+
+        """
+        background_color = ConsoleHelper.exchange_control_sequence('\x1b]11;?\x07')
+
+        rgb_tuple, bit_width = ConsoleHelper.parse_rgb_device_specification(background_color)
+
+        if rgb_tuple and ConsoleHelper.color_is_light(rgb_tuple, bit_width):
+            return 'light'
+        else:
+            return 'dark'
+
+    @staticmethod
+    def exchange_control_sequence(query, timeout=0.05):
+        """Captures a response of a control sequence from STDIN.
+
+        Args:
+            query (str): Control sequence.
+            timeout (int, float): Time given to the terminal to react.
+
+        Returns:
+            str: Response of the terminal.
+
+        """
+        prefix, suffix = query.split('?', 1)
+        attrs_obtained = False
+        try:
+            attrs = termios.tcgetattr(sys.stdin)
+            attrs_obtained = True
+            flags = fcntl.fcntl(sys.stdin.fileno(), fcntl.F_GETFL)
+
+            # disable STDIN line buffering
+            tty.setcbreak(sys.stdin.fileno(), termios.TCSANOW)
+            # set STDIN to non-blocking mode
+            fcntl.fcntl(sys.stdin.fileno(), fcntl.F_SETFL, flags | os.O_NONBLOCK)
+
+            sys.stdout.write(query)
+            sys.stdout.flush()
+
+            # read the response
+            buf = ''
+            start = datetime.datetime.now()
+            while (datetime.datetime.now() - start).total_seconds() < timeout:
+                try:
+                    buf += sys.stdin.read(1)
+                except IOError:
+                    continue
+                if buf.endswith(suffix):
+                    return buf.replace(prefix, '').replace(suffix, '')
+            return None
+        except termios.error:
+            return None
+        finally:
+            # set terminal settings to the starting point
+            if attrs_obtained:
+                termios.tcsetattr(sys.stdin, termios.TCSADRAIN, attrs)
+                fcntl.fcntl(sys.stdin.fileno(), fcntl.F_SETFL, flags)
 
     @staticmethod
     def get_message(message, default_yes=True, any_input=False):
