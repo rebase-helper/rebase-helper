@@ -173,18 +173,18 @@ class CliHelper(object):
             app = Application(config, execution_dir, results_dir, debug_log_file)
             app.run()
         except KeyboardInterrupt:
-            logger.info('\nInterrupted by user')
+            logger.info('Interrupted by user')
         except RebaseHelperError as e:
             if e.msg:
-                logger.error('\n%s', e.msg)
+                logger.error('%s', e.msg)
             else:
-                logger.error('\n%s', six.text_type(e))
+                logger.error('%s', six.text_type(e))
             sys.exit(1)
         except SystemExit as e:
             sys.exit(e.code)
         except BaseException:
             if debug_log_file:
-                logger.error('\nrebase-helper failed due to an unexpected error. Please report this problem'
+                logger.error('rebase-helper failed due to an unexpected error. Please report this problem'
                              '\nusing the following link: %s'
                              '\nand include the content of'
                              '\n\'%s\''
@@ -192,12 +192,12 @@ class CliHelper(object):
                              '\nThank you!',
                              NEW_ISSUE_LINK, debug_log_file)
             else:
-                logger.error('\nrebase-helper failed due to an unexpected error. Please report this problem'
+                logger.error('rebase-helper failed due to an unexpected error. Please report this problem'
                              '\nusing the following link: %s'
                              '\nand include the traceback following this message in the report.'
                              '\nThank you!',
                              NEW_ISSUE_LINK)
-            logger.trace('\n', exc_info=1)
+            logger.trace('', exc_info=1)
             sys.exit(1)
 
         sys.exit(0)
