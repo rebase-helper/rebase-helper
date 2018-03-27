@@ -28,11 +28,13 @@ import rebasehelper.utils
 
 class CustomLogger(logging.Logger):
 
+    TRACE = logging.DEBUG + 1
     SUCCESS = logging.INFO + 5
     HEADING = logging.INFO + 6
     IMPORTANT = logging.INFO + 7
 
     _nameToLevel = {
+        'TRACE': TRACE,
         'SUCCESS': SUCCESS,
         'HEADING': HEADING,
         'IMPORTANT': IMPORTANT,
@@ -125,6 +127,7 @@ class LoggerHelper(object):
 class ColorizingStreamHandler(logging.StreamHandler):
     level_map = {
         logging.DEBUG: {'fg': 'brightblack', 'bg': 'default', 'style': None},
+        CustomLogger.TRACE: {'fg': 'red', 'bg': 'default', 'style': None},
         logging.INFO: {'fg': 'default', 'bg': 'default', 'style': None},
         CustomLogger.SUCCESS: {'fg': 'green', 'bg': 'default', 'style': None},
         CustomLogger.HEADING: {'fg': 'yellow', 'bg': 'default', 'style': None},

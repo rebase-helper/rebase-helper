@@ -197,7 +197,7 @@ class CliHelper(object):
                              '\nand include the traceback following this message in the report.'
                              '\nThank you!',
                              NEW_ISSUE_LINK)
-            logger.debug('\n', exc_info=1)
+            logger.trace('\n', exc_info=1)
             sys.exit(1)
 
         sys.exit(0)
