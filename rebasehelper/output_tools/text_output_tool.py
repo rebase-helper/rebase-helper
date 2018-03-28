@@ -132,7 +132,7 @@ class TextOutputTool(BaseOutputTool):
         """Function is used for printing rpm build logs"""
         if rpms.get('logs', None) is None:
             return
-        for logs in sorted(rpms.get('logs', None)):
+        for logs in sorted(rpms.get('logs', []) + rpms.get('srpm_logs', [])):
             if dirpath not in logs:
                 # Skip logs that do not belong to curent rpms(and version)
                 continue

@@ -576,7 +576,8 @@ class Application(object):
                         builds_nowait=self.conf.builds_nowait,
                         build_tasks=self.conf.build_tasks,
                         builder_options=self.conf.builder_options,
-                        srpm=results_store.get_build(version).get('srpm'))
+                        srpm=results_store.get_build(version).get('srpm'),
+                        srpm_logs=results_store.get_build(version).get('logs'))
 
                     # prepare for building
                     builder.prepare(spec, self.conf)
