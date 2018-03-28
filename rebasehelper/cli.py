@@ -30,7 +30,7 @@ from rebasehelper.options import OPTIONS, traverse_options
 from rebasehelper.constants import PROGRAM_DESCRIPTION, NEW_ISSUE_LINK
 from rebasehelper.version import VERSION
 from rebasehelper.application import Application
-from rebasehelper.logger import logger, LoggerHelper
+from rebasehelper.logger import logger, main_handler, output_tool_handler
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.utils import ConsoleHelper
 from rebasehelper.config import Config
@@ -159,7 +159,6 @@ class CliHelper(object):
         debug_log_file = None
         try:
             # be verbose until debug_log_file is created
-            handler = LoggerHelper.add_stream_handler(logger, logging.DEBUG)
             cli = CLI()
             if hasattr(cli, 'version'):
                 logger.info(VERSION)
@@ -167,25 +166,28 @@ class CliHelper(object):
 
             config = Config(getattr(cli, 'config-file', None))
             config.merge(cli)
+            for handler in [main_handler, output_tool_handler]:
+                handler.set_terminal_background(config.background)
+
             ConsoleHelper.use_colors = ConsoleHelper.should_use_colors(config)
             execution_dir, results_dir, debug_log_file = Application.setup(config)
             if not config.verbose:
-                handler.setLevel(logging.INFO)
+                main_handler.setLevel(logging.INFO)
             app = Application(config, execution_dir, results_dir, debug_log_file)
             app.run()
         except KeyboardInterrupt:
-            logger.info('\nInterrupted by user')
+            logger.info('Interrupted by user')
         except RebaseHelperError as e:
             if e.msg:
-                logger.error('\n%s', e.msg)
+                logger.error('%s', e.msg)
             else:
-                logger.error('\n%s', six.text_type(e))
+                logger.error('%s', six.text_type(e))
             sys.exit(1)
         except SystemExit as e:
             sys.exit(e.code)
         except BaseException:
             if debug_log_file:
-                logger.error('\nrebase-helper failed due to an unexpected error. Please report this problem'
+                logger.error('rebase-helper failed due to an unexpected error. Please report this problem'
                              '\nusing the following link: %s'
                              '\nand include the content of'
                              '\n\'%s\''
@@ -193,12 +195,12 @@ class CliHelper(object):
                              '\nThank you!',
                              NEW_ISSUE_LINK, debug_log_file)
             else:
-                logger.error('\nrebase-helper failed due to an unexpected error. Please report this problem'
+                logger.error('rebase-helper failed due to an unexpected error. Please report this problem'
                              '\nusing the following link: %s'
                              '\nand include the traceback following this message in the report.'
                              '\nThank you!',
                              NEW_ISSUE_LINK)
-            logger.debug('\n', exc_info=1)
+            logger.trace('', exc_info=1)
             sys.exit(1)
 
         sys.exit(0)

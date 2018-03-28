@@ -150,6 +150,34 @@ class TestConsoleHelper(object):
         assert capturer.stdout == 'test stdout'
         assert capturer.stderr == 'test stderr'
 
+    @pytest.mark.parametrize('specification, expected_rgb, expected_bit_width', [
+        ('rgb:0000/0000/0000', (0x0, 0x0, 0x0), 16),
+        ('rgb:ffff/ffff/ffff', (0xffff, 0xffff, 0xffff), 16),
+        ('rgb:f/f/f', (0xf, 0xf, 0xf), 4),
+        ('rgb:', None, None)
+    ], ids=[
+        '16-bit-black',
+        '16-bit-white',
+        '4-bit-white',
+        'invalid-format',
+    ])
+    def test_parse_rgb_device_specification(self, specification, expected_rgb, expected_bit_width):
+        rgb, bit_width = ConsoleHelper.parse_rgb_device_specification(specification)
+        assert rgb == expected_rgb
+        assert bit_width == expected_bit_width
+
+    @pytest.mark.parametrize('rgb_tuple, bit_width, expected_result', [
+        ((0xf, 0xf, 0xf), 4, True),
+        ((0x0, 0x0, 0x0), 4, False),
+        ((0x2929, 0x2929, 0x2929), 16, False),
+    ], ids=[
+        'white',
+        'black',
+        'grey',
+    ])
+    def test_color_is_light(self, rgb_tuple, bit_width, expected_result):
+        assert ConsoleHelper.color_is_light(rgb_tuple, bit_width) == expected_result
+
 
 class TestDownloadHelper(object):
     """ DownloadHelper tests """

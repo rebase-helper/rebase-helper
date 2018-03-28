@@ -21,6 +21,42 @@
 #          Tomas Hozza <thozza@redhat.com>
 
 import logging
+import six
+
+import rebasehelper.utils
+
+
+class CustomLogger(logging.Logger):
+
+    TRACE = logging.DEBUG + 1
+    SUCCESS = logging.INFO + 5
+    HEADING = logging.INFO + 6
+    IMPORTANT = logging.INFO + 7
+
+    _nameToLevel = {
+        'TRACE': TRACE,
+        'SUCCESS': SUCCESS,
+        'HEADING': HEADING,
+        'IMPORTANT': IMPORTANT,
+    }
+
+    def __init__(self, name, level=logging.NOTSET):
+        super(CustomLogger, self).__init__(name, level)
+
+        for lev, severity in six.iteritems(self._nameToLevel):
+            logging.addLevelName(severity, lev)
+
+    def __getattr__(self, level):
+        severity = self._nameToLevel.get(level.upper())
+
+        def log(message, *args, **kwargs):
+            if self.isEnabledFor(severity):
+                self._log(severity, message, args, **kwargs)
+
+        if severity:
+            return log
+
+        raise AttributeError
 
 
 class LoggerHelper(object):
@@ -30,40 +66,54 @@ class LoggerHelper(object):
 
     @staticmethod
     def get_basic_logger(logger_name, level=logging.DEBUG):
-        """
-        Sets-up a basic logger without any handler
+        """Sets up a basic logger without any handler.
 
-        :param logger_name: Logger name
-        :param level: severity level
-        :return: created logger
+        Args:
+            logger_name (str): Logger name.
+            level (int): Severity threshold.
+
+        Returns:
+            logging.Logger: Created logger instance.
+
         """
         basic_logger = logging.getLogger(logger_name)
         basic_logger.setLevel(level)
         return basic_logger
 
     @staticmethod
-    def add_stream_handler(logger_object, level=None):
-        """
-        Adds console handler with given severity.
+    def add_stream_handler(logger_object, level=None, formatter_object=None):
+        """Adds stream handler to the given logger.
 
-        :param logger_object: logger object to add the handler to
-        :param level: severity level
-        :return: created handler object
+        Args:
+            logger_object (logging.Logger): Logger object to add the handler to.
+            level (int): Severity threshold.
+            formatter_object (logging.Formatter): Formatter object used to format logged messages.
+
+        Returns:
+            logging.StreamHandler: Created stream handler instance.
+
         """
-        console_handler = logging.StreamHandler()
+        console_handler = ColorizingStreamHandler()
         if level:
             console_handler.setLevel(level)
+        if formatter_object:
+            console_handler.setFormatter(formatter_object)
         logger_object.addHandler(console_handler)
         return console_handler
 
     @staticmethod
     def add_file_handler(logger_object, path, formatter_object=None, level=None):
-        """
-        Adds FileHandler to a given logger
+        """Adds file handler to the given logger.
 
-        :param logger_object: Logger object to which the file handler will be added
-        :param path: Path to file where the debug log will be written
-        :return: None
+        Args:
+            logger_object (logging.Logger): Logger object to add the handler to.
+            path (str): Path to a log file.
+            formatter_object (logging.Formatter): Formatter object used to format logged messages.
+            level (int): Severity threshold.
+
+        Returns:
+            logging.FileHandler: Created file handler instance.
+
         """
         file_handler = logging.FileHandler(path, 'w')
         if level:
@@ -71,13 +121,60 @@ class LoggerHelper(object):
         if formatter_object:
             file_handler.setFormatter(formatter_object)
         logger_object.addHandler(file_handler)
+        return file_handler
 
 
+class ColorizingStreamHandler(logging.StreamHandler):
+    colors = {
+        'dark': {
+            logging.DEBUG: {'fg': 'brightblack', 'bg': 'default', 'style': None},
+            CustomLogger.TRACE: {'fg': 'red', 'bg': 'default', 'style': None},
+            logging.INFO: {'fg': 'default', 'bg': 'default', 'style': None},
+            CustomLogger.SUCCESS: {'fg': 'green', 'bg': 'default', 'style': None},
+            CustomLogger.HEADING: {'fg': 'yellow', 'bg': 'default', 'style': None},
+            CustomLogger.IMPORTANT: {'fg': 'red', 'bg': 'default', 'style': None},
+            logging.WARNING: {'fg': 'yellow', 'bg': 'default', 'style': None},
+            logging.ERROR: {'fg': 'red', 'bg': 'default', 'style': 'bold'},
+            logging.CRITICAL: {'fg': 'white', 'bg': 'red', 'style': 'bold'},
+        },
+        'light': {
+            logging.DEBUG: {'fg': 'brightblack', 'bg': 'default', 'style': None},
+            CustomLogger.TRACE: {'fg': 'red', 'bg': 'default', 'style': None},
+            logging.INFO: {'fg': 'default', 'bg': 'default', 'style': None},
+            CustomLogger.SUCCESS: {'fg': 'green', 'bg': 'default', 'style': None},
+            CustomLogger.HEADING: {'fg': 'blue', 'bg': 'default', 'style': None},
+            CustomLogger.IMPORTANT: {'fg': 'red', 'bg': 'default', 'style': None},
+            logging.WARNING: {'fg': 'blue', 'bg': 'default', 'style': None},
+            logging.ERROR: {'fg': 'red', 'bg': 'default', 'style': 'bold'},
+            logging.CRITICAL: {'fg': 'white', 'bg': 'red', 'style': 'bold'},
+        },
+    }
+
+    terminal_background = 'dark'
+
+    def set_terminal_background(self, background):
+        if background == 'auto':
+            self.terminal_background = rebasehelper.utils.ConsoleHelper.detect_background()
+        else:
+            self.terminal_background = background
+
+    def emit(self, record):
+        try:
+            message = self.format(record)
+            level_settings = self.colors[self.terminal_background].get(record.levelno, {})
+            rebasehelper.utils.ConsoleHelper.cprint(message, **level_settings)
+            self.flush()
+        except Exception:  # pylint: disable=broad-except
+            self.handleError(record)
+
+
+logging.setLoggerClass(CustomLogger)
 #  the main rebase-helper logger
 logger = LoggerHelper.get_basic_logger('rebase-helper')
 #  logger for output tool
 logger_output = LoggerHelper.get_basic_logger('output-tool', logging.INFO)
 logger_report = LoggerHelper.get_basic_logger('rebase-helper-report', logging.INFO)
 logger_upstream = LoggerHelper.get_basic_logger('rebase-helper-upstream')
-LoggerHelper.add_stream_handler(logger_output)
-formatter = logging.Formatter("%(asctime)s %(levelname)s\t: %(message)s")
+output_tool_handler = LoggerHelper.add_stream_handler(logger_output)
+formatter = logging.Formatter("%(levelname)s: %(message)s")
+main_handler = LoggerHelper.add_stream_handler(logger, logging.DEBUG, formatter)
