@@ -991,14 +991,13 @@ class SpecFile(object):
         logger.debug("Extracting version from '%s' using '%s'", name, url_base)
         # expect that the version macro can be followed by another macros
         regex_str = re.sub(r'%{version}(%{.+})?', 'PLACEHOLDER', url_base, flags=re.IGNORECASE)
+        regex_str = MacroHelper.expand(regex_str, regex_str)
         regex_str = re.escape(regex_str).replace('PLACEHOLDER', version_regex_str)
 
         # if no substitution was made, use the fallback regex
-        if regex_str == re.escape(url_base):
+        if regex_str == re.escape(MacroHelper.expand(url_base, url_base)):
             logger.debug('Using fallback regex to extract version from archive name.')
             regex_str = fallback_regex_str
-        else:
-            regex_str = MacroHelper.expand(regex_str, regex_str)
 
         logger.debug("Extracting version using regex '%s'", regex_str)
         regex = re.compile(regex_str)
