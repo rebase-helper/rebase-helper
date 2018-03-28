@@ -152,8 +152,11 @@ class ColorizingStreamHandler(logging.StreamHandler):
 
     terminal_background = 'dark'
 
-    def set_terminal_background(self):
-        self.terminal_background = rebasehelper.utils.ConsoleHelper.detect_background()
+    def set_terminal_background(self, background):
+        if background == 'auto':
+            self.terminal_background = rebasehelper.utils.ConsoleHelper.detect_background()
+        else:
+            self.terminal_background = background
 
     def emit(self, record):
         try:

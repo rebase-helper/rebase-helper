@@ -167,7 +167,7 @@ class CliHelper(object):
             config = Config(getattr(cli, 'config-file', None))
             config.merge(cli)
             for handler in [main_handler, output_tool_handler]:
-                handler.set_terminal_background()
+                handler.set_terminal_background(config.background)
 
             ConsoleHelper.use_colors = ConsoleHelper.should_use_colors(config)
             execution_dir, results_dir, debug_log_file = Application.setup(config)

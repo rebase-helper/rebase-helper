@@ -55,6 +55,12 @@ OPTIONS = [
         "name": ["--results-dir"],
         "help": "directory where rebase-helper output will be stored",
     },
+    {
+        "name": ["--background"],
+        "choices": ["dark", "light", "auto"],
+        "default": "auto",
+        "help": "change color scheme, defaults to %(default)s",
+    },
     # action control
     [
         {
