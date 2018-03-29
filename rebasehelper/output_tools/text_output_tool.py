@@ -5,6 +5,7 @@ from rebasehelper.output_tool import BaseOutputTool
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.logger import LoggerHelper, logger, logger_report
 from rebasehelper.results_store import results_store
+from rebasehelper.checker import checkers_runner
 
 
 class TextOutputTool(BaseOutputTool):
@@ -56,59 +57,86 @@ class TextOutputTool(BaseOutputTool):
         patch = cls.results_store.get_changes_patch()
         if patch is not None:
             logger_report.info('\nPatch with differences between old and new version source files:')
-            logger_report.info(patch['changes_patch'])
+            logger_report.info(cls.prepend_results_dir_name(os.path.basename(patch['changes_patch'])))
 
     @classmethod
     def print_message_and_separator(cls, message="", separator='='):
         logger_report.info(message)
-        logger_report.info(separator * len(message))
+        logger_report.info(separator * (len(message) - 1))
 
     @classmethod
-    def print_patches(cls, patches, summary):
+    def print_patches(cls, patches):
+        cls.print_message_and_separator("\nDownstream Patches")
         if not patches:
             logger_report.info("Patches were neither modified nor deleted.")
             return
-        logger_report.info(summary)
-        max_name = 0
-        for value in six.itervalues(patches):
-            if value:
-                new_max = max([len(os.path.basename(x)) for x in value])
-                if new_max > max_name:
-                    max_name = new_max
-        max_key = max([len(x) for x in six.iterkeys(patches)])
-        for key, value in six.iteritems(patches):
-            if value:
-                for patch in value:
-                    logger_report.info('Patch %s [%s]', os.path.basename(patch).ljust(max_name), key.ljust(max_key))
+
+        logger_report.info("Rebased patches are located in %s", cls.prepend_results_dir_name('rebased-sources'))
+        logger_report.info("Legend:")
+        logger_report.info("[-] = already applied, patch removed")
+        logger_report.info("[*] = merged, patch modified")
+        logger_report.info("[!] = conflicting or inapplicable, patch skipped")
+        logger_report.info("[ ] = patch untouched")
+
+        patches_out = list()
+        for patch_type, patch_list in sorted(six.iteritems(patches)):
+            if patch_list:
+                symbols = dict(deleted='-', modified='*', inapplicable='!')
+                for patch in sorted(patch_list):
+                    patches_out.append(' * {0:40} [{1}]'.format(os.path.basename(patch),
+                                                                symbols.get(patch_type, ' ')))
+        logger_report.info('\n'.join(sorted(patches_out)))
 
     @classmethod
-    def print_rpms(cls, rpms, version):
+    def print_rpms_and_logs(cls, rpms, version):
+        """
+        Prints information about location of RPMs and logs created during rebase
+        :param rpms: dictionary of (S)RPM paths
+        :param version: new/old version string
+        :return:
+        """
         pkgs = ['srpm', 'rpm']
         if not rpms.get('rpm', None):
             return
-        message = '\n{0} (S)RPM packages:'.format(version)
+        message = '\n{} packages'.format(version)
         cls.print_message_and_separator(message=message, separator='-')
         for type_rpm in pkgs:
             srpm = rpms.get(type_rpm, None)
             if not srpm:
                 continue
-            message = "%s package(s): are in directory %s :"
-            if isinstance(srpm, str):
-                logger_report.info(message, type_rpm.upper(), os.path.dirname(srpm))
-                logger_report.info("- %s", os.path.basename(srpm))
+
+            if type_rpm == 'srpm':
+                message = "\nSource packages and logs are in directory %s:"
             else:
-                logger_report.info(message, type_rpm.upper(), os.path.dirname(srpm[0]))
-                for pkg in srpm:
-                    logger_report.info("- %s", os.path.basename(pkg))
+                message = "\nBinary packages and logs are in directory %s:"
+
+            if isinstance(srpm, str):
+                # Print SRPM path
+                dirname = os.path.dirname(srpm)
+                logger_report.info(message, cls.prepend_results_dir_name(version.lower() + '-build', 'SRPM'))
+                logger_report.info(" - %s", os.path.basename(srpm))
+                # Print SRPM logs
+                cls.print_build_logs(rpms, dirname)
+
+            else:
+                # Print RPMs paths
+                dirname = os.path.dirname(srpm[0])
+                logger_report.info(message, cls.prepend_results_dir_name(version.lower() + '-build', 'RPM'))
+                for pkg in sorted(srpm):
+                    logger_report.info(" - %s", os.path.basename(pkg))
+                # Print RPMs logs
+                cls.print_build_logs(rpms, dirname)
 
     @classmethod
-    def print_build_logs(cls, rpms, version):
+    def print_build_logs(cls, rpms, dirpath):
         """Function is used for printing rpm build logs"""
         if rpms.get('logs', None) is None:
             return
-        logger_report.info('Available %s logs:', version)
-        for logs in rpms.get('logs', None):
-            logger_report.info('- %s', logs)
+        for logs in sorted(rpms.get('logs', []) + rpms.get('srpm_logs', [])):
+            if dirpath not in logs:
+                # Skip logs that do not belong to curent rpms(and version)
+                continue
+            logger_report.info(' - %s', os.path.basename(logs))
 
     @classmethod
     def print_summary(cls, path, results):
@@ -120,40 +148,35 @@ class TextOutputTool(BaseOutputTool):
         try:
             LoggerHelper.add_file_handler(logger_report, path)
         except (OSError, IOError):
-            raise RebaseHelperError("Can not create results file '%s'" % path)
+            raise RebaseHelperError("Can not create results file '{}'".format(path))
 
         cls.results_store = results
 
         cls.print_success_message()
-        type_pkgs = ['old', 'new']
-        if results.get_patches():
-            cls.print_changes_patch()
-            cls.print_patches(results.get_patches(), '\nSummary information about patches:')
-        for pkg in type_pkgs:
-            type_pkg = results.get_build(pkg)
-            if type_pkg:
-                cls.print_rpms(type_pkg, pkg.capitalize())
-                cls.print_build_logs(type_pkg, pkg.capitalize())
+        logger_report.info("All result files are stored in %s", os.path.dirname(path))
 
-        cls.print_pkgdiff_tool(results.get_checkers())
+        cls.print_changes_patch()
+
+        cls.print_checkers_text_output(results.get_checkers())
+
+        if results.get_patches():
+            cls.print_patches(results.get_patches())
+
+        cls.print_message_and_separator("\nRPMS")
+        for pkg_version in ['old', 'new']:
+            pkg_results = results.get_build(pkg_version)
+            if pkg_results:
+                cls.print_rpms_and_logs(pkg_results, pkg_version.capitalize())
 
     @classmethod
-    def print_pkgdiff_tool(cls, checkers_results):
-        """Function prints a summary information about pkgcomparetool"""
+    def print_checkers_text_output(cls, checkers_results):
+        """Function prints text output for every checker"""
         if checkers_results:
-            for check, data in six.iteritems(checkers_results):
-                logger_report.info("=== Checker %s results ===", check)
-                if data:
-                    for checker, output in six.iteritems(data):
-                        if output is None:
-                            logger_report.info("Log is available here: %s\n", checker)
-                        else:
-                            if isinstance(output, list):
-                                logger_report.info("%s See for more details %s", ','.join(output), checker)
-                            else:
-                                logger_report.info("%s See for more details %s", output, checker)
+            for check_tool in six.itervalues(checkers_runner.plugin_classes):
+                for check, data in sorted(six.iteritems(checkers_results)):
+                    if check == check_tool.get_checker_name():
+                        logger_report.info('\n'.join(check_tool.format(data)))
 
     @classmethod
     def run(cls, logs, app):  # pylint: disable=unused-argument
-        path = cls.get_report_path(app)
-        cls.print_summary(path, results_store)
+        cls.print_summary(cls.get_report_path(app), results_store)

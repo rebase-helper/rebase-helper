@@ -112,7 +112,7 @@ class Application(object):
     @staticmethod
     def setup(cli_conf):
         execution_dir = os.getcwd()
-        results_dir = cli_conf.results_dir if cli_conf.results_dir else execution_dir
+        results_dir = os.path.abspath(cli_conf.results_dir) if cli_conf.results_dir else execution_dir
         results_dir = os.path.join(results_dir, settings.REBASE_HELPER_RESULTS_DIR)
 
         # if not continuing, check the results dir
@@ -576,7 +576,8 @@ class Application(object):
                         builds_nowait=self.conf.builds_nowait,
                         build_tasks=self.conf.build_tasks,
                         builder_options=self.conf.builder_options,
-                        srpm=results_store.get_build(version).get('srpm'))
+                        srpm=results_store.get_build(version).get('srpm'),
+                        srpm_logs=results_store.get_build(version).get('logs'))
 
                     # prepare for building
                     builder.prepare(spec, self.conf)
@@ -741,7 +742,9 @@ class Application(object):
 
             results_store.set_result_message('fail', exception.msg)
         else:
-            result = "Rebase to %s SUCCEEDED" % self.conf.sources
+            result = "Rebase from {}-{} to {}-{} completed without an error".format(
+                self.spec_file.get_package_name(), self.spec_file.get_version(),
+                self.rebase_spec_file.get_package_name(), self.rebase_spec_file.get_version())
             results_store.set_result_message('success', result)
 
         if self.rebase_spec_file:

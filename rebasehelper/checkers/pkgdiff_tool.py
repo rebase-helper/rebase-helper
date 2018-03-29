@@ -36,9 +36,9 @@ from xml.etree import ElementTree
 class PkgDiffTool(BaseChecker):
     """ Pkgdiff compare tool. """
 
-    CMD = "pkgdiff"
+    NAME = "pkgdiff"
     DEFAULT = True
-    pkgdiff_results_filename = 'pkgdiff_reports.html'
+    pkgdiff_results_filename = 'report'
     files_xml = "files.xml"
     results_dir = ''
     results_dict = {}
@@ -46,14 +46,10 @@ class PkgDiffTool(BaseChecker):
 
     @classmethod
     def match(cls, cmd=None):
-        if cmd == cls.CMD:
+        if cmd == cls.NAME:
             return True
         else:
             return False
-
-    @classmethod
-    def get_checker_name(cls):
-        return cls.CMD
 
     @classmethod
     def is_default(cls):
@@ -93,7 +89,7 @@ class PkgDiffTool(BaseChecker):
             with open(file_name, 'w') as f:
                 f.writelines(lines)
         except IOError:
-            raise RebaseHelperError("Unable to create XML file for pkgdiff tool '%s'" % file_name)
+            raise RebaseHelperError("Unable to create XML file for pkgdiff tool '{}'".format(file_name))
 
         return file_name
 
@@ -207,10 +203,11 @@ class PkgDiffTool(BaseChecker):
         Compares old and new RPMs using pkgdiff
         :param results_dir result dir where are stored results
         """
-        cls.results_dir = results_dir
-        cls.pkgdiff_results_full_path = os.path.join(cls.results_dir, cls.pkgdiff_results_filename)
+        cls.results_dir = os.path.join(results_dir, cls.NAME)
+        os.makedirs(cls.results_dir)
+        cls.pkgdiff_results_full_path_html = os.path.join(cls.results_dir, cls.pkgdiff_results_filename + '.html')
 
-        cmd = [cls.CMD]
+        cmd = [cls.NAME]
         cmd.append('-hide-unchanged')
         for version in ['old', 'new']:
             old = results_store.get_build(version)
@@ -220,18 +217,18 @@ class PkgDiffTool(BaseChecker):
         cmd.append('-extra-info')
         cmd.append(cls.results_dir)
         cmd.append('-report-path')
-        cmd.append(cls.pkgdiff_results_full_path)
+        cmd.append(cls.pkgdiff_results_full_path_html)
         try:
             ret_code = ProcessHelper.run_subprocess(cmd, output_file=ProcessHelper.DEV_NULL)
         except OSError:
-            raise CheckerNotFoundError("Checker '%s' was not found or installed." % cls.CMD)
+            raise CheckerNotFoundError("Checker '{}' was not found or installed.".format(cls.NAME))
 
         # From pkgdiff source code:
         # ret_code 0 means unchanged
         # ret_code 1 means Changed
         # other return codes means error
         if int(ret_code) != 0 and int(ret_code) != 1:
-            raise RebaseHelperError('Execution of %s failed.\nCommand line is: %s' % (cls.CMD, cmd))
+            raise RebaseHelperError('Execution of {} failed.\nCommand line is: {}'.format(cls.NAME, cmd))
         results_dict = cls.process_xml_results(cls.results_dir)
         lines = []
 
@@ -239,14 +236,27 @@ class PkgDiffTool(BaseChecker):
             if val:
                 if lines:
                     lines.append('')
-                lines.append('Following files were %s:' % key)
+                lines.append('Following files were {}:'.format(key))
                 lines.extend(val)
 
-        pkgdiff_report = os.path.join(cls.results_dir, 'report-' + cls.pkgdiff_results_filename + '.log')
+        pkgdiff_report = os.path.join(cls.results_dir, cls.pkgdiff_results_filename + '.txt')
         try:
             with open(pkgdiff_report, "w") as f:
                 f.write('\n'.join(lines))
         except IOError:
-            raise RebaseHelperError("Unable to write result from %s to '%s'" % (cls.CMD, pkgdiff_report))
+            raise RebaseHelperError("Unable to write result from {} to '{}'".format(cls.NAME, pkgdiff_report))
 
-        return {pkgdiff_report: None}
+        return dict(path=cls.get_checker_output_dir_short())
+
+    @classmethod
+    def format(cls, data):
+        """
+        Formats pkgdiff data to string
+        :param data: pkgdiff data dictionary
+        :return: formated pkgdiff list of strings
+        """
+        output_lines = [cls.get_underlined_title("pkgdiff")]
+        output_lines.append("Details in {}:".format(data['path']))
+        output_lines.append(" - {}.html".format(cls.pkgdiff_results_filename))
+        output_lines.append(" - {}.txt".format(cls.pkgdiff_results_filename))
+        return output_lines
