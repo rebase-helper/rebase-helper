@@ -74,7 +74,7 @@ class BaseOutputTool(object):
         if results_store.get_old_build() is not None:
             logger_output.info('%s:\n%s', 'Old build logs and (S)RPMs', cls.prepend_results_dir_name('old-build'))
         if results_store.get_new_build() is not None:
-            logger_output.info('%s:\n%s', 'New build logs and (S)RPMs', cls.prepend_results_dir_name('old-build'))
+            logger_output.info('%s:\n%s', 'New build logs and (S)RPMs', cls.prepend_results_dir_name('new-build'))
         logger_output.info('')
 
         logger_output.heading('%s:', 'Rebased sources')
