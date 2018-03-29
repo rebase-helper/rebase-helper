@@ -2,6 +2,30 @@
 
 ## [Unreleased]
 
+## [0.13.0] - 2018-03-29
+### Added
+- Added possibility to make changes to specfile between build retries
+- Added **CommitHashUpdater** SPEC hook
+- Added **hackage** versioneer
+- Added support for uncompressed tar archives
+- Created integration environment for test suite to isolate it from the internet
+- Added `--update-sources` option to update *sources* file and upload new sources to lookaside cache
+
+### Changed
+- Switched to `requests` library for downloads
+- Made error messages from **Koji** builds more useful
+- Reworked handling of downstream patches
+- Changed package build process to build first SRPMs and then RPMs
+- Divided checkers into categories running at different phases of rebase
+- **Koji** build tool refactored to be better adjustable and extensible
+- Colorized **rebase-helper** output and enhanced log messages
+- Significatly improved rebase summary and report
+
+### Fixed
+- Fixed `TestConsoleHelper.test_get_message()` test
+- Fixed bug in **rpmdiff** output analysis
+- Fixed some code styling errors and a large number of issues found by static analysis
+
 ## [0.12.0] - 2017-12-19
 ### Added
 - Added **npmjs** and **cpan** versioneers
