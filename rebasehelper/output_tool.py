@@ -78,7 +78,8 @@ class BaseOutputTool(object):
         logger_output.info('')
 
         logger_output.heading('%s:', 'Rebased sources')
-        logger_output.info("%s", cls.prepend_results_dir_name(os.path.relpath(app.debug_log_file, app.results_dir)))
+        logger_output.info("%s", cls.prepend_results_dir_name(os.path.relpath(app.rebased_sources_dir,
+                                                                              app.results_dir)))
 
         patch = results_store.get_changes_patch()
         if 'changes_patch' in patch:
