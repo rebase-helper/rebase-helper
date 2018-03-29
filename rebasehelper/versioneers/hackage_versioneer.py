@@ -25,8 +25,8 @@ from rebasehelper.logger import logger
 from rebasehelper.utils import DownloadHelper
 
 
-class HaskellVersioneer(BaseVersioneer):
-    NAME = 'haskell'
+class HackageVersioneer(BaseVersioneer):
+    NAME = 'hackage'
     CATEGORIES = ['haskell']
 
     BASE_URL = 'https://haskell.org'

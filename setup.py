@@ -117,7 +117,7 @@ setup(
             'rubygems = rebasehelper.versioneers.rubygems_versioneer:RubyGemsVersioneer',
             'npmjs = rebasehelper.versioneers.npmjs_versioneer:NPMJSVersioneer',
             'cpan = rebasehelper.versioneers.cpan_versioneer:CPANVersioneer',
-            'haskell = rebasehelper.versioneers.haskell_versioneer:HaskellVersioneer',
+            'hackage = rebasehelper.versioneers.hackage_versioneer:HackageVersioneer',
         ],
         'rebasehelper.output_tools': [
             'json_output_tool = rebasehelper.output_tools.json_output_tool:JSONOutputTool',

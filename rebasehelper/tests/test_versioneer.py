@@ -29,7 +29,7 @@ from rebasehelper.versioneers.anitya_versioneer import AnityaVersioneer
 from rebasehelper.versioneers.pypi_versioneer import PyPIVersioneer
 from rebasehelper.versioneers.npmjs_versioneer import NPMJSVersioneer
 from rebasehelper.versioneers.cpan_versioneer import CPANVersioneer
-from rebasehelper.versioneers.haskell_versioneer import HaskellVersioneer
+from rebasehelper.versioneers.hackage_versioneer import HackageVersioneer
 
 
 class TestVersioneer(object):
@@ -98,8 +98,8 @@ class TestVersioneer(object):
         'cab>=0.2.17'
     ])
     @pytest.mark.integration
-    def test_haskell_versioneer(self, package, min_version):
-        assert HaskellVersioneer.get_name() in versioneers_runner.versioneers
-        HaskellVersioneer.API_URL = 'https://integration:4430/versioneers'
-        version = versioneers_runner.run(HaskellVersioneer.get_name(), package, None)
+    def test_hackage_versioneer(self, package, min_version):
+        assert HackageVersioneer.get_name() in versioneers_runner.versioneers
+        HackageVersioneer.API_URL = 'https://integration:4430/versioneers'
+        version = versioneers_runner.run(HackageVersioneer.get_name(), package, None)
         assert parse_version(version) >= parse_version(min_version)
