@@ -40,6 +40,7 @@ import termios
 import time
 import tty
 
+import colors
 import copr
 import git
 import pyquery
@@ -57,7 +58,12 @@ from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.logger import logger
 from rebasehelper import settings
 
-import colors
+
+try:
+    from requests_gssapi import HTTPSPNEGOAuth as SPNEGOAuth
+except ImportError:
+    from requests_kerberos import HTTPKerberosAuth as SPNEGOAuth
+
 
 try:
     import koji
@@ -1496,6 +1502,13 @@ class LookasideCacheHelper(object):
         return sources
 
     @classmethod
+    def _write_sources(cls, basepath, sources):
+        path = os.path.join(basepath, 'sources')
+        with open(path, 'w') as f:
+            for source in sources:
+                f.write('{0} ({1}) = {2}\n'.format(source['hashtype'].upper(), source['filename'], source['hash']))
+
+    @classmethod
     def _hash(cls, filename, hashtype):
         try:
             chksum = hashlib.new(hashtype)
@@ -1525,7 +1538,7 @@ class LookasideCacheHelper(object):
         try:
             DownloadHelper.download_file(url, target)
         except DownloadError as e:
-            raise LookasideCacheError(str(e))
+            raise LookasideCacheError(six.text_type(e))
 
     @classmethod
     def download(cls, tool, basepath, package):
@@ -1536,6 +1549,74 @@ class LookasideCacheHelper(object):
             raise LookasideCacheError('Failed to read rpkg configuration')
         for source in cls._read_sources(basepath):
             cls._download_source(tool, url, package, source['filename'], source['hashtype'], source['hash'])
+
+    @classmethod
+    def _upload_source(cls, url, package, filename, hashtype, hsh):
+        class Chunked(object):
+            def __init__(self, path, chunksize=8192):
+                self.path = path
+                self.chunksize = chunksize
+                self.totalsize = os.path.getsize(filename)
+                self.transferred = 0
+                self.start = time.time()
+
+            def __iter__(self):
+                with open(self.path, 'rb') as f:
+                    while True:
+                        data = f.read(self.chunksize)
+                        if not data:
+                            break
+                        self.transferred += len(data)
+                        DownloadHelper.progress(self.totalsize, self.transferred, self.start)
+                        yield data
+
+            def __len__(self):
+                return self.totalsize
+
+        def post(check_only=False):
+            data = dict(name=package)
+            data['{}sum'.format(hashtype)] = hsh
+            if check_only:
+                data['filename'] = filename
+            else:
+                data['file'] = Chunked(filename)
+            r = requests.post(url, data=data, auth=SPNEGOAuth())
+            if not 200 <= r.status_code < 300:
+                raise LookasideCacheError(r.reason)
+            return r.content
+
+        state = post(check_only=True)
+        if state.strip() == b'Available':
+            # already uploaded
+            return
+
+        logger.info('Uploading %s to lookaside cache', filename)
+        try:
+            post()
+        finally:
+            sys.stdout.write('\n')
+            sys.stdout.flush()
+
+    @classmethod
+    def update_sources(cls, tool, basepath, package, old_sources, new_sources):
+        try:
+            config = cls._read_config(tool)
+            url = config['lookaside_cgi']
+            hashtype = config['lookasidehash']
+        except (configparser.Error, KeyError):
+            raise LookasideCacheError('Failed to read rpkg configuration')
+        sources = cls._read_sources(basepath)
+        for idx, src in enumerate(old_sources):
+            indexes = [i for i, s in enumerate(sources) if s['filename'] == src]
+            if indexes:
+                filename = new_sources[idx]
+                if filename == src:
+                    # no change
+                    continue
+                hsh = cls._hash(filename, hashtype)
+                cls._upload_source(url, package, filename, hashtype, hsh)
+                sources[indexes[0]] = dict(hash=hsh, filename=filename, hashtype=hashtype)
+        cls._write_sources(basepath, sources)
 
 
 class ParseError(Exception):
