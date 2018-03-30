@@ -713,14 +713,13 @@ class Application(object):
 
     def get_checker_outputs(self):
         checkers = {}
-        if results_store.get_checkers():
-            for check, data in six.iteritems(results_store.get_checkers()):
-                if data:
-                    for log in six.iterkeys(data):
-                        if FileHelper.file_available(log):
-                            checkers[check] = log
-                else:
-                    checkers[check] = None
+        for check, data in six.iteritems(results_store.get_checkers()):
+            if data:
+                for log in six.iterkeys(data):
+                    if FileHelper.file_available(log):
+                        checkers[check] = log
+            else:
+                checkers[check] = None
         return checkers
 
     def get_rebased_patches(self):
