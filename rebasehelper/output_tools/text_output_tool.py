@@ -171,11 +171,10 @@ class TextOutputTool(BaseOutputTool):
     @classmethod
     def print_checkers_text_output(cls, checkers_results):
         """Function prints text output for every checker"""
-        if checkers_results:
-            for check_tool in six.itervalues(checkers_runner.plugin_classes):
-                for check, data in sorted(six.iteritems(checkers_results)):
-                    if check == check_tool.get_checker_name():
-                        logger_report.info('\n'.join(check_tool.format(data)))
+        for check_tool in six.itervalues(checkers_runner.plugin_classes):
+            for check, data in sorted(six.iteritems(checkers_results)):
+                if check == check_tool.get_checker_name():
+                    logger_report.info('\n'.join(check_tool.format(data)))
 
     @classmethod
     def run(cls, logs, app):  # pylint: disable=unused-argument

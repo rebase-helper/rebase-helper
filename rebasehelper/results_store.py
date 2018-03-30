@@ -95,7 +95,7 @@ class ResultsStore(object):
         return self._data_store.get(self.RESULTS_PATCHES, None)
 
     def get_checkers(self):
-        return self._data_store.get(self.RESULTS_CHECKERS, None)
+        return self._data_store.get(self.RESULTS_CHECKERS, {})
 
     def get_summary_info(self):
         return self._data_store.get(self.RESULTS_INFORMATION, None)
