@@ -31,6 +31,7 @@ from rebasehelper.cli import CLI
 from rebasehelper.config import Config
 from rebasehelper.application import Application
 from rebasehelper.settings import REBASE_HELPER_RESULTS_DIR
+from rebasehelper.utils import GitHelper
 
 
 class TestRebase(object):
@@ -39,6 +40,9 @@ class TestRebase(object):
     def cloned_dist_git(self, url, commit, workdir):
         repo = git.Repo.clone_from(url, workdir)
         repo.git.checkout(commit)
+        # Configure user otherwise app.apply_changes() will fail
+        repo.git.config('user.name', GitHelper.get_user(), local=True)
+        repo.git.config('user.email', GitHelper.get_email(), local=True)
         return repo
 
     @pytest.mark.parametrize('buildtool', [
@@ -97,6 +101,7 @@ class TestRebase(object):
             '--outputtool', 'json',
             '--pkgcomparetool', 'rpmdiff,pkgdiff,abipkgdiff',
             '--color=always',
+            '--apply-changes',
             version
         ])
         config = Config()
@@ -115,3 +120,5 @@ class TestRebase(object):
         ver = [l for h in pf[0] for l in h.target if l.startswith('+Version')]
         assert ver
         assert version in ver[0]
+        repo = git.Repo(execution_dir)
+        assert '- New upstream release {}'.format(version) in repo.commit().summary
