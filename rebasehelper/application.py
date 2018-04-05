@@ -777,6 +777,20 @@ class Application(object):
         rh_stuff['logs'] = self.get_all_log_files()
         return rh_stuff
 
+    def apply_changes(self):
+        try:
+            repo = git.Repo(self.execution_dir)
+        except git.InvalidGitRepositoryError:
+            repo = git.Repo.init(self.execution_dir)
+        patch = results_store.get_changes_patch()
+        if not patch:
+            logger.warning('Cannot apply changes.patch. No patch file was created')
+        try:
+            repo.git.am(patch['changes_patch'])
+        except git.GitCommandError as e:
+            logger.warning('changes.patch was not applied properly. Please review changes manually.'
+                           '\nThe error message is: %s', six.text_type(e))
+
     def run(self):
         # Certain options can be used only with specific build tools
         tools_creating_tasks = [k for k, v in six.iteritems(Builder.build_tools) if v.creates_tasks()]
@@ -840,6 +854,8 @@ class Application(object):
 
         if self.debug_log_file:
             self.print_summary()
+        if self.conf.apply_changes:
+            self.apply_changes()
         return 0
 
 
