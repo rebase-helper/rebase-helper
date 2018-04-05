@@ -159,6 +159,12 @@ OPTIONS = [
         "help": "do not remove workspace directory after finishing",
     },
     {
+        "name": ["--apply-changes"],
+        "default": False,
+        "switch": True,
+        "help": "apply changes.patch after a successful rebase",
+    },
+    {
         "name": ["--disable-inapplicable-patches"],
         "default": False,
         "switch": True,
