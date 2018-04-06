@@ -50,17 +50,6 @@ class AbiCheckerTool(BaseChecker):
     # --d2 dbus-glib-debuginfo-0.104-3.fc23.x86_64.rpm \
     # dbus-glib-0.80-3.fc12.x86_64.rpm dbus-glib-0.104-3.fc23.x86_64.rpm
     @classmethod
-    def match(cls, cmd=None):
-        if cmd == cls.NAME:
-            return True
-        else:
-            return False
-
-    @classmethod
-    def is_default(cls):
-        return cls.DEFAULT
-
-    @classmethod
     def _get_packages_for_abipkgdiff(cls, input_structure=None):
         debug_package = None
         rest_packages = None

@@ -43,7 +43,10 @@ class BaseChecker(object):
         Checks if the tool name match the class implementation. If yes, returns
         True, otherwise returns False.
         """
-        raise NotImplementedError()
+        if cmd == cls.NAME:
+            return True
+        else:
+            return False
 
     @classmethod
     def get_checker_output_dir_short(cls):
@@ -57,8 +60,7 @@ class BaseChecker(object):
 
     @classmethod
     def is_default(cls):
-        """Checks if the tool is the default checker."""
-        raise NotImplementedError()
+        return cls.DEFAULT
 
     @classmethod
     def run_check(cls, results_dir, **kwargs):
