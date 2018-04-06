@@ -200,3 +200,8 @@ class AbiCheckerTool(BaseChecker):
             output_lines.append(" - {}.txt".format(pkg_name))
 
         return output_lines
+
+    @classmethod
+    def get_important_changes(cls, checker_output):
+        if checker_output['abi_changes']:
+            return ['ABI changes occured. Check abipkgdiff output']

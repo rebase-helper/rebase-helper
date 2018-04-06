@@ -75,6 +75,20 @@ class BaseChecker(object):
     def get_underlined_title(cls, text, separator='='):
         return "\n{}\n{}".format(text, separator * len(text))
 
+    @classmethod
+    def get_important_changes(cls, checker_output):
+        """
+        Each checker has an opportunity to highlight some of its output.
+        This function is optional, as not all checkers provide output with critical information.
+
+        Args:
+            checker_output (dict): Dictionary with output from the given checker.
+
+        Returns:
+            list: List of strings to be output to CLI as warning messages.
+        """
+        pass
+
 
 class CheckersRunner(object):
     """
