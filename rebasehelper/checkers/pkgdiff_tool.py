@@ -45,17 +45,6 @@ class PkgDiffTool(BaseChecker):
     category = "RPM"
 
     @classmethod
-    def match(cls, cmd=None):
-        if cmd == cls.NAME:
-            return True
-        else:
-            return False
-
-    @classmethod
-    def is_default(cls):
-        return cls.DEFAULT
-
-    @classmethod
     def _get_rpm_info(cls, name, packages):
         if packages is None:
             return None

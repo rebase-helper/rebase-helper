@@ -42,17 +42,6 @@ class RpmDiffTool(BaseChecker):
     category = "RPM"
 
     @classmethod
-    def match(cls, cmd=None):
-        if cmd == cls.NAME:
-            return True
-        else:
-            return False
-
-    @classmethod
-    def is_default(cls):
-        return cls.DEFAULT
-
-    @classmethod
     def _get_rpms(cls, rpm_list):
         rpm_dict = {}
         for rpm_name in rpm_list:

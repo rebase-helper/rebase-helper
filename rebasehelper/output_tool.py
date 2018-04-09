@@ -26,7 +26,7 @@ import pkg_resources
 
 from rebasehelper.logger import logger, logger_output
 from rebasehelper.results_store import results_store
-from rebasehelper.checkers.abipkgdiff_tool import AbiCheckerTool
+from rebasehelper.checker import checkers_runner
 from rebasehelper.settings import REBASE_HELPER_RESULTS_DIR
 
 
@@ -62,11 +62,8 @@ class BaseOutputTool(object):
         cls.app = app
         cls.print_patches_cli()
         result = results_store.get_result_message()
-        checkers = results_store.get_checkers()
 
-        if 'abipkgdiff' in checkers:
-            if AbiCheckerTool.abi_changes:
-                logger_output.warning('\nABI changes occured. Check abipkgdiff output')
+        cls.print_important_checkers_output()
 
         logger_output.heading('\nAvailable logs:')
         logger_output.info('%s:\n%s', 'Debug log', cls.prepend_results_dir_name(os.path.relpath(app.debug_log_file,
@@ -97,6 +94,17 @@ class BaseOutputTool(object):
                 logger_output.success("\nPatching successful")
             elif results_store.get_patches()['success']:
                 logger_output.error("\nPatching failed")
+
+    @classmethod
+    def print_important_checkers_output(cls):
+        """Iterates over all checkers output to highlight important checkers warning"""
+        checkers_results = results_store.get_checkers()
+        for check_tool in six.itervalues(checkers_runner.plugin_classes):
+            for check, data in sorted(six.iteritems(checkers_results)):
+                if check == check_tool.get_checker_name():
+                    out = check_tool.get_important_changes(data)
+                    if out:
+                        logger_output.warning('\n'.join(out))
 
     @classmethod
     def print_report_file_path(cls):

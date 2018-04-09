@@ -43,7 +43,10 @@ class BaseChecker(object):
         Checks if the tool name match the class implementation. If yes, returns
         True, otherwise returns False.
         """
-        raise NotImplementedError()
+        if cmd == cls.NAME:
+            return True
+        else:
+            return False
 
     @classmethod
     def get_checker_output_dir_short(cls):
@@ -57,8 +60,7 @@ class BaseChecker(object):
 
     @classmethod
     def is_default(cls):
-        """Checks if the tool is the default checker."""
-        raise NotImplementedError()
+        return cls.DEFAULT
 
     @classmethod
     def run_check(cls, results_dir, **kwargs):
@@ -72,6 +74,20 @@ class BaseChecker(object):
     @classmethod
     def get_underlined_title(cls, text, separator='='):
         return "\n{}\n{}".format(text, separator * len(text))
+
+    @classmethod
+    def get_important_changes(cls, checker_output):
+        """
+        Each checker has an opportunity to highlight some of its output.
+        This function is optional, as not all checkers provide output with critical information.
+
+        Args:
+            checker_output (dict): Dictionary with output from the given checker.
+
+        Returns:
+            list: List of strings to be output to CLI as warning messages.
+        """
+        pass
 
 
 class CheckersRunner(object):
