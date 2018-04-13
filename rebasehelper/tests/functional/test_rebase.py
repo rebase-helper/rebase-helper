@@ -30,7 +30,7 @@ import unidiff
 from rebasehelper.cli import CLI
 from rebasehelper.config import Config
 from rebasehelper.application import Application
-from rebasehelper.settings import REBASE_HELPER_RESULTS_DIR
+from rebasehelper.constants import RESULTS_DIR
 from rebasehelper.utils import GitHelper
 
 
@@ -109,11 +109,11 @@ class TestRebase(object):
         execution_dir, results_dir, debug_log_file = Application.setup(config)
         app = Application(config, execution_dir, results_dir, debug_log_file)
         app.run()
-        with open(os.path.join(REBASE_HELPER_RESULTS_DIR, 'report.json')) as f:
+        with open(os.path.join(RESULTS_DIR, 'report.json')) as f:
             report = json.load(f)
             for k in ['deleted', 'modified', 'inapplicable']:
                 assert set(report['patches'].get(k, [])) == (patches[k] or set())
-        changes = os.path.join(REBASE_HELPER_RESULTS_DIR, 'changes.patch')
+        changes = os.path.join(RESULTS_DIR, 'changes.patch')
         patch = unidiff.PatchSet.from_filename(changes, encoding='UTF-8')
         pf = [pf for pf in patch if pf.path == '{}.spec'.format(package)]
         assert pf

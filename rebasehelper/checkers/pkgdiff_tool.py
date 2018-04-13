@@ -28,7 +28,6 @@ from rebasehelper.utils import ProcessHelper, RpmHelper
 from rebasehelper.logger import logger
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
 from rebasehelper.results_store import results_store
-from rebasehelper import settings
 from rebasehelper.checker import BaseChecker
 from xml.etree import ElementTree
 
@@ -38,6 +37,7 @@ class PkgDiffTool(BaseChecker):
 
     NAME = "pkgdiff"
     DEFAULT = True
+    CHECKER_TAGS = ['added', 'removed', 'changed', 'moved', 'renamed']
     pkgdiff_results_filename = 'report'
     files_xml = "files.xml"
     results_dir = ''
@@ -87,7 +87,7 @@ class PkgDiffTool(BaseChecker):
         """
         Function removes all rows which were not changed
         """
-        for tag in settings.CHECKER_TAGS:
+        for tag in cls.CHECKER_TAGS:
             cls.results_dict[tag] = [x for x in cls.results_dict[tag] if not x.endswith('(0%)')]
 
     @classmethod
@@ -109,7 +109,7 @@ class PkgDiffTool(BaseChecker):
             if new_version is '':
                 new_version = cls._get_rpm_info('version', results_store.get_new_build()['rpm'])
 
-        for tag in settings.CHECKER_TAGS:
+        for tag in cls.CHECKER_TAGS:
             cls.results_dict[tag] = []
         for file_name in [os.path.join(result_dir, x) for x in XML_FILES]:
             logger.debug('Processing %s file.', file_name)
@@ -119,7 +119,7 @@ class PkgDiffTool(BaseChecker):
                     lines.extend(f.readlines())
                     lines.append('</pkgdiff>')
                     pkgdiff_tree = ElementTree.fromstringlist(lines)
-                    for tag in settings.CHECKER_TAGS:
+                    for tag in cls.CHECKER_TAGS:
                         for pkgdiff in pkgdiff_tree.findall('.//' + tag):
                             files = [x.strip() for x in pkgdiff.text.strip().split('\n')]
                             files = [x.replace(old_version, '*') for x in files]
@@ -171,7 +171,7 @@ class PkgDiffTool(BaseChecker):
 
         # Remove all files which were not changed
         cls._remove_not_changed_files()
-        for tag in settings.CHECKER_TAGS:
+        for tag in cls.CHECKER_TAGS:
             cls.results_dict[tag] = cls._remove_not_checked_files(cls.results_dict[tag])
 
         added = [x for x in cls.results_dict['added'] if x not in cls.results_dict['removed']]

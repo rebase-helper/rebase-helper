@@ -24,12 +24,12 @@ import os
 
 import pytest
 
-from rebasehelper.settings import REBASE_HELPER_RESULTS_DIR, REBASE_HELPER_DEBUG_LOG
+from rebasehelper.constants import RESULTS_DIR, DEBUG_LOG
 
 
 def make_logs_report():
     logs = [
-        REBASE_HELPER_DEBUG_LOG,
+        DEBUG_LOG,
         'old-build/SRPM/build.log',
         'old-build/RPM/build.log',
         'old-build/RPM/root.log',
@@ -42,7 +42,7 @@ def make_logs_report():
     report = []
     for log in logs:
         try:
-            with open(os.path.join(REBASE_HELPER_RESULTS_DIR, log)) as f:
+            with open(os.path.join(RESULTS_DIR, log)) as f:
                 content = f.read()
                 report.append(' {} '.format(log).center(80, '_'))
                 report.append(content)

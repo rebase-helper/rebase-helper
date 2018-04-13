@@ -42,7 +42,7 @@ from six.moves import urllib
 from rebasehelper.utils import DownloadHelper, DownloadError, MacroHelper, GitHelper, RpmHelper
 from rebasehelper.utils import LookasideCacheHelper, LookasideCacheError, SilentArgumentParser, ParseError, defenc
 from rebasehelper.logger import logger
-from rebasehelper import settings
+from rebasehelper import constants
 from rebasehelper.archive import Archive
 from rebasehelper.exceptions import RebaseHelperError
 
@@ -404,7 +404,7 @@ class SpecFile(object):
         # Fix paths in rebase_spec_file to patches to current directory
         for index, line in enumerate(self.spec_content):
             if line.startswith('Patch'):
-                mod_line = re.sub(settings.REBASE_HELPER_REBASED_SOURCES_DIR + '/', '', line)
+                mod_line = re.sub(constants.REBASED_SOURCES_DIR + '/', '', line)
                 self.spec_content[index] = mod_line
         self.save()
 
@@ -454,7 +454,7 @@ class SpecFile(object):
                 else:
                     patch = None
                 if patch:
-                    fields[1] = os.path.join(settings.REBASE_HELPER_REBASED_SOURCES_DIR, patch_name)
+                    fields[1] = os.path.join(constants.REBASED_SOURCES_DIR, patch_name)
                     self.spec_content[index] = ' '.join(fields) + '\n'
                     modified_patches.append(patch_num)
 
@@ -1250,10 +1250,10 @@ class SpecFile(object):
         :return: list with lines
         """
         sec = '\n'
-        comm_lines = [settings.BEGIN_COMMENT + sec]
+        comm_lines = [constants.BEGIN_COMMENT + sec]
         for l in lines if not isinstance(lines, six.string_types) else [lines]:
             comm_lines.append(l + sec)
-        comm_lines.append(settings.END_COMMENT + sec)
+        comm_lines.append(constants.END_COMMENT + sec)
         return comm_lines
 
     def _correct_missing_files(self, missing):
@@ -1262,10 +1262,10 @@ class SpecFile(object):
             sec_name, sec_content = value
             match = re.search(r'^%files\s*$', sec_name)
             if match:
-                if settings.BEGIN_COMMENT in sec_content:
+                if constants.BEGIN_COMMENT in sec_content:
                     # We need only files which are not included yet.
                     upd_files = [f for f in missing if f not in sec_content]
-                    regex = re.compile(r'(' + settings.BEGIN_COMMENT + r'\s*)')
+                    regex = re.compile(r'(' + constants.BEGIN_COMMENT + r'\s*)')
                     sec_content = regex.sub('\\1' + '\n'.join(upd_files) + sep,
                                             sec_content)
                 else:

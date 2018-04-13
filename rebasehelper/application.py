@@ -32,8 +32,8 @@ from pkg_resources import parse_version
 
 from rebasehelper.archive import Archive
 from rebasehelper.specfile import SpecFile, get_rebase_name, spec_hooks_runner
-from rebasehelper.logger import logger, logger_report, LoggerHelper
-from rebasehelper import settings
+from rebasehelper.logger import logger, LoggerHelper
+from rebasehelper import constants
 from rebasehelper.output_tool import output_tools_runner
 from rebasehelper.utils import PathHelper, GitHelper, KojiHelper, FileHelper, MacroHelper, ConsoleHelper
 from rebasehelper.utils import LookasideCacheHelper
@@ -79,8 +79,7 @@ class Application(object):
         self.debug_log_file = debug_log_file
 
         # Temporary workspace for Builder, checks, ...
-        self.kwargs['workspace_dir'] = self.workspace_dir = os.path.join(self.execution_dir,
-                                                                         settings.REBASE_HELPER_WORKSPACE_DIR)
+        self.kwargs['workspace_dir'] = self.workspace_dir = os.path.join(self.execution_dir, constants.WORKSPACE_DIR)
         # Directory where results should be put
         self.kwargs['results_dir'] = self.results_dir = results_dir
 
@@ -121,7 +120,7 @@ class Application(object):
     def setup(cli_conf):
         execution_dir = os.getcwd()
         results_dir = os.path.abspath(cli_conf.results_dir) if cli_conf.results_dir else execution_dir
-        results_dir = os.path.join(results_dir, settings.REBASE_HELPER_RESULTS_DIR)
+        results_dir = os.path.join(results_dir, constants.RESULTS_DIR)
 
         # if not continuing, check the results dir
         if not cli_conf.cont and not cli_conf.build_only and not cli_conf.comparepkgs:
@@ -131,7 +130,7 @@ class Application(object):
         # parameter even when directory does not exist
         if not os.path.exists(results_dir):
             os.makedirs(results_dir)
-            os.makedirs(os.path.join(results_dir, settings.REBASE_HELPER_LOGS))
+            os.makedirs(os.path.join(results_dir, constants.LOGS_DIR))
 
         debug_log_file = Application._add_debug_log_file(results_dir)
 
@@ -144,7 +143,7 @@ class Application(object):
 
         :return: log file path
         """
-        debug_log_file = os.path.join(results_dir, settings.REBASE_HELPER_DEBUG_LOG)
+        debug_log_file = os.path.join(results_dir, constants.DEBUG_LOG)
         try:
             LoggerHelper.add_file_handler(logger,
                                           debug_log_file,
@@ -155,24 +154,6 @@ class Application(object):
             logger.warning("Can not create debug log '%s'", debug_log_file)
         else:
             return debug_log_file
-
-    @staticmethod
-    def _add_report_log_file(results_dir):
-        """
-        Add the application report log file
-
-        :return: log file path
-        """
-        report_log_file = os.path.join(results_dir, settings.REBASE_HELPER_REPORT_LOG)
-        try:
-            LoggerHelper.add_file_handler(logger_report,
-                                          report_log_file,
-                                          None,
-                                          logging.INFO)
-        except (IOError, OSError):
-            logger.warning("Can not create report log '%s'", report_log_file)
-        else:
-            return report_log_file
 
     def _prepare_spec_objects(self):
         """
@@ -249,9 +230,6 @@ class Application(object):
         # Contains all source except the Source0
         self.old_rest_sources = [os.path.abspath(x) for x in self.spec_file.get_sources()[1:]]
         self.new_rest_sources = [os.path.abspath(x) for x in self.rebase_spec_file.get_sources()[1:]]
-
-    def _get_rebase_helper_log(self):
-        return os.path.join(self.results_dir, settings.REBASE_HELPER_RESULTS_LOG)
 
     def get_rpm_packages(self, dirname):
         """
@@ -344,11 +322,11 @@ class Application(object):
             logger.warning("Results directory '%s' exists, removing it", os.path.basename(results_dir))
             shutil.rmtree(results_dir)
         os.makedirs(results_dir)
-        os.makedirs(os.path.join(results_dir, settings.REBASE_HELPER_LOGS))
-        os.makedirs(os.path.join(results_dir, 'old-build'))
-        os.makedirs(os.path.join(results_dir, 'new-build'))
-        os.makedirs(os.path.join(results_dir, 'checkers'))
-        os.makedirs(os.path.join(results_dir, 'rebased-sources'))
+        os.makedirs(os.path.join(results_dir, constants.LOGS_DIR))
+        os.makedirs(os.path.join(results_dir, constants.OLD_BUILD_DIR))
+        os.makedirs(os.path.join(results_dir, constants.NEW_BUILD_DIR))
+        os.makedirs(os.path.join(results_dir, constants.CHECKERS_DIR))
+        os.makedirs(os.path.join(results_dir, constants.REBASED_SOURCES_DIR))
 
     @staticmethod
     def extract_archive(archive_path, destination):
@@ -397,8 +375,8 @@ class Application(object):
         :return:
         """
 
-        old_sources_dir = os.path.join(self.execution_dir, settings.OLD_SOURCES_DIR)
-        new_sources_dir = os.path.join(self.execution_dir, settings.NEW_SOURCES_DIR)
+        old_sources_dir = os.path.join(self.execution_dir, constants.OLD_SOURCES_DIR)
+        new_sources_dir = os.path.join(self.execution_dir, constants.NEW_SOURCES_DIR)
 
         old_dir = Application.extract_sources(self.old_sources, old_sources_dir)
         new_dir = Application.extract_sources(self.new_sources, new_sources_dir)
@@ -423,7 +401,7 @@ class Application(object):
         # extract rest of source archives to correct paths
         rest_sources = [self.old_rest_sources, self.new_rest_sources]
         spec_files = [self.spec_file, self.rebase_spec_file]
-        sources_dirs = [settings.OLD_SOURCES_DIR, settings.NEW_SOURCES_DIR]
+        sources_dirs = [constants.OLD_SOURCES_DIR, constants.NEW_SOURCES_DIR]
         for sources, spec_file, sources_dir in zip(rest_sources, spec_files, sources_dirs):
             for rest in sources:
                 archive = [x for x in Archive.get_supported_archives() if rest.endswith(x)]

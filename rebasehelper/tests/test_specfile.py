@@ -29,6 +29,7 @@ import pytest
 from rebasehelper.specfile import SpecFile, spec_hooks_runner
 from rebasehelper.spec_hooks.typo_fix import TypoFixHook
 from rebasehelper.spec_hooks.pypi_url_fix import PyPIURLFixHook
+from rebasehelper.constants import BEGIN_COMMENT, END_COMMENT
 
 
 class TestSpecFile(object):
@@ -331,9 +332,9 @@ class TestSpecFile(object):
         files = {'missing': ['/usr/bin/test2']}
         spec_object.modify_spec_files_section(files)
         section = spec_object.get_spec_section('%files')
-        expected = ['#BEGIN THIS MODIFIED BY REBASE-HELPER\n',
+        expected = [BEGIN_COMMENT + '\n',
                     '%{_bindir}/test2\n',
-                    '#END THIS MODIFIED BY REBASE-HELPER\n',
+                    END_COMMENT + '\n',
                     '%{_bindir}/file.txt\n',
                     '\n']
         assert expected == section
@@ -349,17 +350,17 @@ class TestSpecFile(object):
                  'deleted': ['/usr/lib/my_test.so']}
         spec_object.modify_spec_files_section(files)
         section = spec_object.get_spec_section('%files')
-        expected = ['#BEGIN THIS MODIFIED BY REBASE-HELPER\n',
+        expected = [BEGIN_COMMENT + '\n',
                     '%{_bindir}/test2\n',
-                    '#END THIS MODIFIED BY REBASE-HELPER\n',
+                    END_COMMENT + '\n',
                     '%{_bindir}/file.txt\n',
                     '\n']
         assert expected == section
         section_devel = spec_object.get_spec_section('%files devel')
         expected_devel = ['%{_bindir}/test_example\n',
-                          '#BEGIN THIS MODIFIED BY REBASE-HELPER\n',
+                          BEGIN_COMMENT + '\n',
                           '#%{_libdir}/my_test.so\n\n',
-                          '#END THIS MODIFIED BY REBASE-HELPER\n',
+                          END_COMMENT + '\n',
                           '\n']
         assert expected_devel == section_devel
 
