@@ -27,7 +27,7 @@ import pkg_resources
 from rebasehelper.logger import logger, logger_output
 from rebasehelper.results_store import results_store
 from rebasehelper.checker import checkers_runner
-from rebasehelper.settings import REBASE_HELPER_RESULTS_DIR
+from rebasehelper.constants import RESULTS_DIR, REPORT
 
 
 class BaseOutputTool(object):
@@ -42,7 +42,7 @@ class BaseOutputTool(object):
 
     @classmethod
     def get_report_path(cls, app):
-        return os.path.join(app.results_dir, 'report.' + cls.get_extension())
+        return os.path.join(app.results_dir, REPORT + '.' + cls.get_extension())
 
     @classmethod
     def get_extension(cls):
@@ -50,7 +50,7 @@ class BaseOutputTool(object):
 
     @classmethod
     def prepend_results_dir_name(cls, *path_members):
-        return os.path.join(REBASE_HELPER_RESULTS_DIR, *path_members)
+        return os.path.join(RESULTS_DIR, *path_members)
 
     @classmethod
     def print_cli_summary(cls, app):

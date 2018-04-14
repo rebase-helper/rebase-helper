@@ -31,7 +31,6 @@ from rebasehelper.utils import ProcessHelper, RpmHelper
 from rebasehelper.logger import logger
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
 from rebasehelper.results_store import results_store
-from rebasehelper import settings
 from rebasehelper.checker import BaseChecker
 
 
@@ -40,6 +39,8 @@ class AbiCheckerTool(BaseChecker):
 
     NAME = "abipkgdiff"
     DEFAULT = True
+    ABIDIFF_ERROR = 1
+    ABIDIFF_USAGE_ERROR = 2
     abi_changes = None
     results_dir = ''
     log_name = 'abipkgdiff.log'
@@ -110,7 +111,7 @@ class AbiCheckerTool(BaseChecker):
             except OSError:
                 raise CheckerNotFoundError("Checker '{}' was not found or installed.".format(cls.NAME))
 
-            if int(ret_code) & settings.ABIDIFF_ERROR and int(ret_code) & settings.ABIDIFF_USAGE_ERROR:
+            if int(ret_code) & cls.ABIDIFF_ERROR and int(ret_code) & cls.ABIDIFF_USAGE_ERROR:
                 raise RebaseHelperError('Execution of {} failed.\nCommand line is: {}'.format(cls.NAME, cmd))
             reports[old_name] = int(ret_code)
         return dict(packages=cls.parse_abi_logs(reports),

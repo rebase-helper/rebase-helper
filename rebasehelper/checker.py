@@ -26,7 +26,7 @@ import os
 import six
 
 from rebasehelper.logger import logger
-from rebasehelper.settings import REBASE_HELPER_RESULTS_DIR
+from rebasehelper.constants import RESULTS_DIR
 
 
 class BaseChecker(object):
@@ -51,7 +51,7 @@ class BaseChecker(object):
     @classmethod
     def get_checker_output_dir_short(cls):
         """Return short version of checker output directory"""
-        return os.path.join(REBASE_HELPER_RESULTS_DIR, 'checkers', cls.NAME)
+        return os.path.join(RESULTS_DIR, 'checkers', cls.NAME)
 
     @classmethod
     def get_checker_name(cls):

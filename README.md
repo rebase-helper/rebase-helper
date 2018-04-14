@@ -43,7 +43,7 @@ See [docker reference](https://rebase-helper.readthedocs.io/en/latest/user_guide
 | *checkers/*               | reports from individual checkers that were run                    |
 | *old-build/*              | logs and results of old (original) version build                  |
 | *new-build/*              | logs and results of new (rebased) version build                   |
-| *rebase-helper-debug.log* | log containing the most verbose output of a rebase                |
+| *debug.log*               | log containing the most verbose output of a rebase                |
 
 ## How does it work?
 

@@ -25,7 +25,7 @@ import os
 from rebasehelper.cli import CLI
 from rebasehelper.config import Config
 from rebasehelper.application import Application
-from rebasehelper import settings
+from rebasehelper import constants
 
 
 class TestApplication(object):
@@ -62,7 +62,7 @@ class TestApplication(object):
                 'version': '1.0.3',
                 'name': 'test',
                 'tarball': self.NEW_SOURCES,
-                'spec': os.path.join(workdir, settings.REBASE_HELPER_RESULTS_DIR, self.SPEC_FILE),
+                'spec': os.path.join(workdir, constants.RESULTS_DIR, self.SPEC_FILE),
                 'patches_full': {1: [os.path.join(workdir, self.PATCH_1),
                                      '',
                                      0,
@@ -75,7 +75,7 @@ class TestApplication(object):
                                      '-p1',
                                      2,
                                      False]}},
-            'workspace_dir': os.path.join(workdir, settings.REBASE_HELPER_WORKSPACE_DIR),
+            'workspace_dir': os.path.join(workdir, constants.WORKSPACE_DIR),
             'old': {
                 'sources': [os.path.join(workdir, 'test-source.sh'),
                             os.path.join(workdir, 'source-tests.sh'),
@@ -96,7 +96,7 @@ class TestApplication(object):
                                      '-p1',
                                      2,
                                      False]}},
-            'results_dir': os.path.join(workdir, settings.REBASE_HELPER_RESULTS_DIR)}
+            'results_dir': os.path.join(workdir, constants.RESULTS_DIR)}
 
         cli = CLI(self.cmd_line_args)
         config = Config()

@@ -30,7 +30,6 @@ from rebasehelper.utils import ProcessHelper, RpmHelper
 from rebasehelper.logger import logger
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
 from rebasehelper.results_store import results_store
-from rebasehelper import settings
 from rebasehelper.checker import BaseChecker
 
 
@@ -39,6 +38,7 @@ class RpmDiffTool(BaseChecker):
 
     NAME = "rpmdiff"
     DEFAULT = True
+    CHECKER_TAGS = ['added', 'removed', 'changed', 'moved', 'renamed']
     category = "RPM"
 
     @classmethod
@@ -95,7 +95,7 @@ class RpmDiffTool(BaseChecker):
         """Compares old and new RPMs using rpmdiff"""
         results_dict = {}
 
-        for tag in settings.CHECKER_TAGS:
+        for tag in cls.CHECKER_TAGS:
             results_dict[tag] = []
 
         cls.results_dir = os.path.join(results_dir, cls.NAME)

@@ -56,8 +56,6 @@ from pkg_resources import parse_version
 
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.logger import logger
-from rebasehelper import settings
-
 
 try:
     from requests_gssapi import HTTPSPNEGOAuth as SPNEGOAuth
@@ -739,7 +737,7 @@ class PathHelper(object):
     @staticmethod
     def get_temp_dir():
         """Returns a path to new temporary directory."""
-        return tempfile.mkdtemp(prefix=settings.REBASE_HELPER_PREFIX)
+        return tempfile.mkdtemp(prefix='rebase-helper-')
 
 
 class TemporaryEnvironment(object):
