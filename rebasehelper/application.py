@@ -375,8 +375,8 @@ class Application(object):
         :return:
         """
 
-        old_sources_dir = os.path.join(self.execution_dir, constants.OLD_SOURCES_DIR)
-        new_sources_dir = os.path.join(self.execution_dir, constants.NEW_SOURCES_DIR)
+        old_sources_dir = os.path.join(self.execution_dir, constants.WORKSPACE_DIR, constants.OLD_SOURCES_DIR)
+        new_sources_dir = os.path.join(self.execution_dir, constants.WORKSPACE_DIR, constants.NEW_SOURCES_DIR)
 
         old_dir = Application.extract_sources(self.old_sources, old_sources_dir)
         new_dir = Application.extract_sources(self.new_sources, new_sources_dir)
