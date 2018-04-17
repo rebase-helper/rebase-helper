@@ -402,9 +402,10 @@ class SpecFile(object):
 
     def update_paths_to_patches(self):
         # Fix paths in rebase_spec_file to patches to current directory
+        rebased_sources_path = os.path.join(constants.RESULTS_DIR, constants.REBASED_SOURCES_DIR)
         for index, line in enumerate(self.spec_content):
             if line.startswith('Patch'):
-                mod_line = re.sub(constants.REBASED_SOURCES_DIR + '/', '', line)
+                mod_line = re.sub(rebased_sources_path + os.path.sep, '', line)
                 self.spec_content[index] = mod_line
         self.save()
 
@@ -454,7 +455,7 @@ class SpecFile(object):
                 else:
                     patch = None
                 if patch:
-                    fields[1] = os.path.join(constants.REBASED_SOURCES_DIR, patch_name)
+                    fields[1] = os.path.join(constants.RESULTS_DIR, constants.REBASED_SOURCES_DIR, patch_name)
                     self.spec_content[index] = ' '.join(fields) + '\n'
                     modified_patches.append(patch_num)
 
