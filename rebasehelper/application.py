@@ -401,7 +401,10 @@ class Application(object):
         # extract rest of source archives to correct paths
         rest_sources = [self.old_rest_sources, self.new_rest_sources]
         spec_files = [self.spec_file, self.rebase_spec_file]
-        sources_dirs = [constants.OLD_SOURCES_DIR, constants.NEW_SOURCES_DIR]
+        sources_dirs = [
+            os.path.join(constants.WORKSPACE_DIR, constants.OLD_SOURCES_DIR),
+            os.path.join(constants.WORKSPACE_DIR, constants.NEW_SOURCES_DIR),
+        ]
         for sources, spec_file, sources_dir in zip(rest_sources, spec_files, sources_dirs):
             for rest in sources:
                 archive = [x for x in Archive.get_supported_archives() if rest.endswith(x)]
