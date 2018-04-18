@@ -33,7 +33,7 @@ from pkg_resources import parse_version
 
 from rebasehelper.archive import Archive
 from rebasehelper.specfile import SpecFile, get_rebase_name, spec_hooks_runner
-from rebasehelper.logger import logger, LoggerHelper
+from rebasehelper.logger import logger, log_formatter, debug_log_formatter, LoggerHelper, CustomLogger
 from rebasehelper import constants
 from rebasehelper.output_tool import output_tools_runner
 from rebasehelper.utils import PathHelper, GitHelper, KojiHelper, FileHelper, MacroHelper, ConsoleHelper
@@ -134,28 +134,30 @@ class Application(object):
             os.makedirs(results_dir)
             os.makedirs(os.path.join(results_dir, constants.LOGS_DIR))
 
-        debug_log_file = Application._add_debug_log_file(results_dir)
+        debug_log_file = Application.setup_logging(results_dir)
 
         return execution_dir, results_dir, debug_log_file
 
     @staticmethod
-    def _add_debug_log_file(results_dir):
-        """
-        Add the application wide debug log file
+    def setup_logging(results_dir):
+        """Adds file handlers of various verbosity to loggers.
 
-        :return: log file path
+        Args:
+            results_dir: Path to directory which results are stored in.
+
+        Returns:
+            string: Path to debug log.
+
         """
-        debug_log_file = os.path.join(results_dir, constants.DEBUG_LOG)
-        try:
-            LoggerHelper.add_file_handler(logger,
-                                          debug_log_file,
-                                          logging.Formatter("%(asctime)s %(levelname)s\t%(filename)s"
-                                                            ":%(lineno)s %(funcName)s: %(message)s"),
-                                          logging.DEBUG)
-        except (IOError, OSError):
-            logger.warning("Can not create debug log '%s'", debug_log_file)
-        else:
-            return debug_log_file
+        logs_dir = os.path.join(results_dir, constants.LOGS_DIR)
+        debug_log = os.path.join(logs_dir, constants.DEBUG_LOG)
+        LoggerHelper.add_file_handler(logger, debug_log, debug_log_formatter, logging.DEBUG)
+        verbose_log = os.path.join(logs_dir, constants.VERBOSE_LOG)
+        LoggerHelper.add_file_handler(logger, verbose_log, log_formatter, CustomLogger.VERBOSE)
+        info_log = os.path.join(logs_dir, constants.INFO_LOG)
+        LoggerHelper.add_file_handler(logger, info_log, log_formatter, logging.INFO)
+
+        return debug_log
 
     def _prepare_spec_objects(self):
         """

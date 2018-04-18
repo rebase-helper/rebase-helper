@@ -22,15 +22,16 @@
 
 import argparse
 import logging
+import os
 import sys
 
 import six
 
 from rebasehelper.options import OPTIONS, traverse_options
-from rebasehelper.constants import PROGRAM_DESCRIPTION, NEW_ISSUE_LINK
+from rebasehelper.constants import PROGRAM_DESCRIPTION, NEW_ISSUE_LINK, LOGS_DIR, TRACEBACK_LOG
 from rebasehelper.version import VERSION
 from rebasehelper.application import Application
-from rebasehelper.logger import logger, main_handler, output_tool_handler, CustomLogger
+from rebasehelper.logger import logger, logger_traceback, main_handler, output_tool_handler, CustomLogger, LoggerHelper
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.utils import ConsoleHelper
 from rebasehelper.config import Config
@@ -179,6 +180,7 @@ class CliHelper(object):
 
             ConsoleHelper.use_colors = ConsoleHelper.should_use_colors(config)
             execution_dir, results_dir, debug_log_file = Application.setup(config)
+            traceback_log = os.path.join(results_dir, LOGS_DIR, TRACEBACK_LOG)
             if config.verbose == 0:
                 main_handler.setLevel(logging.INFO)
             elif config.verbose == 1:
@@ -207,10 +209,11 @@ class CliHelper(object):
             else:
                 logger.error('rebase-helper failed due to an unexpected error. Please report this problem'
                              '\nusing the following link: %s'
-                             '\nand include the traceback following this message in the report.'
+                             '\nand include the content of %s in the report'
                              '\nThank you!',
-                             NEW_ISSUE_LINK)
-            logger.trace('', exc_info=1)
+                             NEW_ISSUE_LINK, traceback_log)
+            LoggerHelper.add_file_handler(logger_traceback, traceback_log)
+            logger_traceback.trace('', exc_info=1)
             sys.exit(1)
 
         sys.exit(0)

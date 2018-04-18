@@ -66,8 +66,7 @@ class BaseOutputTool(object):
         cls.print_important_checkers_output()
 
         logger_output.heading('\nAvailable logs:')
-        logger_output.info('%s:\n%s', 'Debug log', cls.prepend_results_dir_name(os.path.relpath(app.debug_log_file,
-                                                                                app.results_dir)))
+        logger_output.info('%s:\n%s', 'Debug log', cls.prepend_results_dir_name(app.debug_log_file))
         if results_store.get_old_build() is not None:
             logger_output.info('%s:\n%s', 'Old build logs and (S)RPMs', cls.prepend_results_dir_name('old-build'))
         if results_store.get_new_build() is not None:

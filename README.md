@@ -35,15 +35,15 @@ See [docker reference](https://rebase-helper.readthedocs.io/en/latest/user_guide
 
 **rebase-helper** always creates *rebase-helper-results* directory containing the following items:
 
-| Path                      | Description                                                       |
-|:------------------------- |:----------------------------------------------------------------- |
-| *report.txt*              | summary report with all important information                     |
-| *changes.patch*           | diff against original files, directly applicable to dist-git repo |
-| *rebased-sources/*        | git repository with all modified files                            |
-| *checkers/*               | reports from individual checkers that were run                    |
-| *old-build/*              | logs and results of old (original) version build                  |
-| *new-build/*              | logs and results of new (rebased) version build                   |
-| *debug.log*               | log containing the most verbose output of a rebase                |
+| Path                  | Description                                                       |
+|:--------------------- |:----------------------------------------------------------------- |
+| *report.txt*          | summary report with all important information                     |
+| *changes.patch*       | diff against original files, directly applicable to dist-git repo |
+| *logs/*               | log files of various verbosity levels                             |
+| *rebased-sources/*    | git repository with all modified files                            |
+| *checkers/*           | reports from individual checkers that were run                    |
+| *old-build/*          | logs and results of old (original) version build                  |
+| *new-build/*          | logs and results of new (rebased) version build                   |
 
 ## How does it work?
 
