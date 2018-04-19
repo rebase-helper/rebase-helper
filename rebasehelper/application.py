@@ -21,6 +21,7 @@
 #          Tomas Hozza <thozza@redhat.com>
 
 from __future__ import print_function
+import fnmatch
 import os
 import shutil
 import logging
@@ -103,11 +104,12 @@ class Application(object):
             self._prepare_spec_objects()
 
             if self.conf.update_sources:
-                LookasideCacheHelper.update_sources('fedpkg', self.rebased_sources_dir,
-                                                    self.rebase_spec_file.get_package_name(),
-                                                    [os.path.basename(s) for s in self.spec_file.sources],
-                                                    [os.path.basename(s) for s in self.rebase_spec_file.sources])
-                # TODO: also update .gitignore
+                sources = [os.path.basename(s) for s in self.spec_file.sources]
+                rebased_sources = [os.path.basename(s) for s in self.rebase_spec_file.sources]
+                uploaded = LookasideCacheHelper.update_sources('fedpkg', self.rebased_sources_dir,
+                                                               self.rebase_spec_file.get_package_name(),
+                                                               sources, rebased_sources)
+                self._update_gitignore(uploaded, self.rebased_sources_dir)
 
             # TODO: Remove the value from kwargs and use only CLI attribute!
             self.kwargs['continue'] = self.conf.cont
@@ -185,8 +187,9 @@ class Application(object):
                                         'and no SOURCES argument specified!')
 
         # Prepare rebased_sources_dir
-        sources = os.path.join(self.execution_dir, 'sources')
-        self.rebased_repo = self._prepare_rebased_repository(self.spec_file.patches, sources, self.rebased_sources_dir)
+        self.rebased_repo = self._prepare_rebased_repository(self.spec_file.patches,
+                                                             self.execution_dir,
+                                                             self.rebased_sources_dir)
 
         # check if argument passed as new source is a file or just a version
         if [True for ext in Archive.get_supported_archives() if self.conf.sources.endswith(ext)]:
@@ -456,7 +459,31 @@ class Application(object):
         results_store.set_changes_patch('changes_patch', os.path.join(self.results_dir, 'changes.patch'))
 
     @classmethod
-    def _prepare_rebased_repository(cls, patches, sources, rebased_sources_dir):
+    def _update_gitignore(cls, sources, rebased_sources_dir):
+        """Adds new entries into .gitignore file.
+
+        Args:
+            sources (list): List of new source files.
+            rebased_sources_dir (str): Target directory.
+
+        """
+        gitignore = os.path.join(rebased_sources_dir, '.gitignore')
+        with open(gitignore) as f:
+            entries = f.readlines()
+
+        def match(source):
+            source = source.lstrip(os.path.sep).rstrip('\n')
+            for entry in entries:
+                if fnmatch.fnmatch(source, entry.lstrip(os.path.sep).rstrip('\n')):
+                    return True
+            return False
+
+        with open(gitignore, 'a') as f:
+            for src in [s for s in sources if not match(s)]:
+                f.write(os.path.sep + src + '\n')
+
+    @classmethod
+    def _prepare_rebased_repository(cls, patches, execution_dir, rebased_sources_dir):
         """
         Initialize git repository in the rebased directory
         :return: git.Repo instance of rebased_sources
@@ -464,8 +491,13 @@ class Application(object):
         for patch in patches['applied'] + patches['not_applied']:
             shutil.copy(patch.path, rebased_sources_dir)
 
+        sources = os.path.join(execution_dir, 'sources')
         if os.path.isfile(sources):
             shutil.copy(sources, rebased_sources_dir)
+
+        gitignore = os.path.join(execution_dir, '.gitignore')
+        if os.path.isfile(gitignore):
+            shutil.copy(gitignore, rebased_sources_dir)
 
         repo = git.Repo.init(rebased_sources_dir)
         repo.git.config('user.name', GitHelper.get_user(), local=True)

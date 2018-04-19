@@ -22,6 +22,8 @@
 
 import os
 
+import pytest
+
 from rebasehelper.cli import CLI
 from rebasehelper.config import Config
 from rebasehelper.application import Application
@@ -107,3 +109,33 @@ class TestApplication(object):
         for key, val in app.kwargs.items():
             if key in expected_dict:
                 assert val == expected_dict[key]
+
+    @pytest.mark.parametrize('gitignore, sources, result', [
+        (
+                [
+                    '/source1-*.tar.gz\n',
+                    '/source2-2.8.0.tar.xz\n',
+                    '/Source3.bz2\n',
+                ],
+                [
+                    'source1-1.0.1.tar.gz',
+                    'source2-2.8.1.tar.xz',
+                    'Source3.bz2',
+                ],
+                [
+                    '/source1-*.tar.gz\n',
+                    '/source2-2.8.0.tar.xz\n',
+                    '/Source3.bz2\n',
+                    '/source2-2.8.1.tar.xz\n',
+                ],
+        ),
+    ], ids=[
+        'gitignore',
+    ])
+    def test_update_gitignore(self, workdir, gitignore, sources, result):
+        with open(os.path.join(workdir, '.gitignore'), 'w') as f:
+            for line in gitignore:
+                f.write(line)
+        Application._update_gitignore(sources, workdir)  # pylint: disable=protected-access
+        with open(os.path.join(workdir, '.gitignore')) as f:
+            assert f.readlines() == result
