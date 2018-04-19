@@ -2,6 +2,18 @@
 
 ## [Unreleased]
 
+## [0.13.1] - 2018-04-19
+### Added
+- Added `--apply-changes` option to apply *changes.patch* after successful rebase
+- Implemented *.gitignore* update with `--update-sources`
+
+### Changed
+- Extended `README.md`
+- Cleaned up constants
+
+### Fixed
+- Fixed crash after failed rebase when no checkers were run
+
 ## [0.13.0] - 2018-03-29
 ### Added
 - Added possibility to make changes to specfile between build retries
