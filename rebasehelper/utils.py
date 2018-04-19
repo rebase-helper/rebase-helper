@@ -1603,6 +1603,7 @@ class LookasideCacheHelper(object):
             hashtype = config['lookasidehash']
         except (configparser.Error, KeyError):
             raise LookasideCacheError('Failed to read rpkg configuration')
+        uploaded = []
         sources = cls._read_sources(basepath)
         for idx, src in enumerate(old_sources):
             indexes = [i for i, s in enumerate(sources) if s['filename'] == src]
@@ -1613,8 +1614,10 @@ class LookasideCacheHelper(object):
                     continue
                 hsh = cls._hash(filename, hashtype)
                 cls._upload_source(url, package, filename, hashtype, hsh)
+                uploaded.append(filename)
                 sources[indexes[0]] = dict(hash=hsh, filename=filename, hashtype=hashtype)
         cls._write_sources(basepath, sources)
+        return uploaded
 
 
 class ParseError(Exception):
