@@ -7,15 +7,16 @@ If you can't or don't want to use :program:`rebase-helper` package, you have to 
 apart from Python requirements listed in `get_requirements` function in :file:`setup.py`,
 the following dependencies:
 
-========== ======================== =================================================
-Dependency Package name (in Fedora) Notes
-========== ======================== =================================================
-git        git                      for rebasing of downstream patches
-rpmbuild   rpm-build                for building SRPM and for **rpmbuild** build tool
-mock       mock                     for **mock** build tool, optional
-koji       koji                     for **koji** build tool, optional
-rpmdiff    rpmlint                  for **rpmdiff** checker, optional
-abipkgdiff libabigail               for **abipkgdiff** checker, optional
-pkgdiff    pkgdiff                  for **pkgdiff** checker, optional
-csmock     csmock                   for **csmock** checker, optional
-========== ======================== =================================================
+============ ======================== =================================================
+Dependency   Package name (in Fedora) Notes
+============ ======================== =================================================
+git          git                      for rebasing of downstream patches
+rpmbuild     rpm-build                for building SRPM and for **rpmbuild** build tool
+mock         mock                     for **mock** build tool, optional
+koji         koji                     for **koji** build tool, optional
+rpmdiff      rpmlint                  for **rpmdiff** checker, optional
+abipkgdiff   libabigail               for **abipkgdiff** checker, optional
+pkgdiff      pkgdiff                  for **pkgdiff** checker, optional
+csmock       csmock                   for **csmock** checker, optional
+licensecheck licensecheck             for **licensecheck** checker, optional
+============ ======================== =================================================
