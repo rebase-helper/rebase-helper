@@ -106,6 +106,7 @@ setup(
             'pkgdiff = rebasehelper.checkers.pkgdiff_tool:PkgDiffTool',
             'abipkgdiff = rebasehelper.checkers.abipkgdiff_tool:AbiCheckerTool',
             'csmock = rebasehelper.checkers.csmock_tool:CsmockTool',
+            'licensecheck = rebasehelper.checkers.licensecheck_tool:LicenseCheckTool',
         ],
         'rebasehelper.spec_hooks': [
             'typo_fix = rebasehelper.spec_hooks.typo_fix:TypoFixHook',
