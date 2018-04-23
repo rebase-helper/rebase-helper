@@ -93,7 +93,7 @@ class Application(object):
 
         self.kwargs['spec_hook_blacklist'] = self.conf.spec_hook_blacklist
 
-        logger.debug("Rebase-helper version: %s", VERSION)
+        logger.verbose("Rebase-helper version: %s", VERSION)
 
         if self.conf.build_tasks is None:
             # check the workspace dir
@@ -193,10 +193,10 @@ class Application(object):
 
         # check if argument passed as new source is a file or just a version
         if [True for ext in Archive.get_supported_archives() if self.conf.sources.endswith(ext)]:
-            logger.debug("argument passed as a new source is a file")
+            logger.verbose("argument passed as a new source is a file")
             self.rebase_spec_file.set_version_using_archive(self.conf.sources)
         else:
-            logger.debug("argument passed as a new source is a version")
+            logger.verbose("argument passed as a new source is a version")
             version, extra_version, separator = SpecFile.split_version_string(self.conf.sources)
             self.rebase_spec_file.set_version(version)
             self.rebase_spec_file.set_extra_version_separator(separator)
@@ -298,7 +298,7 @@ class Application(object):
 
         :return:
         """
-        logger.debug("Removing the workspace directory '%s'", self.workspace_dir)
+        logger.verbose("Removing the workspace directory '%s'", self.workspace_dir)
         if os.path.isdir(self.workspace_dir):
             shutil.rmtree(self.workspace_dir)
 

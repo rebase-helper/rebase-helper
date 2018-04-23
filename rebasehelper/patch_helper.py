@@ -87,14 +87,14 @@ class GitPatchTool(PatchBase):
         It tries apply patch with am command and if it fails
         then with command --apply
         """
-        logger.debug('Applying patch with am')
+        logger.verbose('Applying patch with am')
 
         patch_name = patch_object.get_path()
         patch_strip = patch_object.get_strip()
         try:
             repo.git.am(patch_name)
         except git.GitCommandError:
-            logger.debug('Applying patch with git-am failed.')
+            logger.verbose('Applying patch with git-am failed.')
             try:
                 repo.git.apply(patch_name, p=patch_strip)
             except git.GitCommandError:
@@ -163,7 +163,7 @@ class GitPatchTool(PatchBase):
                 cls.output_data = e.stdout
             else:
                 ret_code = 0
-        logger.debug(cls.output_data)
+        logger.verbose(cls.output_data)
         patch_dictionary = {}
         modified_patches = []
         inapplicable_patches = []
@@ -328,5 +328,5 @@ class Patcher(object):
         :param kwargs: --
         :return:
         """
-        logger.debug("Patching source by patch tool %s", self._patch_tool_name)
+        logger.verbose("Patching source by patch tool %s", self._patch_tool_name)
         return self._tool.run_patch(old_dir, new_dir, rest_sources, patches, **kwargs)

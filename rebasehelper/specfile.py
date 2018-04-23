@@ -147,8 +147,8 @@ class SpecFile(object):
             # try to download old sources from Fedora lookaside cache
             LookasideCacheHelper.download('fedpkg', os.path.dirname(self.path), self.get_package_name())
         except LookasideCacheError as e:
-            logger.debug("Downloading sources from lookaside cache failed. "
-                         "Reason: %s.", six.text_type(e))
+            logger.verbose("Downloading sources from lookaside cache failed. "
+                           "Reason: %s.", six.text_type(e))
 
         # filter out only sources with URL
         remote_files = [source for source in self.sources if bool(urllib.parse.urlparse(source).scheme)]
@@ -156,7 +156,7 @@ class SpecFile(object):
         for remote_file in remote_files:
             local_file = os.path.join(self.sources_location, os.path.basename(remote_file))
             if not os.path.isfile(local_file):
-                logger.debug("File '%s' doesn't exist locally, downloading it.", local_file)
+                logger.verbose("File '%s' doesn't exist locally, downloading it.", local_file)
                 try:
                     DownloadHelper.download_file(remote_file, local_file)
                 except DownloadError as e:
@@ -538,7 +538,7 @@ class SpecFile(object):
         :param release:
         :return:
         """
-        logger.debug("Changing release number to '%s'", release)
+        logger.verbose("Changing release number to '%s'", release)
         self.set_tag('Release', '{}%{{?dist}}'.format(release), preserve_macros=True)
 
     def redefine_release_with_macro(self, macro):
@@ -551,10 +551,10 @@ class SpecFile(object):
         release = '{}.{}%{{?dist}}'.format(self.get_release_number(), macro)
         for index, line in enumerate(self.spec_content):
             if line.startswith('Release:'):
-                logger.debug("Commenting out original Release line '%s'", line.strip())
+                logger.verbose("Commenting out original Release line '%s'", line.strip())
                 self.spec_content[index] = '#{0}'.format(line)
                 line = 'Release: {}\n'.format(release)
-                logger.debug("Inserting new Release line '%s'", line)
+                logger.verbose("Inserting new Release line '%s'", line)
                 self.spec_content.insert(index + 1, line)
                 self.save()
                 break
@@ -575,10 +575,10 @@ class SpecFile(object):
                 if not self.spec_content[index - 1].startswith('#Release:'):
                     raise RebaseHelperError("Redefined Release line in SPEC is not 'commented out' "
                                             "old line: '{0}'".format(self.spec_content[index - 1].strip()))
-                logger.debug("Uncommenting original Release line "
-                             "'%s'", self.spec_content[index - 1].strip())
+                logger.verbose("Uncommenting original Release line "
+                               "'%s'", self.spec_content[index - 1].strip())
                 self.spec_content[index - 1] = self.spec_content[index - 1].lstrip('#')
-                logger.debug("Removing redefined Release line '%s'", line.strip())
+                logger.verbose("Removing redefined Release line '%s'", line.strip())
                 self.spec_content.pop(index)
                 self.save()
                 break
@@ -600,7 +600,7 @@ class SpecFile(object):
                                    '%{REBASE_EXTRA_VER}\n'
         new_extra_version_line = '%global REBASE_EXTRA_VER {0}\n'.format(extra_version)
 
-        logger.debug("Updating extra version in SPEC to '%s'", extra_version)
+        logger.verbose("Updating extra version in SPEC to '%s'", extra_version)
 
         #  try to find existing extra version definition
         for index, line in enumerate(self.spec_content):
@@ -616,9 +616,9 @@ class SpecFile(object):
             # we need to create the extra version definition
             else:
                 # insert the REBASE_VER and REBASE_EXTRA_VER definitions
-                logger.debug("Adding new line to spec: %s", rebase_extra_version_def.strip())
+                logger.verbose("Adding new line to spec: %s", rebase_extra_version_def.strip())
                 self.spec_content.insert(0, rebase_extra_version_def)
-                logger.debug("Adding new line to spec: %s", new_extra_version_line.strip())
+                logger.verbose("Adding new line to spec: %s", new_extra_version_line.strip())
                 self.spec_content.insert(0, new_extra_version_line)
 
                 # change Release to 0.1 and append the extra version macro
@@ -630,7 +630,7 @@ class SpecFile(object):
                 for index, line in enumerate(self.spec_content):
                     if source0_re.search(line):
                         # comment out the original Source0 line
-                        logger.debug("Commenting out original Source0 line '%s'", line.strip())
+                        logger.verbose("Commenting out original Source0 line '%s'", line.strip())
                         self.spec_content[index] = '#{0}'.format(line)
                         # construct new Source0 line. The idea is that we use the expanded archive name to create
                         # new Source0. We used raw original Source0 before, but it didn't work reliably.
@@ -649,7 +649,7 @@ class SpecFile(object):
                         # replace the archive name in old Source0 with new one
                         new_source0_line = source0_raw.replace(os.path.basename(source0_raw),
                                                                new_basename_with_macro)
-                        logger.debug("Inserting new Source0 line '%s'", new_source0_line)
+                        logger.verbose("Inserting new Source0 line '%s'", new_source0_line)
                         self.spec_content.insert(index + 1, new_source0_line + '\n')
                         break
         else:
@@ -943,7 +943,7 @@ class SpecFile(object):
         :param version: string with new version
         :return: None
         """
-        logger.debug("Updating version in SPEC from '%s' with '%s'", self.get_version(), version)
+        logger.verbose("Updating version in SPEC from '%s' with '%s'", self.get_version(), version)
         self.set_tag('Version', version, preserve_macros=True)
 
     @staticmethod
@@ -1138,7 +1138,7 @@ class SpecFile(object):
 
     def _write_spec_file_to_disc(self):
         """Write the current SPEC file to the disc"""
-        logger.debug("Writing SPEC file '%s' to the disc", self.path)
+        logger.verbose("Writing SPEC file '%s' to the disc", self.path)
         try:
             with open(self.path, "w") as f:
                 f.writelines(self.spec_content)

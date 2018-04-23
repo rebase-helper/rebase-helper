@@ -60,7 +60,7 @@ class RpmDiffTool(BaseChecker):
                 continue
 
             fields = line.strip().split()
-            logger.debug(fields)
+            logger.verbose(fields)
             if line.startswith('removed'):
                 results_dict['removed'].append(fields[1])
                 continue
