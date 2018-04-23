@@ -49,6 +49,7 @@ class CustomHelpFormatter(argparse.HelpFormatter):
 class CustomAction(argparse.Action):
     def __init__(self, option_strings,
                  switch=False,
+                 counter=False,
                  actual_default=None,
                  dest=None,
                  default=None,
@@ -70,11 +71,18 @@ class CustomAction(argparse.Action):
             choices=choices)
 
         self.switch = switch
-        self.nargs = 0 if self.switch else nargs
+        self.counter = counter
+        self.nargs = 0 if self.switch or self.counter else nargs
         self.actual_default = actual_default
 
     def __call__(self, parser, namespace, values, option_string=None):
-        setattr(namespace, self.dest, True if self.switch else values)
+        if self.counter:
+            value = getattr(namespace, self.dest, 0) + 1
+        elif self.switch:
+            value = True
+        else:
+            value = values
+        setattr(namespace, self.dest, value)
 
 
 class CustomArgumentParser(argparse.ArgumentParser):
