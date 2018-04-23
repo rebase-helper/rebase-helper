@@ -29,12 +29,14 @@ import rebasehelper.utils
 class CustomLogger(logging.Logger):
 
     TRACE = logging.DEBUG + 1
+    VERBOSE = logging.DEBUG + 2
     SUCCESS = logging.INFO + 5
     HEADING = logging.INFO + 6
     IMPORTANT = logging.INFO + 7
 
     _nameToLevel = {
         'TRACE': TRACE,
+        'VERBOSE': VERBOSE,
         'SUCCESS': SUCCESS,
         'HEADING': HEADING,
         'IMPORTANT': IMPORTANT,
@@ -129,6 +131,7 @@ class ColorizingStreamHandler(logging.StreamHandler):
         'dark': {
             logging.DEBUG: {'fg': 'brightblack', 'bg': 'default', 'style': None},
             CustomLogger.TRACE: {'fg': 'red', 'bg': 'default', 'style': None},
+            CustomLogger.VERBOSE: {'fg': 'brightblack', 'bg': 'default', 'style': None},
             logging.INFO: {'fg': 'default', 'bg': 'default', 'style': None},
             CustomLogger.SUCCESS: {'fg': 'green', 'bg': 'default', 'style': None},
             CustomLogger.HEADING: {'fg': 'yellow', 'bg': 'default', 'style': None},
@@ -140,6 +143,7 @@ class ColorizingStreamHandler(logging.StreamHandler):
         'light': {
             logging.DEBUG: {'fg': 'brightblack', 'bg': 'default', 'style': None},
             CustomLogger.TRACE: {'fg': 'red', 'bg': 'default', 'style': None},
+            CustomLogger.VERBOSE: {'fg': 'brightblack', 'bg': 'default', 'style': None},
             logging.INFO: {'fg': 'default', 'bg': 'default', 'style': None},
             CustomLogger.SUCCESS: {'fg': 'green', 'bg': 'default', 'style': None},
             CustomLogger.HEADING: {'fg': 'blue', 'bg': 'default', 'style': None},
