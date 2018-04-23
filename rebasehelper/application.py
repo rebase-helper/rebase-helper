@@ -416,7 +416,6 @@ class Application(object):
                     if dest_dir:
                         Application.extract_sources(rest, os.path.join(self.execution_dir, sources_dir, dest_dir))
 
-        self.run_package_checkers(self.results_dir, category="SOURCE")
         return [old_dir, new_dir]
 
     def patch_sources(self, sources):
@@ -677,7 +676,7 @@ class Application(object):
             if builder.creates_tasks():
                 self.print_task_info(builder)
 
-    def run_package_checkers(self, results_dir, category):
+    def run_package_checkers(self, results_dir, **kwargs):
         """
         Runs checkers on packages and stores results in a given directory.
 
@@ -693,8 +692,7 @@ class Application(object):
             try:
                 data = checkers_runner.run_checker(os.path.join(results_dir, 'checkers'),
                                                    checker_name,
-                                                   workspace_dir=self.workspace_dir,
-                                                   category=category)
+                                                   **kwargs)
                 if data:
                     results[checker_name] = data
             except CheckerNotFoundError:
@@ -833,10 +831,11 @@ class Application(object):
                                         ", ".join(tools_accepting_options)))
 
         if self.conf.build_tasks is None:
-            sources = self.prepare_sources()
+            old_sources, new_sources = self.prepare_sources()
+            self.run_package_checkers(self.results_dir, category='SOURCE', old_dir=old_sources, new_dir=new_sources)
             if not self.conf.build_only and not self.conf.comparepkgs:
                 try:
-                    self.patch_sources(sources)
+                    self.patch_sources([old_sources, new_sources])
                 except RebaseHelperError as e:
                     # Print summary and return error
                     self.print_summary(e)
@@ -848,19 +847,19 @@ class Application(object):
                 try:
                     if self.conf.build_tasks is None:
                         self.build_source_packages()
-                    self.run_package_checkers(self.results_dir, 'SRPM')
+                    self.run_package_checkers(self.results_dir, category='SRPM')
                     self.build_binary_packages()
                     if self.conf.builds_nowait and not self.conf.build_tasks:
                         return
-                    self.run_package_checkers(self.results_dir, 'RPM')
+                    self.run_package_checkers(self.results_dir, category='RPM')
                 # Print summary and return error
                 except RebaseHelperError as e:
                     self.print_summary(e)
                     raise
             else:
                 if self.get_rpm_packages(self.conf.comparepkgs):
-                    self.run_package_checkers(self.results_dir, 'SRPM')
-                    self.run_package_checkers(self.results_dir, 'RPM')
+                    self.run_package_checkers(self.results_dir, category='SRPM')
+                    self.run_package_checkers(self.results_dir, category='RPM')
 
         if not self.conf.keep_workspace:
             self._delete_workspace_dir()
