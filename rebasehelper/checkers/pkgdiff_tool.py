@@ -112,7 +112,7 @@ class PkgDiffTool(BaseChecker):
         for tag in cls.CHECKER_TAGS:
             cls.results_dict[tag] = []
         for file_name in [os.path.join(result_dir, x) for x in XML_FILES]:
-            logger.debug('Processing %s file.', file_name)
+            logger.verbose('Processing %s file.', file_name)
             try:
                 with open(file_name, "r") as f:
                     lines = ['<pkgdiff>']

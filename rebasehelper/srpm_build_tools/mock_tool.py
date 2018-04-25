@@ -118,9 +118,9 @@ class MockSRPMBuildTool(SRPMBuildToolBase):
 
         # srpm path in results_dir
         srpm = os.path.join(srpm_results_dir, os.path.basename(srpm))
-        logger.debug("Successfully built SRPM: '%s'", str(srpm))
+        logger.verbose("Successfully built SRPM: '%s'", str(srpm))
         # gather logs
         logs = [l for l in PathHelper.find_all_files(srpm_results_dir, '*.log')]
-        logger.debug("logs: '%s'", str(logs))
+        logger.verbose("logs: '%s'", str(logs))
 
         return dict(srpm=srpm, logs=logs)

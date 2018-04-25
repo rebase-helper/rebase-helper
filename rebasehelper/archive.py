@@ -245,7 +245,7 @@ class Archive(object):
         if path is None:
             TypeError("Expected argument 'path' (pos 1) is missing")
 
-        logger.debug("Extracting '%s' into '%s'", self._filename, path)
+        logger.verbose("Extracting '%s' into '%s'", self._filename, path)
 
         try:
             LZMAError = lzma.LZMAError

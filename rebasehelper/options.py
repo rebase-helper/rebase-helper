@@ -41,8 +41,8 @@ OPTIONS = [
     # output control
     {
         "name": ["-v", "--verbose"],
-        "default": False,
-        "switch": True,
+        "default": 0,
+        "counter": True,
         "help": "be more verbose",
     },
     {

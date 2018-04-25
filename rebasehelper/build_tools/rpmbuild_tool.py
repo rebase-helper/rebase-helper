@@ -136,10 +136,10 @@ class RpmbuildBuildTool(BuildToolBase):  # pylint: disable=abstract-method
 
         # RPMs paths in results_dir
         rpms = [os.path.join(rpm_results_dir, os.path.basename(f)) for f in rpms]
-        logger.debug("Successfully built RPMs: '%s'", str(rpms))
+        logger.verbose("Successfully built RPMs: '%s'", str(rpms))
 
         # gather logs
         cls.logs.extend([l for l in PathHelper.find_all_files(rpm_results_dir, '*.log')])
-        logger.debug("logs: '%s'", str(cls.logs))
+        logger.verbose("logs: '%s'", str(cls.logs))
 
         return dict(rpm=rpms, logs=cls.logs)

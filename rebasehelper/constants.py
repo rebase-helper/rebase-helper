@@ -33,6 +33,9 @@ CHECKERS_DIR = 'checkers'
 
 LOGS_DIR = 'logs'
 DEBUG_LOG = 'debug.log'
+TRACEBACK_LOG = 'traceback.log'
+VERBOSE_LOG = 'verbose.log'
+INFO_LOG = 'info.log'
 REPORT = 'report'
 
 OLD_SOURCES_DIR = 'old_sources'

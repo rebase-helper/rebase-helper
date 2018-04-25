@@ -2,7 +2,6 @@ import six
 import os
 
 from rebasehelper.output_tool import BaseOutputTool
-from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.logger import LoggerHelper, logger, logger_report
 from rebasehelper.results_store import results_store
 from rebasehelper.checker import checkers_runner
@@ -145,10 +144,7 @@ class TextOutputTool(BaseOutputTool):
             for key, value in six.iteritems(results.get_summary_info()):
                 logger.info("%s %s\n", key, value)
 
-        try:
-            LoggerHelper.add_file_handler(logger_report, path)
-        except (OSError, IOError):
-            raise RebaseHelperError("Can not create results file '{}'".format(path))
+        LoggerHelper.add_file_handler(logger_report, path)
 
         cls.results_store = results
 

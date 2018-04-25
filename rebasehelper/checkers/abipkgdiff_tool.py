@@ -104,7 +104,7 @@ class AbiCheckerTool(BaseChecker):
                 command.append(debug)
             command.append(pkg)
             command.append(new_pkg)
-            logger.debug('Package name for ABI comparison %s', old_name)
+            logger.verbose('Package name for ABI comparison %s', old_name)
             output = os.path.join(cls.results_dir, old_name + '.txt')
             try:
                 ret_code = ProcessHelper.run_subprocess(command, output_file=output)

@@ -477,12 +477,12 @@ class DownloadHelper(object):
         # file exists, check the size
         if os.path.exists(destination_path):
             if file_size < 0 or file_size != os.path.getsize(destination_path):
-                logger.debug("The destination file '%s' exists, but sizes don't match! Removing it.",
-                             destination_path)
+                logger.verbose("The destination file '%s' exists, but sizes don't match! Removing it.",
+                               destination_path)
                 os.remove(destination_path)
             else:
-                logger.debug("The destination file '%s' exists, and the size is correct! Skipping download.",
-                             destination_path)
+                logger.verbose("The destination file '%s' exists, and the size is correct! Skipping download.",
+                               destination_path)
                 return
         try:
             with open(destination_path, 'wb') as local_file:
@@ -913,7 +913,7 @@ class RpmHelper(object):
                     result = rpm.spec(tmp.name, flags) if flags is not None else rpm.spec(tmp.name)
                 for line in capturer.stderr.split('\n'):
                     if line:
-                        logger.debug('rpm: %s', line)
+                        logger.verbose('rpm: %s', line)
                 return result
 
 
