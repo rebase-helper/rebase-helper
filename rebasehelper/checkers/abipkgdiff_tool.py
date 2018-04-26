@@ -126,14 +126,7 @@ class AbiCheckerTool(BaseChecker):
         :return: returns dict of packages names with its abipkgdiff changes
         """
         def parse_changes(lines):
-            """
-            Parses each line with abipkgdiff output info
-            :param lines: list of lines of changes
-            :return: dictionary of list of changes
-
-            Example abipkgdiff line:
-            '  Functions changes summary: 3 Removed, 0 Changed, 0 Added functions (4 filtered out)'
-            """
+            title_re = re.compile(r"^\s*=+\s*changes\s+of\s+'(?P<filename>.+)'.*$")
             summary_re = re.compile(r'''^
             \s+(?P<kind>[\w\s]+changes\s+summary):\s+
             (?P<changes>.+)
@@ -144,27 +137,33 @@ class AbiCheckerTool(BaseChecker):
             (?P<what>Added|Changed|Removed)(\s+functions|variables)?
             (\s+\((?P<filtered_out>\d+)\s+filtered\s+out\))?
             ''', re.VERBOSE)
-            result = {}
+            result_dict = {}
+            filename = 'Undetected filename'
             for line in lines:
+                mt = title_re.match(line)
+                if mt:
+                    filename = mt.group('filename')
+                    if filename not in result_dict:
+                        result_dict[filename] = {}
                 ms = summary_re.match(line)
                 if ms:
+                    result = {}
                     ds = ms.groupdict()
                     result[ds['kind']] = {}
                     for mc in changes_re.finditer(ds['changes']):
                         dc = mc.groupdict()
                         if int(dc['count']) or dc['filtered_out']:
                             result[ds['kind']][dc['what']] = dc
-            return result
+                    result_dict[filename].update(result)
+            return result_dict
 
         pkgs = {}
         for pkg, ret_code in six.iteritems(reports):
             # If no abi changes for the package, store empty dictionary
-            cur_pkg = {}
             if ret_code:
                 with open(os.path.join(cls.results_dir, pkg + '.txt'), 'r') as f:
-                    cur_pkg = parse_changes(f.readlines())
                     cls.abi_changes = True
-            pkgs[pkg] = cur_pkg
+                    pkgs[pkg] = parse_changes(f.readlines())
         return pkgs
 
     @classmethod
@@ -178,24 +177,24 @@ class AbiCheckerTool(BaseChecker):
         if not data['abi_changes']:
             output_lines.append('No ABI changes occured')
             return output_lines
-
         for pkg_name, pkg_changes in sorted(six.iteritems(data['packages'])):
             if not pkg_changes:
                 continue
             output_lines.append("ABI changes in {}:".format(pkg_name))
+            for filename, file_changes in six.iteritems(pkg_changes):
+                output_lines.append(" - {}:".format(filename))
+                for sum_title, changes_list in sorted(six.iteritems(file_changes)):
+                    if not changes_list:
+                        continue
+                    output_lines.append("   - {}:".format(sum_title))
 
-            for sum_title, changes_list in sorted(six.iteritems(pkg_changes)):
-                if not changes_list:
-                    continue
-                output_lines.append("{}".format(sum_title))
-
-                for change_name, change_info in sorted(six.iteritems(changes_list)):
-                    if change_info['filtered_out']:
-                        output_lines.append(" - {} {} (filtered out {})".format(change_name,
-                                                                                change_info['count'],
-                                                                                change_info['filtered_out']))
-                    else:
-                        output_lines.append(" - {} {}".format(change_name, change_info['count']))
+                    for change_name, change_info in sorted(six.iteritems(changes_list)):
+                        if change_info['filtered_out']:
+                            output_lines.append("     - {} {} (filtered out {})".format(change_name,
+                                                                                        change_info['count'],
+                                                                                        change_info['filtered_out']))
+                        else:
+                            output_lines.append("     - {} {}".format(change_name, change_info['count']))
         output_lines.append("Details in {}:".format(data['path']))
         for pkg_name, pkg_changes in sorted(six.iteritems(data['packages'])):
             output_lines.append(" - {}.txt".format(pkg_name))
