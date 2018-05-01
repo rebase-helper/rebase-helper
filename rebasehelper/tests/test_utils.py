@@ -35,13 +35,13 @@ from six import StringIO
 from rebasehelper.utils import GitHelper
 from rebasehelper.utils import ConsoleHelper
 from rebasehelper.utils import DownloadHelper
-from rebasehelper.utils import DownloadError
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.utils import PathHelper
 from rebasehelper.utils import TemporaryEnvironment
 from rebasehelper.utils import RpmHelper
 from rebasehelper.utils import MacroHelper
 from rebasehelper.utils import LookasideCacheHelper
+from rebasehelper.exceptions import DownloadError
 
 
 class TestGitHelper(object):

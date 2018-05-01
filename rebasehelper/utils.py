@@ -56,7 +56,7 @@ from pkg_resources import parse_version
 from urllib3.fields import RequestField
 from urllib3.filepost import encode_multipart_formdata
 
-from rebasehelper.exceptions import RebaseHelperError
+from rebasehelper.exceptions import RebaseHelperError, DownloadError, ParseError, LookasideCacheError
 from rebasehelper.logger import logger
 
 try:
@@ -354,11 +354,6 @@ class ConsoleHelper(object):
                 self._stdout_copy.close()
             if self._stderr_copy:
                 self._stderr_copy.close()
-
-
-class DownloadError(Exception):
-    """Exception indicating that download of a file failed."""
-    pass
 
 
 class DownloadHelper(object):
@@ -1463,13 +1458,6 @@ class FileHelper(object):
             return False
 
 
-class LookasideCacheError(Exception):
-
-    """Exception indicating a problem accessing lookaside cache"""
-
-    pass
-
-
 class LookasideCacheHelper(object):
 
     """Class for downloading files from Fedora/RHEL lookaside cache"""
@@ -1622,11 +1610,6 @@ class LookasideCacheHelper(object):
                 sources[indexes[0]] = dict(hash=hsh, filename=filename, hashtype=hashtype)
         cls._write_sources(basepath, sources)
         return uploaded
-
-
-class ParseError(Exception):
-
-    pass
 
 
 class SilentArgumentParser(argparse.ArgumentParser):
