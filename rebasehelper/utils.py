@@ -1552,7 +1552,7 @@ class LookasideCacheHelper(object):
             cls._download_source(tool, url, package, source['filename'], source['hashtype'], source['hash'])
 
     @classmethod
-    def _upload_source(cls, url, package, filename, hashtype, hsh):
+    def _upload_source(cls, url, package, filename, hashtype, hsh, auth=SPNEGOAuth()):
         class ChunkedData(object):
             def __init__(self, check_only, chunksize=8192):
                 self.check_only = check_only
@@ -1582,7 +1582,7 @@ class LookasideCacheHelper(object):
 
         def post(check_only=False):
             cd = ChunkedData(check_only)
-            r = requests.post(url, data=cd, headers=cd.headers, auth=SPNEGOAuth())
+            r = requests.post(url, data=cd, headers=cd.headers, auth=auth)
             if not 200 <= r.status_code < 300:
                 raise LookasideCacheError(r.reason)
             return r.content

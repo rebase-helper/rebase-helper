@@ -1,3 +1,6 @@
+import cgi
+import hashlib
+import io
 import os
 import posixpath
 import ssl
@@ -52,6 +55,59 @@ class HTTPServer(object):
                     self.wfile.write(data)
                 except FileNotFoundError:
                     self.send_error(404)
+
+            def do_POST(self):
+                def dechunk(f):
+                    bio = io.BytesIO()
+                    while True:
+                        chunksize = bytearray()
+                        while not chunksize.endswith(b'\r\n'):
+                            chunksize += f.read(1)
+                        chunksize = chunksize.decode().split(':')[0]
+                        chunksize = int(chunksize, 16)
+                        if chunksize == 0:
+                            break
+                        chunk = f.read(chunksize)
+                        assert(f.read(2) == b'\r\n')
+                        bio.write(chunk)
+                    bio.seek(0)
+                    return bio
+
+                def verify_hash(f, hashtype, hsh):
+                    try:
+                        chksum = hashlib.new(hashtype)
+                    except ValueError:
+                        return False
+                    chksum.update(f.read())
+                    return chksum.hexdigest() == hsh
+
+                if self.headers.get('Transfer-Encoding') == 'chunked':
+                    fp = dechunk(self.rfile)
+                else:
+                    fp = self.rfile
+                data = cgi.FieldStorage(fp=fp, headers=self.headers,
+                                        environ={'REQUEST_METHOD': 'POST'},
+                                        # accept maximum of 10MB of data
+                                        limit=10 * 1024 * 1024)
+                try:
+                    if 'filename' in data:
+                        resp = b'Missing'
+                        self.send_response(200)
+                        self.send_header('Content-Type', 'text/plain')
+                        self.send_header('Content-Length', len(resp))
+                        self.end_headers()
+                        self.wfile.write(resp)
+                    else:
+                        hashtype = [k for k in data.keys() if k.endswith('sum')][0]
+                        hsh = data[hashtype].value
+                        hashtype = hashtype.split('sum')[0]
+                        if verify_hash(data['file'].file, hashtype, hsh):
+                            self.send_response(204)
+                            self.end_headers()
+                        else:
+                            self.send_error(500)
+                except (KeyError, IndexError):
+                    self.send_error(400)
 
         self.server = BaseHTTPServer.HTTPServer(('', port), RequestHandler)
         if cert:
