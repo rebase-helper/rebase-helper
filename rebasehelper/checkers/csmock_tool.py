@@ -36,7 +36,7 @@ class CsmockTool(BaseChecker):
     """ Csmock compare tool."""
 
     NAME = "csmock"
-    category = "SRPM"
+    CATEGORY = "SRPM"
 
     @classmethod
     def run_check(cls, results_dir, **kwargs):

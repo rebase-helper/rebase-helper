@@ -39,7 +39,7 @@ class LicenseCheckTool(BaseChecker):
 
     NAME = "licensecheck"
     DEFAULT = True
-    category = "SOURCE"
+    CATEGORY = "SOURCE"
     license_changes = False
     license_files_changes = dict()
 

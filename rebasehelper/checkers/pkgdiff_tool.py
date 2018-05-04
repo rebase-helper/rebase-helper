@@ -42,7 +42,7 @@ class PkgDiffTool(BaseChecker):
     files_xml = "files.xml"
     results_dir = ''
     results_dict = {}
-    category = "RPM"
+    CATEGORY = "RPM"
 
     @classmethod
     def _get_rpm_info(cls, name, packages):

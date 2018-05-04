@@ -39,7 +39,7 @@ class RpmDiffTool(BaseChecker):
     NAME = "rpmdiff"
     DEFAULT = True
     CHECKER_TAGS = ['added', 'removed', 'changed', 'moved', 'renamed']
-    category = "RPM"
+    CATEGORY = "RPM"
 
     @classmethod
     def _get_rpms(cls, rpm_list):
