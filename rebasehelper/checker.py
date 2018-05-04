@@ -30,7 +30,14 @@ from rebasehelper.constants import RESULTS_DIR
 
 
 class BaseChecker(object):
-    """ Base class used for testing tool run on final pkgs. """
+    """Base class of package checkers.
+
+    Attributes:
+        NAME(str): Name of the checker.
+        DEFAULT(bool): If True, the checker is run by default.
+        CATEGORY(str): Category which determines when the checker is run. Valid options: SRPM/RPM/SOURCE.
+        results_dir(str): Path where the results are stored.
+    """
 
     NAME = None
     DEFAULT = False

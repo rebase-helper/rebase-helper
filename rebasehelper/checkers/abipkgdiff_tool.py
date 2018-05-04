@@ -35,7 +35,11 @@ from rebasehelper.checker import BaseChecker
 
 
 class AbiCheckerTool(BaseChecker):
-    """abipkgdiff compare tool"""
+    """abipkgdiff compare tool
+
+    Attributes:
+        abi_changes(bool): True if ABI changes were detected.
+    """
 
     NAME = "abipkgdiff"
     DEFAULT = True
@@ -43,8 +47,7 @@ class AbiCheckerTool(BaseChecker):
     ABIDIFF_USAGE_ERROR = 2
     abi_changes = None
     results_dir = ''
-    log_name = 'abipkgdiff.log'
-    category = 'RPM'
+    CATEGORY = 'RPM'
 
     # Example
     # abipkgdiff --d1 dbus-glib-debuginfo-0.80-3.fc12.x86_64.rpm \
@@ -120,10 +123,33 @@ class AbiCheckerTool(BaseChecker):
 
     @classmethod
     def parse_abi_logs(cls, reports):
-        """
-        Parse abipkgdiff logs
-        :param reports: dictionary with paths to the logs of the produced (sub)packages
-        :return: returns dict of packages names with its abipkgdiff changes
+        """Parses summary information from abipkgdiff logs.
+
+        Sets abi_changes attribute if there are any ABI changes found.
+
+        Args:
+            reports(dict): Dictionary mapping package names to abipkgdiff return codes.
+
+        Returns:
+            dict: Dictionary mapping package names to a dict of summary information for each shared object.
+
+            For example:
+
+            {
+                'libtiff':
+                {
+                   'libtiff.so.5.2.5':{
+                        'Functions changes summary': {
+                            'Added': {
+                                'count': '8',
+                                'what': 'Added',
+                                'filtered_out': None,
+                            },
+                        },
+                        'Variables changes summary': {},
+                    },
+                },
+            }
         """
         def parse_changes(lines):
             title_re = re.compile(r"^\s*=+\s*changes\s+of\s+'(?P<filename>.+)'.*$")
@@ -168,14 +194,9 @@ class AbiCheckerTool(BaseChecker):
 
     @classmethod
     def format(cls, data):
-        """
-        Format abipkgdiff output
-        :param data: abipkgdiff dictionary output
-        :return: formated abipkgdiff list of strings
-        """
         output_lines = [cls.get_underlined_title('abipkgdiff')]
         if not data['abi_changes']:
-            output_lines.append('No ABI changes occured')
+            output_lines.append('No ABI changes occured.')
             return output_lines
         for pkg_name, pkg_changes in sorted(six.iteritems(data['packages'])):
             if not pkg_changes:
@@ -204,4 +225,4 @@ class AbiCheckerTool(BaseChecker):
     @classmethod
     def get_important_changes(cls, checker_output):
         if checker_output['abi_changes']:
-            return ['ABI changes occured. Check abipkgdiff output']
+            return ['ABI changes occured. Check abipkgdiff output.']
