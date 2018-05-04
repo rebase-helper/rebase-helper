@@ -41,7 +41,7 @@ class BaseChecker(object):
 
     NAME = None
     DEFAULT = False
-    category = None
+    CATEGORY = None
     results_dir = None
 
     @classmethod
@@ -76,7 +76,7 @@ class BaseChecker(object):
 
     @classmethod
     def get_category(cls):
-        return cls.category
+        return cls.CATEGORY
 
     @classmethod
     def get_underlined_title(cls, text, separator='='):
