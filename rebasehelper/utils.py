@@ -73,32 +73,6 @@ else:
     koji_helper_functional = True
 
 
-class GitRuntimeError(RuntimeError):
-
-    """Error indicating problems with Git"""
-
-    pass
-
-
-class GitRebaseError(RuntimeError):
-
-    """Error indicating problems with Git"""
-
-    pass
-
-
-def get_value_from_kwargs(kwargs, field, source='old'):
-    """
-    Function returns a part of self.kwargs dictionary
-
-    :param kwargs:
-    :param source: 'old' or 'new'
-    :param field: like 'patches', 'source'
-    :return: value from dictionary
-    """
-    return kwargs[source][field]
-
-
 class ConsoleHelper(object):
 
     """Class for command line interaction with the user."""
