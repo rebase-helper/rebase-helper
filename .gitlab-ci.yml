@@ -12,10 +12,10 @@ stages:
     script:
         - make PYTEST_ADDOPTS="-m 'not long_running'" test-docker
 
-test:f26:
+test:f27:
     <<: *test_definition
     variables:
-        DISTRO: fedora-26
+        DISTRO: fedora-27
 
 test:latest:
     <<: *test_definition
