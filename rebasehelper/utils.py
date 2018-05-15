@@ -20,7 +20,6 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
-import gzip
 import hashlib
 import os
 import re
@@ -28,17 +27,14 @@ import shutil
 import sys
 import time
 
-import copr
-import pyquery
 import requests
 import six
 
-from six.moves import urllib
 from six.moves import configparser
 from urllib3.fields import RequestField
 from urllib3.filepost import encode_multipart_formdata
 
-from rebasehelper.exceptions import RebaseHelperError, DownloadError, LookasideCacheError
+from rebasehelper.exceptions import DownloadError, LookasideCacheError
 from rebasehelper.logger import logger
 from rebasehelper.helpers.download_helper import DownloadHelper
 from rebasehelper.helpers.path_helper import PathHelper
@@ -97,122 +93,6 @@ class TemporaryEnvironment(object):
         :return: copy of _env dictionary
         """
         return self._env.copy()
-
-
-class CoprHelper(object):
-
-    @classmethod
-    def get_client(cls):
-        try:
-            client = copr.CoprClient.create_from_file_config()
-        except (copr.client.exceptions.CoprNoConfException,
-                copr.client.exceptions.CoprConfigException):
-            raise RebaseHelperError(
-                'Missing or invalid copr configuration file')
-        else:
-            return client
-
-    @classmethod
-    def create_project(cls, client, project, chroot, description, instructions):
-        try:
-            try:
-                client.create_project(projectname=project,
-                                      chroots=[chroot],
-                                      description=description,
-                                      instructions=instructions)
-            except TypeError:
-                # username argument is required since python-copr-1.67-1
-                client.create_project(username=None,
-                                      projectname=project,
-                                      chroots=[chroot],
-                                      description=description,
-                                      instructions=instructions)
-        except copr.client.exceptions.CoprRequestException:
-            # reuse existing project
-            pass
-
-    @classmethod
-    def build(cls, client, project, srpm):
-        try:
-            result = client.create_new_build(projectname=project, pkgs=[srpm])
-        except copr.client.exceptions.CoprRequestException as e:
-            raise RebaseHelperError('Failed to start copr build: {}'.format(str(e)))
-        else:
-            return result.builds_list[0].build_id
-
-    @classmethod
-    def get_build_url(cls, client, build_id):
-        try:
-            result = client.get_build_details(build_id)
-        except copr.client.exceptions.CoprRequestException as e:
-            raise RebaseHelperError(
-                'Failed to get copr build details for id {}: {}'.format(build_id, str(e)))
-        else:
-            return '{}/coprs/{}/{}/build/{}/'.format(client.copr_url,
-                                                     client.username,
-                                                     result.project,
-                                                     build_id)
-
-    @classmethod
-    def get_build_status(cls, client, build_id):
-        try:
-            result = client.get_build_details(build_id)
-        except copr.client.exceptions.CoprRequestException as e:
-            raise RebaseHelperError(
-                'Failed to get copr build details for id {}: {}'.format(build_id, str(e)))
-        else:
-            return result.status
-
-    @classmethod
-    def watch_build(cls, client, build_id):
-        try:
-            while True:
-                status = cls.get_build_status(client, build_id)
-                if not status:
-                    return False
-                elif status in ['succeeded', 'skipped']:
-                    return True
-                elif status in ['failed', 'canceled', 'unknown']:
-                    return False
-                else:
-                    time.sleep(10)
-        except KeyboardInterrupt:
-            return False
-
-    @classmethod
-    def download_build(cls, client, build_id, destination):
-        logger.info('Downloading packages and logs for build %d', build_id)
-        try:
-            result = client.get_build_details(build_id)
-        except copr.client.exceptions.CoprRequestException as e:
-            raise RebaseHelperError(
-                'Failed to get copr build details for {}: {}'.format(build_id, str(e)))
-        rpms = []
-        logs = []
-        for _, url in six.iteritems(result.data['results_by_chroot']):
-            url = url if url.endswith('/') else url + '/'
-            d = pyquery.PyQuery(url)
-            d.make_links_absolute()
-            for a in d('a[href$=\'.rpm\'], a[href$=\'.log.gz\']'):
-                fn = os.path.basename(urllib.parse.urlsplit(a.attrib['href']).path)
-                dest = os.path.join(destination, fn)
-                if fn.endswith('.src.rpm'):
-                    # skip source RPM
-                    continue
-                DownloadHelper.download_file(a.attrib['href'], dest)
-                if fn.endswith('.rpm'):
-                    rpms.append(dest)
-                elif fn.endswith('.log.gz'):
-                    extracted = dest.replace('.log.gz', '.log')
-                    try:
-                        with gzip.open(dest, 'rb') as archive:
-                            with open(extracted, 'wb') as f:
-                                f.write(archive.read())
-                    except (IOError, EOFError):
-                        raise RebaseHelperError(
-                            'Failed to extract {}'.format(dest))
-                    logs.append(extracted)
-        return rpms, logs
 
 
 class FileHelper(object):

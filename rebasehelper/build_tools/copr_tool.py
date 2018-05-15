@@ -22,7 +22,7 @@
 
 import os
 
-from rebasehelper.utils import CoprHelper
+from rebasehelper.helpers.copr_helper import CoprHelper
 from rebasehelper.logger import logger
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.build_helper import BuildToolBase
