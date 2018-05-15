@@ -710,9 +710,9 @@ class PathHelper(object):
     @staticmethod
     def find_all_files(top_path, pattern):
         """
-        Finds a file that matches the given 'pattern' recursively
-        starting in the 'top_path' directory. If found, returns full path
-        to the first occurrence of the file, otherwise returns None.
+        Finds all files that match the given 'pattern' recursively
+        starting in the 'top_path' directory. If found, returns list
+        of full paths to all found files, otherwise returns empty list.
         """
         files_list = []
         for root, dirs, files in os.walk(top_path):
@@ -725,8 +725,9 @@ class PathHelper(object):
     @staticmethod
     def find_all_files_current_dir(top_path, pattern):
         """
-        Finds all files that matches the given 'pattern' in the 'top_path' directory.
-        If found, returns fields of all files, otherwise returns None.
+        Finds all files that match the given 'pattern' in the 'top_path' directory.
+        If found, returns list of full paths to all found files, otherwise returns
+        empty list.
         """
         files_list = []
         for files in os.listdir(top_path):
