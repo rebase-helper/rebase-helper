@@ -36,7 +36,7 @@ from rebasehelper.specfile import SpecFile, get_rebase_name, spec_hooks_runner
 from rebasehelper.logger import logger, log_formatter, debug_log_formatter, LoggerHelper, CustomLogger
 from rebasehelper import constants
 from rebasehelper.output_tool import output_tools_runner
-from rebasehelper.utils import KojiHelper, FileHelper
+from rebasehelper.utils import FileHelper
 from rebasehelper.utils import LookasideCacheHelper
 from rebasehelper.checker import checkers_runner
 from rebasehelper.build_helper import SRPMBuilder, Builder, SourcePackageBuildError, BinaryPackageBuildError
@@ -49,6 +49,7 @@ from rebasehelper.helpers.path_helper import PathHelper
 from rebasehelper.helpers.macro_helper import MacroHelper
 from rebasehelper.helpers.input_helper import InputHelper
 from rebasehelper.helpers.git_helper import GitHelper
+from rebasehelper.helpers.koji_helper import KojiHelper
 
 
 class Application(object):
