@@ -119,3 +119,19 @@ class PathHelper(object):
 
         """
         return tempfile.mkdtemp(prefix='rebase-helper-')
+
+    @staticmethod
+    def file_available(filename):
+        """Checks if the given file exists.
+
+        Args:
+            filename (str): Path to the file.
+
+        Returns:
+            bool: Whether the file exists.
+
+        """
+        if os.path.exists(filename) and os.path.getsize(filename) != 0:
+            return True
+        else:
+            return False

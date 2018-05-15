@@ -36,7 +36,6 @@ from rebasehelper.specfile import SpecFile, get_rebase_name, spec_hooks_runner
 from rebasehelper.logger import logger, log_formatter, debug_log_formatter, LoggerHelper, CustomLogger
 from rebasehelper import constants
 from rebasehelper.output_tool import output_tools_runner
-from rebasehelper.utils import FileHelper
 from rebasehelper.utils import LookasideCacheHelper
 from rebasehelper.checker import checkers_runner
 from rebasehelper.build_helper import SRPMBuilder, Builder, SourcePackageBuildError, BinaryPackageBuildError
@@ -716,9 +715,9 @@ class Application(object):
         :return:
         """
         log_list = []
-        if FileHelper.file_available(self.debug_log_file):
+        if PathHelper.file_available(self.debug_log_file):
             log_list.append(self.debug_log_file)
-        if FileHelper.file_available(self.report_log_file):
+        if PathHelper.file_available(self.report_log_file):
             log_list.append(self.report_log_file)
         return log_list
 
@@ -734,7 +733,7 @@ class Application(object):
         for check, data in six.iteritems(results_store.get_checkers()):
             if data:
                 for log in six.iterkeys(data):
-                    if FileHelper.file_available(log):
+                    if PathHelper.file_available(log):
                         checkers[check] = log
             else:
                 checkers[check] = None

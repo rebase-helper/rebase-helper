@@ -95,16 +95,6 @@ class TemporaryEnvironment(object):
         return self._env.copy()
 
 
-class FileHelper(object):
-
-    @staticmethod
-    def file_available(filename):
-        if os.path.exists(filename) and os.path.getsize(filename) != 0:
-            return True
-        else:
-            return False
-
-
 class LookasideCacheHelper(object):
 
     """Class for downloading files from Fedora/RHEL lookaside cache"""
