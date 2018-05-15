@@ -36,7 +36,7 @@ from rebasehelper.utils import GitHelper
 from rebasehelper.utils import ConsoleHelper
 from rebasehelper.helpers.download_helper import DownloadHelper
 from rebasehelper.helpers.process_helper import ProcessHelper
-from rebasehelper.utils import PathHelper
+from rebasehelper.helpers.path_helper import PathHelper
 from rebasehelper.utils import TemporaryEnvironment
 from rebasehelper.utils import RpmHelper
 from rebasehelper.utils import MacroHelper

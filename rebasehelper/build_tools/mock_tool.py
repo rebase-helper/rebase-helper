@@ -24,7 +24,7 @@ import os
 
 from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.logger import logger
-from rebasehelper.utils import PathHelper
+from rebasehelper.helpers.path_helper import PathHelper
 from rebasehelper.build_helper import BuildToolBase
 from rebasehelper.build_helper import BinaryPackageBuildError
 from rebasehelper.build_helper import MockTemporaryEnvironment

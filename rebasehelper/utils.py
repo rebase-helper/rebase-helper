@@ -22,7 +22,6 @@
 
 import datetime
 import fcntl
-import fnmatch
 import io
 import gzip
 import hashlib
@@ -58,6 +57,7 @@ from rebasehelper.constants import DEFENC
 from rebasehelper.logger import logger
 from rebasehelper.helpers.download_helper import DownloadHelper
 from rebasehelper.helpers.process_helper import ProcessHelper
+from rebasehelper.helpers.path_helper import PathHelper
 
 try:
     from requests_gssapi import HTTPSPNEGOAuth as SPNEGOAuth
@@ -324,76 +324,6 @@ class ConsoleHelper(object):
                 self._stdout_copy.close()
             if self._stderr_copy:
                 self._stderr_copy.close()
-
-
-class PathHelper(object):
-
-    """Class which finds a file or files in specific directory"""
-
-    @staticmethod
-    def find_first_dir_with_file(top_path, pattern):
-        """
-        Finds a file that matches the given 'pattern' recursively
-        starting in the 'top_path' directory. If found, returns full path
-        to the directory with first occurrence of the file, otherwise
-        returns None.
-        """
-        for root, dirs, files in os.walk(top_path):
-            dirs.sort()
-            for f in files:
-                if fnmatch.fnmatch(f, pattern):
-                    return os.path.abspath(root)
-        return None
-
-    @staticmethod
-    def find_first_file(top_path, pattern, recursion_level=None):
-        """
-        Finds a file that matches the given 'pattern' recursively
-        starting in the 'top_path' directory. If found, returns full path
-        to the first occurrence of the file, otherwise returns None.
-        """
-        for loop, (root, dirs, files) in enumerate(os.walk(top_path)):
-            dirs.sort()
-            for f in files:
-                if fnmatch.fnmatch(f, pattern):
-                    return os.path.join(os.path.abspath(root), f)
-            if recursion_level is not None:
-                if loop == recursion_level:
-                    break
-        return None
-
-    @staticmethod
-    def find_all_files(top_path, pattern):
-        """
-        Finds all files that match the given 'pattern' recursively
-        starting in the 'top_path' directory. If found, returns list
-        of full paths to all found files, otherwise returns empty list.
-        """
-        files_list = []
-        for root, dirs, files in os.walk(top_path):
-            dirs.sort()
-            for f in files:
-                if fnmatch.fnmatch(f, pattern):
-                    files_list.append(os.path.join(os.path.abspath(root), f))
-        return files_list
-
-    @staticmethod
-    def find_all_files_current_dir(top_path, pattern):
-        """
-        Finds all files that match the given 'pattern' in the 'top_path' directory.
-        If found, returns list of full paths to all found files, otherwise returns
-        empty list.
-        """
-        files_list = []
-        for files in os.listdir(top_path):
-            if fnmatch.fnmatch(files, pattern):
-                files_list.append(os.path.join(os.path.abspath(top_path), files))
-        return files_list
-
-    @staticmethod
-    def get_temp_dir():
-        """Returns a path to new temporary directory."""
-        return tempfile.mkdtemp(prefix='rebase-helper-')
 
 
 class TemporaryEnvironment(object):

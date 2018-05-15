@@ -36,7 +36,7 @@ from rebasehelper.specfile import SpecFile, get_rebase_name, spec_hooks_runner
 from rebasehelper.logger import logger, log_formatter, debug_log_formatter, LoggerHelper, CustomLogger
 from rebasehelper import constants
 from rebasehelper.output_tool import output_tools_runner
-from rebasehelper.utils import PathHelper, GitHelper, KojiHelper, FileHelper, MacroHelper, ConsoleHelper
+from rebasehelper.utils import GitHelper, KojiHelper, FileHelper, MacroHelper, ConsoleHelper
 from rebasehelper.utils import LookasideCacheHelper
 from rebasehelper.checker import checkers_runner
 from rebasehelper.build_helper import SRPMBuilder, Builder, SourcePackageBuildError, BinaryPackageBuildError
@@ -45,6 +45,7 @@ from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
 from rebasehelper.results_store import results_store
 from rebasehelper.versioneer import versioneers_runner
 from rebasehelper.version import VERSION
+from rebasehelper.helpers.path_helper import PathHelper
 
 
 class Application(object):
