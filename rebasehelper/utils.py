@@ -48,7 +48,6 @@ from six.moves import input
 from six.moves import urllib
 from six.moves import configparser
 from distutils.util import strtobool
-from pkg_resources import parse_version
 from urllib3.fields import RequestField
 from urllib3.filepost import encode_multipart_formdata
 
@@ -58,6 +57,7 @@ from rebasehelper.logger import logger
 from rebasehelper.helpers.download_helper import DownloadHelper
 from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.helpers.path_helper import PathHelper
+from rebasehelper.helpers.macro_helper import MacroHelper
 
 try:
     from requests_gssapi import HTTPSPNEGOAuth as SPNEGOAuth
@@ -501,88 +501,6 @@ class RpmHelper(object):
                     if line:
                         logger.verbose('rpm: %s', line)
                 return result
-
-
-class MacroHelper(object):
-
-    """Helper class for working with RPM macros """
-
-    @staticmethod
-    def expand(s, default=None):
-        try:
-            return rpm.expandMacro(s)
-        except rpm.error:
-            return default
-
-    @staticmethod
-    def dump():
-        """
-        Returns list of all defined macros
-
-        :return: list of macros
-        """
-        macro_re = re.compile(
-            r'''
-            ^\s*
-            (?P<level>-?\d+)
-            (?P<used>=|:)
-            [ ]
-            (?P<name>\w+)
-            (?P<options>\(.+?\))?
-            [\t]
-            (?P<value>.*)
-            $
-            ''',
-            re.VERBOSE)
-
-        with ConsoleHelper.Capturer(stderr=True) as capturer:
-            rpm.expandMacro('%dump')
-
-        macros = []
-
-        def add_macro(properties):
-            macro = dict(properties)
-            macro['used'] = macro['used'] == '='
-            macro['level'] = int(macro['level'])
-            if parse_version(rpm.__version__) < parse_version('4.13.90'):
-                # in RPM < 4.13.90 level of some macros is decreased by 1
-                if macro['level'] == -1:
-                    # this could be macro with level -1 or level 0, we can not be sure
-                    # so just duplicate the macro for both levels
-                    macros.append(macro)
-                    macro = dict(macro)
-                    macro['level'] = 0
-                    macros.append(macro)
-                elif macro['level'] in (-14, -16):
-                    macro['level'] += 1
-                    macros.append(macro)
-                else:
-                    macros.append(macro)
-            else:
-                macros.append(macro)
-
-        for line in capturer.stderr.split('\n'):
-            match = macro_re.match(line)
-            if match:
-                add_macro(match.groupdict())
-
-        return macros
-
-    @staticmethod
-    def filter(macros, **kwargs):
-        """
-        Returns all macros satisfying specified filters
-
-        :param macros: list of macros to be filtered
-        :param kwargs: filters
-        :return: filtered list of macros
-        """
-        def _test(macro):
-            return all(macro.get(k[4:]) >= v if k.startswith('min_') else
-                       macro.get(k[4:]) <= v if k.startswith('max_') else
-                       macro.get(k) == v for k, v in six.iteritems(kwargs))
-
-        return [m for m in macros if _test(m)]
 
 
 class GitHelper(object):
