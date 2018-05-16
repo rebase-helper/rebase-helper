@@ -39,13 +39,14 @@ from operator import itemgetter
 
 from six.moves import urllib
 
-from rebasehelper.utils import DownloadHelper, MacroHelper, GitHelper, RpmHelper
+from rebasehelper.utils import MacroHelper, GitHelper, RpmHelper
 from rebasehelper.utils import LookasideCacheHelper
 from rebasehelper.logger import logger
 from rebasehelper import constants
 from rebasehelper.archive import Archive
 from rebasehelper.exceptions import RebaseHelperError, DownloadError, ParseError, LookasideCacheError
 from rebasehelper.argument_parser import SilentArgumentParser
+from rebasehelper.helpers.download_helper import DownloadHelper
 
 
 def get_rebase_name(dir_name, name):

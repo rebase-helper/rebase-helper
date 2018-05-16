@@ -34,7 +34,7 @@ from six import StringIO
 
 from rebasehelper.utils import GitHelper
 from rebasehelper.utils import ConsoleHelper
-from rebasehelper.utils import DownloadHelper
+from rebasehelper.helpers.download_helper import DownloadHelper
 from rebasehelper.utils import ProcessHelper
 from rebasehelper.utils import PathHelper
 from rebasehelper.utils import TemporaryEnvironment
