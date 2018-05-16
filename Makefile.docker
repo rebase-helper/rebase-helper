@@ -1,4 +1,4 @@
-DISTRO ?= fedora-26 fedora-latest fedora-rawhide
+DISTRO ?= fedora-27 fedora-latest fedora-rawhide
 
 PYTEST_ADDOPTS ?= -m 'standard and not long_running'
 
