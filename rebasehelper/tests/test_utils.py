@@ -34,6 +34,7 @@ from six import StringIO
 
 from rebasehelper.utils import GitHelper
 from rebasehelper.utils import ConsoleHelper
+from rebasehelper.helpers.input_helper import InputHelper
 from rebasehelper.helpers.download_helper import DownloadHelper
 from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.helpers.path_helper import PathHelper
@@ -113,30 +114,6 @@ class TestGitHelper(object):
 
 class TestConsoleHelper(object):
 
-    @pytest.mark.parametrize('suffix, answer, kwargs, expected_input', [
-        (' [Y/n]? ', 'yes', None, True),
-        (' [Y/n]? ', 'no', None, False),
-        (' [y/N]? ', 'yes', dict(default_yes=False), True),
-        (' [Y/n]? ', '\n', None, True),
-        (' [y/N]? ', '\n', dict(default_yes=False), False),
-        (' ', 'random input\ndsfdf', dict(any_input=True), True),
-        (' ', 'random input\n', dict(default_yes=False, any_input=True), False),
-    ], ids=[
-        'yes',
-        'no',
-        'yes-default_no',
-        'no_input-default_yes',
-        'no_input-default_no',
-        'any_input-default_yes',
-        'any_input-default_no',
-    ])
-    def test_get_message(self, monkeypatch, capsys, suffix, answer, kwargs, expected_input):
-        question = 'bla bla'
-        monkeypatch.setattr('sys.stdin', StringIO(answer))
-        inp = ConsoleHelper.get_message(question, **(kwargs or {}))
-        assert capsys.readouterr()[0] == question + suffix
-        assert inp is expected_input
-
     def test_capture_output(self):
         def write():
             with os.fdopen(sys.__stdout__.fileno(), 'w') as f:  # pylint: disable=no-member
@@ -177,6 +154,33 @@ class TestConsoleHelper(object):
     ])
     def test_color_is_light(self, rgb_tuple, bit_width, expected_result):
         assert ConsoleHelper.color_is_light(rgb_tuple, bit_width) == expected_result
+
+
+class TestInputHelper(object):
+
+    @pytest.mark.parametrize('suffix, answer, kwargs, expected_input', [
+        (' [Y/n]? ', 'yes', None, True),
+        (' [Y/n]? ', 'no', None, False),
+        (' [y/N]? ', 'yes', dict(default_yes=False), True),
+        (' [Y/n]? ', '\n', None, True),
+        (' [y/N]? ', '\n', dict(default_yes=False), False),
+        (' ', 'random input\ndsfdf', dict(any_input=True), True),
+        (' ', 'random input\n', dict(default_yes=False, any_input=True), False),
+    ], ids=[
+        'yes',
+        'no',
+        'yes-default_no',
+        'no_input-default_yes',
+        'no_input-default_no',
+        'any_input-default_yes',
+        'any_input-default_no',
+    ])
+    def test_get_message(self, monkeypatch, capsys, suffix, answer, kwargs, expected_input):
+        question = 'bla bla'
+        monkeypatch.setattr('sys.stdin', StringIO(answer))
+        inp = InputHelper.get_message(question, **(kwargs or {}))
+        assert capsys.readouterr()[0] == question + suffix
+        assert inp is expected_input
 
 
 class TestDownloadHelper(object):

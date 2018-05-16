@@ -36,7 +36,7 @@ from rebasehelper.specfile import SpecFile, get_rebase_name, spec_hooks_runner
 from rebasehelper.logger import logger, log_formatter, debug_log_formatter, LoggerHelper, CustomLogger
 from rebasehelper import constants
 from rebasehelper.output_tool import output_tools_runner
-from rebasehelper.utils import GitHelper, KojiHelper, FileHelper, ConsoleHelper
+from rebasehelper.utils import GitHelper, KojiHelper, FileHelper
 from rebasehelper.utils import LookasideCacheHelper
 from rebasehelper.checker import checkers_runner
 from rebasehelper.build_helper import SRPMBuilder, Builder, SourcePackageBuildError, BinaryPackageBuildError
@@ -47,6 +47,7 @@ from rebasehelper.versioneer import versioneers_runner
 from rebasehelper.version import VERSION
 from rebasehelper.helpers.path_helper import PathHelper
 from rebasehelper.helpers.macro_helper import MacroHelper
+from rebasehelper.helpers.input_helper import InputHelper
 
 
 class Application(object):
@@ -654,7 +655,7 @@ class Application(object):
                         # Save current rebase spec file content
                         self.rebase_spec_file.save()
                     if not self.conf.non_interactive and \
-                            ConsoleHelper.get_message('Do you want to try it one more time'):
+                            InputHelper.get_message('Do you want to try it one more time'):
                         try_build_again = True
                     else:
                         raise RebaseHelperError(msg, logfiles=builder.get_logs().get('logs'))
@@ -667,7 +668,7 @@ class Application(object):
                     try_build_again = False
 
                     logger.info('Now it is time to make changes to  %s if necessary.', self.rebase_spec_file.path)
-                    if not ConsoleHelper.get_message('Do you want to continue with the rebuild now'):
+                    if not InputHelper.get_message('Do you want to continue with the rebuild now'):
                         raise KeyboardInterrupt
                     # Update rebase spec file content after potential manual modifications
                     self.rebase_spec_file._read_spec_content()  # pylint: disable=protected-access

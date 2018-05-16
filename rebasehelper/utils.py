@@ -44,10 +44,8 @@ import requests
 import rpm
 import six
 
-from six.moves import input
 from six.moves import urllib
 from six.moves import configparser
-from distutils.util import strtobool
 from urllib3.fields import RequestField
 from urllib3.filepost import encode_multipart_formdata
 
@@ -76,7 +74,7 @@ else:
 
 class ConsoleHelper(object):
 
-    """Class for command line interaction with the user."""
+    """Class for interacting with the command line."""
 
     use_colors = False
 
@@ -221,46 +219,6 @@ class ConsoleHelper(object):
             if attrs_obtained:
                 termios.tcsetattr(sys.stdin, termios.TCSADRAIN, attrs)
                 fcntl.fcntl(sys.stdin.fileno(), fcntl.F_SETFL, flags)
-
-    @staticmethod
-    def get_message(message, default_yes=True, any_input=False):
-        """Prompts a user with yes/no message and gets the response.
-
-        Args:
-            message (str): Prompt string.
-            default_yes (bool): If the default value should be YES.
-            any_input (bool): Whether to return default value regardless of input.
-
-        Returns:
-            bool: True or False, based on user's input.
-
-        """
-        if default_yes:
-            choice = '[Y/n]'
-        else:
-            choice = '[y/N]'
-
-        if any_input:
-            msg = '{0} '.format(message)
-        else:
-            msg = '{0} {1}? '.format(message, choice)
-
-        while True:
-            user_input = input(msg).lower()
-
-            if not user_input or any_input:
-                return True if default_yes else False
-
-            try:
-                user_input = strtobool(user_input)
-            except ValueError:
-                logger.error('You have to type y(es) or n(o).')
-                continue
-
-            if any_input:
-                return True
-            else:
-                return bool(user_input)
 
     class Capturer(object):
         """ContextManager for capturing stdout/stderr"""

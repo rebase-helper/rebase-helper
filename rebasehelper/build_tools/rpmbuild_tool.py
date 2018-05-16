@@ -23,10 +23,10 @@
 import os
 
 from rebasehelper.helpers.process_helper import ProcessHelper
+from rebasehelper.helpers.input_helper import InputHelper
 from rebasehelper.logger import logger
 from rebasehelper.helpers.path_helper import PathHelper
 from rebasehelper.utils import RpmHelper
-from rebasehelper.utils import ConsoleHelper
 from rebasehelper.build_helper import RpmbuildTemporaryEnvironment
 from rebasehelper.build_helper import BuildToolBase
 from rebasehelper.build_helper import BinaryPackageBuildError
@@ -106,7 +106,7 @@ class RpmbuildBuildTool(BuildToolBase):  # pylint: disable=abstract-method
         req_pkgs = spec.get_requires()
         if not RpmHelper.all_packages_installed(req_pkgs):
             question = '\nSome build dependencies are missing. Do you want to install them now'
-            if conf.non_interactive or ConsoleHelper.get_message(question):
+            if conf.non_interactive or InputHelper.get_message(question):
                 if RpmHelper.install_build_dependencies(spec.get_path(), assume_yes=conf.non_interactive) != 0:
                     raise RebaseHelperError('Failed to install build dependencies')
 

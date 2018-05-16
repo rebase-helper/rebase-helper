@@ -27,8 +27,8 @@ import git
 import six
 
 from rebasehelper.logger import logger
-from rebasehelper.utils import ConsoleHelper
 from rebasehelper.utils import GitHelper
+from rebasehelper.helpers.input_helper import InputHelper
 
 
 patch_tools = {}
@@ -217,7 +217,7 @@ class GitPatchTool(PatchBase):
                             f.write(b'\n')
                         modified_patches.append(patch_name)
                 if not cls.non_interactive:
-                    if not ConsoleHelper.get_message('Do you want to continue with another patch'):
+                    if not InputHelper.get_message('Do you want to continue with another patch'):
                         raise KeyboardInterrupt
                 try:
                     cls.output_data = cls.old_repo.git.rebase(skip=True, stdout_as_string=six.PY3)
