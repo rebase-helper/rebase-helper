@@ -35,77 +35,7 @@ from rebasehelper.logger import logger, logger_traceback, main_handler, output_t
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.utils import ConsoleHelper
 from rebasehelper.config import Config
-
-
-class CustomHelpFormatter(argparse.HelpFormatter):
-
-    def _expand_help(self, action):
-        action.default = getattr(action, 'actual_default', None)
-        if isinstance(action.default, list):
-            default_str = ','.join([str(c) for c in action.default])
-            action.default = default_str
-        return super(CustomHelpFormatter, self)._expand_help(action)
-
-
-class CustomAction(argparse.Action):
-    def __init__(self, option_strings,
-                 switch=False,
-                 counter=False,
-                 actual_default=None,
-                 dest=None,
-                 default=None,
-                 nargs=None,
-                 required=False,
-                 type=None,  # pylint: disable=redefined-builtin
-                 metavar=None,
-                 help=None,  # pylint: disable=redefined-builtin
-                 choices=None):
-
-        super(CustomAction, self).__init__(
-            option_strings=option_strings,
-            dest=dest,
-            default=default,
-            required=required,
-            metavar=metavar,
-            type=type,
-            help=help,
-            choices=choices)
-
-        self.switch = switch
-        self.counter = counter
-        self.nargs = 0 if self.switch or self.counter else nargs
-        self.actual_default = actual_default
-
-    def __call__(self, parser, namespace, values, option_string=None):
-        if self.counter:
-            value = getattr(namespace, self.dest, 0) + 1
-        elif self.switch:
-            value = True
-        else:
-            value = values
-        setattr(namespace, self.dest, value)
-
-
-class CustomArgumentParser(argparse.ArgumentParser):
-
-    def _check_value(self, action, value):
-        if isinstance(value, list):
-            # converted value must be subset of the choices (if specified)
-            if action.choices is not None and not set(value).issubset(action.choices):
-                invalid = set(value).difference(action.choices)
-                if len(invalid) == 1:
-                    tup = repr(invalid.pop()), ', '.join(map(repr, action.choices))
-                    msg = 'invalid choice: %s (choose from %s)' % tup
-                else:
-                    tup = ', '.join(map(repr, invalid)), ', '.join(map(repr, action.choices))
-                    msg = 'invalid choices: %s (choose from %s)' % tup
-                raise argparse.ArgumentError(action, msg)
-        else:
-            super(CustomArgumentParser, self)._check_value(action, value)
-
-    def error(self, message):
-        self.print_usage(sys.stderr)
-        raise RebaseHelperError(message)
+from rebasehelper.argument_parser import CustomArgumentParser, CustomHelpFormatter, CustomAction
 
 
 class CLI(object):

@@ -20,7 +20,6 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
-import argparse
 import datetime
 import fcntl
 import fnmatch
@@ -56,7 +55,7 @@ from pkg_resources import parse_version
 from urllib3.fields import RequestField
 from urllib3.filepost import encode_multipart_formdata
 
-from rebasehelper.exceptions import RebaseHelperError, DownloadError, ParseError, LookasideCacheError
+from rebasehelper.exceptions import RebaseHelperError, DownloadError, LookasideCacheError
 from rebasehelper.logger import logger
 
 try:
@@ -1610,9 +1609,3 @@ class LookasideCacheHelper(object):
                 sources[indexes[0]] = dict(hash=hsh, filename=filename, hashtype=hashtype)
         cls._write_sources(basepath, sources)
         return uploaded
-
-
-class SilentArgumentParser(argparse.ArgumentParser):
-
-    def error(self, message):
-        raise ParseError(message)
