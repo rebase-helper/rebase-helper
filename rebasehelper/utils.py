@@ -53,6 +53,8 @@ from six.moves import urllib
 from six.moves import configparser
 from distutils.util import strtobool
 from pkg_resources import parse_version
+from urllib3.fields import RequestField
+from urllib3.filepost import encode_multipart_formdata
 
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.logger import logger
@@ -1550,36 +1552,37 @@ class LookasideCacheHelper(object):
             cls._download_source(tool, url, package, source['filename'], source['hashtype'], source['hash'])
 
     @classmethod
-    def _upload_source(cls, url, package, filename, hashtype, hsh):
-        class Chunked(object):
-            def __init__(self, path, chunksize=8192):
-                self.path = path
+    def _upload_source(cls, url, package, filename, hashtype, hsh, auth=SPNEGOAuth()):
+        class ChunkedData(object):
+            def __init__(self, check_only, chunksize=8192):
+                self.check_only = check_only
                 self.chunksize = chunksize
-                self.totalsize = os.path.getsize(filename)
-                self.transferred = 0
                 self.start = time.time()
+                fields = [
+                    ('name', package),
+                    ('{}sum'.format(hashtype), hsh),
+                ]
+                if check_only:
+                    fields.append(('filename', filename))
+                else:
+                    with open(filename, 'rb') as f:
+                        rf = RequestField('file', f.read(), filename)
+                        rf.make_multipart()
+                        fields.append(rf)
+                self.data, content_type = encode_multipart_formdata(fields)
+                self.headers = {'Content-Type': content_type}
 
             def __iter__(self):
-                with open(self.path, 'rb') as f:
-                    while True:
-                        data = f.read(self.chunksize)
-                        if not data:
-                            break
-                        self.transferred += len(data)
-                        DownloadHelper.progress(self.totalsize, self.transferred, self.start)
-                        yield data
-
-            def __len__(self):
-                return self.totalsize
+                totalsize = len(self.data)
+                for offset in range(0, totalsize, self.chunksize):
+                    transferred = offset + self.chunksize
+                    if not self.check_only:
+                        DownloadHelper.progress(totalsize, transferred, self.start)
+                    yield self.data[offset:transferred]
 
         def post(check_only=False):
-            data = dict(name=package)
-            data['{}sum'.format(hashtype)] = hsh
-            if check_only:
-                data['filename'] = filename
-            else:
-                data['file'] = Chunked(filename)
-            r = requests.post(url, data=data, auth=SPNEGOAuth())
+            cd = ChunkedData(check_only)
+            r = requests.post(url, data=cd, headers=cd.headers, auth=auth)
             if not 200 <= r.status_code < 300:
                 raise LookasideCacheError(r.reason)
             return r.content
