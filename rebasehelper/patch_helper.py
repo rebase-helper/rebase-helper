@@ -27,7 +27,7 @@ import git
 import six
 
 from rebasehelper.logger import logger
-from rebasehelper.utils import GitHelper
+from rebasehelper.helpers.git_helper import GitHelper
 from rebasehelper.helpers.input_helper import InputHelper
 
 

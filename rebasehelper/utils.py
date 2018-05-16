@@ -31,7 +31,6 @@ import sys
 import time
 
 import copr
-import git
 import pyquery
 import requests
 import six
@@ -44,7 +43,6 @@ from urllib3.filepost import encode_multipart_formdata
 from rebasehelper.exceptions import RebaseHelperError, DownloadError, LookasideCacheError
 from rebasehelper.logger import logger
 from rebasehelper.helpers.download_helper import DownloadHelper
-from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.helpers.path_helper import PathHelper
 from rebasehelper.helpers.console_helper import ConsoleHelper
 from rebasehelper.helpers.rpm_helper import RpmHelper
@@ -112,42 +110,6 @@ class TemporaryEnvironment(object):
         :return: copy of _env dictionary
         """
         return self._env.copy()
-
-
-class GitHelper(object):
-
-    """Class which operates with git repositories"""
-
-    # provide fallback values if system is not configured
-    GIT_USER_NAME = 'rebase-helper'
-    GIT_USER_EMAIL = 'rebase-helper@localhost.local'
-
-    @classmethod
-    def get_user(cls):
-        try:
-            return git.cmd.Git().config('user.name', get=True, stdout_as_string=six.PY3)
-        except git.GitCommandError:
-            logger.warning("Failed to get configured git user name, using '%s'", cls.GIT_USER_NAME)
-            return cls.GIT_USER_NAME
-
-    @classmethod
-    def get_email(cls):
-        try:
-            return git.cmd.Git().config('user.email', get=True, stdout_as_string=six.PY3)
-        except git.GitCommandError:
-            logger.warning("Failed to get configured git user email, using '%s'", cls.GIT_USER_EMAIL)
-            return cls.GIT_USER_EMAIL
-
-    @classmethod
-    def run_mergetool(cls, repo):
-        # we can't use GitPython here, as it doesn't allow
-        # for the command to attach to stdout directly
-        cwd = os.getcwd()
-        try:
-            os.chdir(repo.working_tree_dir)
-            ProcessHelper.run_subprocess(['git', 'mergetool'])
-        finally:
-            os.chdir(cwd)
 
 
 class KojiHelper(object):
