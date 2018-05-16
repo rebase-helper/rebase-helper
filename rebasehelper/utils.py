@@ -26,7 +26,6 @@ import fnmatch
 import io
 import gzip
 import hashlib
-import locale
 import os
 import random
 import re
@@ -56,6 +55,7 @@ from urllib3.fields import RequestField
 from urllib3.filepost import encode_multipart_formdata
 
 from rebasehelper.exceptions import RebaseHelperError, DownloadError, LookasideCacheError
+from rebasehelper.constants import DEFENC
 from rebasehelper.logger import logger
 
 try:
@@ -71,10 +71,6 @@ except ImportError:
     koji_helper_functional = False
 else:
     koji_helper_functional = True
-
-
-defenc = locale.getpreferredencoding()
-defenc = 'utf-8' if defenc == 'ascii' else defenc
 
 
 class GitRuntimeError(RuntimeError):
@@ -337,13 +333,13 @@ class ConsoleHelper(object):
                 self._stdout_tmp.seek(0, io.SEEK_SET)
                 self.stdout = self._stdout_tmp.read()
                 if six.PY3:
-                    self.stdout = self.stdout.decode(defenc)
+                    self.stdout = self.stdout.decode(DEFENC)
             if self._stderr_tmp:
                 self._stderr_tmp.flush()
                 self._stderr_tmp.seek(0, io.SEEK_SET)
                 self.stderr = self._stderr_tmp.read()
                 if six.PY3:
-                    self.stderr = self.stderr.decode(defenc)
+                    self.stderr = self.stderr.decode(DEFENC)
 
             if self._stdout_tmp:
                 self._stdout_tmp.close()
@@ -611,7 +607,7 @@ class ProcessHelper(object):
             except AttributeError:
                 spooled_in_file.close()
             else:
-                spooled_in_file.write(in_data.encode(defenc) if six.PY3 else in_data)
+                spooled_in_file.write(in_data.encode(DEFENC) if six.PY3 else in_data)
                 spooled_in_file.seek(0)
                 in_file = spooled_in_file
                 close_in_file = True
@@ -640,7 +636,7 @@ class ProcessHelper(object):
             # read the output
             for line in sp.stdout:
                 try:
-                    out_file.write(line.decode(defenc) if six.PY3 else line)
+                    out_file.write(line.decode(DEFENC) if six.PY3 else line)
                 except TypeError:
                     out_file.write(line)
             # TODO: Need to figure out how to send output to stdout (without logger) and to logger
@@ -858,7 +854,7 @@ class RpmHelper(object):
         :return:
         """
         h = RpmHelper.get_header_from_rpm(rpm_name)
-        name = h[info].decode(defenc) if six.PY3 else h[info]
+        name = h[info].decode(DEFENC) if six.PY3 else h[info]
         return name
 
     @staticmethod

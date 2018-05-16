@@ -20,6 +20,9 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
+import locale
+
+
 PROGRAM_DESCRIPTION = 'Tool to help package maintainers rebase their packages to the latest upstream version'
 NEW_ISSUE_LINK = 'https://github.com/rebase-helper/rebase-helper/issues/new'
 
@@ -48,3 +51,6 @@ END_COMMENT = '#END rebase-helper MODIFIED BLOCK'
 
 CONFIG_PATH = '$XDG_CONFIG_HOME'
 CONFIG_FILENAME = 'rebase-helper.cfg'
+
+DEFENC = locale.getpreferredencoding()
+DEFENC = 'utf-8' if DEFENC == 'ascii' else DEFENC
