@@ -28,7 +28,7 @@ import six
 import pkg_resources
 
 from rebasehelper.helpers.path_helper import PathHelper
-from rebasehelper.utils import TemporaryEnvironment
+from rebasehelper.temporary_environment import TemporaryEnvironment
 from rebasehelper.logger import logger
 
 

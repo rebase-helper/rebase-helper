@@ -21,7 +21,6 @@
 #          Tomas Hozza <thozza@redhat.com>
 
 import os
-import tempfile
 import random
 import string
 import sys
@@ -38,7 +37,6 @@ from rebasehelper.helpers.input_helper import InputHelper
 from rebasehelper.helpers.download_helper import DownloadHelper
 from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.helpers.path_helper import PathHelper
-from rebasehelper.utils import TemporaryEnvironment
 from rebasehelper.helpers.rpm_helper import RpmHelper
 from rebasehelper.helpers.macro_helper import MacroHelper
 from rebasehelper.helpers.lookaside_cache_helper import LookasideCacheHelper
@@ -531,77 +529,6 @@ class TestPathHelper(object):
 
         def test_find_without_recursion(self, filelist):
             assert PathHelper.find_first_file(os.path.curdir, "*.spec") == os.path.abspath(filelist[-1])
-
-
-class TestTemporaryEnvironment(object):
-    """ TemporaryEnvironment class tests. """
-
-    def test_with_statement(self):
-        with TemporaryEnvironment() as temp:
-            path = temp.path()
-            assert path != ''
-            assert os.path.exists(path)
-            assert os.path.isdir(path)
-            env = temp.env()
-            assert env.get(temp.TEMPDIR, None) is not None
-            assert env.get(temp.TEMPDIR, None) == path
-
-        assert not os.path.exists(path)
-        assert not os.path.isdir(path)
-
-    def test_with_statement_exception(self):
-        path = ''
-
-        try:
-            with TemporaryEnvironment() as temp:
-                path = temp.path()
-                raise RuntimeError()
-        except RuntimeError:
-            pass
-
-        assert not os.path.exists(path)
-        assert not os.path.isdir(path)
-
-    def test_with_statement_callback(self):
-        tmp_file, tmp_path = tempfile.mkstemp(text=True)
-        os.close(tmp_file)
-
-        def callback(**kwargs):
-            path = kwargs.get(TemporaryEnvironment.TEMPDIR, '')
-            assert path != ''
-            with open(tmp_path, 'w') as f:
-                f.write(path)
-
-        with TemporaryEnvironment(exit_callback=callback) as temp:
-            path = temp.path()
-
-        with open(tmp_path, 'r') as f:
-            assert f.read() == path
-
-        os.unlink(tmp_path)
-
-    def test_with_statement_callback_exception(self):
-        path = ''
-        tmp_file, tmp_path = tempfile.mkstemp(text=True)
-        os.close(tmp_file)
-
-        def callback(**kwargs):
-            path = kwargs.get(TemporaryEnvironment.TEMPDIR, '')
-            assert path != ''
-            with open(tmp_path, 'w') as f:
-                f.write(path)
-
-        try:
-            with TemporaryEnvironment(exit_callback=callback) as temp:
-                path = temp.path()
-                raise RuntimeError()
-        except RuntimeError:
-            pass
-
-        with open(tmp_path, 'r') as f:
-            assert f.read() == path
-
-        os.unlink(tmp_path)
 
 
 class TestRpmHelper(object):

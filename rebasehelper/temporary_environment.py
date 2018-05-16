@@ -28,9 +28,10 @@ from rebasehelper.helpers.path_helper import PathHelper
 
 class TemporaryEnvironment(object):
 
-    """
-    Class representing a temporary environment (directory) that can be used
-    as a workspace. It can be used with with statement.
+    """Class representing a temporary environment (directory) that can be used as a workspace.
+
+    Works as a context manager.
+
     """
 
     TEMPDIR = 'TEMPDIR'
@@ -60,20 +61,19 @@ class TemporaryEnvironment(object):
         return "<TemporaryEnvironment path='%s'>", self.path()
 
     def path(self):
-        """
-        Returns path to the temporary environment.
+        """Gets the path to the temporary environment.
 
-        :return: abs path to the environment
+        Returns:
+            str: Absolute path to the temporary environment.
+
         """
         return self._env.get(self.TEMPDIR, '')
 
     def env(self):
-        """
-        Returns copy of _env dictionary.
+        """Gets a copy of _env dictionary.
 
-        :return: copy of _env dictionary
+        Returns:
+            dict: Copy of _env dictionary.
+
         """
         return self._env.copy()
-
-
-
