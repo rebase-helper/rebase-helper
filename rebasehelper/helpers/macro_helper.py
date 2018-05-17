@@ -27,7 +27,7 @@ import six
 
 from pkg_resources import parse_version
 
-from rebasehelper.utils import ConsoleHelper
+from rebasehelper.helpers.console_helper import ConsoleHelper
 
 
 class MacroHelper(object):

@@ -23,7 +23,7 @@
 import logging
 import six
 
-import rebasehelper.utils
+from rebasehelper.helpers.console_helper import ConsoleHelper
 
 
 class CustomLogger(logging.Logger):
@@ -161,7 +161,7 @@ class ColorizingStreamHandler(logging.StreamHandler):
 
     def set_terminal_background(self, background):
         if background == 'auto':
-            self.terminal_background = rebasehelper.utils.ConsoleHelper.detect_background()
+            self.terminal_background = ConsoleHelper.detect_background()
         else:
             self.terminal_background = background
 
@@ -169,7 +169,7 @@ class ColorizingStreamHandler(logging.StreamHandler):
         try:
             message = self.format(record)
             level_settings = self.colors[self.terminal_background].get(record.levelno, {})
-            rebasehelper.utils.ConsoleHelper.cprint(message, **level_settings)
+            ConsoleHelper.cprint(message, **level_settings)
             self.flush()
         except Exception:  # pylint: disable=broad-except
             self.handleError(record)

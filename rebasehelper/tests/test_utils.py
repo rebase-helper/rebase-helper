@@ -33,7 +33,7 @@ import pytest
 from six import StringIO
 
 from rebasehelper.utils import GitHelper
-from rebasehelper.utils import ConsoleHelper
+from rebasehelper.helpers.console_helper import ConsoleHelper
 from rebasehelper.helpers.input_helper import InputHelper
 from rebasehelper.helpers.download_helper import DownloadHelper
 from rebasehelper.helpers.process_helper import ProcessHelper

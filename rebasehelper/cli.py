@@ -33,7 +33,7 @@ from rebasehelper.version import VERSION
 from rebasehelper.application import Application
 from rebasehelper.logger import logger, logger_traceback, main_handler, output_tool_handler, CustomLogger, LoggerHelper
 from rebasehelper.exceptions import RebaseHelperError
-from rebasehelper.utils import ConsoleHelper
+from rebasehelper.helpers.console_helper import ConsoleHelper
 from rebasehelper.config import Config
 from rebasehelper.argument_parser import CustomArgumentParser, CustomHelpFormatter, CustomAction
 
