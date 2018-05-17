@@ -24,7 +24,7 @@ from pkg_resources import parse_version
 
 from rebasehelper.versioneer import BaseVersioneer
 from rebasehelper.logger import logger
-from rebasehelper.utils import DownloadHelper
+from rebasehelper.helpers.download_helper import DownloadHelper
 
 
 class AnityaVersioneer(BaseVersioneer):

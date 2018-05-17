@@ -21,7 +21,6 @@
 #          Tomas Hozza <thozza@redhat.com>
 
 import os
-import tempfile
 import random
 import string
 import sys
@@ -32,16 +31,16 @@ import pytest
 
 from six import StringIO
 
-from rebasehelper.utils import GitHelper
-from rebasehelper.utils import ConsoleHelper
-from rebasehelper.utils import DownloadHelper
-from rebasehelper.utils import DownloadError
-from rebasehelper.utils import ProcessHelper
-from rebasehelper.utils import PathHelper
-from rebasehelper.utils import TemporaryEnvironment
-from rebasehelper.utils import RpmHelper
-from rebasehelper.utils import MacroHelper
-from rebasehelper.utils import LookasideCacheHelper
+from rebasehelper.helpers.git_helper import GitHelper
+from rebasehelper.helpers.console_helper import ConsoleHelper
+from rebasehelper.helpers.input_helper import InputHelper
+from rebasehelper.helpers.download_helper import DownloadHelper
+from rebasehelper.helpers.process_helper import ProcessHelper
+from rebasehelper.helpers.path_helper import PathHelper
+from rebasehelper.helpers.rpm_helper import RpmHelper
+from rebasehelper.helpers.macro_helper import MacroHelper
+from rebasehelper.helpers.lookaside_cache_helper import LookasideCacheHelper
+from rebasehelper.exceptions import DownloadError
 
 
 class TestGitHelper(object):
@@ -113,30 +112,6 @@ class TestGitHelper(object):
 
 class TestConsoleHelper(object):
 
-    @pytest.mark.parametrize('suffix, answer, kwargs, expected_input', [
-        (' [Y/n]? ', 'yes', None, True),
-        (' [Y/n]? ', 'no', None, False),
-        (' [y/N]? ', 'yes', dict(default_yes=False), True),
-        (' [Y/n]? ', '\n', None, True),
-        (' [y/N]? ', '\n', dict(default_yes=False), False),
-        (' ', 'random input\ndsfdf', dict(any_input=True), True),
-        (' ', 'random input\n', dict(default_yes=False, any_input=True), False),
-    ], ids=[
-        'yes',
-        'no',
-        'yes-default_no',
-        'no_input-default_yes',
-        'no_input-default_no',
-        'any_input-default_yes',
-        'any_input-default_no',
-    ])
-    def test_get_message(self, monkeypatch, capsys, suffix, answer, kwargs, expected_input):
-        question = 'bla bla'
-        monkeypatch.setattr('sys.stdin', StringIO(answer))
-        inp = ConsoleHelper.get_message(question, **(kwargs or {}))
-        assert capsys.readouterr()[0] == question + suffix
-        assert inp is expected_input
-
     def test_capture_output(self):
         def write():
             with os.fdopen(sys.__stdout__.fileno(), 'w') as f:  # pylint: disable=no-member
@@ -177,6 +152,33 @@ class TestConsoleHelper(object):
     ])
     def test_color_is_light(self, rgb_tuple, bit_width, expected_result):
         assert ConsoleHelper.color_is_light(rgb_tuple, bit_width) == expected_result
+
+
+class TestInputHelper(object):
+
+    @pytest.mark.parametrize('suffix, answer, kwargs, expected_input', [
+        (' [Y/n]? ', 'yes', None, True),
+        (' [Y/n]? ', 'no', None, False),
+        (' [y/N]? ', 'yes', dict(default_yes=False), True),
+        (' [Y/n]? ', '\n', None, True),
+        (' [y/N]? ', '\n', dict(default_yes=False), False),
+        (' ', 'random input\ndsfdf', dict(any_input=True), True),
+        (' ', 'random input\n', dict(default_yes=False, any_input=True), False),
+    ], ids=[
+        'yes',
+        'no',
+        'yes-default_no',
+        'no_input-default_yes',
+        'no_input-default_no',
+        'any_input-default_yes',
+        'any_input-default_no',
+    ])
+    def test_get_message(self, monkeypatch, capsys, suffix, answer, kwargs, expected_input):
+        question = 'bla bla'
+        monkeypatch.setattr('sys.stdin', StringIO(answer))
+        inp = InputHelper.get_message(question, **(kwargs or {}))
+        assert capsys.readouterr()[0] == question + suffix
+        assert inp is expected_input
 
 
 class TestDownloadHelper(object):
@@ -527,77 +529,6 @@ class TestPathHelper(object):
 
         def test_find_without_recursion(self, filelist):
             assert PathHelper.find_first_file(os.path.curdir, "*.spec") == os.path.abspath(filelist[-1])
-
-
-class TestTemporaryEnvironment(object):
-    """ TemporaryEnvironment class tests. """
-
-    def test_with_statement(self):
-        with TemporaryEnvironment() as temp:
-            path = temp.path()
-            assert path != ''
-            assert os.path.exists(path)
-            assert os.path.isdir(path)
-            env = temp.env()
-            assert env.get(temp.TEMPDIR, None) is not None
-            assert env.get(temp.TEMPDIR, None) == path
-
-        assert not os.path.exists(path)
-        assert not os.path.isdir(path)
-
-    def test_with_statement_exception(self):
-        path = ''
-
-        try:
-            with TemporaryEnvironment() as temp:
-                path = temp.path()
-                raise RuntimeError()
-        except RuntimeError:
-            pass
-
-        assert not os.path.exists(path)
-        assert not os.path.isdir(path)
-
-    def test_with_statement_callback(self):
-        tmp_file, tmp_path = tempfile.mkstemp(text=True)
-        os.close(tmp_file)
-
-        def callback(**kwargs):
-            path = kwargs.get(TemporaryEnvironment.TEMPDIR, '')
-            assert path != ''
-            with open(tmp_path, 'w') as f:
-                f.write(path)
-
-        with TemporaryEnvironment(exit_callback=callback) as temp:
-            path = temp.path()
-
-        with open(tmp_path, 'r') as f:
-            assert f.read() == path
-
-        os.unlink(tmp_path)
-
-    def test_with_statement_callback_exception(self):
-        path = ''
-        tmp_file, tmp_path = tempfile.mkstemp(text=True)
-        os.close(tmp_file)
-
-        def callback(**kwargs):
-            path = kwargs.get(TemporaryEnvironment.TEMPDIR, '')
-            assert path != ''
-            with open(tmp_path, 'w') as f:
-                f.write(path)
-
-        try:
-            with TemporaryEnvironment(exit_callback=callback) as temp:
-                path = temp.path()
-                raise RuntimeError()
-        except RuntimeError:
-            pass
-
-        with open(tmp_path, 'r') as f:
-            assert f.read() == path
-
-        os.unlink(tmp_path)
 
 
 class TestRpmHelper(object):

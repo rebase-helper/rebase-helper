@@ -19,38 +19,3 @@
 #
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
-
-import locale
-
-
-PROGRAM_DESCRIPTION = 'Tool to help package maintainers rebase their packages to the latest upstream version'
-NEW_ISSUE_LINK = 'https://github.com/rebase-helper/rebase-helper/issues/new'
-
-RESULTS_DIR = 'rebase-helper-results'
-WORKSPACE_DIR = 'rebase-helper-workspace'
-
-REBASED_SOURCES_DIR = 'rebased-sources'
-OLD_BUILD_DIR = 'old-build'
-NEW_BUILD_DIR = 'new-build'
-CHECKERS_DIR = 'checkers'
-
-LOGS_DIR = 'logs'
-DEBUG_LOG = 'debug.log'
-TRACEBACK_LOG = 'traceback.log'
-VERBOSE_LOG = 'verbose.log'
-INFO_LOG = 'info.log'
-REPORT = 'report'
-
-OLD_SOURCES_DIR = 'old_sources'
-NEW_SOURCES_DIR = 'new_sources'
-
-GIT_CONFIG = '.gitconfig'
-
-BEGIN_COMMENT = '#BEGIN rebase-helper MODIFIED BLOCK'
-END_COMMENT = '#END rebase-helper MODIFIED BLOCK'
-
-CONFIG_PATH = '$XDG_CONFIG_HOME'
-CONFIG_FILENAME = 'rebase-helper.cfg'
-
-DEFENC = locale.getpreferredencoding()
-DEFENC = 'utf-8' if DEFENC == 'ascii' else DEFENC

@@ -26,11 +26,12 @@ import six
 import re
 from six import StringIO
 
-from rebasehelper.utils import ProcessHelper, RpmHelper
 from rebasehelper.logger import logger
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
 from rebasehelper.results_store import results_store
 from rebasehelper.checker import BaseChecker
+from rebasehelper.helpers.process_helper import ProcessHelper
+from rebasehelper.helpers.rpm_helper import RpmHelper
 
 
 class RpmDiffTool(BaseChecker):

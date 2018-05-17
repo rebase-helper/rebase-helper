@@ -36,8 +36,6 @@ from rebasehelper.specfile import SpecFile, get_rebase_name, spec_hooks_runner
 from rebasehelper.logger import logger, log_formatter, debug_log_formatter, LoggerHelper, CustomLogger
 from rebasehelper import constants
 from rebasehelper.output_tool import output_tools_runner
-from rebasehelper.utils import PathHelper, GitHelper, KojiHelper, FileHelper, MacroHelper, ConsoleHelper
-from rebasehelper.utils import LookasideCacheHelper
 from rebasehelper.checker import checkers_runner
 from rebasehelper.build_helper import SRPMBuilder, Builder, SourcePackageBuildError, BinaryPackageBuildError
 from rebasehelper.patch_helper import Patcher
@@ -45,6 +43,12 @@ from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
 from rebasehelper.results_store import results_store
 from rebasehelper.versioneer import versioneers_runner
 from rebasehelper.version import VERSION
+from rebasehelper.helpers.path_helper import PathHelper
+from rebasehelper.helpers.macro_helper import MacroHelper
+from rebasehelper.helpers.input_helper import InputHelper
+from rebasehelper.helpers.git_helper import GitHelper
+from rebasehelper.helpers.koji_helper import KojiHelper
+from rebasehelper.helpers.lookaside_cache_helper import LookasideCacheHelper
 
 
 class Application(object):
@@ -652,7 +656,7 @@ class Application(object):
                         # Save current rebase spec file content
                         self.rebase_spec_file.save()
                     if not self.conf.non_interactive and \
-                            ConsoleHelper.get_message('Do you want to try it one more time'):
+                            InputHelper.get_message('Do you want to try it one more time'):
                         try_build_again = True
                     else:
                         raise RebaseHelperError(msg, logfiles=builder.get_logs().get('logs'))
@@ -665,7 +669,7 @@ class Application(object):
                     try_build_again = False
 
                     logger.info('Now it is time to make changes to  %s if necessary.', self.rebase_spec_file.path)
-                    if not ConsoleHelper.get_message('Do you want to continue with the rebuild now'):
+                    if not InputHelper.get_message('Do you want to continue with the rebuild now'):
                         raise KeyboardInterrupt
                     # Update rebase spec file content after potential manual modifications
                     self.rebase_spec_file._read_spec_content()  # pylint: disable=protected-access
@@ -711,9 +715,9 @@ class Application(object):
         :return:
         """
         log_list = []
-        if FileHelper.file_available(self.debug_log_file):
+        if PathHelper.file_available(self.debug_log_file):
             log_list.append(self.debug_log_file)
-        if FileHelper.file_available(self.report_log_file):
+        if PathHelper.file_available(self.report_log_file):
             log_list.append(self.report_log_file)
         return log_list
 
@@ -729,7 +733,7 @@ class Application(object):
         for check, data in six.iteritems(results_store.get_checkers()):
             if data:
                 for log in six.iterkeys(data):
-                    if FileHelper.file_available(log):
+                    if PathHelper.file_available(log):
                         checkers[check] = log
             else:
                 checkers[check] = None

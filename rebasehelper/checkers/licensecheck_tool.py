@@ -25,7 +25,7 @@ import re
 
 import six
 
-from rebasehelper.utils import ProcessHelper
+from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.checker import BaseChecker
 
 

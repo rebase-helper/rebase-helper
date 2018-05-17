@@ -43,3 +43,22 @@ class CheckerNotFoundError(RuntimeError):
     Error indicating failure unable to find checker binary.
     """
     pass
+
+
+class DownloadError(Exception):
+    """
+    Exception indicating that download of a file failed.
+    """
+    pass
+
+
+class ParseError(Exception):
+
+    pass
+
+
+class LookasideCacheError(Exception):
+
+    """Exception indicating a problem accessing lookaside cache"""
+
+    pass

@@ -39,12 +39,16 @@ from operator import itemgetter
 
 from six.moves import urllib
 
-from rebasehelper.utils import DownloadHelper, DownloadError, MacroHelper, GitHelper, RpmHelper
-from rebasehelper.utils import LookasideCacheHelper, LookasideCacheError, SilentArgumentParser, ParseError, defenc
 from rebasehelper.logger import logger
 from rebasehelper import constants
 from rebasehelper.archive import Archive
-from rebasehelper.exceptions import RebaseHelperError
+from rebasehelper.exceptions import RebaseHelperError, DownloadError, ParseError, LookasideCacheError
+from rebasehelper.argument_parser import SilentArgumentParser
+from rebasehelper.helpers.download_helper import DownloadHelper
+from rebasehelper.helpers.macro_helper import MacroHelper
+from rebasehelper.helpers.rpm_helper import RpmHelper
+from rebasehelper.helpers.git_helper import GitHelper
+from rebasehelper.helpers.lookaside_cache_helper import LookasideCacheHelper
 
 
 def get_rebase_name(dir_name, name):
@@ -166,7 +170,7 @@ class SpecFile(object):
     def _guess_category(self):
         def _decode(s):
             if six.PY3:
-                return s.decode(defenc)
+                return s.decode(constants.DEFENC)
             return s
         categories = {
             'python': re.compile(r'^python[23]?-'),
@@ -482,7 +486,7 @@ class SpecFile(object):
 
         :return:
         """
-        return self.hdr[rpm.RPMTAG_RELEASE].decode(defenc) if six.PY3 else self.hdr[rpm.RPMTAG_RELEASE]
+        return self.hdr[rpm.RPMTAG_RELEASE].decode(constants.DEFENC) if six.PY3 else self.hdr[rpm.RPMTAG_RELEASE]
 
     def get_release_number(self):
         """
@@ -502,7 +506,7 @@ class SpecFile(object):
 
         :return:
         """
-        return self.hdr[rpm.RPMTAG_VERSION].decode(defenc) if six.PY3 else self.hdr[rpm.RPMTAG_VERSION]
+        return self.hdr[rpm.RPMTAG_VERSION].decode(constants.DEFENC) if six.PY3 else self.hdr[rpm.RPMTAG_VERSION]
 
     def get_extra_version(self):
         """
@@ -1201,7 +1205,7 @@ class SpecFile(object):
 
         :return:
         """
-        return self.hdr[rpm.RPMTAG_NAME].decode(defenc) if six.PY3 else self.hdr[rpm.RPMTAG_NAME]
+        return self.hdr[rpm.RPMTAG_NAME].decode(constants.DEFENC) if six.PY3 else self.hdr[rpm.RPMTAG_NAME]
 
     def get_requires(self):
         """
@@ -1209,7 +1213,7 @@ class SpecFile(object):
 
         :return:
         """
-        return [r.decode(defenc) if six.PY3 else r for r in self.hdr[rpm.RPMTAG_REQUIRES]]
+        return [r.decode(constants.DEFENC) if six.PY3 else r for r in self.hdr[rpm.RPMTAG_REQUIRES]]
 
     @staticmethod
     def get_paths_with_rpm_macros(files):

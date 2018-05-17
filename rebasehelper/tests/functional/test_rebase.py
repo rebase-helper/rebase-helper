@@ -31,7 +31,7 @@ from rebasehelper.cli import CLI
 from rebasehelper.config import Config
 from rebasehelper.application import Application
 from rebasehelper.constants import RESULTS_DIR
-from rebasehelper.utils import GitHelper
+from rebasehelper.helpers.git_helper import GitHelper
 
 
 class TestRebase(object):

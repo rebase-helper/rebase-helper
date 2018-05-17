@@ -24,7 +24,7 @@ import re
 
 from rebasehelper.specfile import BaseSpecHook
 from rebasehelper.logger import logger
-from rebasehelper.utils import DownloadHelper
+from rebasehelper.helpers.download_helper import DownloadHelper
 
 
 class CommitHashUpdaterHook(BaseSpecHook):

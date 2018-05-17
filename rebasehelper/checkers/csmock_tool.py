@@ -25,8 +25,8 @@ import os
 
 import six
 
-from rebasehelper.utils import ProcessHelper
-from rebasehelper.utils import PathHelper
+from rebasehelper.helpers.process_helper import ProcessHelper
+from rebasehelper.helpers.path_helper import PathHelper
 from rebasehelper.exceptions import CheckerNotFoundError
 from rebasehelper.results_store import results_store
 from rebasehelper.checker import BaseChecker
