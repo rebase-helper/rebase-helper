@@ -25,7 +25,7 @@ import os
 from rebasehelper.logger import logger
 from rebasehelper.build_helper import SRPMBuildToolBase, SourcePackageBuildError, MockTemporaryEnvironment
 from rebasehelper.utils import PathHelper
-from rebasehelper.utils import ProcessHelper
+from rebasehelper.helpers.process_helper import ProcessHelper
 
 
 class MockSRPMBuildTool(SRPMBuildToolBase):

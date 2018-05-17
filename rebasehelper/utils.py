@@ -31,7 +31,6 @@ import random
 import re
 import shutil
 import string
-import subprocess
 import sys
 import tempfile
 import termios
@@ -58,6 +57,7 @@ from rebasehelper.exceptions import RebaseHelperError, DownloadError, LookasideC
 from rebasehelper.constants import DEFENC
 from rebasehelper.logger import logger
 from rebasehelper.helpers.download_helper import DownloadHelper
+from rebasehelper.helpers.process_helper import ProcessHelper
 
 try:
     from requests_gssapi import HTTPSPNEGOAuth as SPNEGOAuth
@@ -324,169 +324,6 @@ class ConsoleHelper(object):
                 self._stdout_copy.close()
             if self._stderr_copy:
                 self._stderr_copy.close()
-
-
-class ProcessHelper(object):
-
-    """Class for execution subprocess"""
-
-    DEV_NULL = os.devnull
-
-    @staticmethod
-    def run_subprocess(cmd, input_file=None, output_file=None):
-        """
-        Runs the passed command as a subprocess.
-
-        :param cmd: command with arguments to be run
-        :param input_file: file to read the input from. If None, read from STDIN
-        :param output_file: file to write the output of the command. If None, write to STDOUT
-        :return: exit code of the process
-        """
-        return ProcessHelper.run_subprocess_cwd(cmd, input_file=input_file, output_file=output_file)
-
-    @staticmethod
-    def run_subprocess_cwd(cmd, cwd=None, input_file=None, output_file=None, shell=False):
-        """
-        Runs the passed command as a subprocess in different working directory.
-
-        :param cmd: command with arguments to be run
-        :param cwd: the directory to change the working dir to
-        :param input_file: file to read the input from. If None, read from STDIN
-        :param output_file: file to write the output of the command. If None, write to STDOUT
-        :param shell: if to run the command as shell command (default: False)
-        :return: exit code of the process
-        """
-        return ProcessHelper.run_subprocess_cwd_env(cmd,
-                                                    cwd=cwd,
-                                                    input_file=input_file,
-                                                    output_file=output_file,
-                                                    shell=shell)
-
-    @staticmethod
-    def run_subprocess_env(cmd, env=None, input_file=None, output_file=None, shell=False):
-        """
-        Runs the passed command as a subprocess with possibly changed ENVIRONMENT VARIABLES.
-
-        :param cmd: command with arguments to be run
-        :param env: dictionary with ENVIRONMENT VARIABLES to define
-        :param input_file: file to read the input from. If None, read from STDIN
-        :param output_file: file to write the output of the command. If None, write to STDOUT
-        :param shell: if to run the command as shell command (default: False)
-        :return: exit code of the process
-        """
-        return ProcessHelper.run_subprocess_cwd_env(cmd,
-                                                    env=env,
-                                                    input_file=input_file,
-                                                    output_file=output_file,
-                                                    shell=shell)
-
-    @staticmethod
-    def run_subprocess_cwd_env(cmd, cwd=None, env=None, input_file=None, output_file=None, shell=False):
-        """
-        Runs the passed command as a subprocess in different
-        working directory with possibly changed ENVIRONMENT VARIABLES.
-
-        :param cmd: command with arguments to be run
-        :param cwd: the directory to change the working dir to
-        :param env: dictionary with ENVIRONMENT VARIABLES to define
-        :param input_file: file to read the input from. If None, read from STDIN
-        :param output_file: file to write the output of the command. If None, write to STDOUT
-        :param shell: if to run the command as shell command (default: False)
-        :return: exit code of the process
-        """
-        close_out_file = False
-        close_in_file = False
-
-        logger.debug("cmd=%s, cwd=%s, env=%s, input_file=%s, output_file=%s, shell=%s",
-                     str(cmd), str(cwd), str(env), str(input_file), str(output_file), str(shell))
-
-        # write the output to a file/file-like object?
-        try:
-            out_file = open(output_file, 'wb')
-        except TypeError:
-            out_file = output_file
-        else:
-            close_out_file = True
-
-        # read the input from a file/file-like object?
-        try:
-            in_file = open(input_file, 'r')
-        except TypeError:
-            in_file = input_file
-        else:
-            close_in_file = True
-
-        # we need to rewind the file object pointer to the beginning
-        try:
-            in_file.seek(0)
-        except AttributeError:
-            # we don't mind - in_file might be None
-            pass
-
-        # check if in_file has fileno() method - which is needed for Popen
-        try:
-            in_file.fileno()
-        except (AttributeError, OSError):
-            spooled_in_file = tempfile.SpooledTemporaryFile(mode='w+b')
-            try:
-                in_data = in_file.read()
-            except AttributeError:
-                spooled_in_file.close()
-            else:
-                spooled_in_file.write(in_data.encode(DEFENC) if six.PY3 else in_data)
-                spooled_in_file.seek(0)
-                in_file = spooled_in_file
-                close_in_file = True
-
-        # need to change environment variables?
-        if env is not None:
-            local_env = os.environ.copy()
-            local_env.update(env)
-        else:
-            local_env = None
-
-        if out_file:
-            stdout = subprocess.PIPE
-        else:
-            stdout = None
-
-        sp = subprocess.Popen(cmd,
-                              stdin=in_file,
-                              stdout=stdout,
-                              stderr=subprocess.STDOUT,
-                              cwd=cwd,
-                              env=local_env,
-                              shell=shell)
-
-        if out_file is not None:
-            # read the output
-            for line in sp.stdout:
-                try:
-                    out_file.write(line.decode(DEFENC) if six.PY3 else line)
-                except TypeError:
-                    out_file.write(line)
-            # TODO: Need to figure out how to send output to stdout (without logger) and to logger
-            # else:
-            #   logger.debug(line.rstrip("\n"))
-
-        # we need to rewind the file object pointer to the beginning
-        try:
-            out_file.seek(0)
-        except AttributeError:
-            # we don't mind - out_file might be None
-            pass
-
-        if close_out_file:
-            out_file.close()
-
-        if close_in_file:
-            in_file.close()
-
-        sp.wait()
-
-        logger.debug("subprocess exited with return code %s", six.text_type(sp.returncode))
-
-        return sp.returncode
 
 
 class PathHelper(object):

@@ -22,7 +22,7 @@
 
 import os
 
-from rebasehelper.utils import ProcessHelper
+from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.logger import logger
 from rebasehelper.utils import PathHelper
 from rebasehelper.utils import RpmHelper

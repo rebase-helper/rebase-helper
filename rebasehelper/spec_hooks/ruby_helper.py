@@ -26,8 +26,9 @@ import re
 from six.moves import urllib
 
 from rebasehelper.specfile import BaseSpecHook
-from rebasehelper.utils import TemporaryEnvironment, ProcessHelper, MacroHelper
+from rebasehelper.utils import TemporaryEnvironment, MacroHelper
 from rebasehelper.logger import logger
+from rebasehelper.helpers.process_helper import ProcessHelper
 
 
 class RubyHelperHook(BaseSpecHook):
