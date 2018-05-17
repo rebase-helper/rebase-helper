@@ -156,6 +156,7 @@ class KojiBuildTool(BuildToolBase):
                  'logs' -> list with absolute paths to build_logs
                  'koji_task_id' -> ID of koji task
         """
+        cls.logs = []
         rpm_results_dir = os.path.join(results_dir, "RPM")
         os.makedirs(rpm_results_dir)
         rpms, rpm_logs, koji_task_id = cls._scratch_build(srpm, **kwargs)
