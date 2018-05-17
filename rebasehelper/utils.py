@@ -28,14 +28,12 @@ import re
 import shutil
 import string
 import sys
-import tempfile
 import time
 
 import copr
 import git
 import pyquery
 import requests
-import rpm
 import six
 
 from six.moves import urllib
@@ -44,13 +42,12 @@ from urllib3.fields import RequestField
 from urllib3.filepost import encode_multipart_formdata
 
 from rebasehelper.exceptions import RebaseHelperError, DownloadError, LookasideCacheError
-from rebasehelper.constants import DEFENC
 from rebasehelper.logger import logger
 from rebasehelper.helpers.download_helper import DownloadHelper
 from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.helpers.path_helper import PathHelper
-from rebasehelper.helpers.macro_helper import MacroHelper
 from rebasehelper.helpers.console_helper import ConsoleHelper
+from rebasehelper.helpers.rpm_helper import RpmHelper
 
 try:
     from requests_gssapi import HTTPSPNEGOAuth as SPNEGOAuth
@@ -115,133 +112,6 @@ class TemporaryEnvironment(object):
         :return: copy of _env dictionary
         """
         return self._env.copy()
-
-
-class RpmHelper(object):
-
-    """Helper class for doing various tasks with RPM database, packages, ..."""
-
-    ARCHES = None
-
-    @staticmethod
-    def is_package_installed(pkg_name=None):
-        """
-        Checks whether package with passed name is installed.
-
-        :param package_name: package name we want to check for
-        :return: True if installed, False if not installed
-        """
-        ts = rpm.TransactionSet()
-        mi = ts.dbMatch('provides', pkg_name)
-        return len(mi) > 0
-
-    @staticmethod
-    def all_packages_installed(pkg_names=None):
-        """
-        Check if all packages in passed list are installed.
-
-        :param pkg_names: iterable with package named to check for
-        :return: True if all packages are installed, False if at least one package is not installed.
-        """
-        for pkg in pkg_names:
-            if not RpmHelper.is_package_installed(pkg):
-                return False
-        return True
-
-    @staticmethod
-    def install_build_dependencies(spec_path=None, assume_yes=False):
-        """
-        Install all build requires for a package using PolicyKits
-
-        :param spec_path: absolute path to SPEC file
-        :return:
-        """
-        cmd = ['dnf', 'builddep', spec_path]
-        if os.geteuid() != 0:
-            logger.warning("Authentication required to install build dependencies using '%s'", ' '.join(cmd))
-            cmd = ['pkexec'] + cmd
-        if assume_yes:
-            cmd.append('-y')
-        return ProcessHelper.run_subprocess(cmd)
-
-    @staticmethod
-    def get_header_from_rpm(rpm_name):
-        """
-        Function returns a rpm header from given rpm package
-        for later on analysis
-
-        :param rpm_name:
-        :return:
-        """
-        ts = rpm.TransactionSet()
-        # disable signature checking
-        ts.setVSFlags(rpm._RPMVSF_NOSIGNATURES)  # pylint: disable=protected-access
-        with open(rpm_name, "r") as f:
-            return ts.hdrFromFdno(f)
-
-    @staticmethod
-    def get_info_from_rpm(rpm_name, info):
-        """
-        Method returns a name of the package from RPM file format
-
-        :param pkg_name:
-        :return:
-        """
-        h = RpmHelper.get_header_from_rpm(rpm_name)
-        name = h[info].decode(DEFENC) if six.PY3 else h[info]
-        return name
-
-    @staticmethod
-    def get_arches():
-        """Get list of all known architectures"""
-        arches = ['aarch64', 'noarch', 'ppc', 'riscv64', 's390', 's390x', 'src', 'x86_64']
-        macros = MacroHelper.dump()
-        macros = [m for m in macros if m['name'] in ('ix86', 'arm', 'mips', 'sparc', 'alpha', 'power64')]
-        for m in macros:
-            arches.extend(MacroHelper.expand(m['value'], '').split())
-        return arches
-
-    @classmethod
-    def split_nevra(cls, s):
-        """Splits string into name, epoch, version, release and arch components"""
-        regexps = [
-            ('NEVRA', re.compile(r'^([^:]+)-(([0-9]+):)?([^-:]+)-(.+)\.([^.]+)$')),
-            ('NEVR', re.compile(r'^([^:]+)-(([0-9]+):)?([^-:]+)-(.+)()$')),
-            ('NA', re.compile(r'^([^:]+)()()()()\.([^.]+)$')),
-            ('N', re.compile(r'^([^:]+)()()()()()$')),
-        ]
-        if not cls.ARCHES:
-            cls.ARCHES = cls.get_arches()
-        for pattern, regexp in regexps:
-            match = regexp.match(s)
-            if not match:
-                continue
-            name = match.group(1) or None
-            epoch = match.group(3) or None
-            if epoch:
-                epoch = int(epoch)
-            version = match.group(4) or None
-            release = match.group(5) or None
-            arch = match.group(6) or None
-            if pattern == 'NEVRA' and arch not in cls.ARCHES:
-                # unknown arch, let's assume it's actually dist
-                continue
-            return dict(name=name, epoch=epoch, version=version, release=release, arch=arch)
-        raise RebaseHelperError('Unable to split string into NEVRA.')
-
-    @classmethod
-    def parse_spec(cls, path, flags=None):
-        with open(path, 'rb') as orig:
-            with tempfile.NamedTemporaryFile() as tmp:
-                # remove BuildArch to workaround rpm bug
-                tmp.write(b''.join([l for l in orig.readlines() if not l.startswith(b'BuildArch')]))
-                tmp.flush()
-                with ConsoleHelper.Capturer(stderr=True) as capturer:
-                    result = rpm.spec(tmp.name, flags) if flags is not None else rpm.spec(tmp.name)
-                for line in capturer.stderr.split('\n'):
-                    if line:
-                        logger.verbose('rpm: %s', line)
-                return result
 
 
 class GitHelper(object):

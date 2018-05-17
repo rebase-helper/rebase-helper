@@ -24,12 +24,12 @@ from __future__ import print_function
 import os
 import six
 
-from rebasehelper.utils import RpmHelper
 from rebasehelper.logger import logger
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
 from rebasehelper.results_store import results_store
 from rebasehelper.checker import BaseChecker
 from rebasehelper.helpers.process_helper import ProcessHelper
+from rebasehelper.helpers.rpm_helper import RpmHelper
 from xml.etree import ElementTree
 
 

@@ -26,7 +26,7 @@ from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.helpers.input_helper import InputHelper
 from rebasehelper.logger import logger
 from rebasehelper.helpers.path_helper import PathHelper
-from rebasehelper.utils import RpmHelper
+from rebasehelper.helpers.rpm_helper import RpmHelper
 from rebasehelper.build_helper import RpmbuildTemporaryEnvironment
 from rebasehelper.build_helper import BuildToolBase
 from rebasehelper.build_helper import BinaryPackageBuildError

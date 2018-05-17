@@ -39,7 +39,7 @@ from rebasehelper.helpers.download_helper import DownloadHelper
 from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.helpers.path_helper import PathHelper
 from rebasehelper.utils import TemporaryEnvironment
-from rebasehelper.utils import RpmHelper
+from rebasehelper.helpers.rpm_helper import RpmHelper
 from rebasehelper.helpers.macro_helper import MacroHelper
 from rebasehelper.utils import LookasideCacheHelper
 from rebasehelper.exceptions import DownloadError
