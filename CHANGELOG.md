@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+## [0.13.2] - 2018-05-18
+### Added
+- Added **licensecheck** checker for detecting license changes
+- Added another *not-so-verbose* verbosity level
+
+### Changed
+- Refactored `utils` module
+
+### Fixed
+- Fixed **abipkgdiff** detecting changes in only one object file
+- Fixed uploads to lookaside cache
+- Fixed broken consequent build retries
+
 ## [0.13.1] - 2018-04-19
 ### Added
 - Added `--apply-changes` option to apply *changes.patch* after successful rebase
