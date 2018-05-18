@@ -141,6 +141,7 @@ class MockBuildTool(BuildToolBase):  # pylint: disable=abstract-method
                  'rpm' -> list with absolute paths to RPMs
                  'logs' -> list with absolute paths to logs
         """
+        cls.logs = []
         rpm_results_dir = os.path.join(results_dir, "RPM")
         sources = spec.get_sources()
         patches = [p.get_path() for p in spec.get_patches()]

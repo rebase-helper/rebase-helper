@@ -80,6 +80,7 @@ setup(
         'rebasehelper.build_tools',
         'rebasehelper.srpm_build_tools',
         'rebasehelper.checkers',
+        'rebasehelper.helpers',
         'rebasehelper.spec_hooks',
         'rebasehelper.output_tools',
         'rebasehelper.versioneers',
