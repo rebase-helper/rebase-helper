@@ -34,7 +34,7 @@ class PyPIURLFixHook(BaseSpecHook):
     NAME = 'PyPI URL Fix'
     CATEGORIES = ['python']
     SOURCES_URL_TRANSFORMATIONS = [
-        ('https?://pypi.python.org/', 'https://files.pythonhosted.org/'),
+        (r'https?://pypi(\.python)?\.org/', 'https://files.pythonhosted.org/'),
     ]
 
     @classmethod
@@ -62,6 +62,5 @@ class PyPIURLFixHook(BaseSpecHook):
         Perform predefined URL transformations
         """
         for trans in cls.SOURCES_URL_TRANSFORMATIONS:
-            if re.search(r".*https?://pypi.python.org/.*", line):
-                line = re.sub(trans[0], trans[1], line)
+            line = re.sub(trans[0], trans[1], line)
         return line
