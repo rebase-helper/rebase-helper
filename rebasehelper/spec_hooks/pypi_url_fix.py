@@ -26,13 +26,18 @@ from rebasehelper.specfile import BaseSpecHook
 
 
 class PyPIURLFixHook(BaseSpecHook):
-    """
-    SpecHook for transforming old nonfunctional python package url to
-    a safe url(eg. https://pypi.* to https://files.pythonhosted.*)
+    """SpecHook for transforming an old python package URL to a new URL
+    (e.g. https://pypi.python.org/packages/* to
+    https://files.pythonhosted.org/packages/* or https://pypi.python.org/pypi/*
+    to https://pypi.org/project/*).
+
     """
 
     NAME = 'PyPI URL Fix'
     CATEGORIES = ['python']
+    URL_TRANSFORMATIONS = [
+        (r'https?://pypi\.python\.org/pypi/', 'https://pypi.org/project/'),
+    ]
     SOURCES_URL_TRANSFORMATIONS = [
         (r'https?://pypi(\.python)?\.org/', 'https://files.pythonhosted.org/'),
     ]
@@ -47,20 +52,21 @@ class PyPIURLFixHook(BaseSpecHook):
 
     @classmethod
     def run(cls, spec_file, rebase_spec_file, **kwargs):
-        """
-        Run _transform_url() for all sources to replace all pypi.* urls by
-        files.pythonhosted.* urls.
-        """
         for index, line in enumerate(rebase_spec_file.spec_content):
-            if line.startswith("Source"):
+            if line.startswith("URL"):
                 rebase_spec_file.spec_content[index] = cls._transform_url(line)
+            elif line.startswith("Source"):
+                rebase_spec_file.spec_content[index] = cls._transform_sources_url(line)
         rebase_spec_file.save()
 
     @classmethod
     def _transform_url(cls, line):
-        """
-        Perform predefined URL transformations
-        """
+        for trans in cls.URL_TRANSFORMATIONS:
+            line = re.sub(trans[0], trans[1], line)
+        return line
+
+    @classmethod
+    def _transform_sources_url(cls, line):
         for trans in cls.SOURCES_URL_TRANSFORMATIONS:
             line = re.sub(trans[0], trans[1], line)
         return line
