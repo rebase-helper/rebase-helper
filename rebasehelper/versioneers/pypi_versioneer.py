@@ -32,7 +32,7 @@ class PyPIVersioneer(BaseVersioneer):
     NAME = 'pypi'
     CATEGORIES = ['python']
 
-    BASE_URL = 'https://pypi.python.org'
+    BASE_URL = 'https://pypi.org'
     API_URL = '{}/pypi'.format(BASE_URL)
 
     @classmethod
