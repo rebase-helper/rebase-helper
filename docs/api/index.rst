@@ -4,4 +4,5 @@ API
 .. toctree::
    :glob:
 
+   helpers
    *
