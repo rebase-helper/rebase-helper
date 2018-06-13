@@ -132,7 +132,7 @@ class LicenseCheckTool(BaseChecker):
         if new_licenses or disappeared_licenses:
             cls.license_changes = True
 
-        return changes, new_licenses, disappeared_licenses
+        return changes, list(new_licenses), list(disappeared_licenses)
 
     @classmethod
     def run_check(cls, results_dir, **kwargs):
