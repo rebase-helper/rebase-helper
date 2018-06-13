@@ -1,0 +1,10 @@
+diff --git a/test.c b/test.c
+index 052204d..a460359 100644
+--- a/test.c
++++ b/test.c
+@@ -1,3 +1,5 @@
++/* test.c - test application */
++
+ /*
+  * this is variable A
+  */

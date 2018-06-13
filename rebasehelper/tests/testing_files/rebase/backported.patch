@@ -1,0 +1,13 @@
+diff --git a/test.c b/test.c
+index 052204d..f8f59c4 100644
+--- a/test.c
++++ b/test.c
+@@ -3,7 +3,7 @@
+ /*
+  * this is variable A
+  */
+-int variableA = 0;
++int variableA = -1;
+ 
+ /*
+  * this is variable B
