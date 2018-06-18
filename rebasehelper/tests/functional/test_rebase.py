@@ -25,7 +25,6 @@ import os
 
 import git
 import pytest
-import unidiff
 
 from rebasehelper.cli import CLI
 from rebasehelper.config import Config
@@ -36,13 +35,23 @@ from rebasehelper.helpers.git_helper import GitHelper
 
 class TestRebase(object):
 
+    TEST_FILES = [
+        'rebase/test.spec',
+        'rebase/applicable.patch',
+        'rebase/conflicting.patch',
+        'rebase/backported.patch',
+    ]
+
+    NEW_VERSION = '0.2'
+
     @pytest.fixture
-    def cloned_dist_git(self, url, commit, workdir):
-        repo = git.Repo.clone_from(url, workdir)
-        repo.git.checkout(commit)
+    def initialized_git_repo(self, workdir):
+        repo = git.Repo.init(workdir)
         # Configure user otherwise app.apply_changes() will fail
         repo.git.config('user.name', GitHelper.get_user(), local=True)
         repo.git.config('user.email', GitHelper.get_email(), local=True)
+        repo.git.add(all=True)
+        repo.index.commit('Initial commit', skip_hooks=True)
         return repo
 
     @pytest.mark.parametrize('buildtool', [
@@ -50,59 +59,20 @@ class TestRebase(object):
             os.geteuid() != 0,
             reason='requires superuser privileges')
         ('rpmbuild'),
-        'mock',
+        pytest.mark.long_running('mock'),
     ])
-    @pytest.mark.parametrize('package, url, commit, version, patches', [
-        (
-            'vim-go',
-            'https://src.fedoraproject.org/git/rpms/vim-go.git',
-            'ccf44ccc71e9c4662ebb2c9066f46bbf49bd2e02',
-            '1.12',
-            {'deleted': None, 'modified': None, 'inapplicable': None},
-        ),
-        pytest.mark.long_running((
-            'libtiff',
-            'https://src.fedoraproject.org/git/rpms/libtiff.git',
-            '7b1dffc529cb934f8d30083e624f874a2df7c981',
-            '4.0.8',
-            {
-                'deleted': {
-                    'libtiff-hylafax-fix.patch',
-                    'libtiff-CVE-2017-7592.patch',
-                    'libtiff-CVE-2017-7593.patch',
-                    'libtiff-CVE-2017-7596_7597_7599_7600.patch',
-                    'libtiff-CVE-2017-7598.patch',
-                    'libtiff-CVE-2017-7601.patch',
-                    'libtiff-CVE-2016-10266.patch',
-                    'libtiff-CVE-2016-10267.patch',
-                    'libtiff-CVE-2016-10268.patch',
-                    'libtiff-CVE-2016-10269.patch',
-                    'libtiff-CVE-2016-10270.patch',
-                    'libtiff-CVE-2016-10271_10272.patch',
-                },
-                'modified': None,
-                'inapplicable': {
-                    'libtiff-CVE-2017-7594.patch',
-                    'libtiff-CVE-2017-7595.patch',
-                    'libtiff-CVE-2017-7602.patch',
-                },
-            },
-        )),
-    ], ids=[
-        'vim-go-1.11-2=>1.12',
-        'libtiff-4.0.7-5=>4.0.8',
-    ])
-    @pytest.mark.usefixtures('cloned_dist_git')
-    def test_rebase(self, buildtool, package, version, patches):
+    @pytest.mark.integration
+    @pytest.mark.usefixtures('initialized_git_repo')
+    def test_rebase(self, buildtool):
         cli = CLI([
             '--non-interactive',
             '--disable-inapplicable-patches',
             '--buildtool', buildtool,
             '--outputtool', 'json',
-            '--pkgcomparetool', 'rpmdiff,pkgdiff,abipkgdiff',
+            '--pkgcomparetool', 'rpmdiff,pkgdiff,abipkgdiff,licensecheck',
             '--color=always',
             '--apply-changes',
-            version
+            self.NEW_VERSION,
         ])
         config = Config()
         config.merge(cli)
@@ -111,14 +81,21 @@ class TestRebase(object):
         app.run()
         with open(os.path.join(RESULTS_DIR, 'report.json')) as f:
             report = json.load(f)
-            for k in ['deleted', 'modified', 'inapplicable']:
-                assert set(report['patches'].get(k, [])) == (patches[k] or set())
-        changes = os.path.join(RESULTS_DIR, 'changes.patch')
-        patch = unidiff.PatchSet.from_filename(changes, encoding='UTF-8')
-        pf = [pf for pf in patch if pf.path == '{}.spec'.format(package)]
-        assert pf
-        ver = [l for h in pf[0] for l in h.target if l.startswith('+Version')]
-        assert ver
-        assert version in ver[0]
+            assert 'success' in report['result']
+            # patches
+            assert 'applicable.patch' in report['patches']['untouched']
+            assert 'conflicting.patch' in report['patches']['inapplicable']
+            assert 'backported.patch' in report['patches']['deleted']
+            # licensecheck
+            assert report['checkers']['licensecheck']['license_changes']
+            assert len(report['checkers']['licensecheck']['disappeared_licenses']) == 1
+            assert len(report['checkers']['licensecheck']['new_licenses']) == 1
+            # rpmdiff
+            assert report['checkers']['rpmdiff']['files_changes']['changed'] == 2
+            # abipkgdiff
+            assert report['checkers']['abipkgdiff']['abi_changes']
+            lib = report['checkers']['abipkgdiff']['packages']['test']['libtest.so']
+            assert lib['Functions changes summary']['Added']['count'] == 1
+            assert lib['Variables changes summary']['Removed']['count'] == 1
         repo = git.Repo(execution_dir)
-        assert '- New upstream release {}'.format(version) in repo.commit().summary
+        assert '- New upstream release {}'.format(self.NEW_VERSION) in repo.commit().summary

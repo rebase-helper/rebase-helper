@@ -179,6 +179,7 @@ class AbiCheckerTool(BaseChecker):
                     result[ds['kind']] = {}
                     for mc in changes_re.finditer(ds['changes']):
                         dc = mc.groupdict()
+                        dc['count'] = int(dc['count'])
                         if int(dc['count']) or dc['filtered_out']:
                             result[ds['kind']][dc['what']] = dc
                     result_dict[filename].update(result)

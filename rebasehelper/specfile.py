@@ -1117,10 +1117,10 @@ class SpecFile(object):
     def get_prep_section(self):
         """Function returns whole prep section"""
         prep = self.prep_section.split('\n')
-        # join lines split by backslash
+        # join lines split by backslash or ending with pipe
         result = []
         while prep:
-            if result and result[-1].endswith('\\'):
+            if result and result[-1].rstrip().endswith(('\\', '|')):
                 result[-1] = result[-1][:-1] + prep.pop(0)
             else:
                 result.append(prep.pop(0))
