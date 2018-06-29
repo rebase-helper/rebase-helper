@@ -26,7 +26,7 @@ import re
 
 import pytest
 
-from rebasehelper.specfile import SpecFile, spec_hooks_runner
+from rebasehelper.specfile import SpecFile
 from rebasehelper.spec_hooks.typo_fix import TypoFixHook
 from rebasehelper.spec_hooks.pypi_url_fix import PyPIURLFixHook
 from rebasehelper.constants import BEGIN_COMMENT, END_COMMENT
@@ -457,18 +457,14 @@ class TestSpecFile(object):
         assert target == 'test-1.0.2/misc'
 
     def test_typo_fix_spec_hook(self, spec_object):
-        assert TypoFixHook.get_name() in spec_hooks_runner.spec_hooks
         assert '- This is chnagelog entry with some indentional typos\n' in spec_object.spec_content
-        spec_object.category = 'sample'
-        spec_hooks_runner.run_spec_hooks(spec_object, spec_object)
+        TypoFixHook.run(spec_object, spec_object)
         assert '- This is changelog entry with some intentional typos\n' in spec_object.spec_content
 
     def test_pypi_to_python_hosted_url_trans(self, spec_object):
         # pylint: disable=protected-access
-        assert PyPIURLFixHook.get_name() in spec_hooks_runner.spec_hooks
         assert 'https://pypi.python.org/' in spec_object._get_raw_source_string(7)
-        spec_object.category = 'python'
-        spec_hooks_runner.run_spec_hooks(spec_object, spec_object)
+        PyPIURLFixHook.run(spec_object, spec_object)
         assert 'https://files.pythonhosted.org/' in spec_object._get_raw_source_string(7)
 
     def test_update_paths_to_patches(self, spec_object):
