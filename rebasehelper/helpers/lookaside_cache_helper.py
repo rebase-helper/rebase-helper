@@ -148,7 +148,7 @@ class LookasideCacheHelper(object):
             def __iter__(self):
                 totalsize = len(self.data)
                 for offset in range(0, totalsize, self.chunksize):
-                    transferred = offset + self.chunksize
+                    transferred = min(offset + self.chunksize, totalsize)
                     if not self.check_only:
                         DownloadHelper.progress(totalsize, transferred, self.start)
                     yield self.data[offset:transferred]
