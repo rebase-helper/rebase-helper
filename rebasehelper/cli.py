@@ -132,18 +132,18 @@ class CliHelper(object):
                 logger.error('rebase-helper failed due to an unexpected error. Please report this problem'
                              '\nusing the following link: %s'
                              '\nand include the content of'
+                             '\n\'%s\' and'
                              '\n\'%s\''
-                             '\nfile in the report.'
+                             '\nin the report.'
                              '\nThank you!',
-                             NEW_ISSUE_LINK, debug_log_file)
+                             NEW_ISSUE_LINK, debug_log_file, traceback_log)
+                LoggerHelper.add_file_handler(logger_traceback, traceback_log)
+                logger_traceback.trace('', exc_info=1)
             else:
                 logger.error('rebase-helper failed due to an unexpected error. Please report this problem'
                              '\nusing the following link: %s'
-                             '\nand include the content of %s in the report'
                              '\nThank you!',
-                             NEW_ISSUE_LINK, traceback_log)
-            LoggerHelper.add_file_handler(logger_traceback, traceback_log)
-            logger_traceback.trace('', exc_info=1)
+                             NEW_ISSUE_LINK)
             sys.exit(1)
 
         sys.exit(0)
