@@ -21,16 +21,15 @@
 #          Tomas Hozza <thozza@redhat.com>
 
 from __future__ import print_function
+import argparse
+import itertools
 import os
 import re
 import shutil
-import rpm
-import argparse
 import shlex
-import itertools
 
 import pkg_resources
-
+import rpm
 import six
 
 from datetime import date
