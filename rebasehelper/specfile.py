@@ -36,6 +36,7 @@ from datetime import date
 from difflib import SequenceMatcher
 from operator import itemgetter
 
+from requests.structures import CaseInsensitiveDict
 from six.moves import urllib
 
 from rebasehelper.logger import logger
@@ -100,6 +101,84 @@ class PatchObject(object):
 
     def get_strip(self):
         return self.strip
+
+
+class SpecContent(object):
+    """Class representing content of a SPEC file."""
+
+    SECTION_HEADERS = [
+        '%package',
+        '%prep',
+        '%build',
+        '%install',
+        '%check',
+        '%clean',
+        '%prerun',
+        '%postrun',
+        '%pretrans',
+        '%posttrans',
+        '%pre',
+        '%post',
+        '%files',
+        '%changelog',
+        '%description',
+        '%triggerpostun',
+        '%triggerprein',
+        '%triggerun',
+        '%triggerin',
+        '%trigger',
+        '%verifyscript',
+        '%sepolicy',
+        '%filetriggerin',
+        '%filetrigger',
+        '%filetriggerun',
+        '%filetriggerpostun',
+        '%transfiletriggerin',
+        '%transfiletrigger',
+        '%transfiletriggerun',
+        '%transfiletriggerpostun',
+    ]
+
+    def __init__(self, content):
+        self.sections = self._split_sections(content)
+
+    def __str__(self):
+        """Join SPEC file sections back together."""
+        content = []
+        for header, section in six.iteritems(self.sections):
+            if header != '%package':
+                content.append(header + '\n')
+            for line in section:
+                content.append(line + '\n')
+        return ''.join(content)
+
+    @classmethod
+    def _split_sections(cls, content):
+        """Splits content of a SPEC file into sections.
+
+        Args:
+            content (str): Content of the SPEC file
+
+        """
+        lines = content.splitlines()
+        section_headers_re = [re.compile(r'^{0}.*'.format(re.escape(x)), re.IGNORECASE) for x in cls.SECTION_HEADERS]
+
+        section_beginnings = []
+        for i, line in enumerate(lines):
+            if line.startswith('%'):
+                for header in section_headers_re:
+                    if header.match(line):
+                        section_beginnings.append(i)
+        section_beginnings.append(None)
+
+        sections = CaseInsensitiveDict()
+        sections['%package'] = lines[:section_beginnings[0]]
+
+        for i in range(len(section_beginnings) - 1):
+            start = section_beginnings[i] + 1
+            end = section_beginnings[i + 1]
+            sections[lines[start - 1]] = lines[start:end]
+        return sections
 
 
 class SpecFile(object):
