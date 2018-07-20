@@ -46,9 +46,6 @@ NEW_SOURCES_DIR = 'new_sources'
 
 GIT_CONFIG = '.gitconfig'
 
-BEGIN_COMMENT = '#BEGIN rebase-helper MODIFIED BLOCK'
-END_COMMENT = '#END rebase-helper MODIFIED BLOCK'
-
 CONFIG_PATH = '$XDG_CONFIG_HOME'
 CONFIG_FILENAME = 'rebase-helper.cfg'
 

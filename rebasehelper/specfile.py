@@ -1232,57 +1232,23 @@ class SpecFile(object):
                     break
         return files
 
-    @staticmethod
-    def construct_string_with_comment(lines):
-        """
-        Wraps the line in a rebase-helper specific comments
-
-        :param lines: line (or list of lines) to be wrapped
-        :return: list with lines
-        """
-        sec = '\n'
-        comm_lines = [constants.BEGIN_COMMENT + sec]
-        for l in lines if not isinstance(lines, six.string_types) else [lines]:
-            comm_lines.append(l + sec)
-        comm_lines.append(constants.END_COMMENT + sec)
-        return comm_lines
-
     def _correct_missing_files(self, missing):
-        sep = '\n'
-        for key, value in six.iteritems(self.rpm_sections):
-            sec_name, sec_content = value
+        for sec_name, sec_content in six.iteritems(self.spec_content.sections):
             match = re.search(r'^%files\s*$', sec_name)
             if match:
-                if constants.BEGIN_COMMENT in sec_content:
-                    # We need only files which are not included yet.
-                    upd_files = [f for f in missing if f not in sec_content]
-                    regex = re.compile(r'(' + constants.BEGIN_COMMENT + r'\s*)')
-                    sec_content = regex.sub('\\1' + '\n'.join(upd_files) + sep,
-                                            sec_content)
-                else:
-                    # This code adds begin_comment, files and end_comment
-                    # with separator
-                    sec_content = SpecFile.construct_string_with_comment(missing) + sec_content
-                self.rpm_sections[key] = (sec_name, sec_content)
+                self.spec_content.sections[sec_name] = missing + sec_content
                 break
 
     def _correct_removed_files(self, sources):
-        for key, value in six.iteritems(self.rpm_sections):
-            sec_name, sec_content = value
-            # Only sections %files are interesting
+        for sec_name, sec_content in six.iteritems(self.spec_content.sections):
             match = re.search(r'^%files', sec_name)
             if match:
-                # Check what files are in section
-                # and comment only relevant
+                # Check what files are in the section and delete only relevant files
                 f_exists = [f for f in sources for sec in sec_content if os.path.basename(f) in sec]
                 if not f_exists:
                     continue
-                for f in f_exists:
-                    for index, row in enumerate(sec_content):
-                        if f in row:
-                            sec_content[index: index+1] = SpecFile.construct_string_with_comment('#' + row)
-                            break
-                self.rpm_sections[key] = (sec_name, sec_content)
+                new_content = [line for line in sec_content for f in f_exists if f not in line]
+                self.spec_content.sections[sec_name] = new_content
 
     def modify_spec_files_section(self, files):
         """
@@ -1308,7 +1274,6 @@ class SpecFile(object):
         except KeyError:
             pass
 
-        self.spec_content = self._create_spec_from_sections()
         self.save()
 
     def get_new_log(self):
