@@ -45,8 +45,9 @@ class TypoFixHook(BaseSpecHook):
 
     @classmethod
     def run(cls, spec_file, rebase_spec_file, **kwargs):
-        for index, line in enumerate(rebase_spec_file.spec_content):
-            for replacement in cls.REPLACEMENTS:
-                line = re.sub(replacement[0], replacement[1], line)
-            rebase_spec_file.spec_content[index] = line
+        for section in rebase_spec_file.spec_content.sections:
+            for index, line in enumerate(rebase_spec_file.spec_content.sections[section]):
+                for replacement in cls.REPLACEMENTS:
+                    line = re.sub(replacement[0], replacement[1], line)
+                rebase_spec_file.spec_content.sections[section][index] = line
         rebase_spec_file.save()

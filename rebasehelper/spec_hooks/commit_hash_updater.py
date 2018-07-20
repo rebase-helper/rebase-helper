@@ -121,6 +121,6 @@ class CommitHashUpdaterHook(BaseSpecHook):
                 return
             source = source.replace(hashes[0], new_commit)
         tag = 'Source0'
-        if [l for l in rebase_spec_file.spec_content if re.match(r'^Source\s*:.*', l)]:
+        if [l for l in rebase_spec_file.spec_content.sections['%package'] if re.match(r'^Source\s*:.*', l)]:
             tag = 'Source'
         rebase_spec_file.set_tag(tag, source, preserve_macros=True)

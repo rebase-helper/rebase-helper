@@ -89,12 +89,12 @@ class RubyHelperHook(BaseSpecHook):
             comment_re = re.compile(r'^#')
             comments = None
             # find matching Source line in the SPEC file
-            for i in range(len(rebase_spec_file.spec_content)):
-                if source_re.match(rebase_spec_file.spec_content[i]):
+            for i in range(len(rebase_spec_file.spec_content.sections['%package'])):
+                if source_re.match(rebase_spec_file.spec_content.sections['%package'][i]):
                     # get all comments above this line
                     for j in range(i - 1, 0, -1):
-                        if not comment_re.match(rebase_spec_file.spec_content[j]):
-                            comments = rebase_spec_file.spec_content[j+1:i]
+                        if not comment_re.match(rebase_spec_file.spec_content.sections['%package'][j]):
+                            comments = rebase_spec_file.spec_content['%package'][j+1:i]
                             break
                     break
             # update data so that RPM macros are populated correctly
