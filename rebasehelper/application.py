@@ -544,7 +544,7 @@ class Application(object):
                 build_dict.update(builder.build(spec, results_dir, **build_dict))
                 build_dict = self._sanitize_build_dict(build_dict)
                 results_store.set_build_data(version, build_dict)
-            except RebaseHelperError:
+            except RebaseHelperError:  # pylint: disable=try-except-raise
                 raise
             except SourcePackageBuildError as e:
                 build_dict.update(builder.get_logs())
@@ -631,7 +631,7 @@ class Application(object):
                         build_dict['rpm'], build_dict['logs'] = builder.get_detached_task(task_id, results_dir)
                 build_dict = self._sanitize_build_dict(build_dict)
                 results_store.set_build_data(version, build_dict)
-            except RebaseHelperError:
+            except RebaseHelperError:  # pylint: disable=try-except-raise
                 # Proper RebaseHelperError instance was created already. Re-raise it.
                 raise
             except BinaryPackageBuildError as e:
