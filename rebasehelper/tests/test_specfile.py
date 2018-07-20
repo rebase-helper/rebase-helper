@@ -21,15 +21,13 @@
 #          Tomas Hozza <thozza@redhat.com>
 
 import os
-import six
 import re
 
 import pytest
 
-from rebasehelper.specfile import SpecFile
+from rebasehelper.specfile import SpecFile, SpecContent
 from rebasehelper.spec_hooks.typo_fix import TypoFixHook
 from rebasehelper.spec_hooks.pypi_url_fix import PyPIURLFixHook
-from rebasehelper.constants import BEGIN_COMMENT, END_COMMENT
 
 
 class TestSpecFile(object):
@@ -108,14 +106,11 @@ class TestSpecFile(object):
 
     def test__write_spec_file_to_disc(self, spec_object):
         # pylint: disable=protected-access
-        new_content = [
-            'testing line 1\n',
-            'testing line 2\n'
-        ]
-        spec_object.spec_content = new_content
+        new_content = 'testing line 1\ntesting line 2\n'
+        spec_object.spec_content = SpecContent(new_content)
         spec_object._write_spec_file_to_disc()
         with open(self.SPEC_FILE) as spec:
-            assert new_content == spec.readlines()
+            assert new_content == spec.read()
 
     def test__get_raw_source_string(self, spec_object):
         # pylint: disable=protected-access
@@ -227,141 +222,33 @@ class TestSpecFile(object):
         assert SpecFile.extract_version_from_archive_name('libsigc++-2.10.0.tar.xz',
                                                           name) == ('2.10.0', '', '')
 
-    def test__split_sections(self, spec_object):
-        expected_sections = {
-            0: ['%header', ['%{!?specfile: %global specfile spec file}\n',
-                            '%global summary %{?longsum}%{!?longsum:A testing %{specfile}}\n',
-                            '\n',
-                            '%global version_major 1\n',
-                            '%global version_minor 0\n',
-                            '%global version_patch 2\n',
-                            '%global version_major_minor %{version_major}.%{version_minor}\n',
-                            '%global version %{version_major_minor}.%{version_patch}\n',
-                            '\n',
-                            '%global release 34\n',
-                            '%global release_str %{release}%{?dist}\n',
-                            '\n',
-                            '%global project rebase-helper\n',
-                            '%global commit d70cb5a2f523db5b6088427563531f43b7703859\n',
-                            '\n',
-                            'Summary: %{summary}\n',
-                            'Name: test\n',
-                            'Version: %{version}\n',
-                            'Release: %{release_str}\n',
-                            'License: GPL2+\n',
-                            'Group: System Environment\n',
-                            'URL: http://testing.org\n',
-                            '\n',
-                            '# Note: non-current tarballs get moved to the history/ subdirectory,\n',
-                            '# so look there if you fail to retrieve the version you want\n',
-                            'Source: ftp://ftp.test.org/%{name}-%{version}.tar.xz\n',
-                            'Source1: source-tests.sh\n',
-                            'Source2 : ftp://test.com/test-source.sh\n',
-                            '#Source3: source-tests.sh\n',
-                            'Source4: file.txt.bz2\n',
-                            'Source5: documentation.tar.xz\n',
-                            'Source6: misc.zip\n',
-                            'Source7: https://pypi.python.org/packages/source/p/positional/positional-1.1.0.tar.gz\n',
-                            'Source8: https://github.com/%{project}/%{project}/archive/%{commit}/'
-                            '%{project}-%{commit}.tar.gz\n',
-                            'Patch1: test-testing.patch\n',
-                            'Patch2: test-testing2.patch\n',
-                            'Patch3: test-testing3.patch\n',
-                            'Patch4: test-testing4.patch\n',
-                            'Patch5: rebase-helper-results/rebased-sources/test-testing5.patch\n',
-                            '\n',
-                            'BuildRequires: openssl-devel, pkgconfig, texinfo, gettext, autoconf\n',
-                            '\n']],
-            1: ['%description', ['Testing spec file\n',
-                                 '\n']],
-            2: ['%package devel', ['Summary: A testing devel package\n',
-                                   '\n']],
-            3: ['%description devel', ['Testing devel spec file\n',
-                                       '\n']],
-            4: ['%prep', ['%setup -q -c -a 5\n',
-                          '%patch1\n',
-                          '%patch2 -p1\n',
-                          '%patch3 -p1 -b .testing3\n',
-                          '%patch4 -p0 -b .testing4\n',
-                          'mkdir misc\n',
-                          'tar -xf %{SOURCE6} -C misc\n',
-                          '\n']],
-            5: ['%build', ['autoreconf -vi\n',
-                           '\n',
-                           '%configure\n',
-                           'make TEST\n',
-                           '\n']],
-            6: ['%install', ['make DESTDIR=$RPM_BUILD_ROOT install\n',
-                             '\n']],
-            7: ['%check', ['#to run make check use "--with check"\n',
-                           '%if %{?_with_check:1}%{!?_with_check:0}\n',
-                           'make check\n',
-                           '%endif\n',
-                           '\n']],
-            8: ['%files', ['%{_bindir}/file.txt\n',
-                           '\n']],
-            9: ['%files devel', ['%{_bindir}/test_example\n',
-                                 '%{_libdir}/my_test.so\n',
-                                 '\n']],
-            10: ['%changelog', ['* Wed Apr 26 2017 Nikola Forró <nforro@redhat.com> - 1.0.2-34\n',
-                                '- This is chnagelog entry with some indentional typos\n',
-                                '\n',
-                                '* Wed Nov 12 2014 Tomas Hozza <thozza@redhat.com> 1.0.0-33\n',
-                                '- Bump the release for testing purposes\n',
-                                '\n',
-                                '* Tue Sep 24 2013 Petr Hracek <phracek@redhat.com> 1.0.0-1\n',
-                                '- Initial version\n',
-                                '\n']]
-        }
-        sections = spec_object._split_sections()  # pylint: disable=protected-access
-        for key, value in six.iteritems(expected_sections):
-            assert sections[key][0].lower() == value[0].lower()
-            assert sections[key][1] == value[1]
-
-    def test_get_spec_section(self, spec_object):
-        expected_section = ['%{_bindir}/file.txt\n',
-                            '\n']
-        section = spec_object.get_spec_section('%files')
-        assert section == expected_section
-        expected_section = ['make DESTDIR=$RPM_BUILD_ROOT install\n',
-                            '\n']
-        section = spec_object.get_spec_section('%install')
-        assert section == expected_section
-
     def test_spec_missing_file(self, spec_object):
         files = {'missing': ['/usr/bin/test2']}
         spec_object.modify_spec_files_section(files)
-        section = spec_object.get_spec_section('%files')
-        expected = [BEGIN_COMMENT + '\n',
-                    '%{_bindir}/test2\n',
-                    END_COMMENT + '\n',
-                    '%{_bindir}/file.txt\n',
-                    '\n']
+        section = spec_object.spec_content.sections['%files']
+        expected = ['%{_bindir}/test2',
+                    '%{_bindir}/file.txt',
+                    '']
         assert expected == section
 
     def test_spec_remove_file(self, spec_object):
         files = {'deleted': ['/usr/lib/test.so']}
         spec_object.modify_spec_files_section(files)
-        section = spec_object.get_spec_section('%files devel')
+        section = spec_object.spec_content.sections['%files devel']
         assert '%{_libdir}/test.so' not in section
 
     def test_spec_missing_and_remove_file(self, spec_object):
         files = {'missing': ['/usr/bin/test2'],
                  'deleted': ['/usr/lib/my_test.so']}
         spec_object.modify_spec_files_section(files)
-        section = spec_object.get_spec_section('%files')
-        expected = [BEGIN_COMMENT + '\n',
-                    '%{_bindir}/test2\n',
-                    END_COMMENT + '\n',
-                    '%{_bindir}/file.txt\n',
-                    '\n']
+        section = spec_object.spec_content.sections['%files']
+        expected = ['%{_bindir}/test2',
+                    '%{_bindir}/file.txt',
+                    '']
         assert expected == section
-        section_devel = spec_object.get_spec_section('%files devel')
-        expected_devel = ['%{_bindir}/test_example\n',
-                          BEGIN_COMMENT + '\n',
-                          '#%{_libdir}/my_test.so\n\n',
-                          END_COMMENT + '\n',
-                          '\n']
+        section_devel = spec_object.spec_content.sections['%files devel']
+        expected_devel = ['%{_bindir}/test_example',
+                          '']
         assert expected_devel == section_devel
 
     def test_is_test_suite_enabled(self, spec_object):
@@ -426,27 +313,18 @@ class TestSpecFile(object):
         spec_object.set_extra_version('rc1')
         assert spec_object.get_extra_version() == 'rc1'
 
-    def test_update_changelog(self, spec_object):
-        changelog = []
-        changelog.append('* Mon Jan 01 1970 Rebase-helper <rebase-helper@rebase-helper.com> - 1.2.3')
-        changelog.append('- New upstream version 1.2.3')
-        spec_object.insert_changelog(changelog)
-        result = spec_object.get_spec_section('%changelog')
-        assert changelog[0] == result[0]
-        assert changelog[1] == result[1]
-
     def test_update_setup_dirname(self, spec_object):
-        prep = spec_object.get_spec_section('%prep')
+        prep = spec_object.spec_content.sections['%prep']
         spec_object.update_setup_dirname('test-1.0.2')
-        assert spec_object.get_spec_section('%prep') == prep
+        assert spec_object.spec_content.sections['%prep'] == prep
 
         spec_object.update_setup_dirname('test-1.0.2rc1')
-        prep = spec_object.get_spec_section('%prep')
+        prep = spec_object.spec_content.sections['%prep']
         setup = [l for l in prep if l.startswith('%setup')][0]
         assert '-n %{name}-%{REBASE_VER}' in setup
 
         spec_object.update_setup_dirname('test-1.0.2-rc1')
-        prep = spec_object.get_spec_section('%prep')
+        prep = spec_object.spec_content.sections['%prep']
         setup = [l for l in prep if l.startswith('%setup')][0]
         assert '-n %{name}-%{version}-%{REBASE_EXTRA_VER}' in setup
 
@@ -457,9 +335,11 @@ class TestSpecFile(object):
         assert target == 'test-1.0.2/misc'
 
     def test_typo_fix_spec_hook(self, spec_object):
-        assert '- This is chnagelog entry with some indentional typos\n' in spec_object.spec_content
+        assert '- This is chnagelog entry with some indentional typos' in spec_object.spec_content.sections[
+            '%changelog']
         TypoFixHook.run(spec_object, spec_object)
-        assert '- This is changelog entry with some intentional typos\n' in spec_object.spec_content
+        assert '- This is changelog entry with some intentional typos' in spec_object.spec_content.sections[
+            '%changelog']
 
     def test_pypi_to_python_hosted_url_trans(self, spec_object):
         # pylint: disable=protected-access
@@ -472,12 +352,12 @@ class TestSpecFile(object):
         Check updated paths to patches in the rebased directory
         :return:
         """
-        line = [l for l in spec_object.spec_content if l.startswith('Patch5')][0]
+        line = [l for l in spec_object.spec_content.sections['%package'] if l.startswith('Patch5')][0]
         assert 'rebased-sources' in line
 
         spec_object.update_paths_to_patches()
 
-        line = [l for l in spec_object.spec_content if l.startswith('Patch5')][0]
+        line = [l for l in spec_object.spec_content.sections['%package'] if l.startswith('Patch5')][0]
         assert 'rebased-sources' not in line
 
     @pytest.mark.parametrize('preserve_macros', [
@@ -492,48 +372,48 @@ class TestSpecFile(object):
             'Summary',
             'A testing SPEC file',
             [
-                '%{!?specfile: %global specfile spec file}\n',
-                '%global summary %{?longsum}%{!?longsum:A testing %{specfile}}\n',
-                'Summary: A testing SPEC file\n',
+                '%{!?specfile: %global specfile spec file}',
+                '%global summary %{?longsum}%{!?longsum:A testing %{specfile}}',
+                'Summary: A testing SPEC file',
             ],
             [
-                '%{!?specfile: %global specfile SPEC file}\n',
-                '%global summary %{?longsum}%{!?longsum:A testing %{specfile}}\n',
-                'Summary: %{summary}\n',
+                '%{!?specfile: %global specfile SPEC file}',
+                '%global summary %{?longsum}%{!?longsum:A testing %{specfile}}',
+                'Summary: %{summary}',
             ],
         ),
         (
             'Version',
             '1.1.8',
             [
-                '%global version_major 1\n',
-                '%global version_minor 0\n',
-                '%global version_patch 2\n',
-                '%global version_major_minor %{version_major}.%{version_minor}\n',
-                '%global version %{version_major_minor}.%{version_patch}\n',
-                'Version: 1.1.8\n',
+                '%global version_major 1',
+                '%global version_minor 0',
+                '%global version_patch 2',
+                '%global version_major_minor %{version_major}.%{version_minor}',
+                '%global version %{version_major_minor}.%{version_patch}',
+                'Version: 1.1.8',
             ],
             [
-                '%global version_major 1\n',
-                '%global version_minor 1\n',
-                '%global version_patch 8\n',
-                '%global version_major_minor %{version_major}.%{version_minor}\n',
-                '%global version %{version_major_minor}.%{version_patch}\n',
-                'Version: %{version}\n',
+                '%global version_major 1',
+                '%global version_minor 1',
+                '%global version_patch 8',
+                '%global version_major_minor %{version_major}.%{version_minor}',
+                '%global version %{version_major_minor}.%{version_patch}',
+                'Version: %{version}',
             ],
         ),
         (
             'Release',
             '42%{?dist}',
             [
-                '%global release 34\n',
-                '%global release_str %{release}%{?dist}\n',
-                'Release: 42%{?dist}\n',
+                '%global release 34',
+                '%global release_str %{release}%{?dist}',
+                'Release: 42%{?dist}',
             ],
             [
-                '%global release 42\n',
-                '%global release_str %{release}%{?dist}\n',
-                'Release: %{release_str}\n',
+                '%global release 42',
+                '%global release_str %{release}%{?dist}',
+                'Release: %{release_str}',
             ],
         ),
         (
@@ -542,16 +422,16 @@ class TestSpecFile(object):
             'b0ed0b235bd5ea295fc897e1e2e8e6b6637f2c2d/'
             'rebase-helper-b0ed0b235bd5ea295fc897e1e2e8e6b6637f2c2d.tar.gz',
             [
-                '%global project rebase-helper\n',
-                '%global commit d70cb5a2f523db5b6088427563531f43b7703859\n',
+                '%global project rebase-helper',
+                '%global commit d70cb5a2f523db5b6088427563531f43b7703859',
                 'Source8: https://github.com/rebase-helper/rebase-helper/archive/'
                 'b0ed0b235bd5ea295fc897e1e2e8e6b6637f2c2d/'
-                'rebase-helper-b0ed0b235bd5ea295fc897e1e2e8e6b6637f2c2d.tar.gz\n',
+                'rebase-helper-b0ed0b235bd5ea295fc897e1e2e8e6b6637f2c2d.tar.gz',
             ],
             [
-                '%global project rebase-helper\n',
-                '%global commit b0ed0b235bd5ea295fc897e1e2e8e6b6637f2c2d\n',
-                'Source8: https://github.com/%{project}/%{project}/archive/%{commit}/%{project}-%{commit}.tar.gz\n',
+                '%global project rebase-helper',
+                '%global commit b0ed0b235bd5ea295fc897e1e2e8e6b6637f2c2d',
+                'Source8: https://github.com/%{project}/%{project}/archive/%{commit}/%{project}-%{commit}.tar.gz',
             ],
         ),
     ], ids=[
@@ -563,4 +443,4 @@ class TestSpecFile(object):
     def test_set_tag(self, spec_object, preserve_macros, tag, value, lines, lines_preserve):
         spec_object.set_tag(tag, value, preserve_macros=preserve_macros)
         for line in lines_preserve if preserve_macros else lines:
-            assert line in spec_object.spec_content
+            assert line in spec_object.spec_content.sections['%package']
