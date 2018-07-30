@@ -71,7 +71,7 @@ class GitPatchTool(PatchBase):
     old_repo = None
     new_repo = None
     non_interactive = False
-    patches = None
+    patches = []
 
     @classmethod
     def match(cls, cmd=None):

@@ -39,7 +39,7 @@ class RpmHelper(object):
 
     """Class for working with RPM database and packages."""
 
-    ARCHES = None
+    ARCHES = []
 
     @staticmethod
     def is_package_installed(pkg_name=None):
