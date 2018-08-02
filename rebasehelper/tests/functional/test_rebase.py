@@ -32,6 +32,7 @@ from rebasehelper.config import Config
 from rebasehelper.application import Application
 from rebasehelper.constants import RESULTS_DIR
 from rebasehelper.helpers.git_helper import GitHelper
+from rebasehelper.exceptions import RebaseHelperError
 
 
 class TestRebase(object):
@@ -61,13 +62,15 @@ class TestRebase(object):
             reason='requires superuser privileges')),
         pytest.param('mock', marks=pytest.mark.long_running),
     ])
+    @pytest.mark.parametrize('favor_on_conflict', ['upstream', 'downstream', 'off'])
     @pytest.mark.integration
     @pytest.mark.usefixtures('initialized_git_repo')
-    def test_rebase(self, buildtool):
+    def test_rebase(self, buildtool, favor_on_conflict):
         cli = CLI([
             '--non-interactive',
             '--disable-inapplicable-patches',
             '--buildtool', buildtool,
+            '--favor-on-conflict', favor_on_conflict,
             '--outputtool', 'json',
             '--pkgcomparetool', 'rpmdiff,pkgdiff,abipkgdiff,licensecheck',
             '--color=always',
@@ -78,24 +81,44 @@ class TestRebase(object):
         config.merge(cli)
         execution_dir, results_dir, debug_log_file = Application.setup(config)
         app = Application(config, execution_dir, results_dir, debug_log_file)
+
+        if favor_on_conflict == 'downstream':
+            with pytest.raises(RebaseHelperError) as e:
+                app.run()
+                # Fail is expected, as the downstream patch "conflicting.patch" is patching nonexistent code.
+                assert 'Building new RPM packages failed' in e.msg
+            return
+
         app.run()
         changes = os.path.join(RESULTS_DIR, 'changes.patch')
         patch = unidiff.PatchSet.from_filename(changes, encoding='UTF-8')
-        assert patch[0].is_removed_file   # backported.patch
-        assert patch[1].is_modified_file  # test.spec
-        assert '-Patch1:         conflicting.patch\n' in patch[1][0].source
-        assert '-Patch2:         backported.patch\n' in patch[1][0].source
-        assert '+#Patch1: conflicting.patch\n' in patch[1][0].target
-        assert '-%patch1 -p1\n' in patch[1][1].source
-        assert '-%patch2 -p1\n' in patch[1][1].source
-        assert '+#%%patch1 -p1\n' in patch[1][1].target
-        assert '+- New upstream release {}\n'.format(self.NEW_VERSION) in patch[1][2].target
+
+        if favor_on_conflict == 'upstream':
+            backported_patch, conflicting_patch, spec_file = patch
+            assert conflicting_patch.is_removed_file  # conflicting.patch
+        else:
+            backported_patch, spec_file = patch
+            # Non interactive mode - inapplicable patches are only commented out.
+            assert '+#Patch1: conflicting.patch\n' in spec_file[0].target
+            assert '+#%%patch1 -p1\n' in spec_file[1].target
+        assert backported_patch.is_removed_file   # backported.patch
+        assert spec_file.is_modified_file  # test.spec
+        assert '-Patch1:         conflicting.patch\n' in spec_file[0].source
+        assert '-Patch2:         backported.patch\n' in spec_file[0].source
+        assert '-%patch1 -p1\n' in spec_file[1].source
+        assert '-%patch2 -p1\n' in spec_file[1].source
+        assert '+- New upstream release {}\n'.format(self.NEW_VERSION) in spec_file[2].target
         with open(os.path.join(RESULTS_DIR, 'report.json')) as f:
             report = json.load(f)
             assert 'success' in report['result']
             # patches
             assert 'applicable.patch' in report['patches']['untouched']
-            assert 'conflicting.patch' in report['patches']['inapplicable']
+            if favor_on_conflict == 'upstream':
+                # In case of conflict, upstream code is favored, therefore conflicting patch is unused.
+                assert 'conflicting.patch' in report['patches']['deleted']
+            else:
+                # Non interactive mode - skipping conflicting patches
+                assert 'conflicting.patch' in report['patches']['inapplicable']
             assert 'backported.patch' in report['patches']['deleted']
             # licensecheck
             assert report['checkers']['licensecheck']['license_changes']
