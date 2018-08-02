@@ -93,6 +93,8 @@ class Application(object):
 
         self.kwargs['non_interactive'] = self.conf.non_interactive
 
+        self.kwargs['favor_on_conflict'] = self.conf.favor_on_conflict
+
         self.kwargs['changelog_entry'] = self.conf.changelog_entry
 
         self.kwargs['spec_hook_blacklist'] = self.conf.spec_hook_blacklist
