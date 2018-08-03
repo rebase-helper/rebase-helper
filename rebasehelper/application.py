@@ -427,7 +427,10 @@ class Application(object):
     def patch_sources(self, sources):
         # Patch sources
         patch = Patcher('git')
-        self.rebase_spec_file.update_changelog(self.rebase_spec_file.get_new_log())
+        new_log = self.rebase_spec_file.get_new_log()
+        new_log.extend(self.rebase_spec_file.spec_content.sections['%changelog'])
+        self.rebase_spec_file.spec_content.sections['%changelog'] = new_log
+        self.rebase_spec_file.save()
         try:
             self.rebased_patches = patch.patch(sources[0],
                                                sources[1],

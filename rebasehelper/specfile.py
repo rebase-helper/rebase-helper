@@ -21,22 +21,22 @@
 #          Tomas Hozza <thozza@redhat.com>
 
 from __future__ import print_function
+import argparse
+import itertools
 import os
 import re
 import shutil
-import rpm
-import argparse
 import shlex
-import itertools
 
 import pkg_resources
-
+import rpm
 import six
 
 from datetime import date
 from difflib import SequenceMatcher
 from operator import itemgetter
 
+from requests.structures import CaseInsensitiveDict
 from six.moves import urllib
 
 from rebasehelper.logger import logger
@@ -103,31 +103,99 @@ class PatchObject(object):
         return self.strip
 
 
+class SpecContent(object):
+    """Class representing content of a SPEC file."""
+
+    SECTION_HEADERS = [
+        '%package',
+        '%prep',
+        '%build',
+        '%install',
+        '%check',
+        '%clean',
+        '%prerun',
+        '%postrun',
+        '%pretrans',
+        '%posttrans',
+        '%pre',
+        '%post',
+        '%files',
+        '%changelog',
+        '%description',
+        '%triggerpostun',
+        '%triggerprein',
+        '%triggerun',
+        '%triggerin',
+        '%trigger',
+        '%verifyscript',
+        '%sepolicy',
+        '%filetriggerin',
+        '%filetrigger',
+        '%filetriggerun',
+        '%filetriggerpostun',
+        '%transfiletriggerin',
+        '%transfiletrigger',
+        '%transfiletriggerun',
+        '%transfiletriggerpostun',
+    ]
+
+    def __init__(self, content):
+        self.sections = self._split_sections(content)
+
+    def __str__(self):
+        """Join SPEC file sections back together."""
+        content = []
+        for header, section in six.iteritems(self.sections):
+            if header != '%package':
+                content.append(header + '\n')
+            for line in section:
+                content.append(line + '\n')
+        return ''.join(content)
+
+    @classmethod
+    def _split_sections(cls, content):
+        """Splits content of a SPEC file into sections.
+
+        Args:
+            content (str): Content of the SPEC file
+
+        """
+        lines = content.splitlines()
+        section_headers_re = [re.compile(r'^{0}.*'.format(re.escape(x)), re.IGNORECASE) for x in cls.SECTION_HEADERS]
+
+        section_beginnings = []
+        for i, line in enumerate(lines):
+            if line.startswith('%'):
+                for header in section_headers_re:
+                    if header.match(line):
+                        section_beginnings.append(i)
+        section_beginnings.append(None)
+
+        sections = CaseInsensitiveDict()
+        sections['%package'] = lines[:section_beginnings[0]]
+
+        for i in range(len(section_beginnings) - 1):
+            start = section_beginnings[i] + 1
+            end = section_beginnings[i + 1]
+            sections[lines[start - 1]] = lines[start:end]
+        return sections
+
+
 class SpecFile(object):
 
     """Class representing a SPEC file"""
 
     path = ''
     download = False
-    spec_content = []
+    spec_content = None
     spc = None
     hdr = None
     extra_version = None
     category = None
     sources = None
     patches = None
-    rpm_sections = {}
     prep_section = []
     removed_patches = []
-
-    defined_sections = ['%package',
-                        '%description',
-                        '%prep',
-                        '%build',
-                        '%install',
-                        '%check',
-                        '%files',
-                        '%changelog']
 
     def __init__(self, path, changelog_entry, sources_location='', download=True):
         self.path = path
@@ -219,7 +287,6 @@ class SpecFile(object):
         self.prep_section = self.spc.prep
         # HEADER of SPEC file
         self.hdr = self.spc.sourceHeader
-        self.rpm_sections = self._split_sections()
         # determine the extra_version
         logger.debug("Updating the extra version")
         _, self.extra_version, separator = SpecFile.extract_version_from_archive_name(
@@ -280,7 +347,7 @@ class SpecFile(object):
         source_re_str = r'^Source0?\s*:\s*(.*?)$' if source_num == 0 else r'^Source{0}\s*:\s*(.*?)$'.format(source_num)
         source_re = re.compile(source_re_str)
 
-        for line in self.spec_content:
+        for line in self.spec_content.sections['%package']:
             match = source_re.search(line)
             if match:
                 return match.group(1)
@@ -381,25 +448,25 @@ class SpecFile(object):
         if remove_patches is None:
             remove_patches = []
 
-        for index, line in enumerate(self.spec_content):
+        for index, line in enumerate(self.spec_content.sections['%package']):
             #  if patch is applied on the line, try to check if it should be commented out
             if line.startswith('%patch'):
                 #  check patch numbers
                 for num in comment_out:
                     #  if the line should be commented out
                     if line.startswith('%patch{0}'.format(num)):
-                        comment = '# Following patch contains conflicts\n'
+                        comment = '# Following patch contains conflicts'
                         if disable_inapplicable_patches:
-                            self.spec_content[index] = '{}#%{}'.format(comment, line)
+                            self.spec_content.sections['%package'][index] = '{}#%{}'.format(comment, line)
                         else:
-                            self.spec_content[index] = '{}{}'.format(comment, line)
+                            self.spec_content.sections['%package'][index] = '{}{}'.format(comment, line)
                         #  remove the patch number from list
                         comment_out.remove(num)
                         break
                 for num in remove_patches:
                     #  if the line should be removed
                     if line.startswith('%patch{0}'.format(num)):
-                        self.spec_content[index] = ''
+                        self.spec_content.sections['%package'][index] = ''
                         #  remove the patch number from list
                         remove_patches.remove(num)
                         break
@@ -407,10 +474,10 @@ class SpecFile(object):
     def update_paths_to_patches(self):
         # Fix paths in rebase_spec_file to patches to current directory
         rebased_sources_path = os.path.join(constants.RESULTS_DIR, constants.REBASED_SOURCES_DIR)
-        for index, line in enumerate(self.spec_content):
+        for index, line in enumerate(self.spec_content.sections['%package']):
             if line.startswith('Patch'):
                 mod_line = re.sub(rebased_sources_path + os.path.sep, '', line)
-                self.spec_content[index] = mod_line
+                self.spec_content.sections['%package'][index] = mod_line
         self.save()
 
     def write_updated_patches(self, patches, disable_inapplicable):
@@ -422,7 +489,7 @@ class SpecFile(object):
         inapplicable_patches = []
         modified_patches = []
 
-        for index, line in enumerate(self.spec_content):
+        for index, line in enumerate(self.spec_content.sections['%package']):
             if line.startswith('Patch'):
                 fields = line.strip().split()
                 patch_name = fields[1]
@@ -445,13 +512,13 @@ class SpecFile(object):
                     # remove the line of the patch that was removed
                     self.removed_patches.append(patch_name)
                     removed_patches.append(patch_num)
-                    self.spec_content[index] = ''
+                    self.spec_content.sections['%package'][index] = ''
 
                 if patch_inapplicable:
                     if disable_inapplicable:
                         # comment out line if the patch was not applied
-                        self.spec_content[index] = '#{0} {1}\n'.format(' '.join(fields[:-1]),
-                                                                       os.path.basename(patch_name))
+                        self.spec_content.sections['%package'][index] = '#{0} {1}'.format(' '.join(fields[:-1]),
+                                                                                          os.path.basename(patch_name))
                     inapplicable_patches.append(patch_num)
 
                 if 'modified' in patches:
@@ -460,7 +527,7 @@ class SpecFile(object):
                     patch = None
                 if patch:
                     fields[1] = os.path.join(constants.RESULTS_DIR, constants.REBASED_SOURCES_DIR, patch_name)
-                    self.spec_content[index] = ' '.join(fields) + '\n'
+                    self.spec_content.sections['%package'][index] = ' '.join(fields)
                     modified_patches.append(patch_num)
 
         self._process_patches(inapplicable_patches, removed_patches, disable_inapplicable)
@@ -553,13 +620,13 @@ class SpecFile(object):
         :return:
         """
         release = '{}.{}%{{?dist}}'.format(self.get_release_number(), macro)
-        for index, line in enumerate(self.spec_content):
+        for index, line in enumerate(self.spec_content.sections['%package']):
             if line.startswith('Release:'):
                 logger.verbose("Commenting out original Release line '%s'", line.strip())
-                self.spec_content[index] = '#{0}'.format(line)
-                line = 'Release: {}\n'.format(release)
+                self.spec_content.sections['%package'][index] = '#{0}'.format(line)
+                line = 'Release: {}'.format(release)
                 logger.verbose("Inserting new Release line '%s'", line)
-                self.spec_content.insert(index + 1, line)
+                self.spec_content.sections['%package'].insert(index + 1, line)
                 self.save()
                 break
 
@@ -572,18 +639,20 @@ class SpecFile(object):
         """
         search_re = re.compile(r'^Release\s*:\s*[0-9.]*[0-9]+\.{0}%{{\?dist}}\s*'.format(macro))
 
-        for index, line in enumerate(self.spec_content):
+        for index, line in enumerate(self.spec_content.sections['%package']):
             match = search_re.search(line)
             if match:
                 # We will uncomment old line, so sanity check first
-                if not self.spec_content[index - 1].startswith('#Release:'):
+                if not self.spec_content.sections['%package'][index - 1].startswith('#Release:'):
                     raise RebaseHelperError("Redefined Release line in SPEC is not 'commented out' "
-                                            "old line: '{0}'".format(self.spec_content[index - 1].strip()))
+                                            "old line: '{0}'"
+                                            .format(self.spec_content.sections['%package'][index - 1].strip()))
                 logger.verbose("Uncommenting original Release line "
-                               "'%s'", self.spec_content[index - 1].strip())
-                self.spec_content[index - 1] = self.spec_content[index - 1].lstrip('#')
+                               "'%s'", self.spec_content.sections['%package'][index - 1].strip())
+                self.spec_content.sections['%package'][index - 1] = self.spec_content.sections[
+                    '%package'][index - 1].lstrip('#')
                 logger.verbose("Removing redefined Release line '%s'", line.strip())
-                self.spec_content.pop(index)
+                self.spec_content.sections['%package'].pop(index)
                 self.save()
                 break
 
@@ -601,13 +670,13 @@ class SpecFile(object):
         extra_version_line_index = None
         rebase_extra_version_def = '%global REBASE_VER %{version}' + \
                                    self.extra_version_separator + \
-                                   '%{REBASE_EXTRA_VER}\n'
-        new_extra_version_line = '%global REBASE_EXTRA_VER {0}\n'.format(extra_version)
+                                   '%{REBASE_EXTRA_VER}'
+        new_extra_version_line = '%global REBASE_EXTRA_VER {0}'.format(extra_version)
 
         logger.verbose("Updating extra version in SPEC to '%s'", extra_version)
 
         #  try to find existing extra version definition
-        for index, line in enumerate(self.spec_content):
+        for index, line in enumerate(self.spec_content.sections['%package']):
             match = extra_version_re.search(line)
             if match:
                 extra_version_line_index = index
@@ -616,14 +685,14 @@ class SpecFile(object):
         if extra_version:
             #  just update the existing extra version
             if extra_version_line_index is not None:
-                self.spec_content[extra_version_line_index] = new_extra_version_line
+                self.spec_content.sections['%package'][extra_version_line_index] = new_extra_version_line
             # we need to create the extra version definition
             else:
                 # insert the REBASE_VER and REBASE_EXTRA_VER definitions
                 logger.verbose("Adding new line to spec: %s", rebase_extra_version_def.strip())
-                self.spec_content.insert(0, rebase_extra_version_def)
+                self.spec_content.sections['%package'].insert(0, rebase_extra_version_def)
                 logger.verbose("Adding new line to spec: %s", new_extra_version_line.strip())
-                self.spec_content.insert(0, new_extra_version_line)
+                self.spec_content.sections['%package'].insert(0, new_extra_version_line)
 
                 # change Release to 0.1 and append the extra version macro
                 self.set_release_number('0.1')
@@ -631,11 +700,11 @@ class SpecFile(object):
 
                 # change the Source0 definition
                 source0_re = re.compile(r'^Source0?\s*:.+')
-                for index, line in enumerate(self.spec_content):
+                for index, line in enumerate(self.spec_content.sections['%package']):
                     if source0_re.search(line):
                         # comment out the original Source0 line
                         logger.verbose("Commenting out original Source0 line '%s'", line.strip())
-                        self.spec_content[index] = '#{0}'.format(line)
+                        self.spec_content.sections['%package'][index] = '#{0}'.format(line)
                         # construct new Source0 line. The idea is that we use the expanded archive name to create
                         # new Source0. We used raw original Source0 before, but it didn't work reliably.
                         source0_raw = line
@@ -654,7 +723,7 @@ class SpecFile(object):
                         new_source0_line = source0_raw.replace(os.path.basename(source0_raw),
                                                                new_basename_with_macro)
                         logger.verbose("Inserting new Source0 line '%s'", new_source0_line)
-                        self.spec_content.insert(index + 1, new_source0_line + '\n')
+                        self.spec_content.sections['%package'].insert(index + 1, new_source0_line)
                         break
         else:
             # set the Release to 1 and revert the redefined Release with macro if needed
@@ -713,7 +782,7 @@ class SpecFile(object):
 
         def _get_macro_value(macro):
             """Returns raw value of a macro"""
-            for line in self.spec_content:
+            for line in self.spec_content.sections['%package']:
                 match = macro_def_re.match(line)
                 if not match:
                     continue
@@ -723,7 +792,7 @@ class SpecFile(object):
 
         def _redefine_macro(macro, value):
             """Replaces value of an existing macro"""
-            for index, line in enumerate(self.spec_content):
+            for index, line in enumerate(self.spec_content.sections['%package']):
                 match = macro_def_re.match(line)
                 if not match:
                     continue
@@ -732,7 +801,7 @@ class SpecFile(object):
                 line = line[:match.start('value')] + value + line[match.end('value'):]
                 if match.group('options'):
                     line = line[:match.start('options')] + line[match.end('options'):]
-                self.spec_content[index] = line
+                self.spec_content.sections['%package'][index] = line
                 break
             self.save()
 
@@ -740,7 +809,7 @@ class SpecFile(object):
             """Returns all redefinable macros present in a string"""
             macro_re = re.compile(r'%(?P<brace>{\??)?(?P<name>\w+)(?(brace)})')
             macros = []
-            for line in self.spec_content:
+            for line in self.spec_content.sections['%package']:
                 match = macro_def_re.match(line)
                 if not match:
                     continue
@@ -928,7 +997,7 @@ class SpecFile(object):
             return result
 
         tag_re = re.compile(r'^(?P<name>\w+)\s*:\s*(?P<value>.+)$')
-        for index, line in enumerate(self.spec_content):
+        for index, line in enumerate(self.spec_content.sections['%package']):
             match = tag_re.match(line)
             if not match:
                 continue
@@ -936,7 +1005,8 @@ class SpecFile(object):
                 continue
             if preserve_macros:
                 value = _process_value(match.group('value'), value)
-            self.spec_content[index] = line[:match.start('value')] + value + line[match.end('value'):]
+            new_line = line[:match.start('value')] + value + line[match.end('value'):]
+            self.spec_content.sections['%package'][index] = new_line
             break
         self.save()
 
@@ -1031,89 +1101,6 @@ class SpecFile(object):
     # SPEC SECTIONS RELATED METHODS #
     #################################
 
-    def _create_spec_from_sections(self):
-        """
-        Spec file has defined order
-        First we write a header
-        """
-        new_spec_file = []
-
-        try:
-            for _, value in sorted(six.iteritems(self.rpm_sections)):
-                sec_name, section = value
-                if '%header' in sec_name:
-                    new_spec_file.extend(section)
-                else:
-                    new_spec_file.append(sec_name + '\n')
-                    new_spec_file.extend(section)
-        except KeyError:
-            raise RebaseHelperError("Unable to find a specific section in SPEC file")
-
-        return new_spec_file
-
-    def _split_sections(self):
-        """
-        Function split spec file to well known SPEC sections
-
-        :return: position and content of section in format like
-            [0, (%files, [list of all rows within %files section],
-             1, (%files debug, [list of all rows within %files debug section]]
-        """
-        # rpm-python does not provide any directive for getting %files section
-        # Therefore we should do that workaround
-        section_headers_re = [re.compile('^{0}.*'.format(x), re.IGNORECASE) for x in self.defined_sections]
-
-        section_starts = []
-        # First of all we need to find beginning of all sections
-        for line_num, line in enumerate(self.spec_content):
-            # it might be a section
-            if line.startswith('%'):
-                # check all possible section headers
-                for section_header in section_headers_re:
-                    if section_header.search(line):
-                        section_starts.append(line_num)
-
-        # determine the SPEC header
-        # it is everything until the beginning the first section
-        header_end = section_starts[0] if section_starts else len(self.spec_content)
-        sections = {0: ('%header', self.spec_content[:header_end])}
-
-        # now determine all previously found sections
-        for i in range(len(section_starts)):
-            # We cut a relevant section to field
-            if i + 1 < len(section_starts):
-                curr_section = self.spec_content[section_starts[i]:section_starts[i+1]]
-            else:
-                curr_section = self.spec_content[section_starts[i]:]
-            sections[i+1] = (curr_section[0].strip(), curr_section[1:])
-
-        return sections
-
-    def get_spec_section(self, section_name):
-        """
-        Returns the section of selected name
-
-        :param section_name: section name to get
-        :return: list of lines contained in the selected section
-        """
-        for sec_name, section in six.itervalues(self.rpm_sections):
-            if sec_name.lower() == section_name.lower():
-                return section
-
-    def set_spec_section(self, section_name, new_section):
-        """
-        Returns the section of selected name
-
-        :param section_name: section name to get
-        :return: list of lines contained in the selected section
-        """
-        for key, val in six.iteritems(self.rpm_sections):
-            if section_name.lower() in val[0].lower():
-                if isinstance(new_section, str):
-                    self.rpm_sections[key] = (section_name, new_section.split('\n'))
-                else:
-                    self.rpm_sections[key] = (section_name, new_section)
-
     def get_prep_section(self):
         """Function returns whole prep section"""
         prep = self.prep_section.split('\n')
@@ -1134,18 +1121,17 @@ class SpecFile(object):
         """Method reads the content SPEC file and updates internal variables."""
         try:
             with open(self.path) as f:
-                lines = f.readlines()
+                content = f.read()
         except IOError:
             raise RebaseHelperError("Unable to open and read SPEC file '%s'" % self.path)
-        #  Complete SPEC file content
-        self.spec_content = lines
+        self.spec_content = SpecContent(content)
 
     def _write_spec_file_to_disc(self):
         """Write the current SPEC file to the disc"""
         logger.verbose("Writing SPEC file '%s' to the disc", self.path)
         try:
             with open(self.path, "w") as f:
-                f.writelines(self.spec_content)
+                f.write(str(self.spec_content))
         except IOError:
             raise RebaseHelperError("Unable to write updated data to SPEC file '%s'" % self.path)
 
@@ -1188,7 +1174,7 @@ class SpecFile(object):
 
         :return: True if enabled or False if not
         """
-        check_section = self.get_spec_section('%check')
+        check_section = self.spec_content.sections.get('%check')
         if not check_section:
             return False
         # Remove commented lines
@@ -1246,57 +1232,23 @@ class SpecFile(object):
                     break
         return files
 
-    @staticmethod
-    def construct_string_with_comment(lines):
-        """
-        Wraps the line in a rebase-helper specific comments
-
-        :param lines: line (or list of lines) to be wrapped
-        :return: list with lines
-        """
-        sec = '\n'
-        comm_lines = [constants.BEGIN_COMMENT + sec]
-        for l in lines if not isinstance(lines, six.string_types) else [lines]:
-            comm_lines.append(l + sec)
-        comm_lines.append(constants.END_COMMENT + sec)
-        return comm_lines
-
     def _correct_missing_files(self, missing):
-        sep = '\n'
-        for key, value in six.iteritems(self.rpm_sections):
-            sec_name, sec_content = value
+        for sec_name, sec_content in six.iteritems(self.spec_content.sections):
             match = re.search(r'^%files\s*$', sec_name)
             if match:
-                if constants.BEGIN_COMMENT in sec_content:
-                    # We need only files which are not included yet.
-                    upd_files = [f for f in missing if f not in sec_content]
-                    regex = re.compile(r'(' + constants.BEGIN_COMMENT + r'\s*)')
-                    sec_content = regex.sub('\\1' + '\n'.join(upd_files) + sep,
-                                            sec_content)
-                else:
-                    # This code adds begin_comment, files and end_comment
-                    # with separator
-                    sec_content = SpecFile.construct_string_with_comment(missing) + sec_content
-                self.rpm_sections[key] = (sec_name, sec_content)
+                self.spec_content.sections[sec_name] = missing + sec_content
                 break
 
     def _correct_removed_files(self, sources):
-        for key, value in six.iteritems(self.rpm_sections):
-            sec_name, sec_content = value
-            # Only sections %files are interesting
+        for sec_name, sec_content in six.iteritems(self.spec_content.sections):
             match = re.search(r'^%files', sec_name)
             if match:
-                # Check what files are in section
-                # and comment only relevant
+                # Check what files are in the section and delete only relevant files
                 f_exists = [f for f in sources for sec in sec_content if os.path.basename(f) in sec]
                 if not f_exists:
                     continue
-                for f in f_exists:
-                    for index, row in enumerate(sec_content):
-                        if f in row:
-                            sec_content[index: index+1] = SpecFile.construct_string_with_comment('#' + row)
-                            break
-                self.rpm_sections[key] = (sec_name, sec_content)
+                new_content = [line for line in sec_content for f in f_exists if f not in line]
+                self.spec_content.sections[sec_name] = new_content
 
     def modify_spec_files_section(self, files):
         """
@@ -1322,7 +1274,6 @@ class SpecFile(object):
         except KeyError:
             pass
 
-        self.spec_content = self._create_spec_from_sections()
         self.save()
 
     def get_new_log(self):
@@ -1332,25 +1283,14 @@ class SpecFile(object):
                                            ver=self.get_version(),
                                            rel=self.get_release_number())
         evr = evr[2:] if evr.startswith('0:') else evr
-        new_record.append('* {day} {name} <{email}> - {evr}\n'.format(day=today.strftime('%a %b %d %Y'),
-                                                                      name=GitHelper.get_user(),
-                                                                      email=GitHelper.get_email(),
-                                                                      evr=evr))
+        new_record.append('* {day} {name} <{email}> - {evr}'.format(day=today.strftime('%a %b %d %Y'),
+                                                                    name=GitHelper.get_user(),
+                                                                    email=GitHelper.get_email(),
+                                                                    evr=evr))
         self._update_data()
-        new_record.append(MacroHelper.expand(self.changelog_entry, self.changelog_entry) + '\n')
-        new_record.append('\n')
+        new_record.append(MacroHelper.expand(self.changelog_entry, self.changelog_entry))
+        new_record.append('')
         return new_record
-
-    def insert_changelog(self, new_log):
-        changelog = '%changelog'
-        new_log.extend(self.get_spec_section(changelog))
-        self.set_spec_section(changelog, new_log)
-
-    def update_changelog(self, new_log):
-        """Function updates changelog with new version"""
-        self.insert_changelog(new_log)
-        self.spec_content = self._create_spec_from_sections()
-        self.save()
 
     def _get_setup_parser(self):
         """
@@ -1380,7 +1320,7 @@ class SpecFile(object):
         """
         parser = self._get_setup_parser()
 
-        for line in self.spec_content:
+        for line in self.spec_content.sections['%prep']:
             if line.startswith('%setup') or line.startswith('%autosetup'):
                 line = MacroHelper.expand(line, '')
 
@@ -1404,7 +1344,7 @@ class SpecFile(object):
         """
         parser = self._get_setup_parser()
 
-        for index, line in enumerate(self.spec_content):
+        for index, line in enumerate(self.spec_content.sections['%prep']):
             if line.startswith('%setup') or line.startswith('%autosetup'):
                 line = MacroHelper.expand(line, '')
 
@@ -1461,8 +1401,8 @@ class SpecFile(object):
                         args.extend(['-S', ns.S])
                     args.extend(unknown)
 
-                    self.spec_content[index] = '#{0}'.format(line)
-                    self.spec_content.insert(index + 1, ' '.join(args) + '\n')
+                    self.spec_content.sections['%prep'][index] = '#{0}'.format(line)
+                    self.spec_content.sections['%prep'].insert(index + 1, ' '.join(args))
                     self.save()
 
     def find_archive_target_in_prep(self, archive):
