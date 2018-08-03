@@ -620,6 +620,7 @@ class Application(object):
                 if self.conf.build_tasks is None:
                     if koji_build_id:
                         session = KojiHelper.create_session()
+                        results_dir = os.path.join(results_dir, 'RPM')
                         build_dict['rpm'], build_dict['logs'] = KojiHelper.download_build(session,
                                                                                           koji_build_id,
                                                                                           results_dir)

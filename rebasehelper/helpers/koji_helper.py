@@ -307,6 +307,7 @@ class KojiHelper(object):
         packages = session.listRPMs(buildID=build_id)
         rpms = []
         logs = []
+        os.makedirs(destination)
         for pkg in packages:
             # FIXME: multiple arches
             if pkg['arch'] not in ['noarch', 'x86_64']:
