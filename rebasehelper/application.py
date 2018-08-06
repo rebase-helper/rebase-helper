@@ -49,6 +49,7 @@ from rebasehelper.helpers.input_helper import InputHelper
 from rebasehelper.helpers.git_helper import GitHelper
 from rebasehelper.helpers.koji_helper import KojiHelper
 from rebasehelper.helpers.lookaside_cache_helper import LookasideCacheHelper
+from rebasehelper.helpers.fedora_api_helper import FedoraApiHelper
 
 
 class Application(object):
@@ -129,7 +130,10 @@ class Application(object):
         results_dir = os.path.join(results_dir, constants.RESULTS_DIR)
 
         # if not continuing, check the results dir
-        if not cli_conf.cont and not cli_conf.build_only and not cli_conf.comparepkgs:
+        import pdb
+        pdb.set_trace()
+        if not cli_conf.cont and not cli_conf.build_only \
+                and not cli_conf.comparepkgs and not cli_conf.push_changes_only:
             Application._check_results_dir(results_dir)
 
         # This is used if user executes rebase-helper with --continue
@@ -808,6 +812,15 @@ class Application(object):
         return True
 
     def run(self):
+        if self.conf.push_changes_only == 'private-branch':
+            FedoraApiHelper.push_private_branch(patch_path=self.conf.patch_path)
+            logger.info("SUCCESS")
+            return 0
+        elif self.conf.push_changes_only == 'fork':
+            FedoraApiHelper.fork_and_push_changes(self.spec_file.get_package_name(), patch_path=self.conf.patch_path)
+            logger.info("SUCCESS")
+            return 0
+
         # Certain options can be used only with specific build tools
         tools_creating_tasks = [k for k, v in six.iteritems(Builder.build_tools) if v.creates_tasks()]
         if self.conf.buildtool not in tools_creating_tasks:
@@ -838,7 +851,7 @@ class Application(object):
         if self.conf.build_tasks is None:
             old_sources, new_sources = self.prepare_sources()
             self.run_package_checkers(self.results_dir, category='SOURCE', old_dir=old_sources, new_dir=new_sources)
-            if not self.conf.build_only and not self.conf.comparepkgs:
+            if not self.conf.build_only and not self.conf.comparepkgs and not self.conf.push_changes_only:
                 try:
                     self.patch_sources([old_sources, new_sources])
                 except RebaseHelperError as e:
@@ -846,7 +859,7 @@ class Application(object):
                     self.print_summary(e)
                     raise
 
-        if not self.conf.patch_only:
+        if not self.conf.patch_only and not self.conf.push_changes_only:
             if not self.conf.comparepkgs:
                 # Build packages
                 while True:
@@ -876,6 +889,7 @@ class Application(object):
 
         if self.debug_log_file:
             self.print_summary()
+
         if self.conf.apply_changes:
             self.apply_changes()
         return 0

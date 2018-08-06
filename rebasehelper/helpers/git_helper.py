@@ -63,3 +63,51 @@ class GitHelper(object):
             ProcessHelper.run_subprocess(['git', 'mergetool'])
         finally:
             os.chdir(cwd)
+
+    @classmethod
+    def git_remote_add(cls, name, remote_url):
+        repo = git.Repo(os.getcwd())
+        git.remote.Remote.add(repo, name, remote_url)
+
+    @classmethod
+    def git_fetch_all(cls, remote_name):
+        repo = git.Repo(os.getcwd())
+        for remote in repo.remotes:
+            if remote.name != remote_name:
+                continue
+            remote.fetch()
+            for ref in remote.refs:
+                remote.fetch(ref.name.split('/')[1])
+
+    @classmethod
+    def git_checkout(cls, new_branch, ref=None):
+        repo = git.Repo(os.getcwd())
+        if ref:
+            # Create a new branch
+            repo.git.checkout('-b', new_branch, ref)
+        else:
+            # Recreate a branch
+            repo.git.checkout('-B', new_branch)
+
+    @classmethod
+    def git_push(cls, origin, branch):
+        repo = git.Repo(os.getcwd())
+        repo.git.push(origin, branch)
+
+    @classmethod
+    def git_branch(cls, name='rebase-helper'):
+        repo = git.Repo(os.getcwd())
+        repo.git.branch(name)
+
+    @classmethod
+    def git_am(cls, path):
+        repo = git.Repo(os.getcwd())
+        repo.git.am(path)
+
+    @classmethod
+    def git_rev_parse(cls, branch):
+        repo = git.Repo(os.getcwd())
+        try:
+            return repo.rev_parse(branch)
+        except Exception:
+            return False

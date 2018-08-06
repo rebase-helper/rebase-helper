@@ -165,6 +165,17 @@ OPTIONS = [
         "help": "apply changes.patch after a successful rebase",
     },
     {
+        "name": ["--push-changes-only"],
+        "default": False,
+        "choices": ["fork", "private-branch"],
+        "help": "push changes to dist-git",
+    },
+    {
+        "name": ["--patch-path"],
+        "default": None,
+        "help": "Path to generated 'changes.patch' file",
+    },
+    {
         "name": ["--disable-inapplicable-patches"],
         "default": False,
         "switch": True,
