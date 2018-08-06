@@ -288,13 +288,14 @@ class KojiHelper(object):
         return None, None
 
     @classmethod
-    def download_build(cls, session, build_id, destination):
+    def download_build(cls, session, build_id, destination, arches):
         """Downloads RPMs and logs of a Koji build.
 
         Args:
             session (koji.ClientSession): Active Koji session instance.
             build_id (str): Koji build ID.
             destination (str): Path where to download files to.
+            arches (list): List of architectures to be downloaded.
 
         Returns:
             tuple: List of downloaded RPMs and list of downloaded logs.
@@ -307,9 +308,25 @@ class KojiHelper(object):
         packages = session.listRPMs(buildID=build_id)
         rpms = []
         logs = []
+        os.makedirs(destination, exist_ok=True)
         for pkg in packages:
-            # FIXME: multiple arches
-            if pkg['arch'] not in ['noarch', 'x86_64']:
+            if pkg['arch'] not in arches:
+                continue
+            filename = '.'.join([pkg['nvr'], pkg['arch'], 'rpm'])
+            local_path = os.path.join(destination, filename)
+            if local_path not in rpms:
+                url = '/'.join([
+                    session.opts['topurl'],
+                    'packages',
+                    build['package_name'],
+                    build['version'],
+                    build['release'],
+                    pkg['arch'],
+                    filename])
+                DownloadHelper.download_file(url, local_path)
+                rpms.append(local_path)
+            if pkg['arch'] == 'src':
+                # No logs for SRPM in koji
                 continue
             for logname in ['build.log', 'root.log', 'state.log']:
                 local_path = os.path.join(destination, logname)
@@ -326,17 +343,33 @@ class KojiHelper(object):
                         logname])
                     DownloadHelper.download_file(url, local_path)
                     logs.append(local_path)
-            filename = '.'.join([pkg['nvr'], pkg['arch'], 'rpm'])
-            local_path = os.path.join(destination, filename)
-            if local_path not in rpms:
-                url = '/'.join([
-                    session.opts['topurl'],
-                    'packages',
-                    build['package_name'],
-                    build['version'],
-                    build['release'],
-                    pkg['arch'],
-                    filename])
-                DownloadHelper.download_file(url, local_path)
-                rpms.append(local_path)
         return rpms, logs
+
+    @classmethod
+    def get_old_build_info(cls, package_name, package_version):
+        """Gets latest build info from koji.
+
+        Args:
+            package_name (str): Package name from specfile.
+            package_version (str): Package version from specfile.
+
+        Returns:
+            tuple: Koji version, koji build id, package version, package full version.
+
+        """
+        if cls.functional:
+            session = KojiHelper.create_session()
+            koji_version, koji_build_id = KojiHelper.get_latest_build(session, package_name)
+            if koji_version:
+                if koji_version != package_version:
+                    logger.warning('Version of the latest Koji build (%s) with id (%s) '
+                                   'differs from version in SPEC file (%s)!',
+                                   koji_version, koji_build_id, package_version)
+                package_version = package_full_version = koji_version
+                return koji_build_id, package_version, package_full_version
+            else:
+                logger.warning('Unable to find the latest Koji build!')
+                return None, None, None
+        else:
+            logger.warning('Unable to get the latest Koji build!')
+            return None, None, None
