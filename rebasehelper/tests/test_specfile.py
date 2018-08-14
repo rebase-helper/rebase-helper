@@ -29,6 +29,8 @@ from rebasehelper.specfile import SpecFile, SpecContent
 from rebasehelper.spec_hooks.typo_fix import TypoFixHook
 from rebasehelper.spec_hooks.pypi_url_fix import PyPIURLFixHook
 
+from rebasehelper.spec_hooks.paths_to_rpm_macros import PathsToRPMMacrosHook
+
 
 class TestSpecFile(object):
     NAME = 'test'
@@ -227,7 +229,9 @@ class TestSpecFile(object):
         spec_object.modify_spec_files_section(files)
         section = spec_object.spec_content.sections['%files']
         expected = ['%{_bindir}/test2',
-                    '%{_bindir}/file.txt',
+                    '/usr/share/man/man1/*',
+                    '/usr/bin/%{name}',
+                    '%config(noreplace) /etc/test/test.conf',
                     '']
         assert expected == section
 
@@ -243,11 +247,15 @@ class TestSpecFile(object):
         spec_object.modify_spec_files_section(files)
         section = spec_object.spec_content.sections['%files']
         expected = ['%{_bindir}/test2',
-                    '%{_bindir}/file.txt',
+                    '/usr/share/man/man1/*',
+                    '/usr/bin/%{name}',
+                    '%config(noreplace) /etc/test/test.conf',
                     '']
         assert expected == section
         section_devel = spec_object.spec_content.sections['%files devel']
         expected_devel = ['%{_bindir}/test_example',
+                          '/usr/share/test1.txt',
+                          '/no/macros/here',
                           '']
         assert expected_devel == section_devel
 
@@ -340,6 +348,24 @@ class TestSpecFile(object):
         TypoFixHook.run(spec_object, spec_object)
         assert '- This is changelog entry with some intentional typos' in spec_object.spec_content.sections[
             '%changelog']
+
+    def test_paths_to_rpm_macros_spec_hook(self, spec_object):
+        files = [
+            '%{_mandir}/man1/*',
+            '%{_bindir}/%{name}',
+            '%config(noreplace) %{_sysconfdir}/test/test.conf',
+            '',
+        ]
+        files_devel = [
+            '%{_bindir}/test_example',
+            '%{_libdir}/my_test.so',
+            '%{_datadir}/test1.txt',
+            '/no/macros/here',
+            '',
+        ]
+        PathsToRPMMacrosHook.run(spec_object, spec_object)
+        assert files == spec_object.spec_content.sections['%files']
+        assert files_devel == spec_object.spec_content.sections['%files devel']
 
     def test_pypi_to_python_hosted_url_trans(self, spec_object):
         # pylint: disable=protected-access
