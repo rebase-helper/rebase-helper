@@ -74,11 +74,15 @@ make check
 %endif
 
 %files
-%{_bindir}/file.txt
+/usr/share/man/man1/*
+/usr/bin/%{name}
+%config(noreplace) /etc/test/test.conf
 
 %files devel
 %{_bindir}/test_example
 %{_libdir}/my_test.so
+/usr/share/test1.txt
+/no/macros/here
 
 %changelog
 * Wed Apr 26 2017 Nikola Forró <nforro@redhat.com> - 1.0.2-34
