@@ -265,18 +265,11 @@ class TestSpecFile(object):
 
     def test_set_extra_version_some_extra_version(self, spec_object):
         spec_object.set_extra_version('b1')
-        with open(spec_object.get_path()) as f:
-            # 1st line
-            assert f.readline() == '%global REBASE_EXTRA_VER b1\n'
-            # 2nd line
-            assert f.readline() == '%global REBASE_VER %{version}%{REBASE_EXTRA_VER}\n'
-            while True:
-                line = f.readline()
-                if line == '#Source: ftp://ftp.test.org/%{name}-%{version}.tar.xz\n':
-                    break
-                assert line is not None
-            # there is new Source0 after old commented out entry
-            assert f.readline() == 'Source: ftp://ftp.test.org/%{name}-%{REBASE_VER}.tar.xz\n'
+        preamble = spec_object.spec_content.sections['%package']
+        assert preamble[0] == '%global REBASE_EXTRA_VER b1'
+        assert preamble[1] == '%global REBASE_VER %{version}%{REBASE_EXTRA_VER}'
+        old_source_index = preamble.index('#Source: ftp://ftp.test.org/%{name}-%{version}.tar.xz')
+        assert preamble[old_source_index + 1] == 'Source: ftp://ftp.test.org/%{name}-%{REBASE_VER}.tar.xz'
         # the release number was changed
         assert spec_object.get_release_number() == '0.1'
         # the release string now contains the extra version
@@ -286,33 +279,22 @@ class TestSpecFile(object):
 
     def test_set_extra_version_no_extra_version(self, spec_object):
         spec_object.set_extra_version('')
-        with open(spec_object.get_path()) as f:
-            # 1st line
-            assert f.readline() != '%global REBASE_EXTRA_VER b1\n'
-            # 2nd line
-            assert f.readline() != '%global REBASE_VER %{version}%{REBASE_EXTRA_VER}\n'
-        # the release number was changed
+        assert spec_object.spec_content.sections['%package'][0] != '%global REBASE_EXTRA_VER b1'
+        assert spec_object.spec_content.sections['%package'][1] != '%global REBASE_VER %{version}%{REBASE_EXTRA_VER}'
         assert spec_object.get_release_number() == '1'
 
     def test_redefine_release_with_macro(self, spec_object):
         macro = '%{REBASE_VER}'
         spec_object.redefine_release_with_macro(macro)
-        with open(spec_object.get_path()) as f:
-            while f.readline() != '#Release: %{release_str}\n':
-                pass
-            assert f.readline() == 'Release: 34' + '.' + macro + '%{?dist}\n'
+        preamble = spec_object.spec_content.sections['%package']
+        old_release_index = preamble.index('#Release: %{release_str}')
+        assert preamble[old_release_index + 1] == 'Release: 34' + '.' + macro + '%{?dist}'
 
     def test_revert_redefine_release_with_macro(self, spec_object):
         macro = '%{REBASE_VER}'
         spec_object.redefine_release_with_macro(macro)
         spec_object.revert_redefine_release_with_macro(macro)
-        with open(spec_object.get_path()) as f:
-            for line in f.readlines():
-                if line.startswith('Release:'):
-                    assert line == 'Release: %{release_str}\n'
-                    return
-        # the line has to be found, fail if not!
-        assert False
+        assert 'Release: %{release_str}' in spec_object.spec_content.sections['%package']
 
     def test_get_extra_version_not_set(self, spec_object):
         assert spec_object.get_extra_version() == ''
