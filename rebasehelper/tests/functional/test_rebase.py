@@ -25,6 +25,7 @@ import os
 
 import git
 import pytest
+import unidiff
 
 from rebasehelper.cli import CLI
 from rebasehelper.config import Config
@@ -78,6 +79,17 @@ class TestRebase(object):
         execution_dir, results_dir, debug_log_file = Application.setup(config)
         app = Application(config, execution_dir, results_dir, debug_log_file)
         app.run()
+        changes = os.path.join(RESULTS_DIR, 'changes.patch')
+        patch = unidiff.PatchSet.from_filename(changes, encoding='UTF-8')
+        assert patch[0].is_removed_file   # backported.patch
+        assert patch[1].is_modified_file  # test.spec
+        assert '-Patch1:         conflicting.patch\n' in patch[1][0].source
+        assert '-Patch2:         backported.patch\n' in patch[1][0].source
+        assert '+#Patch1: conflicting.patch\n' in patch[1][0].target
+        assert '-%patch1 -p1\n' in patch[1][1].source
+        assert '-%patch2 -p1\n' in patch[1][1].source
+        assert '+#%%patch1 -p1\n' in patch[1][1].target
+        assert '+- New upstream release {}\n'.format(self.NEW_VERSION) in patch[1][2].target
         with open(os.path.join(RESULTS_DIR, 'report.json')) as f:
             report = json.load(f)
             assert 'success' in report['result']
