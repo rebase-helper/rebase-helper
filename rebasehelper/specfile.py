@@ -448,7 +448,7 @@ class SpecFile(object):
         if remove_patches is None:
             remove_patches = []
 
-        for index, line in enumerate(self.spec_content.sections['%package']):
+        for index, line in enumerate(self.spec_content.sections['%prep']):
             #  if patch is applied on the line, try to check if it should be commented out
             if line.startswith('%patch'):
                 #  check patch numbers
@@ -457,16 +457,16 @@ class SpecFile(object):
                     if line.startswith('%patch{0}'.format(num)):
                         comment = '# Following patch contains conflicts'
                         if disable_inapplicable_patches:
-                            self.spec_content.sections['%package'][index] = '{}#%{}'.format(comment, line)
+                            self.spec_content.sections['%prep'][index] = '{}#%{}'.format(comment, line)
                         else:
-                            self.spec_content.sections['%package'][index] = '{}{}'.format(comment, line)
+                            self.spec_content.sections['%prep'][index] = '{}{}'.format(comment, line)
                         #  remove the patch number from list
                         comment_out.remove(num)
                         break
                 for num in remove_patches:
                     #  if the line should be removed
                     if line.startswith('%patch{0}'.format(num)):
-                        self.spec_content.sections['%package'][index] = ''
+                        self.spec_content.sections['%prep'][index] = ''
                         #  remove the patch number from list
                         remove_patches.remove(num)
                         break
