@@ -55,11 +55,10 @@ class TestRebase(object):
         return repo
 
     @pytest.mark.parametrize('buildtool', [
-        pytest.mark.skipif(
+        pytest.param('rpmbuild', marks=pytest.mark.skipif(
             os.geteuid() != 0,
-            reason='requires superuser privileges')
-        ('rpmbuild'),
-        pytest.mark.long_running('mock'),
+            reason='requires superuser privileges')),
+        pytest.param('mock', marks=pytest.mark.long_running),
     ])
     @pytest.mark.integration
     @pytest.mark.usefixtures('initialized_git_repo')
