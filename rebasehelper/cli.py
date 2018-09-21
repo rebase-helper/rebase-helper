@@ -97,7 +97,6 @@ class CliHelper(object):
     def run():
         debug_log_file = None
         try:
-            # be verbose until debug_log_file is created
             cli = CLI()
             if hasattr(cli, 'version'):
                 logger.info(VERSION)
@@ -115,6 +114,8 @@ class CliHelper(object):
                 main_handler.setLevel(logging.INFO)
             elif config.verbose == 1:
                 main_handler.setLevel(CustomLogger.VERBOSE)
+            else:
+                main_handler.setLevel(logging.DEBUG)
             app = Application(config, execution_dir, results_dir, debug_log_file)
             app.run()
         except KeyboardInterrupt:

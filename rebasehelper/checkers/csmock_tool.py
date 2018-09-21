@@ -39,6 +39,13 @@ class CsmockTool(BaseChecker):
     CATEGORY = "SRPM"
 
     @classmethod
+    def is_available(cls):
+        try:
+            return ProcessHelper.run_subprocess([cls.NAME, '--help'], output_file=ProcessHelper.DEV_NULL) == 0
+        except (IOError, OSError):
+            return False
+
+    @classmethod
     def run_check(cls, results_dir, **kwargs):
         """Compares old and new RPMs using pkgdiff"""
         csmock_report = {}

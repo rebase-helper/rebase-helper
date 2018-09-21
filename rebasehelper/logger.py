@@ -188,5 +188,5 @@ console_formatter = logging.Formatter("%(levelname)s: %(message)s")
 log_formatter = logging.Formatter("%(message)s")
 debug_log_formatter = logging.Formatter("%(asctime)s %(filename)s:%(lineno)s %(funcName)s: %(message)s")
 
-main_handler = LoggerHelper.add_stream_handler(logger, logging.DEBUG, console_formatter)
+main_handler = LoggerHelper.add_stream_handler(logger, logging.INFO, console_formatter)
 output_tool_handler = LoggerHelper.add_stream_handler(logger_output)

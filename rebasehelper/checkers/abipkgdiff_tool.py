@@ -50,6 +50,13 @@ class AbiCheckerTool(BaseChecker):
     results_dir = ''
     CATEGORY = 'RPM'
 
+    @classmethod
+    def is_available(cls):
+        try:
+            return ProcessHelper.run_subprocess([cls.NAME, '--help'], output_file=ProcessHelper.DEV_NULL) == 3
+        except (IOError, OSError):
+            return False
+
     # Example
     # abipkgdiff --d1 dbus-glib-debuginfo-0.80-3.fc12.x86_64.rpm \
     # --d2 dbus-glib-debuginfo-0.104-3.fc23.x86_64.rpm \
