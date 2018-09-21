@@ -44,6 +44,13 @@ class LicenseCheckTool(BaseChecker):
     license_files_changes = dict()
 
     @classmethod
+    def is_available(cls):
+        try:
+            return ProcessHelper.run_subprocess([cls.NAME, '--help'], output_file=ProcessHelper.DEV_NULL) == 0
+        except (IOError, OSError):
+            return False
+
+    @classmethod
     def get_license_changes(cls, old_dir, new_dir):
         """
         Finds differences in licenses between old and new source files.

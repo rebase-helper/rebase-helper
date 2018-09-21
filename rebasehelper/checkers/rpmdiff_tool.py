@@ -43,6 +43,13 @@ class RpmDiffTool(BaseChecker):
     CATEGORY = "RPM"
 
     @classmethod
+    def is_available(cls):
+        try:
+            return ProcessHelper.run_subprocess([cls.NAME, '--help'], output_file=ProcessHelper.DEV_NULL) == 0
+        except (IOError, OSError):
+            return False
+
+    @classmethod
     def _get_rpms(cls, rpm_list):
         rpm_dict = {}
         for rpm_name in rpm_list:

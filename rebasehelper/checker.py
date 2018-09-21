@@ -70,6 +70,10 @@ class BaseChecker(object):
         return cls.DEFAULT
 
     @classmethod
+    def is_available(cls):
+        return False
+
+    @classmethod
     def run_check(cls, results_dir, **kwargs):
         """Perform the check itself and return results."""
         raise NotImplementedError()
@@ -148,11 +152,11 @@ class CheckersRunner(object):
 
     def get_supported_tools(self):
         """Return list of supported tools"""
-        return self.plugin_classes.keys()
+        return [k for k, v in six.iteritems(self.plugin_classes) if v.is_available()]
 
     def get_default_tools(self):
         """Return list of default tools"""
-        return [k for k, v in six.iteritems(self.plugin_classes) if v.is_default()]
+        return [k for k, v in six.iteritems(self.plugin_classes) if v.is_available() and v.is_default()]
 
 
 # Global instance of CheckersRunner. It is enough to load it once per application run.
