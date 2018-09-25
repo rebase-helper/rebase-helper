@@ -131,6 +131,7 @@ class LookasideCacheHelper(object):
                 self.check_only = check_only
                 self.chunksize = chunksize
                 self.start = time.time()
+                self.uploaded = False
                 fields = [
                     ('name', package),
                     ('{}sum'.format(hashtype), hsh),
@@ -146,12 +147,17 @@ class LookasideCacheHelper(object):
                 self.headers = {'Content-Type': content_type}
 
             def __iter__(self):
-                totalsize = len(self.data)
-                for offset in range(0, totalsize, self.chunksize):
-                    transferred = min(offset + self.chunksize, totalsize)
-                    if not self.check_only:
-                        DownloadHelper.progress(totalsize, transferred, self.start)
-                    yield self.data[offset:transferred]
+                if self.uploaded:
+                    # ensure the progressbar is shown only once (SPNEGOAuth causes second request)
+                    yield self.data
+                else:
+                    totalsize = len(self.data)
+                    for offset in range(0, totalsize, self.chunksize):
+                        transferred = min(offset + self.chunksize, totalsize)
+                        if not self.check_only:
+                            DownloadHelper.progress(totalsize, transferred, self.start)
+                        yield self.data[offset:transferred]
+                    self.uploaded = True
 
         def post(check_only=False):
             cd = ChunkedData(check_only)
