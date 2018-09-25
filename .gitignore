@@ -41,3 +41,5 @@ htmlcov
 .spyderworkspace
 .cache
 
+# PyCharm virtual environments
+venv
