@@ -448,28 +448,25 @@ class SpecFile(object):
         if remove_patches is None:
             remove_patches = []
 
-        for index, line in enumerate(self.spec_content.sections['%prep']):
-            #  if patch is applied on the line, try to check if it should be commented out
+        i = 0
+        while i < len(self.spec_content.sections['%prep']):
+            line = self.spec_content.sections['%prep'][i]
             if line.startswith('%patch'):
-                #  check patch numbers
-                for num in comment_out:
-                    #  if the line should be commented out
-                    if line.startswith('%patch{0}'.format(num)):
-                        comment = '# Following patch contains conflicts'
+                for num in reversed(comment_out):
+                    if line.startswith('%patch{}'.format(num)):
                         if disable_inapplicable_patches:
-                            self.spec_content.sections['%prep'][index] = '{}#%{}'.format(comment, line)
-                        else:
-                            self.spec_content.sections['%prep'][index] = '{}{}'.format(comment, line)
-                        #  remove the patch number from list
+                            self.spec_content.sections['%prep'][i] = '#%{}'.format(line)
+                        self.spec_content.sections['%prep'].insert(i, '# The following patch contains conflicts')
                         comment_out.remove(num)
+                        i += 1
                         break
-                for num in remove_patches:
-                    #  if the line should be removed
-                    if line.startswith('%patch{0}'.format(num)):
-                        self.spec_content.sections['%prep'][index] = ''
-                        #  remove the patch number from list
+                for num in reversed(remove_patches):
+                    if line.startswith('%patch{}'.format(num)):
+                        del self.spec_content.sections['%prep'][i]
                         remove_patches.remove(num)
+                        i -= 1
                         break
+            i += 1
 
     def update_paths_to_patches(self):
         # Fix paths in rebase_spec_file to patches to current directory
