@@ -145,8 +145,15 @@ class GitPatchTool(PatchBase):
             cls.old_repo.create_remote(upstream, url=cls.new_sources).fetch()
             root_commit = cls.old_repo.git.rev_list('HEAD', max_parents=0)
             last_commit = cls.old_repo.commit('HEAD')
+            if cls.favor_on_conflict == 'upstream':
+                strategy_option = 'ours'
+            elif cls.favor_on_conflict == 'downstream':
+                strategy_option = 'theirs'
+            else:
+                strategy_option = False
             try:
                 cls.output_data = cls.old_repo.git.rebase(root_commit, last_commit,
+                                                          strategy_option=strategy_option,
                                                           onto='{}/master'.format(upstream),
                                                           stdout_as_string=six.PY3)
             except git.GitCommandError as e:
@@ -279,6 +286,7 @@ class GitPatchTool(PatchBase):
         cls.rest_sources = rest_sources
         cls.patches = patches
         cls.non_interactive = kwargs.get('non_interactive')
+        cls.favor_on_conflict = kwargs.get('favor_on_conflict')
         if not os.path.isdir(os.path.join(cls.old_sources, '.git')):
             cls.old_repo = cls.init_git(old_dir)
             cls.new_repo = cls.init_git(new_dir)

@@ -147,6 +147,13 @@ OPTIONS = [
         "help": "do not interact with user",
     },
     {
+        "name": ["--favor-on-conflict"],
+        "choices": ["downstream", "upstream", "off"],
+        "default": "off",
+        "dest": "favor_on_conflict",
+        "help": "favor downstream or upstream changes when conflicts appear",
+    },
+    {
         "name": ["--not-download-sources"],
         "default": False,
         "switch": True,
