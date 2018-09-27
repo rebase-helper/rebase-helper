@@ -532,19 +532,36 @@ class Application(object):
                 six.text_type(e), SRPMBuilder.get_supported_tools()))
 
         for version in ['old', 'new']:
+            koji_build_id = None
             results_dir = '{}-build'.format(os.path.join(self.results_dir, version))
             spec = self.spec_file if version == 'old' else self.rebase_spec_file
             package_name = spec.get_package_name()
             package_version = spec.get_version()
             package_full_version = spec.get_full_version()
             logger.info('Building source package for %s version %s', package_name, package_full_version)
+
+            if version == 'old' and self.conf.get_old_build_from_koji:
+                koji_build_id, package_version, package_full_version = KojiHelper.get_old_build_info(package_name,
+                                                                                                     package_version)
+
             build_dict = dict(
                 name=package_name,
                 version=package_version,
                 srpm_buildtool=self.conf.srpm_buildtool,
                 srpm_builder_options=self.conf.srpm_builder_options)
             try:
-                build_dict.update(builder.build(spec, results_dir, **build_dict))
+                if koji_build_id:
+                    session = KojiHelper.create_session()
+                    build_dict['srpm'], build_dict['logs'] = KojiHelper.download_build(session,
+                                                                                       koji_build_id,
+                                                                                       os.path.join(
+                                                                                           results_dir,
+                                                                                           'SRPM'
+                                                                                       ),
+                                                                                       arches=['src'])
+
+                else:
+                    build_dict.update(builder.build(spec, results_dir, **build_dict))
                 build_dict = self._sanitize_build_dict(build_dict)
                 results_store.set_build_data(version, build_dict)
             except RebaseHelperError:  # pylint: disable=try-except-raise
@@ -586,19 +603,9 @@ class Application(object):
                 package_full_version = spec.get_full_version()
 
                 if version == 'old' and self.conf.get_old_build_from_koji:
-                    if KojiHelper.functional:
-                        session = KojiHelper.create_session()
-                        koji_version, koji_build_id = KojiHelper.get_latest_build(session, package_name)
-                        if koji_version:
-                            if koji_version != package_version:
-                                logger.warning('Version of the latest Koji build (%s) with id (%s) '
-                                               'differs from version in SPEC file (%s)!',
-                                               koji_version, koji_build_id, package_version)
-                            package_version = package_full_version = koji_version
-                        else:
-                            logger.warning('Unable to find the latest Koji build!')
-                    else:
-                        logger.warning('Unable to get the latest Koji build!')
+                    koji_build_id, package_version, package_full_version = KojiHelper.get_old_build_info(
+                                                                               package_name,
+                                                                               package_version)
 
                 build_dict = dict(
                     name=package_name,
@@ -622,7 +629,11 @@ class Application(object):
                         session = KojiHelper.create_session()
                         build_dict['rpm'], build_dict['logs'] = KojiHelper.download_build(session,
                                                                                           koji_build_id,
-                                                                                          results_dir)
+                                                                                          os.path.join(
+                                                                                              results_dir,
+                                                                                              'RPM',
+                                                                                          ),
+                                                                                          arches=['noarch', 'x86_64'])
                     else:
                         build_dict.update(builder.build(spec, results_dir, **build_dict))
                 if builder.creates_tasks() and task_id and not koji_build_id:
