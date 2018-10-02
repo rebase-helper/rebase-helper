@@ -23,6 +23,7 @@
 import six
 import pkg_resources
 
+from rebasehelper.constants import DOCS_BUILD
 from rebasehelper.logger import logger
 
 
@@ -69,6 +70,14 @@ class VersioneersRunner(object):
     def get_available_versioneers(self):
         """Returns a list of available versioneers"""
         return self.versioneers.keys()
+
+    @staticmethod
+    def get_all_versioneers():
+        """Returns a list of all versioneers."""
+        return [entrypoint.name for entrypoint in pkg_resources.iter_entry_points('rebasehelper.versioneers')]
+
+    def get_versioneers(self):
+        return self.get_all_versioneers() if DOCS_BUILD else self.get_available_versioneers()
 
     def run(self, versioneer, package_name, category, versioneer_blacklist=None):
         """

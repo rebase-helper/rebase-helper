@@ -94,46 +94,46 @@ OPTIONS = [
     # tool selection
     {
         "name": ["--buildtool"],
-        "choices": Builder.get_supported_tools(),
+        "choices": Builder.get_tools(),
         "default": Builder.get_default_tool(),
         "help": "build tool to use, defaults to %(default)s",
     },
     {
         "name": ["--srpm-buildtool"],
-        "choices": SRPMBuilder.get_supported_tools(),
+        "choices": SRPMBuilder.get_tools(),
         "default": SRPMBuilder.get_default_tool(),
         "help": "SRPM build tool to use, defaults to %(default)s",
     },
     {
         "name": ["--pkgcomparetool"],
-        "choices": checkers_runner.get_supported_tools(),
+        "choices": checkers_runner.get_tools(),
         "default": checkers_runner.get_default_tools(),
         "type": lambda s: s.split(','),
         "help": "set of tools to use for package comparison, defaults to %(default)s",
     },
     {
         "name": ["--outputtool"],
-        "choices": BaseOutputTool.get_supported_tools(),
+        "choices": BaseOutputTool.get_tools(),
         "default": BaseOutputTool.get_default_tool(),
         "help": "tool to use for formatting rebase output, defaults to %(default)s",
     },
     {
         "name": ["--versioneer"],
-        "choices": versioneers_runner.get_available_versioneers(),
+        "choices": versioneers_runner.get_versioneers(),
         "default": None,
         "help": "tool to use for determining latest upstream version",
     },
     # blacklists
     {
         "name": ["--versioneer-blacklist"],
-        "choices": versioneers_runner.get_available_versioneers(),
+        "choices": versioneers_runner.get_versioneers(),
         "default": [],
         "type": lambda s: s.split(","),
         "help": "prevent specified versioneers from being run",
     },
     {
         "name": ["--spec-hook-blacklist"],
-        "choices": spec_hooks_runner.get_available_spec_hooks(),
+        "choices": spec_hooks_runner.get_spec_hooks(),
         "default": [],
         "type": lambda s: s.split(","),
         "help": "prevent specified spec hooks from being run",
