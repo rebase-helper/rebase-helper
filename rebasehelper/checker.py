@@ -164,7 +164,7 @@ class CheckersRunner(object):
 
     def get_default_tools(self):
         """Return list of default tools"""
-        return [k for k, v in six.iteritems(self.plugin_classes) if v.is_available() and v.is_default()]
+        return [k for k, v in six.iteritems(self.plugin_classes) if v.is_default()]
 
 
 # Global instance of CheckersRunner. It is enough to load it once per application run.

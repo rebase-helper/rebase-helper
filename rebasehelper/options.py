@@ -109,7 +109,8 @@ OPTIONS = [
         "choices": checkers_runner.get_tools(),
         "default": checkers_runner.get_default_tools(),
         "type": lambda s: s.split(','),
-        "help": "set of tools to use for package comparison, defaults to %(default)s",
+        "help": "set of tools to use for package comparison, defaults to "
+                "%(default)s if available",
     },
     {
         "name": ["--outputtool"],
