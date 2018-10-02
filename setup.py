@@ -125,8 +125,8 @@ setup(
             'hackage = rebasehelper.versioneers.hackage_versioneer:HackageVersioneer',
         ],
         'rebasehelper.output_tools': [
-            'json_output_tool = rebasehelper.output_tools.json_output_tool:JSONOutputTool',
-            'text_output_tool = rebasehelper.output_tools.text_output_tool:TextOutputTool',
+            'json = rebasehelper.output_tools.json_output_tool:JSONOutputTool',
+            'text = rebasehelper.output_tools.text_output_tool:TextOutputTool',
         ]
     },
     install_requires=get_requirements(),
