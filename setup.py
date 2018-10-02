@@ -110,11 +110,11 @@ setup(
             'licensecheck = rebasehelper.checkers.licensecheck_tool:LicenseCheckTool',
         ],
         'rebasehelper.spec_hooks': [
-            'typo_fix = rebasehelper.spec_hooks.typo_fix:TypoFixHook',
-            'pypi_url_fix = rebasehelper.spec_hooks.pypi_url_fix:PyPIURLFixHook',
-            'ruby_helper = rebasehelper.spec_hooks.ruby_helper:RubyHelperHook',
-            'commit_hash_updater = rebasehelper.spec_hooks.commit_hash_updater:CommitHashUpdaterHook',
-            'paths_to_rpm_macros = rebasehelper.spec_hooks.paths_to_rpm_macros:PathsToRPMMacrosHook',
+            'TypoFixHook = rebasehelper.spec_hooks.typo_fix:TypoFixHook',
+            'PyPiURLFixHook = rebasehelper.spec_hooks.pypi_url_fix:PyPIURLFixHook',
+            'RubyHelperHook = rebasehelper.spec_hooks.ruby_helper:RubyHelperHook',
+            'CommitHashUpdaterHook = rebasehelper.spec_hooks.commit_hash_updater:CommitHashUpdaterHook',
+            'PathsToRPMMacrosHook = rebasehelper.spec_hooks.paths_to_rpm_macros:PathsToRPMMacrosHook',
         ],
         'rebasehelper.versioneers': [
             'anitya = rebasehelper.versioneers.anitya_versioneer:AnityaVersioneer',
