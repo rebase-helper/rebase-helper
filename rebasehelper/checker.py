@@ -26,7 +26,7 @@ import os
 import six
 
 from rebasehelper.logger import logger
-from rebasehelper.constants import RESULTS_DIR
+from rebasehelper.constants import RESULTS_DIR, DOCS_BUILD
 
 
 class BaseChecker(object):
@@ -154,9 +154,17 @@ class CheckersRunner(object):
         """Return list of supported tools"""
         return [k for k, v in six.iteritems(self.plugin_classes) if v.is_available()]
 
+    @staticmethod
+    def get_all_tools():
+        """Returns a list of all checkers."""
+        return [entrypoint.name for entrypoint in pkg_resources.iter_entry_points('rebasehelper.checkers')]
+
+    def get_tools(self):
+        return self.get_all_tools() if DOCS_BUILD else self.get_supported_tools()
+
     def get_default_tools(self):
         """Return list of default tools"""
-        return [k for k, v in six.iteritems(self.plugin_classes) if v.is_available() and v.is_default()]
+        return [k for k, v in six.iteritems(self.plugin_classes) if v.is_default()]
 
 
 # Global instance of CheckersRunner. It is enough to load it once per application run.
