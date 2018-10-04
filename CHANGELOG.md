@@ -2,6 +2,26 @@
 
 ## [Unreleased]
 
+## [0.14.0] - 2018-10-04
+### Added
+- Added **PathsToRPMMacros** SPEC hook for transforming paths in *%files* section
+- Added `--favor-on-conflict` option to prefer upstream or downstream changes with conflicting patches
+
+### Changed
+- Extended **PyPIURLFix** SPEC hook to incorporate the new https://pypi.org website
+- Made processing of patches in a SPEC file more robust
+- Rewritten functional test to use an artificial package designed to check most aspects of the rebase process
+- `pylint` is now run with Python 3 only, as Python 2 variant is no longer supported
+- Code refactoring, simplified `SpecFile` class
+- Checkers are no longer required for **rebase-helper** to run, only available checkers are used
+
+### Fixed
+- Fixed bug in **licensecheck** checker when used with **json** output tool
+- Fixed SPEC hook tests
+- Fixed strangely acting lookaside cache upload progressbar
+- Fixed downloading of SRPMs with `--get-old-build-from-koji`
+- Fixed building usage documentation
+
 ## [0.13.2] - 2018-05-18
 ### Added
 - Added **licensecheck** checker for detecting license changes
