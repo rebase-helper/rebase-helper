@@ -27,7 +27,6 @@ import os
 import six
 import pkg_resources
 
-from rebasehelper.constants import DOCS_BUILD
 from rebasehelper.helpers.path_helper import PathHelper
 from rebasehelper.temporary_environment import TemporaryEnvironment
 from rebasehelper.logger import logger
@@ -390,10 +389,6 @@ class SRPMBuilder(object):
         return [entrypoint.name for entrypoint in pkg_resources.iter_entry_points('rebasehelper.srpm_build_tools')]
 
     @classmethod
-    def get_tools(cls):
-        return cls.get_all_tools() if DOCS_BUILD else cls.get_supported_tools()
-
-    @classmethod
     def get_default_tool(cls):
         """Returns default build tool"""
         default = [k for k, v in six.iteritems(cls.srpm_build_tools) if v.is_default()]
@@ -487,10 +482,6 @@ class Builder(object):
     def get_all_tools():
         """Returns a list of all build tools."""
         return [entrypoint.name for entrypoint in pkg_resources.iter_entry_points('rebasehelper.build_tools')]
-
-    @classmethod
-    def get_tools(cls):
-        return cls.get_all_tools() if DOCS_BUILD else cls.get_supported_tools()
 
     @classmethod
     def get_default_tool(cls):

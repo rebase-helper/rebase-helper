@@ -1507,9 +1507,6 @@ class SpecHooksRunner(object):
         """Returns a list of all spec hooks."""
         return [entrypoint.name for entrypoint in pkg_resources.iter_entry_points('rebasehelper.spec_hooks')]
 
-    def get_spec_hooks(self):
-        return self.get_all_spec_hooks() if constants.DOCS_BUILD else self.get_available_spec_hooks()
-
     def run_spec_hooks(self, spec_file, rebase_spec_file, **kwargs):
         """
         Runs all spec hooks.
