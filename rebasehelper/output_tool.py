@@ -27,7 +27,7 @@ import pkg_resources
 from rebasehelper.logger import logger, logger_output
 from rebasehelper.results_store import results_store
 from rebasehelper.checker import checkers_runner
-from rebasehelper.constants import RESULTS_DIR, REPORT, DOCS_BUILD
+from rebasehelper.constants import RESULTS_DIR, REPORT
 
 
 class BaseOutputTool(object):
@@ -162,10 +162,6 @@ class BaseOutputTool(object):
     def get_all_tools():
         """Returns a list of all output tools."""
         return [entrypoint.name for entrypoint in pkg_resources.iter_entry_points('rebasehelper.output_tools')]
-
-    @classmethod
-    def get_tools(cls):
-        return cls.get_all_tools() if DOCS_BUILD else cls.get_supported_tools()
 
     @staticmethod
     def get_default_tool():

@@ -21,7 +21,6 @@
 #          Tomas Hozza <thozza@redhat.com>
 
 import locale
-import sys
 
 
 PROGRAM_DESCRIPTION = 'Tool to help package maintainers rebase their packages to the latest upstream version'
@@ -52,5 +51,3 @@ CONFIG_FILENAME = 'rebase-helper.cfg'
 
 DEFENC = locale.getpreferredencoding()
 DEFENC = 'utf-8' if DEFENC == 'ascii' else DEFENC
-
-DOCS_BUILD = 'sphinx' in sys.modules

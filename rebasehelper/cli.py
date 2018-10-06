@@ -42,13 +42,17 @@ class CLI(object):
     """ Class for processing data from commandline """
 
     @staticmethod
-    def build_parser():
+    def build_parser(available_choices_only=False):
         parser = CustomArgumentParser(description=PROGRAM_DESCRIPTION,
                                       formatter_class=CustomHelpFormatter)
 
         group = parser.add_mutually_exclusive_group()
         current_group = 0
         for option in traverse_options(OPTIONS):
+            available_choices = option.pop("available_choices", option.get("choices"))
+            if available_choices_only:
+                option["choices"] = available_choices
+
             option_kwargs = dict(option)
             for key in ("group", "default", "name"):
                 if key in option_kwargs:
@@ -81,7 +85,7 @@ class CLI(object):
                 args[i:i+2] = ['='.join(args[i:i+2])]
             except ValueError:
                 continue
-        self.parser = CLI.build_parser()
+        self.parser = CLI.build_parser(available_choices_only=True)
         self.args = self.parser.parse_args(args)
 
     def __getattr__(self, name):
