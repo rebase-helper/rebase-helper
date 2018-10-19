@@ -33,6 +33,7 @@ from pkg_resources import parse_version
 
 from rebasehelper.archive import Archive
 from rebasehelper.specfile import SpecFile, get_rebase_name, spec_hooks_runner
+from rebasehelper.build_log_hook import build_log_hook_runner
 from rebasehelper.logger import logger, log_formatter, debug_log_formatter, LoggerHelper, CustomLogger
 from rebasehelper import constants
 from rebasehelper.output_tool import output_tools_runner
@@ -800,6 +801,7 @@ class Application(object):
                            '\nThe error message is: %s', six.text_type(e))
 
     def prepare_next_run(self, results_dir):
+        build_log_hook_runner.run(self.spec_file, self.rebase_spec_file, **self.kwargs)
         # Save current rebase spec file content
         self.rebase_spec_file.save()
         if not self.conf.non_interactive and \

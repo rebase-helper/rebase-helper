@@ -28,6 +28,7 @@ class ResultsStore(object):
 
     RESULTS_INFORMATION = 'information'
     RESULTS_CHECKERS = 'checkers'
+    RESULTS_BUILD_LOG_HOOKS = 'build_log_hooks'
     RESULTS_BUILDS = 'builds'
     RESULTS_PATCHES = 'patches'
     RESULTS_CHANGES_PATCH = 'changes_patch'
@@ -43,6 +44,7 @@ class ResultsStore(object):
         if results_type not in (
                 self.RESULTS_INFORMATION,
                 self.RESULTS_CHECKERS,
+                self.RESULTS_BUILD_LOG_HOOKS,
                 self.RESULTS_BUILDS,
                 self.RESULTS_PATCHES,
                 self.RESULTS_CHANGES_PATCH,
@@ -65,6 +67,9 @@ class ResultsStore(object):
 
     def set_checker_output(self, text, data):
         self.set_results(self.RESULTS_CHECKERS, {text: data})
+
+    def set_build_log_hooks_result(self, text, data):
+        self.set_results(self.RESULTS_BUILD_LOG_HOOKS, {text: data})
 
     def set_build_data(self, version, data):
         self.set_results(self.RESULTS_BUILDS, {version: data})
@@ -96,6 +101,9 @@ class ResultsStore(object):
 
     def get_checkers(self):
         return self._data_store.get(self.RESULTS_CHECKERS, {})
+
+    def get_build_log_hooks(self):
+        return self._data_store.get(self.RESULTS_BUILD_LOG_HOOKS, {})
 
     def get_summary_info(self):
         return self._data_store.get(self.RESULTS_INFORMATION, None)
