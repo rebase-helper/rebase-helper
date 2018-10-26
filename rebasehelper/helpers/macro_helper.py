@@ -42,6 +42,40 @@ class MacroHelper(object):
             return default
 
     @staticmethod
+    def expand_macros(macros):
+        """Expands values of multiple macros.
+
+        Args:
+            macros (list): List of macros to be expanded, macros are
+                represented as dicts.
+
+        Returns:
+            list: List of macros with expanded values.
+
+        """
+        for macro in macros:
+            macro['value'] = MacroHelper.expand(macro['value'])
+        return macros
+
+    @staticmethod
+    def substitute_path_with_macros(path, macros):
+        """Substitutes parts of a path with macros.
+
+        Args:
+            path (str): Path to be changed.
+            macros (list): Macros which can be used as a substitution.
+
+        Returns:
+            str: Path expressed using macros.
+
+        """
+        for m in macros:
+            if m['value'] and m['value'] in path:
+                path = path.replace(m['value'], '%{{{}}}'.format(m['name']))
+
+        return path
+
+    @staticmethod
     def dump():
         """Gets list of all defined macros.
 
