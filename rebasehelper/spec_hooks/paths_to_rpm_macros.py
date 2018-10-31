@@ -32,21 +32,6 @@ class PathsToRPMMacrosHook(BaseSpecHook):
     NAME = 'Paths To RPM Macros'
     CATEGORIES = None
 
-    MACROS_WHITELIST = [
-        '_sysconfdir',
-        '_bindir',
-        '_libdir',
-        '_libexecdir',
-        '_sbindir',
-        '_sharedstatedir',
-        '_datadir',
-        '_includedir',
-        '_infodir',
-        '_mandir',
-        '_localstatedir',
-        '_initdir',
-    ]
-
     @classmethod
     def get_name(cls):
         return cls.NAME
@@ -57,7 +42,7 @@ class PathsToRPMMacrosHook(BaseSpecHook):
 
     @classmethod
     def run(cls, spec_file, rebase_spec_file, **kwargs):
-        macros = [m for m in rebase_spec_file.macros if m['name'] in cls.MACROS_WHITELIST]
+        macros = [m for m in rebase_spec_file.macros if m['name'] in MacroHelper.MACROS_WHITELIST]
         macros = MacroHelper.expand_macros(macros)
         # ensure maximal greediness
         macros.sort(key=lambda k: len(k['value']), reverse=True)

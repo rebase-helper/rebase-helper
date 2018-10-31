@@ -34,6 +34,21 @@ class MacroHelper(object):
 
     """Class for working with RPM macros"""
 
+    MACROS_WHITELIST = [
+        '_sysconfdir',
+        '_bindir',
+        '_libdir',
+        '_libexecdir',
+        '_sbindir',
+        '_sharedstatedir',
+        '_datadir',
+        '_includedir',
+        '_infodir',
+        '_mandir',
+        '_localstatedir',
+        '_initdir',
+    ]
+
     @staticmethod
     def expand(s, default=None):
         try:
