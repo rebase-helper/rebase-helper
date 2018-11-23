@@ -116,7 +116,9 @@ setup(
             'CommitHashUpdaterHook = rebasehelper.spec_hooks.commit_hash_updater:CommitHashUpdaterHook',
             'PathsToRPMMacrosHook = rebasehelper.spec_hooks.paths_to_rpm_macros:PathsToRPMMacrosHook',
         ],
-        'rebasehelper.build_log_hooks': [],
+        'rebasehelper.build_log_hooks': [
+            'FilesBuildLogHook = rebasehelper.build_log_hooks.files_build_log_hook:FilesBuildLogHook',
+        ],
         'rebasehelper.versioneers': [
             'anitya = rebasehelper.versioneers.anitya_versioneer:AnityaVersioneer',
             'pypi = rebasehelper.versioneers.pypi_versioneer:PyPIVersioneer',

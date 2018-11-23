@@ -224,6 +224,9 @@ class TestSpecFile(object):
         assert SpecFile.extract_version_from_archive_name('libsigc++-2.10.0.tar.xz',
                                                           name) == ('2.10.0', '', '')
 
+    def test_get_main_files_section(self, spec_object):
+        assert spec_object.get_main_files_section() == '%files'
+
     def test_spec_missing_file(self, spec_object):
         files = {'missing': ['/usr/bin/test2']}
         spec_object.modify_spec_files_section(files)

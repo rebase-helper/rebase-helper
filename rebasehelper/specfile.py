@@ -536,6 +536,9 @@ class SpecFile(object):
     # PACKAGE VERSION RELATED METHODS #
     ###################################
 
+    def get_NVR(self):
+        return '{}-{}-{}'.format(self.get_package_name(), self.get_full_version(), self.get_release())
+
     def get_epoch_number(self):
         """
         Method for getting epoch of the package
@@ -1109,6 +1112,24 @@ class SpecFile(object):
             else:
                 result.append(prep.pop(0))
         return result
+
+    def get_main_files_section(self):
+        """Finds the exact name of the main %files section.
+
+        Returns:
+            str: Name of the main files section.
+
+        """
+        parser = SilentArgumentParser()
+        parser.add_argument('-n', default=None)
+        parser.add_argument('-f')
+        parser.add_argument('subpackage', nargs='?', default=None)
+
+        for sec_name in self.spec_content.sections:
+            if sec_name.startswith('%files'):
+                ns, _ = parser.parse_known_args(shlex.split(sec_name)[1:])
+                if not ns.subpackage and not ns.n:
+                    return sec_name
 
     #############################################
     # SPEC CONTENT MANIPULATION RELATED METHODS #
