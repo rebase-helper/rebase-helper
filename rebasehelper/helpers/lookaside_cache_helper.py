@@ -106,9 +106,9 @@ class LookasideCacheHelper(object):
             else:
                 os.unlink(target)
         if tool == 'fedpkg':
-            url = '{}/{}/{}/{}/{}/{}'.format(url, package, filename, hashtype, hsh, filename)
+            url = '{0}/{1}/{2}/{3}/{4}/{2}'.format(url, package, filename, hashtype, hsh)
         else:
-            url = '{}/{}/{}/{}/{}'.format(url, package, filename, hsh, filename)
+            url = '{0}/{1}/{2}/{3}/{2}'.format(url, package, filename, hsh)
         try:
             DownloadHelper.download_file(url, target)
         except DownloadError as e:

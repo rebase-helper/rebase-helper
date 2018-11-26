@@ -210,7 +210,6 @@ class BuildToolBase(object):
         :param spec: spec file object
         """
         # do nothing by default
-        pass
 
     @classmethod
     def build(cls, spec, results_dir, srpm, **kwargs):

@@ -98,7 +98,6 @@ class BaseChecker(object):
         Returns:
             list: List of strings to be output to CLI as warning messages.
         """
-        pass
 
 
 class CheckersRunner(object):
