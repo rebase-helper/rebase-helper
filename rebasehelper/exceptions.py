@@ -39,26 +39,16 @@ class RebaseHelperError(Exception):
 
 
 class CheckerNotFoundError(RuntimeError):
-    """
-    Error indicating failure unable to find checker binary.
-    """
-    pass
+    """Error indicating failure unable to find checker binary"""
 
 
 class DownloadError(Exception):
-    """
-    Exception indicating that download of a file failed.
-    """
-    pass
+    """Exception indicating that download of a file failed"""
 
 
 class ParseError(Exception):
-
     pass
 
 
 class LookasideCacheError(Exception):
-
     """Exception indicating a problem accessing lookaside cache"""
-
-    pass
