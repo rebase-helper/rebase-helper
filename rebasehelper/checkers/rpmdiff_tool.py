@@ -86,12 +86,12 @@ class RpmDiffTool(BaseChecker):
         added = []
         removed = []
         for item in results_dict['removed']:
-            found = [x for x in results_dict['added'] if os.path.basename(item) in x]
+            found = [x for x in results_dict['added'] if os.path.basename(item) == os.path.basename(x)]
             if not found:
                 removed.append(item)
 
         for item in results_dict['added']:
-            found = [x for x in results_dict['removed'] if os.path.basename(item) in x]
+            found = [x for x in results_dict['removed'] if os.path.basename(item) == os.path.basename(x)]
             if not found:
                 added.append(item)
         results_dict['added'] = added
