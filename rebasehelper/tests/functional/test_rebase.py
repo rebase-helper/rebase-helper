@@ -35,6 +35,17 @@ from rebasehelper.helpers.git_helper import GitHelper
 from rebasehelper.exceptions import RebaseHelperError
 
 
+@pytest.fixture
+def initialized_git_repo(workdir):
+    repo = git.Repo.init(workdir)
+    # Configure user otherwise app.apply_changes() will fail
+    repo.git.config('user.name', GitHelper.get_user(), local=True)
+    repo.git.config('user.email', GitHelper.get_email(), local=True)
+    repo.git.add(all=True)
+    repo.index.commit('Initial commit', skip_hooks=True)
+    return repo
+
+
 class TestRebase(object):
 
     TEST_FILES = [
@@ -45,16 +56,6 @@ class TestRebase(object):
     ]
 
     NEW_VERSION = '0.2'
-
-    @pytest.fixture
-    def initialized_git_repo(self, workdir):
-        repo = git.Repo.init(workdir)
-        # Configure user otherwise app.apply_changes() will fail
-        repo.git.config('user.name', GitHelper.get_user(), local=True)
-        repo.git.config('user.email', GitHelper.get_email(), local=True)
-        repo.git.add(all=True)
-        repo.index.commit('Initial commit', skip_hooks=True)
-        return repo
 
     @pytest.mark.parametrize('buildtool', [
         pytest.param('rpmbuild', marks=pytest.mark.skipif(
@@ -133,3 +134,60 @@ class TestRebase(object):
             assert lib['Variables changes summary']['Removed']['count'] == 1
         repo = git.Repo(execution_dir)
         assert '- New upstream release {}'.format(self.NEW_VERSION) in repo.commit().summary
+
+
+class TestBuildLogHooks(object):
+    TEST_FILES = [
+        'build-log-hooks/test-build-log-hooks.spec'
+    ]
+
+    NEW_VERSION = '0.2'
+
+    @pytest.mark.parametrize('buildtool', [
+        pytest.param('rpmbuild', marks=pytest.mark.skipif(
+            os.geteuid() != 0,
+            reason='requires superuser privileges')),
+        pytest.param('mock', marks=pytest.mark.long_running),
+    ])
+    @pytest.mark.integration
+    @pytest.mark.usefixtures('initialized_git_repo')
+    def test_files_build_log_hook(self, buildtool):
+        cli = CLI([
+            '--non-interactive',
+            '--force-build-log-hooks',
+            '--buildtool', buildtool,
+            '--outputtool', 'json',
+            '--color=always',
+            self.NEW_VERSION,
+        ])
+        config = Config()
+        config.merge(cli)
+        execution_dir, results_dir, debug_log_file = Application.setup(config)
+        app = Application(config, execution_dir, results_dir, debug_log_file)
+        app.run()
+
+        changes = os.path.join(RESULTS_DIR, 'changes.patch')
+        patch = unidiff.PatchSet.from_filename(changes, encoding='UTF-8')
+        spec_file = patch[0]
+
+        assert spec_file.is_modified_file
+        # removed files
+        assert '-%license LICENSE README\n' in spec_file[1].source
+        assert '+%license LICENSE\n' in spec_file[1].target
+        assert '-/dirA/fileB\n' in spec_file[1].source
+        assert '-/dirB/fileY\n' in spec_file[1].source
+
+        # added files
+        assert '+/dirA/fileC\n' in spec_file[1].target
+        assert '+/dirB/fileW\n' in spec_file[1].target
+
+        with open(os.path.join(RESULTS_DIR, 'report.json')) as f:
+            report = json.load(f)
+            assert 'success' in report['result']
+            added = report['build_log_hooks']['files']['added']
+            assert '/dirA/fileC' in added['%files']
+            assert '/dirB/fileW' in added['%files devel']
+            removed = report['build_log_hooks']['files']['removed']
+            assert 'README' in removed['%files']
+            assert '/dirA/fileB' in removed['%files']
+            assert '/dirB/fileY' in removed['%files devel']
