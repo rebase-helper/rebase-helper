@@ -79,6 +79,11 @@ class BaseChecker(object):
         raise NotImplementedError()
 
     @classmethod
+    def format(cls, data):
+        """Formats checker output to a readable text form."""
+        raise NotImplementedError()
+
+    @classmethod
     def get_category(cls):
         return cls.CATEGORY
 
