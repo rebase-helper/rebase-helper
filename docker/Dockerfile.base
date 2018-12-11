@@ -10,14 +10,7 @@ RUN echo -e "deltarpm=0\ninstall_weak_deps=0\ntsflags=nodocs" >> /etc/dnf/dnf.co
     python2-devel \
     python3 \
     python3-devel \
-    python2-rpm \
-    python3-rpm \
-    python2-tox \
     python3-tox \
-    python2-pip \
-    python3-pip \
-    python2-setuptools \
-    python3-setuptools \
     redhat-rpm-config \
     libxml2-devel \
     libxslt-devel \
