@@ -1,4 +1,4 @@
-#!/usr/bin/python -tt
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 #
 # This tool helps you to rebase package to the latest version
@@ -22,6 +22,7 @@
 #          Tomas Hozza <thozza@redhat.com>
 
 import sys
+
 from rebasehelper.cli import CliHelper
 
 if __name__ == "__main__":
