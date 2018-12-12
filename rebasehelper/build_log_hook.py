@@ -73,7 +73,10 @@ class BuildLogHookRunner(object):
 
         """
         if not non_interactive:
+            blacklist = kwargs.get('build_log_hook_blacklist', [])
             for name, build_log_hook in six.iteritems(self.build_log_hooks):
+                if name in blacklist:
+                    continue
                 categories = build_log_hook.get_categories()
                 if not categories or spec_file.category in categories:
                     logger.info('Running %s build log hook.', name)

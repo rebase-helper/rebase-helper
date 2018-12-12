@@ -100,6 +100,8 @@ class Application(object):
 
         self.kwargs['spec_hook_blacklist'] = self.conf.spec_hook_blacklist
 
+        self.kwargs['build_log_hook_blacklist'] = self.conf.build_log_hook_blacklist
+
         logger.verbose("Rebase-helper version: %s", VERSION)
 
         if self.conf.build_tasks is None:

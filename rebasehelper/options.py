@@ -27,6 +27,7 @@ from rebasehelper.checker import checkers_runner
 from rebasehelper.output_tool import BaseOutputTool
 from rebasehelper.versioneer import versioneers_runner
 from rebasehelper.specfile import spec_hooks_runner
+from rebasehelper.build_log_hook import build_log_hook_runner
 from rebasehelper.constants import CONFIG_PATH, CONFIG_FILENAME
 
 
@@ -145,6 +146,14 @@ OPTIONS = [
         "default": [],
         "type": lambda s: s.split(","),
         "help": "prevent specified spec hooks from being run",
+    },
+    {
+        "name": ["--build-log-hook-blacklist"],
+        "choices": build_log_hook_runner.get_all_tools(),
+        "available_choices": build_log_hook_runner.get_supported_tools(),
+        "default": [],
+        "type": lambda s: s.split(","),
+        "help": "prevent specified build log hooks from being run"
     },
     # behavior control
     {
