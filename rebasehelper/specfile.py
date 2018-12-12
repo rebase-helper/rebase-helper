@@ -536,6 +536,9 @@ class SpecFile(object):
     # PACKAGE VERSION RELATED METHODS #
     ###################################
 
+    def get_NVR(self):
+        return '{}-{}-{}'.format(self.get_package_name(), self.get_full_version(), self.get_release())
+
     def get_epoch_number(self):
         """
         Method for getting epoch of the package
@@ -1110,6 +1113,24 @@ class SpecFile(object):
                 result.append(prep.pop(0))
         return result
 
+    def get_main_files_section(self):
+        """Finds the exact name of the main %files section.
+
+        Returns:
+            str: Name of the main files section.
+
+        """
+        parser = SilentArgumentParser()
+        parser.add_argument('-n', default=None)
+        parser.add_argument('-f')
+        parser.add_argument('subpackage', nargs='?', default=None)
+
+        for sec_name in self.spec_content.sections:
+            if sec_name.startswith('%files'):
+                ns, _ = parser.parse_known_args(shlex.split(sec_name)[1:])
+                if not ns.subpackage and not ns.n:
+                    return sec_name
+
     #############################################
     # SPEC CONTENT MANIPULATION RELATED METHODS #
     #############################################
@@ -1197,81 +1218,6 @@ class SpecFile(object):
         :return:
         """
         return [r.decode(constants.DEFENC) if six.PY3 else r for r in self.hdr[rpm.RPMTAG_REQUIRES]]
-
-    @staticmethod
-    def get_paths_with_rpm_macros(files):
-        """
-        Method modifies paths in passed list to use RPM macros
-
-        :param files: list of absolute paths
-        :return: modified list of paths with RPM macros
-        """
-        # TODO: move this to RpmHelper?
-        macro_mapping = {'/usr/lib64': '%{_libdir}',
-                         '/usr/libexec': '%{_libexecdir}',
-                         '/usr/lib/systemd/system': '%{_unitdir}',
-                         '/usr/lib': '%{_libdir}',
-                         '/usr/bin': '%{_bindir}',
-                         '/usr/sbin': '%{_sbindir}',
-                         '/usr/include': '%{_includedir}',
-                         '/usr/share/man': '%{_mandir}',
-                         '/usr/share/info': '%{_infodir}',
-                         '/usr/share/doc': '%{_docdir}',
-                         '/usr/share': '%{_datarootdir}',
-                         '/var/lib': '%{_sharedstatedir}',
-                         '/var/tmp': '%{_tmppath}',
-                         '/var': '%{_localstatedir}',
-                         }
-        for index, filename in enumerate(files):
-            for abs_path, macro in sorted(six.iteritems(macro_mapping), reverse=True):
-                if filename.startswith(abs_path):
-                    files[index] = filename.replace(abs_path, macro)
-                    break
-        return files
-
-    def _correct_missing_files(self, missing):
-        for sec_name, sec_content in six.iteritems(self.spec_content.sections):
-            match = re.search(r'^%files\s*$', sec_name)
-            if match:
-                self.spec_content.sections[sec_name] = missing + sec_content
-                break
-
-    def _correct_removed_files(self, sources):
-        for sec_name, sec_content in six.iteritems(self.spec_content.sections):
-            match = re.search(r'^%files', sec_name)
-            if match:
-                # Check what files are in the section and delete only relevant files
-                f_exists = [f for f in sources for sec in sec_content if os.path.basename(f) in sec]
-                if not f_exists:
-                    continue
-                new_content = [line for line in sec_content for f in f_exists if f not in line]
-                self.spec_content.sections[sec_name] = new_content
-
-    def modify_spec_files_section(self, files):
-        """
-        Function repairs spec file according to new sources.
-
-        :param files:
-        :return:
-        """
-        # Files which are missing in SPEC file.
-        try:
-            if files['missing']:
-                upd_files = SpecFile.get_paths_with_rpm_macros(files['missing'])
-                self._correct_missing_files(upd_files)
-        except KeyError:
-            pass
-
-        # Files which does not exist in SOURCES.
-        # Should be removed from SPEC file.
-        try:
-            if files['deleted']:
-                upd_files = SpecFile.get_paths_with_rpm_macros(files['deleted'])
-                self._correct_removed_files(upd_files)
-        except KeyError:
-            pass
-
-        self.save()
 
     def get_new_log(self):
         new_record = []

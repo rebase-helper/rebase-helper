@@ -147,41 +147,6 @@ class TestSpecFile(object):
         req = spec_object.get_requires()
         assert len(expected.intersection(req)) == len(expected)
 
-    def test_get_paths_with_rpm_macros(self):
-        raw_paths = ['/usr/bin/binary1',
-                     '/usr/sbin/binary2',
-                     '/usr/include/header.h',
-                     '/usr/lib/library1.so',
-                     '/usr/lib64/library2.so',
-                     '/usr/libexec/script.sh',
-                     '/usr/lib/systemd/system/daemond.service',
-                     '/usr/share/man/man1/test.1.gz',
-                     '/usr/share/info/file.info',
-                     '/usr/share/doc/RFC.pdf',
-                     '/usr/share/config.site',
-                     '/var/lib/libvirt',
-                     '/var/tmp/abrt',
-                     '/var/lock']
-
-        expected_paths = {'%{_bindir}/binary1',
-                          '%{_sbindir}/binary2',
-                          '%{_includedir}/header.h',
-                          '%{_libdir}/library1.so',
-                          '%{_libdir}/library2.so',
-                          '%{_libexecdir}/script.sh',
-                          '%{_unitdir}/daemond.service',
-                          '%{_mandir}/man1/test.1.gz',
-                          '%{_infodir}/file.info',
-                          '%{_docdir}/RFC.pdf',
-                          '%{_datarootdir}/config.site',
-                          '%{_sharedstatedir}/libvirt',
-                          '%{_tmppath}/abrt',
-                          '%{_localstatedir}/lock'}
-
-        paths = SpecFile.get_paths_with_rpm_macros(raw_paths)
-        assert len(set(paths)) == len(expected_paths)
-        assert len(expected_paths.intersection(set(paths))) == len(expected_paths)
-
     def test_split_version_string(self):
         assert SpecFile.split_version_string() == (None, None, None)
         assert SpecFile.split_version_string('1.0.1') == ('1.0.1', '', '')
@@ -224,40 +189,8 @@ class TestSpecFile(object):
         assert SpecFile.extract_version_from_archive_name('libsigc++-2.10.0.tar.xz',
                                                           name) == ('2.10.0', '', '')
 
-    def test_spec_missing_file(self, spec_object):
-        files = {'missing': ['/usr/bin/test2']}
-        spec_object.modify_spec_files_section(files)
-        section = spec_object.spec_content.sections['%files']
-        expected = ['%{_bindir}/test2',
-                    '/usr/share/man/man1/*',
-                    '/usr/bin/%{name}',
-                    '%config(noreplace) /etc/test/test.conf',
-                    '']
-        assert expected == section
-
-    def test_spec_remove_file(self, spec_object):
-        files = {'deleted': ['/usr/lib/test.so']}
-        spec_object.modify_spec_files_section(files)
-        section = spec_object.spec_content.sections['%files devel']
-        assert '%{_libdir}/test.so' not in section
-
-    def test_spec_missing_and_remove_file(self, spec_object):
-        files = {'missing': ['/usr/bin/test2'],
-                 'deleted': ['/usr/lib/my_test.so']}
-        spec_object.modify_spec_files_section(files)
-        section = spec_object.spec_content.sections['%files']
-        expected = ['%{_bindir}/test2',
-                    '/usr/share/man/man1/*',
-                    '/usr/bin/%{name}',
-                    '%config(noreplace) /etc/test/test.conf',
-                    '']
-        assert expected == section
-        section_devel = spec_object.spec_content.sections['%files devel']
-        expected_devel = ['%{_bindir}/test_example',
-                          '/usr/share/test1.txt',
-                          '/no/macros/here',
-                          '']
-        assert expected_devel == section_devel
+    def test_get_main_files_section(self, spec_object):
+        assert spec_object.get_main_files_section() == '%files'
 
     def test_is_test_suite_enabled(self, spec_object):
         found = spec_object.is_test_suite_enabled()

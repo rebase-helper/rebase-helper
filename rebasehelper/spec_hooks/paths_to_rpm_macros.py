@@ -32,21 +32,6 @@ class PathsToRPMMacrosHook(BaseSpecHook):
     NAME = 'Paths To RPM Macros'
     CATEGORIES = None
 
-    MACROS_WHITELIST = [
-        '_sysconfdir',
-        '_bindir',
-        '_libdir',
-        '_libexecdir',
-        '_sbindir',
-        '_sharedstatedir',
-        '_datadir',
-        '_includedir',
-        '_infodir',
-        '_mandir',
-        '_localstatedir',
-        '_initdir',
-    ]
-
     @classmethod
     def get_name(cls):
         return cls.NAME
@@ -56,38 +41,15 @@ class PathsToRPMMacrosHook(BaseSpecHook):
         return cls.CATEGORIES
 
     @classmethod
-    def _substitute_for_macro(cls, path, macros):
-        """Substitutes parts of a path with macros.
-
-        Args:
-            path (str): Path to be changed.
-            macros (list): Macros which can be used as a substitution.
-
-        Returns:
-            str: Path expressed using macros.
-
-        """
-        for m in macros:
-            if m['value'] and m['value'] in path:
-                path = path.replace(m['value'], '%{{{}}}'.format(m['name']))
-
-        return path
-
-    @classmethod
-    def _expand_macros(cls, macros):
-        for macro in macros:
-            macro['value'] = MacroHelper.expand(macro['value'])
-        return macros
-
-    @classmethod
     def run(cls, spec_file, rebase_spec_file, **kwargs):
-        macros = [m for m in rebase_spec_file.macros if m['name'] in cls.MACROS_WHITELIST]
-        macros = cls._expand_macros(macros)
+        macros = [m for m in rebase_spec_file.macros if m['name'] in MacroHelper.MACROS_WHITELIST]
+        macros = MacroHelper.expand_macros(macros)
         # ensure maximal greediness
         macros.sort(key=lambda k: len(k['value']), reverse=True)
 
         for sec_name, sec_content in six.iteritems(rebase_spec_file.spec_content.sections):
             if sec_name.startswith('%files'):
                 for index, line in enumerate(sec_content):
-                    rebase_spec_file.spec_content.sections[sec_name][index] = cls._substitute_for_macro(line, macros)
+                    new_path = MacroHelper.substitute_path_with_macros(line, macros)
+                    rebase_spec_file.spec_content.sections[sec_name][index] = new_path
         rebase_spec_file.save()

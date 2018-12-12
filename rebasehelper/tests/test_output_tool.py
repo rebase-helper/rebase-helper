@@ -62,6 +62,10 @@ class TestOutputTool(object):
         message = 'Following files were moved\n%s\n' % '\n'.join(data['moved'])
         test_output = {'pkgdiff': message}
         rs.set_checker_output('Results from checker(s)', test_output)
+        files_build_log_hook_result = {
+            'removed': {'%files': ['README']}
+        }
+        rs.set_build_log_hooks_result('files', files_build_log_hook_result)
         rs.set_info_text('Information text', 'some information text')
         rs.set_info_text('Next Information', 'some another information text')
         rs.set_result_message('success', data['success'])
@@ -72,6 +76,12 @@ class TestOutputTool(object):
         expected_output = """\
 Success
 All result files are stored in {workdir}
+
+files build log hook
+====================
+- removed
+- %files
+- README
 
 Downstream Patches
 ==================
@@ -141,6 +151,13 @@ Binary packages and logs are in directory rebase-helper-results/new-build/RPM:
             ResultsStore.RESULTS_CHECKERS: {
                 "Results from checker(s)": {
                     "pkgdiff": "Following files were moved\n/usr/sbin/test\n/usr/sbin/test2\n"
+                }
+            },
+            ResultsStore.RESULTS_BUILD_LOG_HOOKS: {
+                'files': {
+                    'removed': {
+                        '%files': ['README']
+                    }
                 }
             },
             ResultsStore.RESULTS_INFORMATION: {
