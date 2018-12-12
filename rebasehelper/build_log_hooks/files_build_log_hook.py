@@ -201,7 +201,6 @@ class FilesBuildLogHook(BaseBuildLogHook):
         macros.sort(key=lambda k: len(k['value']), reverse=True)
 
         result = collections.defaultdict(lambda: collections.defaultdict(list))
-
         for file in files:
             section = cls._get_best_matching_files_section(rebase_spec_file, file)
             substituted_path = MacroHelper.substitute_path_with_macros(file, macros)

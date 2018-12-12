@@ -63,7 +63,7 @@ class BuildLogHookRunner(object):
                 # silently skip broken plugin
                 continue
 
-    def run(self, spec_file, rebase_spec_file, non_interactive, **kwargs):
+    def run(self, spec_file, rebase_spec_file, non_interactive, force_build_log_hooks, **kwargs):
         """Runs all build log hooks.
 
         Args:
@@ -71,8 +71,12 @@ class BuildLogHookRunner(object):
             rebase_spec_file (rebasehelper.specfile.SpecFile): Rebased SpecFile object.
             kwargs (dict): Keyword arguments from instance of Application.
 
+        Returns:
+            bool: Whether build log hooks made some changes to the SPEC file.
+
         """
-        if not non_interactive:
+        changes_made = False
+        if not non_interactive or force_build_log_hooks:
             blacklist = kwargs.get('build_log_hook_blacklist', [])
             for name, build_log_hook in six.iteritems(self.build_log_hooks):
                 if name in blacklist:
@@ -82,6 +86,9 @@ class BuildLogHookRunner(object):
                     logger.info('Running %s build log hook.', name)
                     result = build_log_hook.run(spec_file, rebase_spec_file, **kwargs) or {}
                     results_store.set_build_log_hooks_result(name, result)
+                    if result:
+                        changes_made = True
+        return changes_made
 
     def get_supported_tools(self):
         return self.build_log_hooks.keys()

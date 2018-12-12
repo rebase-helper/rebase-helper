@@ -213,6 +213,12 @@ OPTIONS = [
         "switch": True,
         "help": "update \"sources\" file and upload new sources to lookaside cache",
     },
+    {
+        "name": ["--force-build-log-hooks"],
+        "default": False,
+        "switch": True,
+        "help": "Enforces that build log hooks will be run in non-interactive mode"
+    },
     # remote builder options
     {
         "name": ["--builds-nowait"],

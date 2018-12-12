@@ -102,6 +102,8 @@ class Application(object):
 
         self.kwargs['build_log_hook_blacklist'] = self.conf.build_log_hook_blacklist
 
+        self.kwargs['force_build_log_hooks'] = self.conf.force_build_log_hooks
+
         logger.verbose("Rebase-helper version: %s", VERSION)
 
         if self.conf.build_tasks is None:
@@ -803,15 +805,18 @@ class Application(object):
                            '\nThe error message is: %s', six.text_type(e))
 
     def prepare_next_run(self, results_dir):
-        build_log_hook_runner.run(self.spec_file, self.rebase_spec_file, **self.kwargs)
+        changes_made = build_log_hook_runner.run(self.spec_file, self.rebase_spec_file, **self.kwargs)
         # Save current rebase spec file content
         self.rebase_spec_file.save()
         if not self.conf.non_interactive and \
                 InputHelper.get_message('Do you want to try it one more time'):
             logger.info('Now it is time to make changes to  %s if necessary.', self.rebase_spec_file.path)
+        elif self.conf.non_interactive and changes_made:
+            logger.info('Build log hooks made some changes to the SPEC file, starting the build process again.')
         else:
             return False
-        if not InputHelper.get_message('Do you want to continue with the rebuild now'):
+        if not self.conf.non_interactive and not \
+                InputHelper.get_message('Do you want to continue with the rebuild now'):
             return False
         # Update rebase spec file content after potential manual modifications
         self.rebase_spec_file._read_spec_content()  # pylint: disable=protected-access
