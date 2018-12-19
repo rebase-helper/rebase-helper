@@ -486,7 +486,9 @@ class SpecFile(object):
         inapplicable_patches = []
         modified_patches = []
 
-        for index, line in enumerate(self.spec_content.sections['%package']):
+        i = 0
+        while i < len(self.spec_content.sections['%package']):
+            line = self.spec_content.sections['%package'][i]
             if line.startswith('Patch'):
                 fields = line.strip().split()
                 patch_name = fields[1]
@@ -509,13 +511,14 @@ class SpecFile(object):
                     # remove the line of the patch that was removed
                     self.removed_patches.append(patch_name)
                     removed_patches.append(patch_num)
-                    self.spec_content.sections['%package'][index] = ''
+                    del self.spec_content.sections['%package'][i]
+                    continue
 
                 if patch_inapplicable:
                     if disable_inapplicable:
                         # comment out line if the patch was not applied
-                        self.spec_content.sections['%package'][index] = '#{0} {1}'.format(' '.join(fields[:-1]),
-                                                                                          os.path.basename(patch_name))
+                        self.spec_content.sections['%package'][i] = '#{0} {1}'.format(' '.join(fields[:-1]),
+                                                                                      os.path.basename(patch_name))
                     inapplicable_patches.append(patch_num)
 
                 if 'modified' in patches:
@@ -524,8 +527,9 @@ class SpecFile(object):
                     patch = None
                 if patch:
                     fields[1] = os.path.join(constants.RESULTS_DIR, constants.REBASED_SOURCES_DIR, patch_name)
-                    self.spec_content.sections['%package'][index] = ' '.join(fields)
+                    self.spec_content.sections['%package'][i] = ' '.join(fields)
                     modified_patches.append(patch_num)
+            i += 1
 
         self._process_patches(inapplicable_patches, removed_patches, disable_inapplicable)
 
