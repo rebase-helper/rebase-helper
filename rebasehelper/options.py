@@ -217,7 +217,7 @@ OPTIONS = [
         "name": ["--force-build-log-hooks"],
         "default": False,
         "switch": True,
-        "help": "Enforces that build log hooks will be run in non-interactive mode"
+        "help": "enforce running of build log hooks (even in non-interactive mode)",
     },
     # remote builder options
     {
