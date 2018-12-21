@@ -28,7 +28,6 @@ import re
 import shutil
 import shlex
 
-import pkg_resources
 import rpm
 import six
 
@@ -41,6 +40,7 @@ from six.moves import urllib
 
 from rebasehelper.logger import logger
 from rebasehelper import constants
+from rebasehelper.plugins import Plugin, PluginLoader
 from rebasehelper.archive import Archive
 from rebasehelper.exceptions import RebaseHelperError, DownloadError, ParseError, LookasideCacheError
 from rebasehelper.argument_parser import SilentArgumentParser
@@ -1401,18 +1401,11 @@ class SpecFile(object):
         return None
 
 
-class BaseSpecHook(object):
+class BaseSpecHook(Plugin):
     """Base class for a spec hook"""
 
-    @classmethod
-    def get_name(cls):
-        """Returns the name of a spec hook"""
-        raise NotImplementedError()
-
-    @classmethod
-    def get_categories(cls):
-        """Returns list of categories of a spec hook"""
-        raise NotImplementedError()
+    # spec hook categories, see SpecFile._guess_category() for a complete list
+    CATEGORIES = None
 
     @classmethod
     def run(cls, spec_file, rebase_spec_file, **kwargs):
@@ -1432,34 +1425,17 @@ class SpecHooksRunner(object):
     """
 
     def __init__(self):
-        """
-        Constructor of SpecHooksRunner class.
-        """
-        self.spec_hooks = {}
-        for entrypoint in pkg_resources.iter_entry_points('rebasehelper.spec_hooks'):
-            try:
-                spec_hook = entrypoint.load()
-            except ImportError:
-                # silently skip broken plugin
-                continue
-            try:
-                self.spec_hooks[spec_hook.get_name()] = spec_hook
-            except (AttributeError, NotImplementedError):
-                # silently skip broken plugin
-                continue
+        self.spec_hooks = PluginLoader.load('rebasehelper.spec_hooks')
+
+    def get_all_spec_hooks(self):
+        return list(self.spec_hooks)
 
     def get_available_spec_hooks(self):
-        """Returns a list of all available spec hooks"""
-        return [v.__name__ for v in six.itervalues(self.spec_hooks)]
-
-    @staticmethod
-    def get_all_spec_hooks():
-        """Returns a list of all spec hooks."""
-        return [entrypoint.name for entrypoint in pkg_resources.iter_entry_points('rebasehelper.spec_hooks')]
+        return [k for k, v in six.iteritems(self.spec_hooks) if v]
 
     def run_spec_hooks(self, spec_file, rebase_spec_file, **kwargs):
         """
-        Runs all spec hooks.
+        Runs all non-blacklisted spec hooks.
 
         :param spec_file: Original spec file object
         :param rebase_spec_file: Rebased spec file object
@@ -1468,9 +1444,9 @@ class SpecHooksRunner(object):
         blacklist = kwargs.get("spec_hook_blacklist", [])
 
         for name, spec_hook in six.iteritems(self.spec_hooks):
-            if spec_hook.__name__ in blacklist:
+            if not spec_hook or name in blacklist:
                 continue
-            categories = spec_hook.get_categories()
+            categories = spec_hook.CATEGORIES
             if not categories or spec_file.category in categories:
                 logger.info("Running '%s' spec hook", name)
                 spec_hook.run(spec_file, rebase_spec_file, **kwargs)

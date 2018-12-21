@@ -29,17 +29,6 @@ from rebasehelper.helpers.macro_helper import MacroHelper
 class PathsToRPMMacrosHook(BaseSpecHook):
     """SpecHook for replacing paths to files with RPM macros."""
 
-    NAME = 'Paths To RPM Macros'
-    CATEGORIES = None
-
-    @classmethod
-    def get_name(cls):
-        return cls.NAME
-
-    @classmethod
-    def get_categories(cls):
-        return cls.CATEGORIES
-
     @classmethod
     def run(cls, spec_file, rebase_spec_file, **kwargs):
         macros = [m for m in rebase_spec_file.macros if m['name'] in MacroHelper.MACROS_WHITELIST]

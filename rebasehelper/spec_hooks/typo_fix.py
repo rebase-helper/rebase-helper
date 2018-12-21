@@ -28,20 +28,12 @@ from rebasehelper.specfile import BaseSpecHook
 class TypoFixHook(BaseSpecHook):
     """Sample spec hook that fixes typos in spec file"""
 
-    NAME = 'Typo fix'
     CATEGORIES = ['sample']
+
     REPLACEMENTS = [
         ('chnagelog', 'changelog'),
         ('indentional', 'intentional'),
     ]
-
-    @classmethod
-    def get_name(cls):
-        return cls.NAME
-
-    @classmethod
-    def get_categories(cls):
-        return cls.CATEGORIES
 
     @classmethod
     def run(cls, spec_file, rebase_spec_file, **kwargs):

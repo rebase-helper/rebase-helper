@@ -30,17 +30,6 @@ from rebasehelper.helpers.download_helper import DownloadHelper
 class CommitHashUpdaterHook(BaseSpecHook):
     """Tries to update commit hash present in Source0 tag according to the new version"""
 
-    NAME = 'Commit Hash Updater'
-    CATEGORIES = None
-
-    @classmethod
-    def get_name(cls):
-        return cls.NAME
-
-    @classmethod
-    def get_categories(cls):
-        return cls.CATEGORIES
-
     @classmethod
     def _get_commit_hash_from_github(cls, spec_file):
         """
