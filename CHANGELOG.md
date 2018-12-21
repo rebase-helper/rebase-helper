@@ -2,6 +2,21 @@
 
 ## [Unreleased]
 
+## [0.15.0] - 2018-12-21
+### Added
+- Implemented build log hooks and added **files** hook to detect and fix missing/unpackaged files
+
+### Changed
+- Refactored and simplified all plugins
+
+### Fixed
+- Fixed not listing all argument choices while generating documentation
+- Fixed error in parsing rpmdiff output
+- Fixed insertion of extra blank lines to a SPEC file after removing patches
+
+### Removed
+- Removed unneeded packages from base Docker image
+
 ## [0.14.0] - 2018-10-04
 ### Added
 - Added **PathsToRPMMacros** SPEC hook for transforming paths in *%files* section
