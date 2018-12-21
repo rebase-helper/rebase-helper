@@ -110,14 +110,14 @@ setup(
             'licensecheck = rebasehelper.checkers.licensecheck_tool:LicenseCheckTool',
         ],
         'rebasehelper.spec_hooks': [
-            'TypoFixHook = rebasehelper.spec_hooks.typo_fix:TypoFixHook',
-            'PyPiURLFixHook = rebasehelper.spec_hooks.pypi_url_fix:PyPIURLFixHook',
-            'RubyHelperHook = rebasehelper.spec_hooks.ruby_helper:RubyHelperHook',
-            'CommitHashUpdaterHook = rebasehelper.spec_hooks.commit_hash_updater:CommitHashUpdaterHook',
-            'PathsToRPMMacrosHook = rebasehelper.spec_hooks.paths_to_rpm_macros:PathsToRPMMacrosHook',
+            'typo-fix = rebasehelper.spec_hooks.typo_fix:TypoFixHook',
+            'pypi-url-fix = rebasehelper.spec_hooks.pypi_url_fix:PyPIURLFixHook',
+            'ruby-helper = rebasehelper.spec_hooks.ruby_helper:RubyHelperHook',
+            'commit-hash-updater = rebasehelper.spec_hooks.commit_hash_updater:CommitHashUpdaterHook',
+            'paths-to-rpm-macros = rebasehelper.spec_hooks.paths_to_rpm_macros:PathsToRPMMacrosHook',
         ],
         'rebasehelper.build_log_hooks': [
-            'FilesBuildLogHook = rebasehelper.build_log_hooks.files_build_log_hook:FilesBuildLogHook',
+            'files = rebasehelper.build_log_hooks.files_build_log_hook:FilesBuildLogHook',
         ],
         'rebasehelper.versioneers': [
             'anitya = rebasehelper.versioneers.anitya_versioneer:AnityaVersioneer',
