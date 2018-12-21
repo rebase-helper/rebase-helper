@@ -775,7 +775,7 @@ class Application(object):
             self.rebase_spec_file.update_paths_to_patches()
             self.generate_patch()
 
-        output_tools_runner.run_output_tools(logs, self)
+        output_tools_runner.run_output_tool(self.conf.outputtool, logs, self)
 
     def print_task_info(self, builder):
         logs = self.get_new_build_logs()['build_ref']

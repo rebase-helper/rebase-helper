@@ -24,7 +24,7 @@ import os
 
 from rebasehelper.build_helper import Builder, SRPMBuilder
 from rebasehelper.checker import checkers_runner
-from rebasehelper.output_tool import BaseOutputTool
+from rebasehelper.output_tool import output_tools_runner
 from rebasehelper.versioneer import versioneers_runner
 from rebasehelper.specfile import spec_hooks_runner
 from rebasehelper.build_log_hook import build_log_hook_runner
@@ -118,9 +118,9 @@ OPTIONS = [
     },
     {
         "name": ["--outputtool"],
-        "choices": BaseOutputTool.get_all_tools(),
-        "available_choices": BaseOutputTool.get_supported_tools(),
-        "default": BaseOutputTool.get_default_tool(),
+        "choices": output_tools_runner.get_all_tools(),
+        "available_choices": output_tools_runner.get_supported_tools(),
+        "default": output_tools_runner.get_default_tool(),
         "help": "tool to use for formatting rebase output, defaults to %(default)s",
     },
     {

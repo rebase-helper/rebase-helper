@@ -6,28 +6,7 @@ import json
 class JSONOutputTool(BaseOutputTool):
     """ JSON output tool """
 
-    NAME = "json"
     EXTENSION = "json"
-
-    @classmethod
-    def match(cls, cmd=None):
-        if cmd == cls.NAME:
-            return True
-        else:
-            return False
-
-    @classmethod
-    def get_name(cls):
-        return cls.NAME
-
-    @classmethod
-    def get_extension(cls):
-        """
-        Get extension of the output_tool
-
-        :return: output_tool extension
-        """
-        return cls.EXTENSION
 
     @classmethod
     def print_summary(cls, path, results):

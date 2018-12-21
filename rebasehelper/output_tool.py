@@ -22,31 +22,26 @@
 
 import os
 import six
-import pkg_resources
 
+from rebasehelper.plugins import Plugin, PluginLoader
 from rebasehelper.logger import logger, logger_output
 from rebasehelper.results_store import results_store
 from rebasehelper.checker import checkers_runner
 from rebasehelper.constants import RESULTS_DIR, REPORT
 
 
-class BaseOutputTool(object):
+class BaseOutputTool(Plugin):
     """
     Base class for OutputTools.
     print_cli_summary must be overridden in order to produce different CLI output
     """
 
     DEFAULT = False
-    NAME = 'name'
-    EXTENSION = 'ext'
+    EXTENSION = ''
 
     @classmethod
     def get_report_path(cls, app):
-        return os.path.join(app.results_dir, REPORT + '.' + cls.get_extension())
-
-    @classmethod
-    def get_extension(cls):
-        raise NotImplementedError
+        return os.path.join(app.results_dir, REPORT + '.' + cls.EXTENSION)
 
     @classmethod
     def prepend_results_dir_name(cls, *path_members):
@@ -98,9 +93,9 @@ class BaseOutputTool(object):
     def print_important_checkers_output(cls):
         """Iterates over all checkers output to highlight important checkers warning"""
         checkers_results = results_store.get_checkers()
-        for check_tool in six.itervalues(checkers_runner.plugin_classes):
+        for check_tool in six.itervalues(checkers_runner.checkers):
             for check, data in sorted(six.iteritems(checkers_results)):
-                if check == check_tool.get_checker_name():
+                if check == check_tool.name:
                     out = check_tool.get_important_changes(data)
                     if out:
                         logger_output.warning('\n'.join(out))
@@ -108,8 +103,8 @@ class BaseOutputTool(object):
     @classmethod
     def print_report_file_path(cls):
         """Print path to the report file"""
-        logger_output.heading('%s report:' % cls.NAME)
-        logger_output.info('%s', cls.prepend_results_dir_name('report.' + cls.get_extension()))
+        logger_output.heading('%s report:' % cls.name)
+        logger_output.info('%s', cls.prepend_results_dir_name('report.' + cls.EXTENSION))
 
     @classmethod
     def print_patches_cli(cls):
@@ -144,31 +139,6 @@ class BaseOutputTool(object):
     def run(cls, logs, app):  # pylint: disable=unused-argument
         raise NotImplementedError()
 
-    @classmethod
-    def match(cls, cmd=None):
-        """Checks if tool name matches the desired one."""
-        raise NotImplementedError()
-
-    @classmethod
-    def get_name(cls):
-        raise NotImplementedError()
-
-    @staticmethod
-    def get_supported_tools():
-        """Returns list of supported output tools"""
-        return output_tools_runner.output_tools.keys()
-
-    @staticmethod
-    def get_all_tools():
-        """Returns a list of all output tools."""
-        return [entrypoint.name for entrypoint in pkg_resources.iter_entry_points('rebasehelper.output_tools')]
-
-    @staticmethod
-    def get_default_tool():
-        """Returns default output tool"""
-        default = [k for k, v in six.iteritems(output_tools_runner.output_tools) if v.DEFAULT]
-        return default[0] if default else None
-
 
 class OutputToolRunner(object):
     """
@@ -176,34 +146,30 @@ class OutputToolRunner(object):
     """
 
     def __init__(self):
-        """
-        Constructor of OutputToolRunner class.
-        """
-        self.output_tools = {}
-        for entrypoint in pkg_resources.iter_entry_points('rebasehelper.output_tools'):
-            try:
-                output_tool = entrypoint.load()
-            except ImportError:
-                # silently skip broken plugin
-                continue
-            try:
-                self.output_tools[output_tool.get_name()] = output_tool
-            except (AttributeError, NotImplementedError):
-                # silently skip broken plugin
-                continue
+        self.output_tools = PluginLoader.load('rebasehelper.output_tools')
 
-    def run_output_tools(self, logs=None, app=None):
-        """
-        Runs all output tools.
+    def get_all_tools(self):
+        return list(self.output_tools)
 
+    def get_supported_tools(self):
+        return [k for k, v in six.iteritems(self.output_tools) if v]
+
+    def get_default_tool(self):
+        default = [k for k, v in six.iteritems(self.output_tools) if v and v.DEFAULT]
+        return default[0] if default else None
+
+    def run_output_tool(self, tool, logs=None, app=None):
+        """
+        Runs specified output tool.
+
+        :param tool: Tool to run
         :param log: Log that probably contains the important message concerning the rebase fail
         :param app: Application class instance
         """
-        for output_tool in six.itervalues(self.output_tools):
-            if output_tool.match(app.conf.outputtool):
-                logger.info("Running '%s' output tool.", output_tool.get_name())
-                output_tool.run(logs, app=app)
-                output_tool.print_cli_summary(app)
+        output_tool = self.output_tools[tool]
+        logger.info("Running '%s' output tool.", tool)
+        output_tool.run(logs, app=app)
+        output_tool.print_cli_summary(app)
 
 
 # Global instance of OutputToolRunner. It is enough to load it once per application run.
