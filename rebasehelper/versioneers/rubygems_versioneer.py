@@ -29,19 +29,10 @@ from rebasehelper.helpers.download_helper import DownloadHelper
 
 class RubyGemsVersioneer(BaseVersioneer):
 
-    NAME = 'rubygems'
     CATEGORIES = ['ruby']
 
     BASE_URL = 'https://rubygems.org'
     API_URL = '{}/api/v1/gems'.format(BASE_URL)
-
-    @classmethod
-    def get_name(cls):
-        return cls.NAME
-
-    @classmethod
-    def get_categories(cls):
-        return cls.CATEGORIES
 
     @classmethod
     def _get_version(cls, package_name):

@@ -29,19 +29,10 @@ from rebasehelper.helpers.download_helper import DownloadHelper
 
 class AnityaVersioneer(BaseVersioneer):
 
-    NAME = 'anitya'
     CATEGORIES = None
 
     BASE_URL = 'https://release-monitoring.org'
     API_URL = '{}/api'.format(BASE_URL)
-
-    @classmethod
-    def get_name(cls):
-        return cls.NAME
-
-    @classmethod
-    def get_categories(cls):
-        return cls.CATEGORIES
 
     @classmethod
     def _get_version_using_distro_api(cls, package_name):

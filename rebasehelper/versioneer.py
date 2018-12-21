@@ -21,23 +21,16 @@
 #          Tomas Hozza <thozza@redhat.com>
 
 import six
-import pkg_resources
 
+from rebasehelper.plugins import Plugin, PluginLoader
 from rebasehelper.logger import logger
 
 
-class BaseVersioneer(object):
+class BaseVersioneer(Plugin):
     """Base class for a versioneer"""
 
-    @classmethod
-    def get_name(cls):
-        """Returns the name of a versioneer"""
-        raise NotImplementedError()
-
-    @classmethod
-    def get_categories(cls):
-        """Returns list of categories of a versioneer"""
-        raise NotImplementedError()
+    # versioneer categories, see SpecFile._guess_category() for a complete list
+    CATEGORIES = None
 
     @classmethod
     def run(cls, package_name):
@@ -53,27 +46,13 @@ class BaseVersioneer(object):
 class VersioneersRunner(object):
 
     def __init__(self):
-        self.versioneers = {}
-        for entrypoint in pkg_resources.iter_entry_points('rebasehelper.versioneers'):
-            try:
-                versioneer = entrypoint.load()
-            except ImportError:
-                # silently skip broken plugin
-                continue
-            try:
-                self.versioneers[versioneer.get_name()] = versioneer
-            except (AttributeError, NotImplementedError):
-                # silently skip broken plugin
-                continue
+        self.versioneers = PluginLoader.load('rebasehelper.versioneers')
+
+    def get_all_versioneers(self):
+        return list(self.versioneers)
 
     def get_available_versioneers(self):
-        """Returns a list of available versioneers"""
-        return self.versioneers.keys()
-
-    @staticmethod
-    def get_all_versioneers():
-        """Returns a list of all versioneers."""
-        return [entrypoint.name for entrypoint in pkg_resources.iter_entry_points('rebasehelper.versioneers')]
+        return [k for k, v in six.iteritems(self.versioneers) if v]
 
     def run(self, versioneer, package_name, category, versioneer_blacklist=None):
         """
@@ -92,11 +71,11 @@ class VersioneersRunner(object):
             logger.info("Running '%s' versioneer", versioneer)
             return self.versioneers[versioneer].run(package_name)
         # run all versioneers, except those disabled in config, categorized first
-        allowed_versioneers = [v for k, v in six.iteritems(self.versioneers) if k not in versioneer_blacklist]
-        for versioneer in sorted(allowed_versioneers, key=lambda v: not v.get_categories()):
-            categories = versioneer.get_categories()
+        allowed_versioneers = [v for k, v in six.iteritems(self.versioneers) if v and k not in versioneer_blacklist]
+        for versioneer in sorted(allowed_versioneers, key=lambda v: not v.CATEGORIES):
+            categories = versioneer.CATEGORIES
             if not categories or category in categories:
-                logger.info("Running '%s' versioneer", versioneer.get_name())
+                logger.info("Running '%s' versioneer", versioneer.name)
                 result = versioneer.run(package_name)
                 if result:
                     return result

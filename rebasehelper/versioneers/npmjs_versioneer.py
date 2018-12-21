@@ -27,19 +27,10 @@ from rebasehelper.helpers.download_helper import DownloadHelper
 
 class NPMJSVersioneer(BaseVersioneer):
 
-    NAME = 'npmjs'
     CATEGORIES = ['nodejs']
 
     BASE_URL = 'https://www.npmjs.com'
     API_URL = 'http://registry.npmjs.org'
-
-    @classmethod
-    def get_name(cls):
-        return cls.NAME
-
-    @classmethod
-    def get_categories(cls):
-        return cls.CATEGORIES
 
     @classmethod
     def _get_version(cls, package_name):

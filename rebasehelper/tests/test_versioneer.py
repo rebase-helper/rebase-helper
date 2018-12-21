@@ -43,9 +43,9 @@ class TestVersioneer(object):
     ])
     @pytest.mark.integration
     def test_anitya_versioneer(self, package, min_version):
-        assert AnityaVersioneer.get_name() in versioneers_runner.versioneers
+        assert AnityaVersioneer.name in versioneers_runner.versioneers
         AnityaVersioneer.API_URL = 'https://integration:4430/versioneers'
-        version = versioneers_runner.run(AnityaVersioneer.get_name(), package, None)
+        version = versioneers_runner.run(AnityaVersioneer.name, package, None)
         assert parse_version(version) >= parse_version(min_version)
 
     @pytest.mark.parametrize('package, min_version', [
@@ -57,9 +57,9 @@ class TestVersioneer(object):
     ])
     @pytest.mark.integration
     def test_pypi_versioneer(self, package, min_version):
-        assert PyPIVersioneer.get_name() in versioneers_runner.versioneers
+        assert PyPIVersioneer.name in versioneers_runner.versioneers
         PyPIVersioneer.API_URL = 'https://integration:4430/versioneers'
-        version = versioneers_runner.run(PyPIVersioneer.get_name(), package, None)
+        version = versioneers_runner.run(PyPIVersioneer.name, package, None)
         assert parse_version(version) >= parse_version(min_version)
 
     @pytest.mark.parametrize('package, min_version', [
@@ -71,9 +71,9 @@ class TestVersioneer(object):
     ])
     @pytest.mark.integration
     def test_npmjs_versioneer(self, package, min_version):
-        assert NPMJSVersioneer.get_name() in versioneers_runner.versioneers
+        assert NPMJSVersioneer.name in versioneers_runner.versioneers
         NPMJSVersioneer.API_URL = 'https://integration:4430/versioneers'
-        version = versioneers_runner.run(NPMJSVersioneer.get_name(), package, None)
+        version = versioneers_runner.run(NPMJSVersioneer.name, package, None)
         assert parse_version(version) >= parse_version(min_version)
 
     @pytest.mark.parametrize('package, min_version', [
@@ -85,9 +85,9 @@ class TestVersioneer(object):
     ])
     @pytest.mark.integration
     def test_cpan_versioneer(self, package, min_version):
-        assert CPANVersioneer.get_name() in versioneers_runner.versioneers
+        assert CPANVersioneer.name in versioneers_runner.versioneers
         CPANVersioneer.API_URL = 'https://integration:4430/versioneers'
-        version = versioneers_runner.run(CPANVersioneer.get_name(), package, None)
+        version = versioneers_runner.run(CPANVersioneer.name, package, None)
         assert parse_version(version) >= parse_version(min_version)
 
     @pytest.mark.parametrize('package, min_version', [
@@ -99,7 +99,7 @@ class TestVersioneer(object):
     ])
     @pytest.mark.integration
     def test_hackage_versioneer(self, package, min_version):
-        assert HackageVersioneer.get_name() in versioneers_runner.versioneers
+        assert HackageVersioneer.name in versioneers_runner.versioneers
         HackageVersioneer.API_URL = 'https://integration:4430/versioneers'
-        version = versioneers_runner.run(HackageVersioneer.get_name(), package, None)
+        version = versioneers_runner.run(HackageVersioneer.name, package, None)
         assert parse_version(version) >= parse_version(min_version)
