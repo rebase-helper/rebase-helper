@@ -22,7 +22,7 @@
 
 import os
 
-from rebasehelper.build_helper import Builder, SRPMBuilder
+from rebasehelper.build_helper import build_helper, srpm_build_helper
 from rebasehelper.checker import checkers_runner
 from rebasehelper.output_tool import output_tools_runner
 from rebasehelper.versioneer import versioneers_runner
@@ -95,16 +95,16 @@ OPTIONS = [
     # tool selection
     {
         "name": ["--buildtool"],
-        "choices": Builder.get_all_tools(),
-        "available_choices": Builder.get_supported_tools(),
-        "default": Builder.get_default_tool(),
+        "choices": build_helper.get_all_tools(),
+        "available_choices": build_helper.get_supported_tools(),
+        "default": build_helper.get_default_tool(),
         "help": "build tool to use, defaults to %(default)s",
     },
     {
         "name": ["--srpm-buildtool"],
-        "choices": SRPMBuilder.get_all_tools(),
-        "available_choices": SRPMBuilder.get_supported_tools(),
-        "default": SRPMBuilder.get_default_tool(),
+        "choices": srpm_build_helper.get_all_tools(),
+        "available_choices": srpm_build_helper.get_supported_tools(),
+        "default": srpm_build_helper.get_default_tool(),
         "help": "SRPM build tool to use, defaults to %(default)s",
     },
     {

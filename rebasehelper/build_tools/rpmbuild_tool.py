@@ -38,6 +38,8 @@ class RpmbuildBuildTool(BuildToolBase):  # pylint: disable=abstract-method
     Class representing rpmbuild build tool.
     """
 
+    ACCEPTS_OPTIONS = True
+
     CMD = "rpmbuild"
     logs = []
 
@@ -71,29 +73,6 @@ class RpmbuildBuildTool(BuildToolBase):  # pylint: disable=abstract-method
         logfile = build_log_path
         cls.logs.extend([l for l in PathHelper.find_all_files(rpm_results_dir, '*.log')])
         raise BinaryPackageBuildError("Building RPMs failed!", results_dir, logfile=logfile)
-
-    @classmethod
-    def match(cls, cmd=None):
-        if cmd == cls.CMD:
-            return True
-        else:
-            return False
-
-    @classmethod
-    def get_build_tool_name(cls):
-        return cls.CMD
-
-    @classmethod
-    def is_default(cls):
-        return cls.DEFAULT
-
-    @classmethod
-    def accepts_options(cls):
-        return True
-
-    @classmethod
-    def creates_tasks(cls):
-        return False
 
     @classmethod
     def prepare(cls, spec, conf):

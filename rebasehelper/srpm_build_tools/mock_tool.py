@@ -31,16 +31,7 @@ from rebasehelper.helpers.process_helper import ProcessHelper
 class MockSRPMBuildTool(SRPMBuildToolBase):
 
     CMD = "mock"
-    DEFAULT = False
     logs = []
-
-    @classmethod
-    def get_build_tool_name(cls):
-        return cls.CMD
-
-    @classmethod
-    def is_default(cls):
-        return cls.DEFAULT
 
     @classmethod
     def _build_srpm(cls, spec, workdir, results_dir, srpm_results_dir, srpm_builder_options):

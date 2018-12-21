@@ -35,8 +35,10 @@ class MockBuildTool(BuildToolBase):  # pylint: disable=abstract-method
     Class representing Mock build tool.
     """
 
-    CMD = "mock"
     DEFAULT = True
+    ACCEPTS_OPTIONS = True
+
+    CMD = "mock"
     logs = []
 
     @classmethod
@@ -103,29 +105,6 @@ class MockBuildTool(BuildToolBase):  # pylint: disable=abstract-method
         else:
             logfile = root_log_path
         return logfile
-
-    @classmethod
-    def match(cls, cmd=None):
-        if cmd == cls.CMD:
-            return True
-        else:
-            return False
-
-    @classmethod
-    def get_build_tool_name(cls):
-        return cls.CMD
-
-    @classmethod
-    def is_default(cls):
-        return cls.DEFAULT
-
-    @classmethod
-    def accepts_options(cls):
-        return True
-
-    @classmethod
-    def creates_tasks(cls):
-        return False
 
     @classmethod
     def build(cls, spec, results_dir, srpm, **kwargs):
