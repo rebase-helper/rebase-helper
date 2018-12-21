@@ -1,7 +1,7 @@
 PYTHON = python3
 
 
-all: help
+.PHONY: help clean install build log source html man completion sample_config test test-docker
 
 
 help:
@@ -48,11 +48,11 @@ source: clean
 
 
 html: build
-	make -f Makefile.docs html
+	make -f Makefile.docs clean html
 
 
 man: build
-	make -f Makefile.docs man
+	make -f Makefile.docs clean man
 
 
 completion: build

@@ -20,26 +20,31 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
-import re
-
-from rebasehelper.specfile import BaseSpecHook
+import pkg_resources
 
 
-class TypoFixHook(BaseSpecHook):
-    """Sample spec hook that fixes typos in spec file"""
+class Plugin(object):
+    name = None
 
-    CATEGORIES = ['sample']
 
-    REPLACEMENTS = [
-        ('chnagelog', 'changelog'),
-        ('indentional', 'intentional'),
-    ]
-
+class PluginLoader(object):
     @classmethod
-    def run(cls, spec_file, rebase_spec_file, **kwargs):
-        for section in rebase_spec_file.spec_content.sections:
-            for index, line in enumerate(rebase_spec_file.spec_content.sections[section]):
-                for replacement in cls.REPLACEMENTS:
-                    line = re.sub(replacement[0], replacement[1], line)
-                rebase_spec_file.spec_content.sections[section][index] = line
-        rebase_spec_file.save()
+    def load(cls, entrypoint):
+        result = {}
+        for ep in pkg_resources.iter_entry_points(entrypoint):
+            result[ep.name] = None
+            try:
+                plugin = ep.load()
+            except ImportError:
+                # skip broken plugin
+                continue
+            try:
+                if not issubclass(plugin, Plugin):
+                    raise TypeError
+            except TypeError:
+                # skip broken plugin
+                continue
+            else:
+                plugin.name = ep.name
+            result[ep.name] = plugin
+        return result

@@ -33,22 +33,14 @@ class PyPIURLFixHook(BaseSpecHook):
 
     """
 
-    NAME = 'PyPI URL Fix'
     CATEGORIES = ['python']
+
     URL_TRANSFORMATIONS = [
         (r'https?://pypi\.python\.org/pypi/', 'https://pypi.org/project/'),
     ]
     SOURCES_URL_TRANSFORMATIONS = [
         (r'https?://pypi(\.python)?\.org/', 'https://files.pythonhosted.org/'),
     ]
-
-    @classmethod
-    def get_name(cls):
-        return cls.NAME
-
-    @classmethod
-    def get_categories(cls):
-        return cls.CATEGORIES
 
     @classmethod
     def run(cls, spec_file, rebase_spec_file, **kwargs):

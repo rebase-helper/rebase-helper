@@ -20,23 +20,18 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
-import pkg_resources
 import six
 
+from rebasehelper.plugins import Plugin, PluginLoader
 from rebasehelper.logger import logger
 from rebasehelper.results_store import results_store
 
 
-class BaseBuildLogHook(object):
+class BaseBuildLogHook(Plugin):
     """Base class for a build log hook."""
 
-    @classmethod
-    def get_name(cls):
-        raise NotImplementedError()
-
-    @classmethod
-    def get_categories(cls):
-        raise NotImplementedError()
+    # build log hook categories, see SpecFile._guess_category() for a complete list
+    CATEGORIES = None
 
     @classmethod
     def format(cls, data):
@@ -50,21 +45,16 @@ class BaseBuildLogHook(object):
 
 class BuildLogHookRunner(object):
     def __init__(self):
-        self.build_log_hooks = {}
-        for entrypoint in pkg_resources.iter_entry_points('rebasehelper.build_log_hooks'):
-            try:
-                build_log_hook = entrypoint.load()
-            except ImportError:
-                # silently skip broken plugin
-                continue
-            try:
-                self.build_log_hooks[build_log_hook.get_name()] = build_log_hook
-            except (AttributeError, NotImplementedError):
-                # silently skip broken plugin
-                continue
+        self.build_log_hooks = PluginLoader.load('rebasehelper.build_log_hooks')
+
+    def get_all_tools(self):
+        return list(self.build_log_hooks)
+
+    def get_supported_tools(self):
+        return [k for k, v in six.iteritems(self.build_log_hooks) if v]
 
     def run(self, spec_file, rebase_spec_file, non_interactive, force_build_log_hooks, **kwargs):
-        """Runs all build log hooks.
+        """Runs all non-blacklisted build log hooks.
 
         Args:
             spec_file (rebasehelper.specfile.SpecFile): Original SpecFile object.
@@ -79,9 +69,9 @@ class BuildLogHookRunner(object):
         if not non_interactive or force_build_log_hooks:
             blacklist = kwargs.get('build_log_hook_blacklist', [])
             for name, build_log_hook in six.iteritems(self.build_log_hooks):
-                if name in blacklist:
+                if not build_log_hook or name in blacklist:
                     continue
-                categories = build_log_hook.get_categories()
+                categories = build_log_hook.CATEGORIES
                 if not categories or spec_file.category in categories:
                     logger.info('Running %s build log hook.', name)
                     result = build_log_hook.run(spec_file, rebase_spec_file, **kwargs) or {}
@@ -89,13 +79,6 @@ class BuildLogHookRunner(object):
                     if result:
                         changes_made = True
         return changes_made
-
-    def get_supported_tools(self):
-        return self.build_log_hooks.keys()
-
-    @staticmethod
-    def get_all_tools():
-        return [entrypoint.name for entrypoint in pkg_resources.iter_entry_points('rebasehelper.build_log_hooks')]
 
 
 # Global instance of BuildLogHookRunner. It is enough to load it once per application run.

@@ -34,8 +34,9 @@ class CoprBuildTool(BuildToolBase):
     Class representing Copr build tool.
     """
 
+    CREATES_TASKS = True
+
     CMD = "copr"
-    LOCAL = False
     logs = []
     copr_helper = None
 
@@ -44,29 +45,6 @@ class CoprBuildTool(BuildToolBase):
     description = 'Repository containing rebase-helper builds.'
     instructions = '''You can use this repository to test functionality
                       of rebased packages.'''
-
-    @classmethod
-    def match(cls, cmd=None):
-        if cmd == cls.CMD:
-            return True
-        else:
-            return False
-
-    @classmethod
-    def get_build_tool_name(cls):
-        return cls.CMD
-
-    @classmethod
-    def is_default(cls):
-        return cls.DEFAULT
-
-    @classmethod
-    def accepts_options(cls):
-        return False
-
-    @classmethod
-    def creates_tasks(cls):
-        return True
 
     @classmethod
     def _build_rpms(cls, srpm, name, **kwargs):

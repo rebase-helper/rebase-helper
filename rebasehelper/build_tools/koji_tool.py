@@ -40,34 +40,12 @@ class KojiBuildTool(BuildToolBase):
     Class representing Koji build tool.
     """
 
+    CREATES_TASKS = True
+
     CMD = "koji"
-    LOCAL = False
     logs = []
 
     target_tag = 'rawhide'
-
-    @classmethod
-    def match(cls, cmd=None):
-        if cmd == cls.CMD:
-            return True
-        else:
-            return False
-
-    @classmethod
-    def get_build_tool_name(cls):
-        return cls.CMD
-
-    @classmethod
-    def is_default(cls):
-        return cls.DEFAULT
-
-    @classmethod
-    def accepts_options(cls):
-        return False
-
-    @classmethod
-    def creates_tasks(cls):
-        return True
 
     @classmethod
     def _verify_tasks(cls, session, task_dict):

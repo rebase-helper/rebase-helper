@@ -37,16 +37,17 @@ class LicenseCheckTool(BaseChecker):
         license_files_changes(dict): Dictionary of {license: change_type + file_name} pairs.
     """
 
-    NAME = "licensecheck"
     DEFAULT = True
-    CATEGORY = "SOURCE"
+    CATEGORY = 'SOURCE'
+
+    CMD = 'licensecheck'
     license_changes = False
     license_files_changes = dict()
 
     @classmethod
     def is_available(cls):
         try:
-            return ProcessHelper.run_subprocess([cls.NAME, '--help'], output_file=ProcessHelper.DEV_NULL) == 0
+            return ProcessHelper.run_subprocess([cls.CMD, '--help'], output_file=ProcessHelper.DEV_NULL) == 0
         except (IOError, OSError):
             return False
 

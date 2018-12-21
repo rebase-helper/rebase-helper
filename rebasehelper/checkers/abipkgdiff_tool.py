@@ -42,18 +42,19 @@ class AbiCheckerTool(BaseChecker):
         abi_changes(bool): True if ABI changes were detected.
     """
 
-    NAME = "abipkgdiff"
     DEFAULT = True
+    CATEGORY = 'RPM'
+    results_dir = ''
+
+    CMD = 'abipkgdiff'
     ABIDIFF_ERROR = 1
     ABIDIFF_USAGE_ERROR = 2
     abi_changes = None
-    results_dir = ''
-    CATEGORY = 'RPM'
 
     @classmethod
     def is_available(cls):
         try:
-            return ProcessHelper.run_subprocess([cls.NAME, '--help'], output_file=ProcessHelper.DEV_NULL) == 3
+            return ProcessHelper.run_subprocess([cls.CMD, '--help'], output_file=ProcessHelper.DEV_NULL) == 3
         except (IOError, OSError):
             return False
 
@@ -91,11 +92,11 @@ class AbiCheckerTool(BaseChecker):
         """Compares old and new RPMs using abipkgdiff"""
         # Check if ABI changes occured
         cls.abi_changes = None
-        cls.results_dir = os.path.join(results_dir, cls.NAME)
+        cls.results_dir = os.path.join(results_dir, cls.name)
         os.makedirs(cls.results_dir)
         debug_old, rest_pkgs_old = cls._get_packages_for_abipkgdiff(results_store.get_build('old'))
         debug_new, rest_pkgs_new = cls._get_packages_for_abipkgdiff(results_store.get_build('new'))
-        cmd = [cls.NAME]
+        cmd = [cls.CMD]
         reports = {}
         for pkg in rest_pkgs_old:
             command = list(cmd)
@@ -120,10 +121,10 @@ class AbiCheckerTool(BaseChecker):
             try:
                 ret_code = ProcessHelper.run_subprocess(command, output_file=output)
             except OSError:
-                raise CheckerNotFoundError("Checker '{}' was not found or installed.".format(cls.NAME))
+                raise CheckerNotFoundError("Checker '{}' was not found or installed.".format(cls.name))
 
             if int(ret_code) & cls.ABIDIFF_ERROR and int(ret_code) & cls.ABIDIFF_USAGE_ERROR:
-                raise RebaseHelperError('Execution of {} failed.\nCommand line is: {}'.format(cls.NAME, cmd))
+                raise RebaseHelperError('Execution of {} failed.\nCommand line is: {}'.format(cls.CMD, cmd))
             reports[old_name] = int(ret_code)
         return dict(packages=cls.parse_abi_logs(reports),
                     abi_changes=cls.abi_changes,

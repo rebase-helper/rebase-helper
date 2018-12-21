@@ -12,35 +12,8 @@ class TextOutputTool(BaseOutputTool):
 
     """ Text output tool. """
 
-    NAME = "text"
-    EXTENSION = 'txt'
     DEFAULT = True
-
-    @classmethod
-    def match(cls, cmd=None):
-        """
-        Checks if the given string matches the output tool
-
-        :param cmd: output tool name
-        :return: True if the name matches
-        """
-        if cmd == cls.NAME:
-            return True
-        else:
-            return False
-
-    @classmethod
-    def get_name(cls):
-        return cls.NAME
-
-    @classmethod
-    def get_extension(cls):
-        """
-        Get extension of the output_tool
-
-        :return: output_tool extension
-        """
-        return cls.EXTENSION
+    EXTENSION = 'txt'
 
     @classmethod
     def print_success_message(cls):
@@ -170,9 +143,9 @@ class TextOutputTool(BaseOutputTool):
     @classmethod
     def print_checkers_text_output(cls, checkers_results):
         """Function prints text output for every checker"""
-        for check_tool in six.itervalues(checkers_runner.plugin_classes):
+        for check_tool in six.itervalues(checkers_runner.checkers):
             for check, data in sorted(six.iteritems(checkers_results)):
-                if check == check_tool.get_checker_name():
+                if check == check_tool.name:
                     logger_report.info('\n'.join(check_tool.format(data)))
 
     @classmethod

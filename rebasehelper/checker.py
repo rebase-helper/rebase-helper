@@ -20,58 +20,36 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
-import pkg_resources
 import os
 
 import six
 
+from rebasehelper.plugins import Plugin, PluginLoader
 from rebasehelper.logger import logger
 from rebasehelper.constants import RESULTS_DIR
 
 
-class BaseChecker(object):
+class BaseChecker(Plugin):
     """Base class of package checkers.
 
     Attributes:
-        NAME(str): Name of the checker.
         DEFAULT(bool): If True, the checker is run by default.
         CATEGORY(str): Category which determines when the checker is run. Valid options: SRPM/RPM/SOURCE.
         results_dir(str): Path where the results are stored.
     """
 
-    NAME = None
     DEFAULT = False
     CATEGORY = None
     results_dir = None
 
     @classmethod
-    def match(cls, cmd):
-        """
-        Checks if the tool name match the class implementation. If yes, returns
-        True, otherwise returns False.
-        """
-        if cmd == cls.NAME:
-            return True
-        else:
-            return False
-
-    @classmethod
     def get_checker_output_dir_short(cls):
         """Return short version of checker output directory"""
-        return os.path.join(RESULTS_DIR, 'checkers', cls.NAME)
-
-    @classmethod
-    def get_checker_name(cls):
-        """Returns a name of the checker"""
-        return cls.NAME
-
-    @classmethod
-    def is_default(cls):
-        return cls.DEFAULT
+        return os.path.join(RESULTS_DIR, 'checkers', cls.name)
 
     @classmethod
     def is_available(cls):
-        return False
+        raise NotImplementedError()
 
     @classmethod
     def run_check(cls, results_dir, **kwargs):
@@ -111,21 +89,16 @@ class CheckersRunner(object):
     """
 
     def __init__(self):
-        """
-        Constructor of a CheckersRunner class.
-        """
-        self.plugin_classes = {}
-        for entrypoint in pkg_resources.iter_entry_points('rebasehelper.checkers'):
-            try:
-                checker = entrypoint.load()
-            except ImportError:
-                # silently skip broken plugin
-                continue
-            try:
-                self.plugin_classes[checker.get_checker_name()] = checker
-            except (AttributeError, NotImplementedError):
-                # silently skip broken plugin
-                continue
+        self.checkers = PluginLoader.load('rebasehelper.checkers')
+
+    def get_all_tools(self):
+        return list(self.checkers)
+
+    def get_supported_tools(self):
+        return [k for k, v in six.iteritems(self.checkers) if v]
+
+    def get_default_tools(self):
+        return [k for k, v in six.iteritems(self.checkers) if v and v.DEFAULT]
 
     def run_checker(self, results_dir, checker_name, **kwargs):
         """
@@ -138,34 +111,15 @@ class CheckersRunner(object):
         :raises NotImplementedError: If checker with the given name does not exist.
         :return: results from the checker
         """
-        checker = None
-        for check_tool in six.itervalues(self.plugin_classes):
-            if check_tool.get_category() != kwargs.get('category'):
-                continue
-            if check_tool.match(checker_name):
-                # we found the checker we are looking for
-                checker = check_tool
-                break
-
-        if checker is None:
-            # Appropriate checker not found
+        try:
+            checker = self.checkers[checker_name]
+        except KeyError:
+            return None
+        if checker.CATEGORY != kwargs.get('category'):
             return None
 
-        logger.info("Running tests on packages using '%s'", checker_name)
+        logger.info("Running checks on packages using '%s'", checker_name)
         return checker.run_check(results_dir, **kwargs)
-
-    def get_supported_tools(self):
-        """Return list of supported tools"""
-        return [k for k, v in six.iteritems(self.plugin_classes) if v.is_available()]
-
-    @staticmethod
-    def get_all_tools():
-        """Returns a list of all checkers."""
-        return [entrypoint.name for entrypoint in pkg_resources.iter_entry_points('rebasehelper.checkers')]
-
-    def get_default_tools(self):
-        """Return list of default tools"""
-        return [k for k, v in six.iteritems(self.plugin_classes) if v.is_default()]
 
 
 # Global instance of CheckersRunner. It is enough to load it once per application run.

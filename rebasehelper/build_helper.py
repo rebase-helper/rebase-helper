@@ -25,8 +25,8 @@ import shutil
 import os
 
 import six
-import pkg_resources
 
+from rebasehelper.plugins import Plugin, PluginLoader
 from rebasehelper.helpers.path_helper import PathHelper
 from rebasehelper.temporary_environment import TemporaryEnvironment
 from rebasehelper.logger import logger
@@ -170,37 +170,20 @@ class MockTemporaryEnvironment(BuildTemporaryEnvironment):
             os.makedirs(self._env[self.TEMPDIR + '_' + dir_name])
 
 
-class BuildToolBase(object):
-    """
-    Base class for various build tools
+class BuildToolBase(Plugin):
+    """Build tool base class.
+
+    Attributes:
+        DEFAULT(bool): If True, the build tool is default tool.
+        ACCEPTS_OPTIONS(bool): If True, the build tool accepts additional
+            options passed via --builder-options.
+        CREATES_TASKS(bool): If True, the build tool creates remote tasks.
+
     """
 
     DEFAULT = False
-
-    @classmethod
-    def match(cls, cmd=None):
-        """Checks if tool name matches the desired one."""
-        raise NotImplementedError()
-
-    @classmethod
-    def get_build_tool_name(cls):
-        """Returns the name of the build tool."""
-        raise NotImplementedError()
-
-    @classmethod
-    def is_default(cls):
-        """Checks if the tool is the default build tool."""
-        raise NotImplementedError()
-
-    @classmethod
-    def accepts_options(cls):
-        """Checks if the tool accepts additional command line options."""
-        raise NotImplementedError()
-
-    @classmethod
-    def creates_tasks(cls):
-        """Checks if the tool creates build tasks."""
-        raise NotImplementedError()
+    ACCEPTS_OPTIONS = False
+    CREATES_TASKS = False
 
     @classmethod
     def prepare(cls, spec, conf):
@@ -285,22 +268,15 @@ class BuildToolBase(object):
         return None
 
 
-class SRPMBuildToolBase(object):
-    """
-    Base class for SRPM builder tools
+class SRPMBuildToolBase(Plugin):
+    """SRPM build tool base class.
+
+    Attributes:
+        DEFAULT(bool): If True, the build tool is default tool.
+
     """
 
     DEFAULT = False
-
-    @classmethod
-    def get_build_tool_name(cls):
-        """Returns name of the SRPM Build Tool"""
-        return NotImplementedError()
-
-    @classmethod
-    def is_default(cls):
-        """Returns true if the SRPM Build Tool is set to be default"""
-        return NotImplementedError()
 
     @staticmethod
     def get_srpm_builder_options(**kwargs):
@@ -331,163 +307,48 @@ class SRPMBuildToolBase(object):
         raise NotImplementedError()
 
 
-class SRPMBuilder(object):
-    """
-    Builder class for building SRPMs.
-    """
+class SRPMBuildHelper(object):
+    def __init__(self):
+        self.srpm_build_tools = PluginLoader.load('rebasehelper.srpm_build_tools')
 
-    srpm_build_tools = {}
+    def get_all_tools(self):
+        return list(self.srpm_build_tools)
 
-    def __init__(self, tool=None):
-        if tool is None:
-            raise TypeError("Expected argument 'tool' (pos 1) is missing")
-        self._tool_name = tool
-        self._tool = None
+    def get_supported_tools(self):
+        return [k for k, v in six.iteritems(self.srpm_build_tools) if v]
 
-        for build_tool in self.srpm_build_tools.values():
-            if build_tool.get_build_tool_name() == self._tool_name:
-                self._tool = build_tool
-
-        if self._tool is None:
-            raise NotImplementedError("Unsupported SRPM build tool")
-
-    def __str__(self):
-        return "<SRPM Builder tool_name='{_tool_name}' tool='{_tool}'>".format(**vars(self))
-
-    @classmethod
-    def load_srpm_build_tools(cls):
-        for entrypoint in pkg_resources.iter_entry_points('rebasehelper.srpm_build_tools'):
-            try:
-                srpm_build_tool = entrypoint.load()
-            except ImportError:
-                # silently skip broken plugin
-                continue
-            try:
-                cls.srpm_build_tools[srpm_build_tool.get_build_tool_name()] = srpm_build_tool
-            except (AttributeError, NotImplementedError):
-                # silently skip broken plugin
-                continue
-
-    def get_logs(self):
-        """Get logs."""
-        logger.debug("Getting logs '%s'", self._tool_name)
-        return self._tool.get_logs()
-
-    def build(self, *args, **kwargs):
-        logger.debug("Building SRPM using '%s'", self._tool_name)
-        return self._tool.build(*args, **kwargs)
-
-    @classmethod
-    def get_supported_tools(cls):
-        """Returns list of supported srpm build tools"""
-        return cls.srpm_build_tools.keys()
-
-    @staticmethod
-    def get_all_tools():
-        """Returns a list of all srpm build tools."""
-        return [entrypoint.name for entrypoint in pkg_resources.iter_entry_points('rebasehelper.srpm_build_tools')]
-
-    @classmethod
-    def get_default_tool(cls):
-        """Returns default build tool"""
-        default = [k for k, v in six.iteritems(cls.srpm_build_tools) if v.is_default()]
+    def get_default_tool(self):
+        default = [k for k, v in six.iteritems(self.srpm_build_tools) if v and v.DEFAULT]
         return default[0] if default else None
 
+    def get_tool(self, tool):
+        try:
+            return self.srpm_build_tools[tool]
+        except KeyError:
+            raise NotImplementedError('Unsupported SRPM build tool')
 
-class Builder(object):
-    """
-    Class representing a process of building binaries from sources.
-    """
 
-    build_tools = {}
+class BuildHelper(object):
+    def __init__(self):
+        self.build_tools = PluginLoader.load('rebasehelper.build_tools')
 
-    @classmethod
-    def load_build_tools(cls):
-        cls.build_tools = {}
-        for entrypoint in pkg_resources.iter_entry_points('rebasehelper.build_tools'):
-            try:
-                build_tool = entrypoint.load()
-            except ImportError:
-                # silently skip broken plugin
-                continue
-            try:
-                cls.build_tools[build_tool.get_build_tool_name()] = build_tool
-            except (AttributeError, NotImplementedError):
-                # silently skip broken plugin
-                continue
+    def get_all_tools(self):
+        return list(self.build_tools)
 
-    def __init__(self, tool=None):
-        if tool is None:
-            raise TypeError("Expected argument 'tool' (pos 1) is missing")
-        self._tool_name = tool
-        self._tool = None
+    def get_supported_tools(self):
+        return [k for k, v in six.iteritems(self.build_tools) if v]
 
-        for build_tool in self.build_tools.values():
-            if build_tool.match(self._tool_name):
-                self._tool = build_tool
-
-        if self._tool is None:
-            raise NotImplementedError("Unsupported build tool")
-
-    def __str__(self):
-        return "<Builder tool_name='{_tool_name}' tool='{_tool}'>".format(**vars(self))
-
-    def accepts_options(self):
-        return self._tool.accepts_options()
-
-    def creates_tasks(self):
-        return self._tool.creates_tasks()
-
-    def prepare(self, spec, conf):
-        """Prepare for build"""
-        logger.debug("Preparing for build using '%s'", self._tool_name)
-        self._tool.prepare(spec, conf)
-
-    def build(self, *args, **kwargs):
-        """Build sources."""
-        logger.debug("Building RPMs using '%s'", self._tool_name)
-        return self._tool.build(*args, **kwargs)
-
-    def get_logs(self):
-        """Get logs."""
-        logger.debug("Getting logs '%s'", self._tool_name)
-        return self._tool.get_logs()
-
-    def wait_for_task(self, build_dict, task_id, results_dir):
-        """Wait for task"""
-        logger.debug("Waiting for task using '%s'", self._tool_name)
-        return self._tool.wait_for_task(build_dict, task_id, results_dir)
-
-    def get_task_info(self, build_dict):
-        """Get task info"""
-        logger.debug("Getting task info using '%s'", self._tool_name)
-        return self._tool.get_task_info(build_dict)
-
-    def get_detached_task(self, task_id, results_dir):
-        """Get detached task"""
-        logger.debug("Getting detached task using '%s'", self._tool_name)
-        return self._tool.get_detached_task(task_id, results_dir)
-
-    @classmethod
-    def get_supported_tools(cls):
-        """
-        Returns a list of supported build tools
-
-        :return: list of supported build tools
-        """
-        return cls.build_tools.keys()
-
-    @staticmethod
-    def get_all_tools():
-        """Returns a list of all build tools."""
-        return [entrypoint.name for entrypoint in pkg_resources.iter_entry_points('rebasehelper.build_tools')]
-
-    @classmethod
-    def get_default_tool(cls):
-        """Returns default build tool"""
-        default = [k for k, v in six.iteritems(cls.build_tools) if v.is_default()]
+    def get_default_tool(self):
+        default = [k for k, v in six.iteritems(self.build_tools) if v and v.DEFAULT]
         return default[0] if default else None
 
+    def get_tool(self, tool):
+        try:
+            return self.build_tools[tool]
+        except KeyError:
+            raise NotImplementedError('Unsupported RPM build tool')
 
-SRPMBuilder.load_srpm_build_tools()
-Builder.load_build_tools()
+
+# Global instances of SRPMBuildHelper and BuildHelper. It is enough to load them once per application run.
+srpm_build_helper = SRPMBuildHelper()
+build_helper = BuildHelper()

@@ -38,7 +38,7 @@ from rebasehelper.logger import logger, log_formatter, debug_log_formatter, Logg
 from rebasehelper import constants
 from rebasehelper.output_tool import output_tools_runner
 from rebasehelper.checker import checkers_runner
-from rebasehelper.build_helper import SRPMBuilder, Builder, SourcePackageBuildError, BinaryPackageBuildError
+from rebasehelper.build_helper import srpm_build_helper, build_helper, SourcePackageBuildError, BinaryPackageBuildError
 from rebasehelper.patch_helper import Patcher
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
 from rebasehelper.results_store import results_store
@@ -533,10 +533,10 @@ class Application(object):
 
     def build_source_packages(self):
         try:
-            builder = SRPMBuilder(self.conf.srpm_buildtool)
+            builder = srpm_build_helper.get_tool(self.conf.srpm_buildtool)
         except NotImplementedError as e:
             raise RebaseHelperError('{}. Supported SRPM build tools are {}'.format(
-                six.text_type(e), SRPMBuilder.get_supported_tools()))
+                six.text_type(e), srpm_build_helper.get_supported_tools()))
 
         for version in ['old', 'new']:
             koji_build_id = None
@@ -591,10 +591,10 @@ class Application(object):
     def build_binary_packages(self):
         """Function calls build class for building packages"""
         try:
-            builder = Builder(self.conf.buildtool)
+            builder = build_helper.get_tool(self.conf.buildtool)
         except NotImplementedError as e:
             raise RebaseHelperError('{}. Supported build tools are {}'.format(
-                six.text_type(e), Builder.get_supported_tools()))
+                six.text_type(e), build_helper.get_supported_tools()))
 
         for version in ['old', 'new']:
             results_dir = '{}-build'.format(os.path.join(self.results_dir, version))
@@ -643,7 +643,7 @@ class Application(object):
                                                                                           arches=['noarch', 'x86_64'])
                     else:
                         build_dict.update(builder.build(spec, results_dir, **build_dict))
-                if builder.creates_tasks() and task_id and not koji_build_id:
+                if builder.CREATES_TASKS and task_id and not koji_build_id:
                     if not self.conf.builds_nowait:
                         build_dict['rpm'], build_dict['logs'] = builder.wait_for_task(build_dict,
                                                                                       task_id,
@@ -675,7 +675,7 @@ class Application(object):
                                         'Check all available log files.')
 
         if self.conf.builds_nowait and not self.conf.build_tasks:
-            if builder.creates_tasks():
+            if builder.CREATES_TASKS:
                 self.print_task_info(builder)
 
     def run_package_checkers(self, results_dir, **kwargs):
@@ -775,7 +775,7 @@ class Application(object):
             self.rebase_spec_file.update_paths_to_patches()
             self.generate_patch()
 
-        output_tools_runner.run_output_tools(logs, self)
+        output_tools_runner.run_output_tool(self.conf.outputtool, logs, self)
 
     def print_task_info(self, builder):
         logs = self.get_new_build_logs()['build_ref']
@@ -830,7 +830,7 @@ class Application(object):
 
     def run(self):
         # Certain options can be used only with specific build tools
-        tools_creating_tasks = [k for k, v in six.iteritems(Builder.build_tools) if v.creates_tasks()]
+        tools_creating_tasks = [k for k, v in six.iteritems(build_helper.build_tools) if v and v.CREATES_TASKS]
         if self.conf.buildtool not in tools_creating_tasks:
             options_used = []
             if self.conf.build_tasks is not None:
@@ -846,7 +846,7 @@ class Application(object):
                                     ('--builds-nowait', '--get-old-build-from-koji')
                                     )
 
-        tools_accepting_options = [k for k, v in six.iteritems(Builder.build_tools) if v.accepts_options()]
+        tools_accepting_options = [k for k, v in six.iteritems(build_helper.build_tools) if v and v.ACCEPTS_OPTIONS]
         if self.conf.buildtool not in tools_accepting_options:
             options_used = []
             if self.conf.builder_options is not None:

@@ -37,15 +37,16 @@ from rebasehelper.helpers.rpm_helper import RpmHelper
 class RpmDiffTool(BaseChecker):
     """rpmdiff compare tool"""
 
-    NAME = "rpmdiff"
     DEFAULT = True
+    CATEGORY = 'RPM'
+
+    CMD = 'rpmdiff'
     CHECKER_TAGS = ['added', 'removed', 'changed', 'moved', 'renamed']
-    CATEGORY = "RPM"
 
     @classmethod
     def is_available(cls):
         try:
-            return ProcessHelper.run_subprocess([cls.NAME, '--help'], output_file=ProcessHelper.DEV_NULL) == 0
+            return ProcessHelper.run_subprocess([cls.CMD, '--help'], output_file=ProcessHelper.DEV_NULL) == 0
         except (IOError, OSError):
             return False
 
@@ -106,7 +107,7 @@ class RpmDiffTool(BaseChecker):
         for tag in cls.CHECKER_TAGS:
             results_dict[tag] = []
 
-        cls.results_dir = os.path.join(results_dir, cls.NAME)
+        cls.results_dir = os.path.join(results_dir, cls.name)
         os.makedirs(cls.results_dir)
 
         # Only S (size), M(mode) and 5 (checksum) are now important
@@ -117,7 +118,7 @@ class RpmDiffTool(BaseChecker):
             if 'debuginfo' in key or 'debugsource' in key:
                 # skip debug{info,source} packages
                 continue
-            cmd = [cls.NAME]
+            cmd = [cls.CMD]
             # TODO modify to online command
             for x in not_catched_flags:
                 cmd.extend(['-i', x])
@@ -132,7 +133,7 @@ class RpmDiffTool(BaseChecker):
             try:
                 ProcessHelper.run_subprocess(cmd, output_file=output)
             except OSError:
-                raise CheckerNotFoundError("Checker '{}' was not found or installed.".format(cls.NAME))
+                raise CheckerNotFoundError("Checker '{}' was not found or installed.".format(cls.name))
             results_dict = cls._analyze_logs(output, results_dict)
         results_dict = cls.update_added_removed(results_dict)
         cls.results_dict = {k: v for k, v in six.iteritems(results_dict) if v}
@@ -152,7 +153,7 @@ class RpmDiffTool(BaseChecker):
             with open(rpmdiff_report, "w") as f:
                 f.write('\n'.join(lines))
         except IOError:
-            raise RebaseHelperError("Unable to write result from {} to '{}'".format(cls.NAME, rpmdiff_report))
+            raise RebaseHelperError("Unable to write result from {} to '{}'".format(cls.name, rpmdiff_report))
 
         return {'path': cls.get_checker_output_dir_short(), 'files_changes': counts}
 

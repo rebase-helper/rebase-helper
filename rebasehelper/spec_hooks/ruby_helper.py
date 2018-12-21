@@ -34,16 +34,7 @@ from rebasehelper.helpers.macro_helper import MacroHelper
 
 class RubyHelperHook(BaseSpecHook):
 
-    NAME = 'Ruby Helper'
     CATEGORIES = ['ruby']
-
-    @classmethod
-    def get_name(cls):
-        return cls.NAME
-
-    @classmethod
-    def get_categories(cls):
-        return cls.CATEGORIES
 
     @classmethod
     def _get_instructions(cls, comments, old_version, new_version):

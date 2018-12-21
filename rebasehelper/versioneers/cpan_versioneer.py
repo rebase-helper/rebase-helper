@@ -26,19 +26,10 @@ from rebasehelper.helpers.download_helper import DownloadHelper
 
 
 class CPANVersioneer(BaseVersioneer):
-    NAME = 'cpan'
     CATEGORIES = ['perl']
 
     BASE_URL = 'https://metacpan.org'
     API_URL = 'https://fastapi.metacpan.org/v1'
-
-    @classmethod
-    def get_name(cls):
-        return cls.NAME
-
-    @classmethod
-    def get_categories(cls):
-        return cls.CATEGORIES
 
     @classmethod
     def _get_version(cls, package_name):

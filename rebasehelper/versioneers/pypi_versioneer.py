@@ -29,19 +29,10 @@ from rebasehelper.helpers.download_helper import DownloadHelper
 
 class PyPIVersioneer(BaseVersioneer):
 
-    NAME = 'pypi'
     CATEGORIES = ['python']
 
     BASE_URL = 'https://pypi.org'
     API_URL = '{}/pypi'.format(BASE_URL)
-
-    @classmethod
-    def get_name(cls):
-        return cls.NAME
-
-    @classmethod
-    def get_categories(cls):
-        return cls.CATEGORIES
 
     @classmethod
     def _get_version(cls, package_name):

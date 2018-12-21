@@ -26,19 +26,10 @@ from rebasehelper.helpers.download_helper import DownloadHelper
 
 
 class HackageVersioneer(BaseVersioneer):
-    NAME = 'hackage'
     CATEGORIES = ['haskell']
 
     BASE_URL = 'https://haskell.org'
     API_URL = 'https://hackage.haskell.org'
-
-    @classmethod
-    def get_name(cls):
-        return cls.NAME
-
-    @classmethod
-    def get_categories(cls):
-        return cls.CATEGORIES
 
     @classmethod
     def _get_version(cls, package_name):

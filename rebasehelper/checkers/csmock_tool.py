@@ -33,15 +33,16 @@ from rebasehelper.checker import BaseChecker
 
 
 class CsmockTool(BaseChecker):
-    """ Csmock compare tool."""
+    """csmock checker"""
 
-    NAME = "csmock"
-    CATEGORY = "SRPM"
+    CATEGORY = 'SRPM'
+
+    CMD = 'csmock'
 
     @classmethod
     def is_available(cls):
         try:
-            return ProcessHelper.run_subprocess([cls.NAME, '--help'], output_file=ProcessHelper.DEV_NULL) == 0
+            return ProcessHelper.run_subprocess([cls.CMD, '--help'], output_file=ProcessHelper.DEV_NULL) == 0
         except (IOError, OSError):
             return False
 
@@ -52,11 +53,11 @@ class CsmockTool(BaseChecker):
 
         old_pkgs = results_store.get_old_build().get('srpm', None)
         new_pkgs = results_store.get_new_build().get('srpm', None)
-        results_dir = os.path.join(results_dir, cls.NAME)
+        results_dir = os.path.join(results_dir, cls.CMD)
         os.makedirs(results_dir)
         arguments = ['--force', '-a', '-r', 'fedora-rawhide-x86_64', '--base-srpm']
         if old_pkgs and new_pkgs:
-            cmd = [cls.NAME]
+            cmd = [cls.CMD]
             cmd.extend(arguments)
             cmd.append(old_pkgs)
             cmd.append(new_pkgs)
@@ -65,7 +66,7 @@ class CsmockTool(BaseChecker):
             try:
                 ProcessHelper.run_subprocess(cmd, output_file=output)
             except OSError:
-                raise CheckerNotFoundError("Checker '{}' was not found or installed.".format(cls.NAME))
+                raise CheckerNotFoundError("Checker '{}' was not found or installed.".format(cls.name))
         csmock_report['error'] = PathHelper.find_all_files_current_dir(results_dir, '*.err')
         csmock_report['txt'] = PathHelper.find_all_files_current_dir(results_dir, '*.txt')
         csmock_report['log'] = PathHelper.find_all_files_current_dir(results_dir, '*.log')
