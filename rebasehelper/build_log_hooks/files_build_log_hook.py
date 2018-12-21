@@ -35,7 +35,6 @@ from rebasehelper.results_store import results_store
 
 
 class FilesBuildLogHook(BaseBuildLogHook):
-    NAME = 'files'
     CATEGORIES = None
 
     # taken from build/files.c in RPM source
@@ -59,14 +58,6 @@ class FilesBuildLogHook(BaseBuildLogHook):
         '%readme': None,
         '%verify': None,
     }
-
-    @classmethod
-    def get_name(cls):
-        return cls.NAME
-
-    @classmethod
-    def get_categories(cls):
-        return cls.CATEGORIES
 
     @classmethod
     def format(cls, data):
@@ -295,4 +286,4 @@ class FilesBuildLogHook(BaseBuildLogHook):
                 logger.info('\t%s', file)
             new_result = cls._correct_missing_files(rebase_spec_file, files)
         rebase_spec_file.save()
-        return cls.merge_two_results(results_store.get_build_log_hooks().get(cls.NAME, {}), new_result)
+        return cls.merge_two_results(results_store.get_build_log_hooks().get(cls.name, {}), new_result)
