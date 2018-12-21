@@ -36,19 +36,20 @@ from xml.etree import ElementTree
 class PkgDiffTool(BaseChecker):
     """ Pkgdiff compare tool. """
 
-    NAME = "pkgdiff"
     DEFAULT = True
+    CATEGORY = 'RPM'
+
+    CMD = 'pkgdiff'
     CHECKER_TAGS = ['added', 'removed', 'changed', 'moved', 'renamed']
     pkgdiff_results_filename = 'report'
-    files_xml = "files.xml"
+    files_xml = 'files.xml'
     results_dir = ''
     results_dict = {}
-    CATEGORY = "RPM"
 
     @classmethod
     def is_available(cls):
         try:
-            return ProcessHelper.run_subprocess([cls.NAME, '--help'], output_file=ProcessHelper.DEV_NULL) == 0
+            return ProcessHelper.run_subprocess([cls.CMD, '--help'], output_file=ProcessHelper.DEV_NULL) == 0
         except (IOError, OSError):
             return False
 
@@ -200,11 +201,11 @@ class PkgDiffTool(BaseChecker):
         Compares old and new RPMs using pkgdiff
         :param results_dir result dir where are stored results
         """
-        cls.results_dir = os.path.join(results_dir, cls.NAME)
+        cls.results_dir = os.path.join(results_dir, cls.name)
         os.makedirs(cls.results_dir)
         cls.pkgdiff_results_full_path_html = os.path.join(cls.results_dir, cls.pkgdiff_results_filename + '.html')
 
-        cmd = [cls.NAME]
+        cmd = [cls.CMD]
         cmd.append('-hide-unchanged')
         for version in ['old', 'new']:
             old = results_store.get_build(version)
@@ -218,14 +219,14 @@ class PkgDiffTool(BaseChecker):
         try:
             ret_code = ProcessHelper.run_subprocess(cmd, output_file=ProcessHelper.DEV_NULL)
         except OSError:
-            raise CheckerNotFoundError("Checker '{}' was not found or installed.".format(cls.NAME))
+            raise CheckerNotFoundError("Checker '{}' was not found or installed.".format(cls.name))
 
         # From pkgdiff source code:
         # ret_code 0 means unchanged
         # ret_code 1 means Changed
         # other return codes means error
         if int(ret_code) != 0 and int(ret_code) != 1:
-            raise RebaseHelperError('Execution of {} failed.\nCommand line is: {}'.format(cls.NAME, cmd))
+            raise RebaseHelperError('Execution of {} failed.\nCommand line is: {}'.format(cls.CMD, cmd))
         results_dict = cls.process_xml_results(cls.results_dir)
         lines = []
 
@@ -241,7 +242,7 @@ class PkgDiffTool(BaseChecker):
             with open(pkgdiff_report, "w") as f:
                 f.write('\n'.join(lines))
         except IOError:
-            raise RebaseHelperError("Unable to write result from {} to '{}'".format(cls.NAME, pkgdiff_report))
+            raise RebaseHelperError("Unable to write result from {} to '{}'".format(cls.name, pkgdiff_report))
 
         return dict(path=cls.get_checker_output_dir_short())
 
