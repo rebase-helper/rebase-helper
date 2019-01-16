@@ -240,16 +240,8 @@ class SpecFile(object):
             if six.PY3:
                 return s.decode(constants.DEFENC)
             return s
-        categories = {
-            'python': re.compile(r'^python[23]?-'),
-            'perl': re.compile(r'^perl-'),
-            'ruby': re.compile(r'^rubygem-'),
-            'nodejs': re.compile(r'^nodejs-'),
-            'php': re.compile(r'^php-'),
-            'haskell': re.compile(r'^ghc-'),
-        }
         for pkg in self.spc.packages:
-            for category, regexp in six.iteritems(categories):
+            for category, regexp in six.iteritems(constants.PACKAGE_CATEGORIES):
                 if regexp.match(_decode(pkg.header[rpm.RPMTAG_NAME])):
                     return category
                 for provide in pkg.header[rpm.RPMTAG_PROVIDENAME]:
@@ -1404,7 +1396,7 @@ class SpecFile(object):
 class BaseSpecHook(Plugin):
     """Base class for a spec hook"""
 
-    # spec hook categories, see SpecFile._guess_category() for a complete list
+    # spec hook categories, see PACKAGE_CATEGORIES in constants for a complete list
     CATEGORIES = None
 
     @classmethod

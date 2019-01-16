@@ -29,7 +29,7 @@ from rebasehelper.logger import logger
 class BaseVersioneer(Plugin):
     """Base class for a versioneer"""
 
-    # versioneer categories, see SpecFile._guess_category() for a complete list
+    # versioneer categories, see PACKAGE_CATEGORIES in constants for a complete list
     CATEGORIES = None
 
     @classmethod
