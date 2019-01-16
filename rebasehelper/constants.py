@@ -57,6 +57,7 @@ PACKAGE_CATEGORIES = {
     'nodejs': re.compile(r'^nodejs-'),
     'php': re.compile(r'^php-'),
     'haskell': re.compile(r'^ghc-'),
+    'R': re.compile(r'^R-'),
 }
 
 DEFENC = locale.getpreferredencoding()
