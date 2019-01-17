@@ -235,34 +235,26 @@ class SpecFile(object):
                     raise RebaseHelperError("Failed to download file from URL {}. "
                                             "Reason: '{}'. ".format(remote_file, str(e)))
 
-    def _guess_category(self):
-        def _decode(s):
-            if six.PY3:
-                return s.decode(constants.DEFENC)
-            return s
-        categories = {
-            'python': re.compile(r'^python[23]?-'),
-            'perl': re.compile(r'^perl-'),
-            'ruby': re.compile(r'^rubygem-'),
-            'nodejs': re.compile(r'^nodejs-'),
-            'php': re.compile(r'^php-'),
-            'haskell': re.compile(r'^ghc-'),
-        }
-        for pkg in self.spc.packages:
-            for category, regexp in six.iteritems(categories):
-                if regexp.match(_decode(pkg.header[rpm.RPMTAG_NAME])):
-                    return category
-                for provide in pkg.header[rpm.RPMTAG_PROVIDENAME]:
-                    if regexp.match(_decode(provide)):
-                        return category
-        return None
-
     def _update_data(self):
         """
         Function updates data from given SPEC file
 
         :return:
         """
+        def guess_category():
+            def _decode(s):
+                if six.PY3:
+                    return s.decode(constants.DEFENC)
+                return s
+            for pkg in self.spc.packages:
+                for category, regexp in six.iteritems(constants.PACKAGE_CATEGORIES):
+                    if regexp.match(_decode(pkg.header[rpm.RPMTAG_NAME])):
+                        return category
+                    for provide in pkg.header[rpm.RPMTAG_PROVIDENAME]:
+                        if regexp.match(_decode(provide)):
+                            return category
+            return None
+
         def replace_macro(macro, value):
             m = '%{{{}}}'.format(macro)
             while MacroHelper.expand(m, m) != m:
@@ -282,7 +274,7 @@ class SpecFile(object):
                 self.spc = RpmHelper.parse_spec(self.path)
             except ValueError:
                 raise RebaseHelperError("Problem with parsing SPEC file '%s'" % self.path)
-        self.category = self._guess_category()
+        self.category = guess_category()
         self.sources = self._get_spec_sources_list(self.spc)
         self.prep_section = self.spc.prep
         # HEADER of SPEC file
@@ -1404,7 +1396,7 @@ class SpecFile(object):
 class BaseSpecHook(Plugin):
     """Base class for a spec hook"""
 
-    # spec hook categories, see SpecFile._guess_category() for a complete list
+    # spec hook categories, see PACKAGE_CATEGORIES in constants for a complete list
     CATEGORIES = None
 
     @classmethod
