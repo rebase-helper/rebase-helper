@@ -1,0 +1,14 @@
+strictness: veryhigh
+autodetect: false
+doc-warnings: true
+test-warnings: true
+ignore-paths:
+    - docker/
+    - docs/
+pep8:
+    full: true
+    options:
+        max-line-length: 120
+pep257:
+    disable:
+        - D401
