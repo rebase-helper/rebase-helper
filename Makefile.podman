@@ -1,0 +1,33 @@
+DISTRO ?= fedora-28 fedora-latest fedora-rawhide
+
+PYTEST_ADDOPTS ?= -m 'standard and not long_running'
+
+PODMAN := sudo podman
+
+.PHONY: test integration $(DISTRO)
+
+test: integration $(DISTRO)
+
+integration:
+	$(PODMAN) pod rm -f integration || true
+
+	$(PODMAN) run \
+		--pod new\:integration \
+		-d rebasehelper/integration\:latest
+
+$(DISTRO):
+	$(PODMAN) rmi -f rebase-helper-tests-$@ || true
+
+	$(PODMAN) build \
+		--build-arg DISTRO="$@" \
+		-f docker/Dockerfile.tests \
+		-t rebase-helper-tests-$@ \
+		.
+
+	$(PODMAN) run \
+		--pod integration \
+		--add-host integration\:127.0.0.1 \
+		--cap-add SYS_ADMIN \
+		-e TOXENV="$(TOXENV)" \
+		-e PYTEST_ADDOPTS="$(PYTEST_ADDOPTS)" \
+		-t rebase-helper-tests-$@
