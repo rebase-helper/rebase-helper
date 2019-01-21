@@ -1,5 +1,6 @@
 recursive-include rebasehelper/tests/testing_files *
 include Makefile.docker
+include Makefile.podman
 recursive-include docker *
 include Makefile.docs
 recursive-include docs *

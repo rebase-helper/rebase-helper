@@ -1,7 +1,7 @@
 PYTHON = python3
 
 
-.PHONY: help clean install build log source html man completion sample_config test test-docker
+.PHONY: help clean install build log source html man completion sample_config test test-docker test-podman
 
 
 help:
@@ -18,7 +18,8 @@ help:
 	@echo " man                     generate manual page"
 	@echo " completion              generate bash completion script"
 	@echo " test                    run test suite"
-	@echo " test-docker             run test suite inside Docker containers for several Fedora releases"
+	@echo " test-docker             run containerized test suite using docker-compose for several Fedora releases"
+	@echo " test-podman             run containerized test suite in a pod using podman for several Fedora releases"
 
 
 clean:
@@ -69,3 +70,7 @@ test:
 
 test-docker:
 	make -f Makefile.docker test
+
+
+test-podman:
+	make -f Makefile.podman test
