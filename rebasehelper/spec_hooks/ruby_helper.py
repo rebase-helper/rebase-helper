@@ -85,7 +85,7 @@ class RubyHelperHook(BaseSpecHook):
                     # get all comments above this line
                     for j in range(i - 1, 0, -1):
                         if not comment_re.match(rebase_spec_file.spec_content.sections['%package'][j]):
-                            comments = rebase_spec_file.spec_content['%package'][j+1:i]
+                            comments = rebase_spec_file.spec_content.sections['%package'][j+1:i]
                             break
                     break
             # update data so that RPM macros are populated correctly
