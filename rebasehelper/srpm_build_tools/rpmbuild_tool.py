@@ -68,7 +68,8 @@ class RpmbuildSRPMBuildTool(SRPMBuildToolBase):
             return PathHelper.find_first_file(workdir, '*.src.rpm')
         # An error occurred, raise an exception
         logfile = build_log_path
-        cls.logs = [l for l in PathHelper.find_all_files(srpm_results_dir, '*.log')]
+        logs = [l for l in PathHelper.find_all_files(results_dir, '*.log')]
+        cls.logs = [os.path.join(srpm_results_dir, os.path.basename(l)) for l in logs]
         raise SourcePackageBuildError("Building SRPM failed!", logfile=logfile)
 
     @classmethod

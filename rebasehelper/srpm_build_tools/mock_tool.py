@@ -77,7 +77,8 @@ class MockSRPMBuildTool(SRPMBuildToolBase):
                 logfile = build_log_path
         else:
             logfile = root_log_path
-        cls.logs = [l for l in PathHelper.find_all_files(srpm_results_dir, '*.log')]
+        logs = [l for l in PathHelper.find_all_files(results_dir, '*.log')]
+        cls.logs = [os.path.join(srpm_results_dir, os.path.basename(l)) for l in logs]
         raise SourcePackageBuildError("Building SRPM failed!", logfile=logfile)
 
     @classmethod
