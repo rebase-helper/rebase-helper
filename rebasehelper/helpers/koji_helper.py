@@ -288,6 +288,26 @@ class KojiHelper(object):
         return None, None
 
     @classmethod
+    def get_build(cls, session, package, version):
+        """Looks up Koji build of a specific version of a package.
+
+        Args:
+            session (koji.ClientSession): Active Koji session instance.
+            package (str): Package name.
+            version (str): Package version.
+
+        Returns:
+            tuple: Found latest package version and Koji build ID.
+
+        """
+        builds = session.listTagged('rawhide', inherit=True, package=package)
+        if builds:
+            for build in builds:
+                if build['version'] == version:
+                    return build['version'], build['id']
+        return None, None
+
+    @classmethod
     def download_build(cls, session, build_id, destination, arches):
         """Downloads RPMs and logs of a Koji build.
 
@@ -347,19 +367,22 @@ class KojiHelper(object):
 
     @classmethod
     def get_old_build_info(cls, package_name, package_version):
-        """Gets latest build info from koji.
+        """Gets old build info from Koji.
 
         Args:
             package_name (str): Package name from specfile.
             package_version (str): Package version from specfile.
 
         Returns:
-            tuple: Koji version, koji build id, package version, package full version.
+            tuple: Koji build id, package version, package full version.
 
         """
         if cls.functional:
             session = KojiHelper.create_session()
-            koji_version, koji_build_id = KojiHelper.get_latest_build(session, package_name)
+            koji_version, koji_build_id = KojiHelper.get_build(session, package_name, package_version)
+            if not koji_version:
+                # fallback to the latest Koji build
+                koji_version, koji_build_id = KojiHelper.get_latest_build(session, package_name)
             if koji_version:
                 if koji_version != package_version:
                     logger.warning('Version of the latest Koji build (%s) with id (%s) '
@@ -368,8 +391,8 @@ class KojiHelper(object):
                 package_version = package_full_version = koji_version
                 return koji_build_id, package_version, package_full_version
             else:
-                logger.warning('Unable to find the latest Koji build!')
+                logger.warning('Unable to find old version Koji build!')
                 return None, None, None
         else:
-            logger.warning('Unable to get the latest Koji build!')
+            logger.warning('Unable to get old version Koji build!')
             return None, None, None
