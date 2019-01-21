@@ -119,7 +119,8 @@ class Application(object):
                 rebased_sources = [os.path.basename(s) for s in self.rebase_spec_file.sources]
                 uploaded = LookasideCacheHelper.update_sources('fedpkg', self.rebased_sources_dir,
                                                                self.rebase_spec_file.get_package_name(),
-                                                               sources, rebased_sources)
+                                                               sources, rebased_sources,
+                                                               upload=not self.conf.skip_upload)
                 self._update_gitignore(uploaded, self.rebased_sources_dir)
 
             # TODO: Remove the value from kwargs and use only CLI attribute!
