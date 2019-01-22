@@ -214,6 +214,12 @@ OPTIONS = [
         "help": "update \"sources\" file and upload new sources to lookaside cache",
     },
     {
+        "name": ["--skip-upload"],
+        "default": False,
+        "switch": True,
+        "help": "skip uploading new sources to lookaside cache",
+    },
+    {
         "name": ["--force-build-log-hooks"],
         "default": False,
         "switch": True,

@@ -179,7 +179,7 @@ class LookasideCacheHelper(object):
             sys.stdout.flush()
 
     @classmethod
-    def update_sources(cls, tool, basepath, package, old_sources, new_sources):
+    def update_sources(cls, tool, basepath, package, old_sources, new_sources, upload=True):
         try:
             config = cls._read_config(tool)
             url = config['lookaside_cgi']
@@ -196,7 +196,8 @@ class LookasideCacheHelper(object):
                     # no change
                     continue
                 hsh = cls._hash(filename, hashtype)
-                cls._upload_source(url, package, filename, hashtype, hsh)
+                if upload:
+                    cls._upload_source(url, package, filename, hashtype, hsh)
                 uploaded.append(filename)
                 sources[indexes[0]] = dict(hash=hsh, filename=filename, hashtype=hashtype)
         cls._write_sources(basepath, sources)
