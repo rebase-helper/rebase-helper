@@ -68,7 +68,7 @@ class LicenseCheckTool(BaseChecker):
         for source_dir in [old_dir, new_dir]:
             out = six.StringIO()
             ProcessHelper.run_subprocess(["/usr/bin/licensecheck", source_dir, "--machine", "--recursive"],
-                                         output_file=out)
+                                         output_file=out, ignore_stderr=True)
             diff = {}
             for l in out:
                 # licensecheck output format: 'Filepath\tlicense'
