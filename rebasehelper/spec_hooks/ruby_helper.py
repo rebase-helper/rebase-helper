@@ -56,7 +56,7 @@ class RubyHelperHook(BaseSpecHook):
             script = os.path.join(tmp.path(), 'script.sh')
             with open(script, 'w') as f:
                 f.write('#!/bin/sh -x\n')
-                f.write(''.join(instructions))
+                f.write('{}\n'.format('\n'.join(instructions)))
                 f.write('cp "{}" "{}"\n'.format(source, os.getcwd()))
             os.chmod(script, 0o755)
             result = ProcessHelper.run_subprocess_cwd(script, tmp.path(), output_file=logfile, shell=True)
