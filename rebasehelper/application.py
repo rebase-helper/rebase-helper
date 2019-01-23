@@ -484,6 +484,10 @@ class Application(object):
 
         """
         gitignore = os.path.join(rebased_sources_dir, '.gitignore')
+
+        if not os.path.isfile(gitignore):
+            return
+
         with open(gitignore) as f:
             entries = f.readlines()
 
