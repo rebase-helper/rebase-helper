@@ -88,6 +88,9 @@ class RubyHelperHook(BaseSpecHook):
                             comments = rebase_spec_file.spec_content.sections['%package'][j+1:i]
                             break
                     break
+            if not comments:
+                # nothing to do
+                continue
             # update data so that RPM macros are populated correctly
             rebase_spec_file._update_data()  # pylint: disable=protected-access
             instructions = cls._get_instructions(comments,
