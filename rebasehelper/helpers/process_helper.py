@@ -37,22 +37,26 @@ class ProcessHelper(object):
     DEV_NULL = os.devnull
 
     @staticmethod
-    def run_subprocess(cmd, input_file=None, output_file=None):
+    def run_subprocess(cmd, input_file=None, output_file=None, ignore_stderr=False):
         """Runs the specified command in a subprocess.
 
         Args:
             cmd (iterable): A sequence of program arguments.
             input_file (str, typing.BytesIO): File to read the input from.
             output_file (str, typing.BytesIO): File to write the output of the command to.
+            ignore_stderr (bool): Whether to ignore stderr output.
 
         Returns:
             int: Exit code of the subprocess.
 
         """
-        return ProcessHelper.run_subprocess_cwd(cmd, input_file=input_file, output_file=output_file)
+        return ProcessHelper.run_subprocess_cwd(cmd,
+                                                input_file=input_file,
+                                                output_file=output_file,
+                                                ignore_stderr=ignore_stderr)
 
     @staticmethod
-    def run_subprocess_cwd(cmd, cwd=None, input_file=None, output_file=None, shell=False):
+    def run_subprocess_cwd(cmd, cwd=None, input_file=None, output_file=None, ignore_stderr=False, shell=False):
         """Runs the specified command in a subprocess in a different working directory.
 
         Args:
@@ -60,6 +64,7 @@ class ProcessHelper(object):
             cwd (str): Working directory for the command.
             input_file (str, typing.BytesIO): File to read the input from.
             output_file (str, typing.BytesIO): File to write the output of the command to.
+            ignore_stderr (bool): Whether to ignore stderr output.
             shell (bool): Whether to run the command in a shell.
 
         Returns:
@@ -70,10 +75,11 @@ class ProcessHelper(object):
                                                     cwd=cwd,
                                                     input_file=input_file,
                                                     output_file=output_file,
+                                                    ignore_stderr=ignore_stderr,
                                                     shell=shell)
 
     @staticmethod
-    def run_subprocess_env(cmd, env=None, input_file=None, output_file=None, shell=False):
+    def run_subprocess_env(cmd, env=None, input_file=None, output_file=None, ignore_stderr=False, shell=False):
         """Runs the specified command in a subprocess with a redefined environment.
 
         Args:
@@ -81,6 +87,7 @@ class ProcessHelper(object):
             env (dict): Environment variables for the new process.
             input_file (str, typing.BytesIO): File to read the input from.
             output_file (str, typing.BytesIO): File to write the output of the command to.
+            ignore_stderr (bool): Whether to ignore stderr output.
             shell (bool): Whether to run the command in a shell.
 
         Returns:
@@ -91,10 +98,12 @@ class ProcessHelper(object):
                                                     env=env,
                                                     input_file=input_file,
                                                     output_file=output_file,
+                                                    ignore_stderr=ignore_stderr,
                                                     shell=shell)
 
     @staticmethod
-    def run_subprocess_cwd_env(cmd, cwd=None, env=None, input_file=None, output_file=None, shell=False):
+    def run_subprocess_cwd_env(cmd, cwd=None, env=None, input_file=None, output_file=None, ignore_stderr=False,
+                               shell=False):
         """Runs the specified command in a subprocess in a different working directory with a redefined environment.
 
         Args:
@@ -103,6 +112,7 @@ class ProcessHelper(object):
             env (dict): Environment variables for the new process.
             input_file (str, typing.BytesIO): File to read the input from.
             output_file (str, typing.BytesIO): File to write the output of the command to.
+            ignore_stderr (bool): Whether to ignore stderr output.
             shell (bool): Whether to run the command in a shell.
 
         Returns:
@@ -165,13 +175,14 @@ class ProcessHelper(object):
         else:
             stdout = None
 
-        sp = subprocess.Popen(cmd,
-                              stdin=in_file,
-                              stdout=stdout,
-                              stderr=subprocess.STDOUT,
-                              cwd=cwd,
-                              env=local_env,
-                              shell=shell)
+        with open(os.devnull, 'wb') as devnull:
+            sp = subprocess.Popen(cmd,
+                                  stdin=in_file,
+                                  stdout=stdout,
+                                  stderr=devnull if ignore_stderr else subprocess.STDOUT,
+                                  cwd=cwd,
+                                  env=local_env,
+                                  shell=shell)
 
         if out_file is not None:
             # read the output
