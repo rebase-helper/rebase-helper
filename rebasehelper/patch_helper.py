@@ -87,7 +87,7 @@ class GitPatchTool(PatchBase):
         It tries apply patch with am command and if it fails
         then with command --apply
         """
-        logger.verbose('Applying patch with am')
+        logger.verbose('Applying patch with git-am')
 
         patch_name = patch_object.get_path()
         patch_strip = patch_object.get_strip()
@@ -95,6 +95,11 @@ class GitPatchTool(PatchBase):
             repo.git.am(patch_name)
         except git.GitCommandError:
             logger.verbose('Applying patch with git-am failed.')
+            try:
+                repo.git.am(abort=True)
+            except git.GitCommandError:
+                pass
+            logger.verbose('Applying patch with git-apply')
             try:
                 repo.git.apply(patch_name, p=patch_strip)
             except git.GitCommandError:
