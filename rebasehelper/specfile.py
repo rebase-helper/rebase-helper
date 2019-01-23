@@ -440,6 +440,9 @@ class SpecFile(object):
         if remove_patches is None:
             remove_patches = []
 
+        if '%prep' not in self.spec_content.sections:
+            return
+
         i = 0
         while i < len(self.spec_content.sections['%prep']):
             line = self.spec_content.sections['%prep'][i]
@@ -1099,6 +1102,8 @@ class SpecFile(object):
 
     def get_prep_section(self):
         """Function returns whole prep section"""
+        if not self.prep_section:
+            return []
         prep = self.prep_section.split('\n')
         # join lines split by backslash or ending with pipe
         result = []
@@ -1259,7 +1264,7 @@ class SpecFile(object):
         """
         parser = self._get_setup_parser()
 
-        for line in self.spec_content.sections['%prep']:
+        for line in self.spec_content.sections.get('%prep', []):
             if line.startswith('%setup') or line.startswith('%autosetup'):
                 line = MacroHelper.expand(line, '')
 
@@ -1283,7 +1288,7 @@ class SpecFile(object):
         """
         parser = self._get_setup_parser()
 
-        for index, line in enumerate(self.spec_content.sections['%prep']):
+        for index, line in enumerate(self.spec_content.sections.get('%prep', [])):
             if line.startswith('%setup') or line.startswith('%autosetup'):
                 line = MacroHelper.expand(line, '')
 
