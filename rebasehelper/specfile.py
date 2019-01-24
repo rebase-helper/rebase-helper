@@ -839,6 +839,7 @@ class SpecFile(object):
                 text = ''
                 macro = ''
                 buf = ''
+                escape = False
                 while inp:
                     c = inp.pop(0)
                     if c == '%':
@@ -858,6 +859,11 @@ class SpecFile(object):
                             elif c == '}':
                                 tree.append(('m', buf[:-1]))
                                 buf = ''
+                        elif c == '(':
+                            if text:
+                                tree.append(('t', text))
+                                text = ''
+                            tree.append(('s', None, parse(inp)))
                         else:
                             if text:
                                 tree.append(('t', text))
@@ -867,7 +873,22 @@ class SpecFile(object):
                                 macro += c
                             tree.append(('m', macro))
                             macro = ''
+                    elif c == '$':
+                        text += c
+                        c = inp.pop(0)
+                        if c == '{':
+                            text += c
+                            escape = True
                     elif c == '}':
+                        if escape:
+                            text += c
+                            escape = False
+                        else:
+                            if text:
+                                tree.append(('t', text))
+                            inp.append(c)
+                            return tree
+                    elif c == ')':
                         if text:
                             tree.append(('t', text))
                         inp.append(c)
@@ -890,6 +911,9 @@ class SpecFile(object):
                     elif node[0] == 'c':
                         if MacroHelper.expand('%{{{}:1}}'.format(node[1])):
                             result.extend(traverse(node[2]))
+                    elif node[0] == 's':
+                        # ignore shell expansions, push nonsensical value
+                        result.append('@')
                 return result
 
             inp = list(s)
