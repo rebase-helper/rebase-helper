@@ -63,10 +63,14 @@ class FilesBuildLogHook(BaseBuildLogHook):
         output = []
         for file_type, related_files in six.iteritems(data):
             output.append(' - {}'.format(file_type))
-            for section, files in six.iteritems(related_files):
-                output.append('\t- {}'.format(section))
-                for file in files:
-                    output.append('\t\t- {}'.format(file))
+            if isinstance(related_files, list):
+                for file in related_files:
+                    output.append('\t- {}'.format(file))
+            else:
+                for section, files in six.iteritems(related_files):
+                    output.append('\t- {}'.format(section))
+                    for file in files:
+                        output.append('\t\t- {}'.format(file))
 
         return output
 
