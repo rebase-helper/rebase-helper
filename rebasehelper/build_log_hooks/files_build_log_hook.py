@@ -196,7 +196,7 @@ class FilesBuildLogHook(BaseBuildLogHook):
             substituted_path = MacroHelper.substitute_path_with_macros(file, macros)
             rebase_spec_file.spec_content.sections[section].insert(0, substituted_path)
             result['added'][section].append(substituted_path)
-            logger.info('Added %s to %s section', substituted_path, section)
+            logger.info("Added %s to '%s' section", substituted_path, section)
 
         return result
 
@@ -243,7 +243,7 @@ class FilesBuildLogHook(BaseBuildLogHook):
                             del original_line[len(directives) + j]
                             files.remove(deleted_file)
                             result['removed'][sec_name].append(original_file)
-                            logger.info('Removed %s from %s section', original_file, sec_name)
+                            logger.info("Removed %s from '%s' section", original_file, sec_name)
                             break
                         else:
                             j += 1
