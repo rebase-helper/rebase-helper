@@ -198,7 +198,12 @@ class FilesBuildLogHook(BaseBuildLogHook):
         for file in files:
             section = cls._get_best_matching_files_section(rebase_spec_file, file)
             substituted_path = MacroHelper.substitute_path_with_macros(file, macros)
-            rebase_spec_file.spec_content.sections[section].insert(0, substituted_path)
+            try:
+                index = [i for i, l in enumerate(rebase_spec_file.spec_content.sections[section]) if l][-1] + 1
+            except IndexError:
+                # section is empty
+                index = 0
+            rebase_spec_file.spec_content.sections[section].insert(index, substituted_path)
             result['added'][section].append(substituted_path)
             logger.info("Added %s to '%s' section", substituted_path, section)
 
