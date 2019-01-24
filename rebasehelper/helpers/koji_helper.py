@@ -70,9 +70,10 @@ class KojiHelper(object):
         else:
             return session
         # fall back to kerberos login (doesn't work with python3)
+        exc = (koji.AuthError, koji.krbV.Krb5Error) if koji.krbV else koji.AuthError
         try:
             session.krb_login()
-        except (koji.AuthError, koji.krbV.Krb5Error) as e:
+        except exc as e:
             raise RebaseHelperError('Login failed: {}'.format(six.text_type(e)))
         else:
             return session
