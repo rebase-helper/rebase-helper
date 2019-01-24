@@ -40,6 +40,18 @@ class BaseBuildLogHook(Plugin):
 
     @classmethod
     def run(cls, spec_file, rebase_spec_file, results_dir, **kwargs):
+        """Runs the build log hook.
+
+        Args:
+            spec_file (rebasehelper.specfile.SpecFile): Original SpecFile object.
+            rebase_spec_file (rebasehelper.specfile.SpecFile): Rebased SpecFile object.
+            kwargs (dict): Keyword arguments from instance of Application.
+
+        Returns:
+            tuple: The first element is a dict containing changes, the second is a bool whether
+            the build process should be restarted.
+
+        """
         raise NotImplementedError()
 
     @classmethod
@@ -78,10 +90,10 @@ class BuildLogHookRunner(object):
                 categories = build_log_hook.CATEGORIES
                 if not categories or spec_file.category in categories:
                     logger.info('Running %s build log hook.', name)
-                    result = build_log_hook.run(spec_file, rebase_spec_file, **kwargs) or {}
+                    result, rerun = build_log_hook.run(spec_file, rebase_spec_file, **kwargs)
                     result = build_log_hook.merge_two_results(results_store.get_build_log_hooks().get(name, {}), result)
                     results_store.set_build_log_hooks_result(name, result)
-                    if result:
+                    if rerun:
                         changes_made = True
         return changes_made
 

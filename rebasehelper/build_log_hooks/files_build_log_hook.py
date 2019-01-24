@@ -267,7 +267,7 @@ class FilesBuildLogHook(BaseBuildLogHook):
     @classmethod
     def run(cls, spec_file, rebase_spec_file, results_dir, **kwargs):
         if not results_dir:
-            return None
+            return {}, False
         log = os.path.join(results_dir, 'new-build', 'RPM', 'build.log')
 
         nvr = rebase_spec_file.get_NVR()
@@ -285,4 +285,4 @@ class FilesBuildLogHook(BaseBuildLogHook):
                 logger.info('\t%s', file)
             result = cls._correct_missing_files(rebase_spec_file, files)
         rebase_spec_file.save()
-        return result
+        return result, 'added' in result or 'removed' in result
