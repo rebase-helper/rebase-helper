@@ -45,13 +45,13 @@ class FilesBuildLogHook(BaseBuildLogHook):
         '%defattr': None,
         '%dev': None,
         '%dir': None,
-        '%doc': '%{_defaultdocdir}/%{name}',
+        '%doc': '%{_defaultdocdir}',
         '%docdir': None,
         '%dverify': None,
         '%exclude': None,
         '%ghost': None,
         '%lang': None,
-        '%license': '%{_defaultlicensedir}/%{name}',
+        '%license': '%{_defaultlicensedir}',
         '%missingok': None,
         '%pubkey': None,
         '%readme': None,
@@ -210,6 +210,7 @@ class FilesBuildLogHook(BaseBuildLogHook):
         result = collections.defaultdict(lambda: collections.defaultdict(list))
         for sec_name, sec_content in six.iteritems(rebase_spec_file.spec_content.sections):
             if sec_name.startswith('%files'):
+                subpackage = rebase_spec_file.get_subpackage_name(sec_name)
                 i = 0
                 while i < len(sec_content):
                     original_line = sec_content[i].split()
@@ -227,7 +228,7 @@ class FilesBuildLogHook(BaseBuildLogHook):
                             split_line.remove(element)
 
                     if prepend_macro:
-                        split_line = [os.path.join(prepend_macro, p) for p in split_line]
+                        split_line = [os.path.join(prepend_macro, subpackage, os.path.basename(p)) for p in split_line]
                     split_line = [MacroHelper.expand(p) for p in split_line]
 
                     j = 0
