@@ -1266,11 +1266,12 @@ class SpecFile(object):
 
         for line in self.spec_content.sections.get('%prep', []):
             if line.startswith('%setup') or line.startswith('%autosetup'):
-                line = MacroHelper.expand(line, '')
+                args = shlex.split(line)
+                args = [MacroHelper.expand(a, '') for a in args[1:]]
 
                 # parse macro arguments
                 try:
-                    ns, _ = parser.parse_known_args(shlex.split(line)[1:])
+                    ns, _ = parser.parse_known_args(args)
                 except ParseError:
                     continue
 
@@ -1290,14 +1291,13 @@ class SpecFile(object):
 
         for index, line in enumerate(self.spec_content.sections.get('%prep', [])):
             if line.startswith('%setup') or line.startswith('%autosetup'):
-                line = MacroHelper.expand(line, '')
-
                 args = shlex.split(line)
                 macro = args[0]
+                args = [MacroHelper.expand(a, '') for a in args[1:]]
 
                 # parse macro arguments
                 try:
-                    ns, unknown = parser.parse_known_args(args[1:])
+                    ns, unknown = parser.parse_known_args(args)
                 except ParseError:
                     continue
 
