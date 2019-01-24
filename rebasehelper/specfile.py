@@ -773,45 +773,41 @@ class SpecFile(object):
             (?P<name>\w+)
             (?P<options>\(.+?\))?
             \s+
-            (?P<value>.+)
+            (?P<value>
+                (%((?P<b>{)|(?P<s>\()))?
+                .+?
+                (?(b)})(?(s)\))
+            )
             (?(cond)})
             $
             ''',
-            re.VERBOSE)
+            re.VERBOSE | re.MULTILINE | re.DOTALL)
 
         def _get_macro_value(macro):
             """Returns raw value of a macro"""
-            for line in self.spec_content.sections['%package']:
-                match = macro_def_re.match(line)
-                if not match:
-                    continue
+            for match in macro_def_re.finditer('\n'.join(self.spec_content.sections['%package'])):
                 if match.group('name') == macro:
                     return match.group('value')
             return None
 
         def _redefine_macro(macro, value):
             """Replaces value of an existing macro"""
-            for index, line in enumerate(self.spec_content.sections['%package']):
-                match = macro_def_re.match(line)
-                if not match:
-                    continue
+            content = '\n'.join(self.spec_content.sections['%package'])
+            for match in macro_def_re.finditer(content):
                 if match.group('name') != macro:
                     continue
-                line = line[:match.start('value')] + value + line[match.end('value'):]
+                content = content[:match.start('value')] + value + content[match.end('value'):]
                 if match.group('options'):
-                    line = line[:match.start('options')] + line[match.end('options'):]
-                self.spec_content.sections['%package'][index] = line
+                    content = content[:match.start('options')] + content[match.end('options'):]
                 break
+            self.spec_content.sections['%package'] = content.split('\n')
             self.save()
 
         def _find_macros(s):
             """Returns all redefinable macros present in a string"""
             macro_re = re.compile(r'%(?P<brace>{\??)?(?P<name>\w+)(?(brace)})')
             macros = []
-            for line in self.spec_content.sections['%package']:
-                match = macro_def_re.match(line)
-                if not match:
-                    continue
+            for match in macro_def_re.finditer('\n'.join(self.spec_content.sections['%package'])):
                 macros.append(match.group('name'))
             result = []
             for match in macro_re.finditer(s):
