@@ -31,7 +31,6 @@ import six
 from rebasehelper.build_log_hook import BaseBuildLogHook
 from rebasehelper.helpers.macro_helper import MacroHelper
 from rebasehelper.logger import logger
-from rebasehelper.results_store import results_store
 
 
 class FilesBuildLogHook(BaseBuildLogHook):
@@ -274,16 +273,16 @@ class FilesBuildLogHook(BaseBuildLogHook):
         nvr = rebase_spec_file.get_NVR()
         error_type, files = cls._parse_build_log(log, nvr)
 
-        new_result = {}
+        result = {}
         if error_type == 'deleted':
             logger.info('The following files are absent in sources but are in the SPEC file, trying to remove them:')
             for file in files:
                 logger.info('\t%s', file)
-            new_result = cls._correct_deleted_files(rebase_spec_file, files)
+            result = cls._correct_deleted_files(rebase_spec_file, files)
         elif error_type == 'missing':
             logger.info('The following files are in the sources but are missing in the SPEC file, trying to add them:')
             for file in files:
                 logger.info('\t%s', file)
-            new_result = cls._correct_missing_files(rebase_spec_file, files)
+            result = cls._correct_missing_files(rebase_spec_file, files)
         rebase_spec_file.save()
-        return cls.merge_two_results(results_store.get_build_log_hooks().get(cls.name, {}), new_result)
+        return result

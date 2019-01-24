@@ -42,6 +42,10 @@ class BaseBuildLogHook(Plugin):
     def run(cls, spec_file, rebase_spec_file, results_dir, **kwargs):
         raise NotImplementedError()
 
+    @classmethod
+    def merge_two_results(cls, old, new):
+        raise NotImplementedError()
+
 
 class BuildLogHookRunner(object):
     def __init__(self):
@@ -75,6 +79,7 @@ class BuildLogHookRunner(object):
                 if not categories or spec_file.category in categories:
                     logger.info('Running %s build log hook.', name)
                     result = build_log_hook.run(spec_file, rebase_spec_file, **kwargs) or {}
+                    result = build_log_hook.merge_two_results(results_store.get_build_log_hooks().get(name, {}), result)
                     results_store.set_build_log_hooks_result(name, result)
                     if result:
                         changes_made = True
