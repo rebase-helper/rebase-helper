@@ -35,6 +35,7 @@ Test subpackage
 /dirA/fileB
 
 %files devel
+%doc docs_dir/AUTHORS
 /dirB/fileX
 /dirB/fileY
 /dirB/fileZ

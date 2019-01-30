@@ -31,7 +31,6 @@ import six
 from rebasehelper.build_log_hook import BaseBuildLogHook
 from rebasehelper.helpers.macro_helper import MacroHelper
 from rebasehelper.logger import logger
-from rebasehelper.results_store import results_store
 
 
 class FilesBuildLogHook(BaseBuildLogHook):
@@ -46,13 +45,13 @@ class FilesBuildLogHook(BaseBuildLogHook):
         '%defattr': None,
         '%dev': None,
         '%dir': None,
-        '%doc': '%{_defaultdocdir}/%{name}',
+        '%doc': '%{_defaultdocdir}',
         '%docdir': None,
         '%dverify': None,
         '%exclude': None,
         '%ghost': None,
         '%lang': None,
-        '%license': '%{_defaultlicensedir}/%{name}',
+        '%license': '%{_defaultlicensedir}',
         '%missingok': None,
         '%pubkey': None,
         '%readme': None,
@@ -64,10 +63,14 @@ class FilesBuildLogHook(BaseBuildLogHook):
         output = []
         for file_type, related_files in six.iteritems(data):
             output.append(' - {}'.format(file_type))
-            for section, files in six.iteritems(related_files):
-                output.append('\t- {}'.format(section))
-                for file in files:
-                    output.append('\t\t- {}'.format(file))
+            if isinstance(related_files, list):
+                for file in related_files:
+                    output.append('\t- {}'.format(file))
+            else:
+                for section, files in six.iteritems(related_files):
+                    output.append('\t- {}'.format(section))
+                    for file in files:
+                        output.append('\t\t- {}'.format(file))
 
         return output
 
@@ -195,9 +198,14 @@ class FilesBuildLogHook(BaseBuildLogHook):
         for file in files:
             section = cls._get_best_matching_files_section(rebase_spec_file, file)
             substituted_path = MacroHelper.substitute_path_with_macros(file, macros)
-            rebase_spec_file.spec_content.sections[section].insert(0, substituted_path)
+            try:
+                index = [i for i, l in enumerate(rebase_spec_file.spec_content.sections[section]) if l][-1] + 1
+            except IndexError:
+                # section is empty
+                index = 0
+            rebase_spec_file.spec_content.sections[section].insert(index, substituted_path)
             result['added'][section].append(substituted_path)
-            logger.info('Added %s to %s section', substituted_path, section)
+            logger.info("Added %s to '%s' section", substituted_path, section)
 
         return result
 
@@ -211,6 +219,7 @@ class FilesBuildLogHook(BaseBuildLogHook):
         result = collections.defaultdict(lambda: collections.defaultdict(list))
         for sec_name, sec_content in six.iteritems(rebase_spec_file.spec_content.sections):
             if sec_name.startswith('%files'):
+                subpackage = rebase_spec_file.get_subpackage_name(sec_name)
                 i = 0
                 while i < len(sec_content):
                     original_line = sec_content[i].split()
@@ -228,7 +237,7 @@ class FilesBuildLogHook(BaseBuildLogHook):
                             split_line.remove(element)
 
                     if prepend_macro:
-                        split_line = [os.path.join(prepend_macro, p) for p in split_line]
+                        split_line = [os.path.join(prepend_macro, subpackage, os.path.basename(p)) for p in split_line]
                     split_line = [MacroHelper.expand(p) for p in split_line]
 
                     j = 0
@@ -244,7 +253,7 @@ class FilesBuildLogHook(BaseBuildLogHook):
                             del original_line[len(directives) + j]
                             files.remove(deleted_file)
                             result['removed'][sec_name].append(original_file)
-                            logger.info('Removed %s from %s section', original_file, sec_name)
+                            logger.info("Removed %s from '%s' section", original_file, sec_name)
                             break
                         else:
                             j += 1
@@ -268,22 +277,22 @@ class FilesBuildLogHook(BaseBuildLogHook):
     @classmethod
     def run(cls, spec_file, rebase_spec_file, results_dir, **kwargs):
         if not results_dir:
-            return None
+            return {}, False
         log = os.path.join(results_dir, 'new-build', 'RPM', 'build.log')
 
         nvr = rebase_spec_file.get_NVR()
         error_type, files = cls._parse_build_log(log, nvr)
 
-        new_result = {}
+        result = {}
         if error_type == 'deleted':
             logger.info('The following files are absent in sources but are in the SPEC file, trying to remove them:')
             for file in files:
                 logger.info('\t%s', file)
-            new_result = cls._correct_deleted_files(rebase_spec_file, files)
+            result = cls._correct_deleted_files(rebase_spec_file, files)
         elif error_type == 'missing':
             logger.info('The following files are in the sources but are missing in the SPEC file, trying to add them:')
             for file in files:
                 logger.info('\t%s', file)
-            new_result = cls._correct_missing_files(rebase_spec_file, files)
+            result = cls._correct_missing_files(rebase_spec_file, files)
         rebase_spec_file.save()
-        return cls.merge_two_results(results_store.get_build_log_hooks().get(cls.name, {}), new_result)
+        return result, 'added' in result or 'removed' in result

@@ -35,18 +35,20 @@ class MacroHelper(object):
     """Class for working with RPM macros"""
 
     MACROS_WHITELIST = [
-        '_sysconfdir',
         '_bindir',
-        '_libdir',
-        '_libexecdir',
-        '_sbindir',
-        '_sharedstatedir',
         '_datadir',
         '_includedir',
         '_infodir',
-        '_mandir',
-        '_localstatedir',
         '_initdir',
+        '_libdir',
+        '_libexecdir',
+        '_localstatedir',
+        '_mandir',
+        '_sbindir',
+        '_sharedstatedir',
+        '_sysconfdir',
+        'python2_sitelib',
+        'python3_sitelib',
     ]
 
     @staticmethod

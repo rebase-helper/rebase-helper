@@ -1134,6 +1134,21 @@ class SpecFile(object):
                 result.append(prep.pop(0))
         return result
 
+    @staticmethod
+    def get_subpackage_name(files_section):
+        """Gets subpackage name based on the %files section."""
+        parser = SilentArgumentParser()
+        parser.add_argument('-n', default=None)
+        parser.add_argument('-f')
+        parser.add_argument('subpackage', nargs='?', default=None)
+        ns, _ = parser.parse_known_args(shlex.split(files_section)[1:])
+        if ns.n:
+            return ns.n
+        elif ns.subpackage:
+            return '%{{name}}-{}'.format(ns.subpackage)
+        else:
+            return '%{name}'
+
     def get_main_files_section(self):
         """Finds the exact name of the main %files section.
 
@@ -1141,15 +1156,9 @@ class SpecFile(object):
             str: Name of the main files section.
 
         """
-        parser = SilentArgumentParser()
-        parser.add_argument('-n', default=None)
-        parser.add_argument('-f')
-        parser.add_argument('subpackage', nargs='?', default=None)
-
         for sec_name in self.spec_content.sections:
             if sec_name.startswith('%files'):
-                ns, _ = parser.parse_known_args(shlex.split(sec_name)[1:])
-                if not ns.subpackage and not ns.n:
+                if self.get_subpackage_name(sec_name) == '%{name}':
                     return sec_name
 
     #############################################
