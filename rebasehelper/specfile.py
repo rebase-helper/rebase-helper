@@ -1122,14 +1122,22 @@ class SpecFile(object):
 
     def get_prep_section(self):
         """Function returns whole prep section"""
+        def unmatched_quotation(s):
+            try:
+                shlex.split(s)
+            except ValueError:
+                return True
+            return False
         if not self.prep_section:
             return []
         prep = self.prep_section.split('\n')
         # join lines split by backslash or ending with pipe
-        result = []
+        result = [prep.pop(0)]
         while prep:
-            if result and result[-1].rstrip().endswith(('\\', '|')):
+            if result[-1].rstrip().endswith('\\'):
                 result[-1] = result[-1][:-1] + prep.pop(0)
+            elif result[-1].rstrip().endswith('|') or unmatched_quotation(result[-1]):
+                result[-1] = result[-1] + prep.pop(0)
             else:
                 result.append(prep.pop(0))
         return result
