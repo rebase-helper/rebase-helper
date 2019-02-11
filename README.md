@@ -86,3 +86,9 @@ The following steps describe a rebase process:
 - **Cleanup**
 
     - *rebase-helper-workspace* directory is removed
+
+## Video presentation
+
+At DevConf.cz 2016, Tomáš Hozza, Petr Hráček presented on rebase-helper.
+
+[![rebase-helper presentation at DevConf.cz 2016](https://img.youtube.com/vi/Y-5Qiwaujd8/0.jpg)](https://www.youtube.com/watch?v=Y-5Qiwaujd8)
