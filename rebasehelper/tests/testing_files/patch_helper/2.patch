@@ -1,0 +1,13 @@
+diff --git a/lipsum.txt b/lipsum.txt
+index 8b5622c..07415eb 100644
+--- a/lipsum.txt
++++ b/lipsum.txt
+@@ -5,7 +5,7 @@ suspendisse interdum consectetur libero id faucibus nisl tincidunt eget. Dictum
+ non consectetur a erat nam. Tincidunt lobortis feugiat vivamus at augue eget.
+ Aliquam id diam maecenas ultricies mi eget. Egestas egestas fringilla phasellus
+ faucibus. Mauris pellentesque pulvinar pellentesque habitant morbi tristique
+-senectus et netus. Aliquam vestibulum morbi blandit cursus. Mauris pharetra et
++senectus et netus. Aliquam vestibulum morbi blandit CURSUS. Mauris pharetra et
+ ultrices neque. Diam vel quam elementum pulvinar etiam non.
+ 
+ Fames ac turpis egestas integer eget aliquet nibh praesent tristique. Euismod in

@@ -1,0 +1,12 @@
+diff --git a/lipsum.txt b/lipsum.txt
+index 9cad8f1..239345e 100644
+--- a/lipsum.txt
++++ b/lipsum.txt
+@@ -45,6 +45,6 @@ Vitae ultricies leo integer malesuada nunc. Dictum fusce ut placerat orci nulla.
+ Scelerisque purus semper eget duis. Porttitor rhoncus dolor purus non enim.
+ Facilisis volutpat est velit egestas dui id ornare. Sem nulla pharetra diam sit
+ amet nisl suscipit adipiscing. Ultricies mi quis hendrerit dolor magna eget est.
+-Nulla pharetra diam sit amet nisl suscipit adipiscing bibendum. Eget nunc
++Nulla pharetra diam sit amet nisl SUSCIPIT adipiscing bibendum. Eget nunc
+ scelerisque viverra mauris. Purus ut faucibus pulvinar elementum integer.
+ Rhoncus mattis rhoncus urna neque viverra justo nec.
