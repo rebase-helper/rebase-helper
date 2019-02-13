@@ -29,6 +29,7 @@ import six
 from rebasehelper.logger import logger
 from rebasehelper.helpers.git_helper import GitHelper
 from rebasehelper.helpers.input_helper import InputHelper
+from rebasehelper.constants import DEFENC
 
 
 patch_tools = {}
@@ -81,7 +82,31 @@ class GitPatchTool(PatchBase):
             return False
 
     @staticmethod
-    def apply_patch(repo, patch_object):
+    def decorate_patch_name(patch_name):
+        return '<<[{0}]>>'.format(patch_name)
+
+    @classmethod
+    def insert_patch_name(cls, message, patch_name):
+        return '{0}\n\n{1}'.format(message, cls.decorate_patch_name(patch_name))
+
+    @classmethod
+    def extract_patch_name(cls, message):
+        for line in message.split('\n'):
+            if line.startswith('<<[') and line.endswith(']>>'):
+                return line[3:-3]
+        return None
+
+    @classmethod
+    def strip_patch_name(cls, diff, patch_name):
+        token = '\n\n{0}'.format(cls.decorate_patch_name(patch_name)).encode(DEFENC)
+        try:
+            idx = diff.index(token)
+            return diff[:idx] + diff[idx + len(token):]
+        except (IndexError, ValueError):
+            return diff
+
+    @classmethod
+    def apply_patch(cls, repo, patch_object):
         """
         Function applies patches to old sources
         It tries apply patch with am command and if it fails
@@ -93,6 +118,7 @@ class GitPatchTool(PatchBase):
         patch_strip = patch_object.get_strip()
         try:
             repo.git.am(patch_name)
+            commit = repo.head.commit
         except git.GitCommandError:
             logger.verbose('Applying patch with git-am failed.')
             try:
@@ -105,41 +131,27 @@ class GitPatchTool(PatchBase):
             except git.GitCommandError:
                 repo.git.apply(patch_name, p=patch_strip, reject=True, whitespace='fix')
             repo.git.add(all=True)
-            repo.index.commit('Patch: {0}'.format(os.path.basename(patch_name)), skip_hooks=True)
-        else:
-            # replace last commit message with patch name to preserve mapping between commits and patches
-            repo.head.reset('HEAD~1', index=False)
-            repo.index.commit('Patch: {0}'.format(os.path.basename(patch_name)), skip_hooks=True)
-
-    @classmethod
-    def _update_deleted_patches(cls, inapplicable_patches):
-        """Function checks patches against rebase-patches"""
-        commits = list(cls.old_repo.iter_commits())
-        updated_patches = []
-        for patch in cls.patches:
-            patch_name = patch.get_patch_name()
-            if (not [c for c in commits if c.summary.endswith(patch_name)] and
-                    patch_name not in inapplicable_patches):
-                updated_patches.append(patch_name)
-        return updated_patches
-
-    @staticmethod
-    def _get_automerged_patches(output):
-        automerged_patches = []
-        if not output:
-            return automerged_patches
-        patch_name = None
-        for line in output.split('\n'):
-            if line.startswith('Applying:'):
-                patch_name = line.split()[-1]
-            elif line.startswith('Auto-merging'):
-                if patch_name and patch_name not in automerged_patches:
-                    automerged_patches.append(patch_name)
-        return automerged_patches
+            commit = repo.index.commit(cls.decorate_patch_name(os.path.basename(patch_name)), skip_hooks=True)
+        repo.git.commit(amend=True, m=cls.insert_patch_name(commit.message, os.path.basename(patch_name)))
 
     @classmethod
     def _git_rebase(cls):
         """Function performs git rebase between old and new sources"""
+        def compare_commits(a, b):
+            # compare commit diffs disregarding differences in blob hashes
+            attributes = (
+                'a_mode', 'b_mode', 'a_rawpath', 'b_rawpath',
+                'new_file', 'deleted_file', 'raw_rename_from', 'raw_rename_to',
+                'diff', 'change_type', 'score')
+            diff1 = a.diff(a.parents[0], create_patch=True)
+            diff2 = b.diff(b.parents[0], create_patch=True)
+            if len(diff1) != len(diff2):
+                return False
+            for d1, d2 in zip(diff1, diff2):
+                for attr in attributes:
+                    if getattr(d1, attr) != getattr(d2, attr):
+                        return False
+            return True
         # in old_sources do:
         # 1) git remote add new_sources <path_to_new_sources>
         # 2) git fetch new_sources
@@ -169,7 +181,7 @@ class GitPatchTool(PatchBase):
         else:
             logger.info('git-rebase operation continues...')
             try:
-                cls.output_data = cls.old_repo.git.rebase(skip=True, stdout_as_string=six.PY3)
+                cls.output_data = cls.old_repo.git.rebase('--continue', stdout_as_string=six.PY3)
             except git.GitCommandError as e:
                 ret_code = e.status
                 cls.output_data = e.stdout
@@ -179,80 +191,87 @@ class GitPatchTool(PatchBase):
         patch_dictionary = {}
         modified_patches = []
         inapplicable_patches = []
-        while True:
-            automerged_patches = cls._get_automerged_patches(cls.output_data)
-            for patch_name in automerged_patches:
-                commits = [c for c in cls.old_repo.iter_commits() if c.summary.endswith(patch_name)]
-                if commits:
-                    base_name = os.path.join(cls.kwargs['rebased_sources_dir'], patch_name)
-                    diff = cls.old_repo.git.diff(commits[0].parents[0], commits[0], stdout_as_string=False)
-                    with open(base_name, 'wb') as f:
-                        f.write(diff)
-                        f.write(b'\n')
-                    modified_patches.append(patch_name)
-            if ret_code != 0:
-                # get name of the current patch using .git/rebase-apply/next
-                try:
-                    with open(os.path.join(cls.old_sources, '.git', 'rebase-apply', 'next')) as f:
-                        patch_name = cls.patches[int(f.readline()) - 1].get_patch_name()
-                except IOError:
-                    raise RuntimeError('Git rebase failed with unknown reason. Please check log file')
-                if not cls.non_interactive:
-                    logger.info("Git has problems with rebasing patch %s", patch_name)
-                    GitHelper.run_mergetool(cls.old_repo)
-                else:
-                    inapplicable_patches.append(patch_name)
-                    try:
-                        cls.output_data = cls.old_repo.git.rebase(skip=True, stdout_as_string=six.PY3)
-                    except git.GitCommandError as e:
-                        ret_code = e.status
-                        cls.output_data = e.stdout
+        while ret_code != 0:
+            try:
+                with open(os.path.join(cls.old_sources, '.git', 'rebase-apply', 'next')) as f:
+                    next_index = int(f.readline())
+                with open(os.path.join(cls.old_sources, '.git', 'rebase-apply', 'last')) as f:
+                    last_index = int(f.readline())
+            except IOError:
+                raise RuntimeError('Git rebase failed with unknown reason. Please check log file')
+            patch_name = cls.patches[next_index - 1].get_patch_name()
+            inapplicable = False
+            if cls.non_interactive:
+                inapplicable = True
+            else:
+                logger.info('Failed to auto-merge patch %s', patch_name)
+                GitHelper.run_mergetool(cls.old_repo)
+                if cls.old_repo.index.unmerged_blobs():
+                    if InputHelper.get_message('There are still unmerged entries. Do you want to skip this patch'):
+                        inapplicable = True
                     else:
-                        ret_code = 0
-                    continue
-                base_name = os.path.join(cls.kwargs['rebased_sources_dir'], patch_name)
-                # unstaged changes
-                diff = cls.old_repo.commit().diff(None)
-                if diff:
-                    # staged changes
-                    diff = cls.old_repo.index.diff(cls.old_repo.commit())
-                    modified_files = [d.a_path for d in diff]
-                    logger.info('Following files were modified: %s', ', '.join(modified_files))
-                    try:
-                        commit = cls.old_repo.index.commit(patch_name, skip_hooks=True)
-                    except git.UnmergedEntriesError:
-                        inapplicable_patches.append(patch_name)
-                    else:
-                        diff = cls.old_repo.git.diff(commit.parents[0], commit, stdout_as_string=False)
-                        with open(base_name, 'wb') as f:
-                            f.write(diff)
-                            f.write(b'\n')
-                        modified_patches.append(patch_name)
-                if not cls.non_interactive:
-                    if not InputHelper.get_message('Do you want to continue with another patch'):
-                        raise KeyboardInterrupt
+                        continue
+            if inapplicable:
+                inapplicable_patches.append(patch_name)
                 try:
                     cls.output_data = cls.old_repo.git.rebase(skip=True, stdout_as_string=six.PY3)
                 except git.GitCommandError as e:
                     ret_code = e.status
                     cls.output_data = e.stdout
+                    continue
                 else:
-                    ret_code = 0
+                    break
+            diff = cls.old_repo.index.diff(cls.old_repo.commit())
+            if diff:
+                modified_patches.append(patch_name)
+            if next_index < last_index:
+                if not InputHelper.get_message('Do you want to continue with another patch'):
+                    raise KeyboardInterrupt
+            try:
+                if diff:
+                    cls.output_data = cls.old_repo.git.rebase('--continue', stdout_as_string=six.PY3)
+                else:
+                    cls.output_data = cls.old_repo.git.rebase(skip=True, stdout_as_string=six.PY3)
+            except git.GitCommandError as e:
+                ret_code = e.status
+                cls.output_data = e.stdout
             else:
                 break
-        deleted_patches = cls._update_deleted_patches(inapplicable_patches)
+        original_commits = list(cls.old_repo.iter_commits(rev=cls.old_repo.branches.master))
+        commits = list(cls.old_repo.iter_commits())
+        untouched_patches = []
+        deleted_patches = []
+        for patch in cls.patches:
+            patch_name = patch.get_patch_name()
+            original_commit = [c for c in original_commits if cls.extract_patch_name(c.message) == patch_name]
+            commit = [c for c in commits if cls.extract_patch_name(c.message) == patch_name]
+            if original_commit and commit:
+                if patch_name not in modified_patches and compare_commits(original_commit[0], commit[0]):
+                    untouched_patches.append(patch_name)
+                else:
+                    base_name = os.path.join(cls.kwargs['rebased_sources_dir'], patch_name)
+                    if commit[0].summary == cls.decorate_patch_name(patch_name):
+                        diff = cls.old_repo.git.diff(commit[0].parents[0], commit[0], stdout_as_string=False)
+                    else:
+                        diff = cls.old_repo.git.format_patch(commit[0], '-1',
+                                                             stdout=True, no_numbered=True,
+                                                             no_attach=True, stdout_as_string=False)
+                        diff = cls.strip_patch_name(diff, patch_name)
+                    with open(base_name, 'wb') as f:
+                        f.write(diff)
+                        f.write(b'\n')
+                    if patch_name not in modified_patches:
+                        modified_patches.append(patch_name)
+            elif patch_name not in inapplicable_patches:
+                deleted_patches.append(patch_name)
         if deleted_patches:
             patch_dictionary['deleted'] = deleted_patches
         if modified_patches:
             patch_dictionary['modified'] = modified_patches
         if inapplicable_patches:
             patch_dictionary['inapplicable'] = inapplicable_patches
-        patches = [os.path.basename(p.path) for p in cls.patches]
-        untouched_patches = [p for p in patches if p not in deleted_patches + modified_patches + inapplicable_patches]
         if untouched_patches:
             patch_dictionary['untouched'] = untouched_patches
-        # TODO correct settings for merge tool in ~/.gitconfig
-        # currently now meld is not started
         return patch_dictionary
 
     @classmethod
