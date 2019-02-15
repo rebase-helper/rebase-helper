@@ -114,6 +114,12 @@ class Application(object):
             self._get_spec_file()
             self._prepare_spec_objects()
 
+            # verify all sources for the new version are present
+            missing_sources = [os.path.basename(s) for s in self.rebase_spec_file.sources
+                               if not os.path.isfile(os.path.basename(s))]
+            if missing_sources:
+                raise RebaseHelperError('The following sources are missing: {}'.format(','.join(missing_sources)))
+
             if self.conf.update_sources:
                 sources = [os.path.basename(s) for s in self.spec_file.sources]
                 rebased_sources = [os.path.basename(s) for s in self.rebase_spec_file.sources]
