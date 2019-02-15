@@ -40,6 +40,8 @@ class TestApplication(object):
     SOURCE_1 = 'file.txt.bz2'
     SOURCE_2 = 'documentation.tar.xz'
     SOURCE_3 = 'misc.zip'
+    TEST_SOURCE = 'test-source.sh'
+    SOURCE_TESTS = 'source-tests.sh'
 
     TEST_FILES = [
         OLD_SOURCES,
@@ -50,7 +52,11 @@ class TestApplication(object):
         PATCH_3,
         SOURCE_1,
         SOURCE_2,
-        SOURCE_3
+        SOURCE_3,
+        TEST_SOURCE,
+        SOURCE_TESTS,
+        'positional-1.1.0.tar.gz',
+        'rebase-helper-d70cb5a2f523db5b6088427563531f43b7703859.tar.gz',
     ]
 
     cmd_line_args = ['--not-download-sources', '1.0.3']
@@ -58,8 +64,8 @@ class TestApplication(object):
     def test_application_sources(self, workdir):
         expected_dict = {
             'new': {
-                'sources': [os.path.join(workdir, 'test-source.sh'),
-                            os.path.join(workdir, 'source-tests.sh'),
+                'sources': [os.path.join(workdir, self.TEST_SOURCE),
+                            os.path.join(workdir, self.SOURCE_TESTS),
                             os.path.join(workdir, self.NEW_SOURCES)],
                 'version': '1.0.3',
                 'name': 'test',
@@ -79,8 +85,8 @@ class TestApplication(object):
                                      False]}},
             'workspace_dir': os.path.join(workdir, constants.WORKSPACE_DIR),
             'old': {
-                'sources': [os.path.join(workdir, 'test-source.sh'),
-                            os.path.join(workdir, 'source-tests.sh'),
+                'sources': [os.path.join(workdir, self.TEST_SOURCE),
+                            os.path.join(workdir, self.SOURCE_TESTS),
                             os.path.join(workdir, self.OLD_SOURCES)],
                 'version': '1.0.2',
                 'name': 'test',
