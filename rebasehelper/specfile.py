@@ -474,6 +474,11 @@ class SpecFile(object):
 
     def write_updated_patches(self, patches, disable_inapplicable):
         """Function writes the patches to -rebase.spec file"""
+        def is_comment(line):
+            if re.match(r'^#\s*[A-Za-z][A-Za-z0-9]+:', line):
+                # ignore commented-out tag
+                return False
+            return line.startswith('#')
         if not patches:
             return None
         # If some patches are not applied then comment out or remove
@@ -506,7 +511,12 @@ class SpecFile(object):
                     # remove the line of the patch that was removed
                     self.removed_patches.append(patch_name)
                     removed_patches.append(patch_num)
-                    del self.spec_content.sections['%package'][i]
+                    # find associated comments
+                    j = i
+                    while j > 0 and is_comment(self.spec_content.sections['%package'][j - 1]):
+                        j -= 1
+                    del self.spec_content.sections['%package'][j: i+1]
+                    i = j
                     continue
 
                 if patch_inapplicable:
