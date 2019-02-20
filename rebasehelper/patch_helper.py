@@ -205,12 +205,31 @@ class GitPatchTool(PatchBase):
                 inapplicable = True
             else:
                 logger.info('Failed to auto-merge patch %s', patch_name)
+                unmerged = cls.old_repo.index.unmerged_blobs()
                 GitHelper.run_mergetool(cls.old_repo)
                 if cls.old_repo.index.unmerged_blobs():
-                    if InputHelper.get_message('There are still unmerged entries. Do you want to skip this patch'):
+                    if InputHelper.get_message('There are still unmerged entries. Do you want to skip this patch',
+                                               default_yes=False):
                         inapplicable = True
                     else:
                         continue
+                if not inapplicable:
+                    # check for unresolved conflicts
+                    unresolved = []
+                    for file in unmerged:
+                        with open(os.path.join(cls.old_sources, file)) as f:
+                            if [l for l in f.readlines() if '<<<<<<<' in l]:
+                                unresolved.append(file)
+                    if unresolved:
+                        if InputHelper.get_message('There are still unresolved conflicts. '
+                                                   'Do you want to skip this patch',
+                                                   default_yes=False):
+                            inapplicable = True
+                        else:
+                            cls.old_repo.index.reset(paths=unresolved)
+                            unresolved.insert(0, '--')
+                            cls.old_repo.git.checkout(*unresolved, conflict='diff3')
+                            continue
             if inapplicable:
                 inapplicable_patches.append(patch_name)
                 try:
