@@ -115,6 +115,7 @@ setup(
             'ruby-helper = rebasehelper.spec_hooks.ruby_helper:RubyHelperHook',
             'commit-hash-updater = rebasehelper.spec_hooks.commit_hash_updater:CommitHashUpdaterHook',
             'paths-to-rpm-macros = rebasehelper.spec_hooks.paths_to_rpm_macros:PathsToRPMMacrosHook',
+            'escape-macros = rebasehelper.spec_hooks.escape_macros:EscapeMacrosHook',
         ],
         'rebasehelper.build_log_hooks': [
             'files = rebasehelper.build_log_hooks.files_build_log_hook:FilesBuildLogHook',

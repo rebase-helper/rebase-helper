@@ -28,6 +28,7 @@ import pytest
 from rebasehelper.specfile import SpecFile, SpecContent
 from rebasehelper.spec_hooks.typo_fix import TypoFixHook
 from rebasehelper.spec_hooks.pypi_url_fix import PyPIURLFixHook
+from rebasehelper.spec_hooks.escape_macros import EscapeMacrosHook
 
 from rebasehelper.spec_hooks.paths_to_rpm_macros import PathsToRPMMacrosHook
 
@@ -281,6 +282,10 @@ class TestSpecFile(object):
         PathsToRPMMacrosHook.run(spec_object, spec_object)
         assert files == spec_object.spec_content.sections['%files']
         assert files_devel == spec_object.spec_content.sections['%files devel']
+
+    def test_escape_macros_spec_hook(self, spec_object):
+        EscapeMacrosHook.run(spec_object, spec_object)
+        assert spec_object.spec_content.sections['%build'][0] == "autoreconf -vi # Unescaped macros %%name %%{name}"
 
     def test_pypi_to_python_hosted_url_trans(self, spec_object):
         # pylint: disable=protected-access
