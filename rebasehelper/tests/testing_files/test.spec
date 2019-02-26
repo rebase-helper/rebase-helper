@@ -59,7 +59,7 @@ mkdir misc
 tar -xf %{SOURCE6} -C misc
 
 %build
-autoreconf -vi
+autoreconf -vi # Unescaped macros %name %{name}
 
 %configure
 make TEST
