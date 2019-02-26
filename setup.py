@@ -48,8 +48,8 @@ def get_rpm_distribution():
 def get_requirements():
     result = [
         'backports.lzma;python_version<"3.3"',
-        # copr is broken with newer marshmallow
-        'marshmallow<=3.0.0b6',
+        # need stable marshmallow for copr
+        'marshmallow<3.0.0',
         'copr',
         'pyquery',
         'requests',
