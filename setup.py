@@ -64,11 +64,18 @@ def get_requirements():
     return result
 
 
+def get_readme():
+    with open('README.md') as f:
+        return f.read()
+
+
 setup(
     name='rebasehelper',
     version=VERSION,
-    description='rebase-helper helps you to rebase your packages',
-    keywords='packages, easy, quick',
+    description='This tool helps you rebase your package to the latest version',
+    long_description=get_readme(),
+    long_description_content_type='text/markdown',
+    keywords=['rebase', 'packages', 'rpm'],
     author='Petr Hracek',
     author_email='phracek@redhat.com',
     url='https://github.com/rebase-helper/rebase-helper',
@@ -146,5 +153,13 @@ setup(
         'Operating System :: POSIX :: Linux',
         'Programming Language :: Python',
         'Topic :: Software Development',
-    ]
+        'Topic :: System :: Operating System',
+        'Topic :: System :: Software Distribution',
+        'Topic :: Utilities',
+    ],
+    project_urls={
+        'Source Code': 'https://github.com/rebase-helper/rebase-helper',
+        'Documentation': 'https://rebase-helper.readthedocs.io',
+        'Bug Tracker': 'https://github.com/rebase-helper/rebase-helper/issues',
+    }
 )
