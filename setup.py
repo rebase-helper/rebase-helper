@@ -48,14 +48,12 @@ def get_rpm_distribution():
 def get_requirements():
     result = [
         'backports.lzma;python_version<"3.3"',
-        # copr is broken with newer marshmallow
-        'marshmallow<=3.0.0b6',
+        # need stable marshmallow for copr
+        'marshmallow<3.0.0',
         'copr',
         'pyquery',
         'requests',
-        # this is obsoleted by requests-gssapi, but we have to wait
-        # until it's more widely available in distributions
-        'requests-kerberos',
+        'requests-gssapi',
         'six',
         'GitPython',
         'ansicolors',
