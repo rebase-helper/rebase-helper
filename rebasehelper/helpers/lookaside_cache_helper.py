@@ -27,20 +27,17 @@ import sys
 import time
 
 import requests
+import requests_gssapi
 import six
 
-from six.moves import configparser
 from urllib3.fields import RequestField
 from urllib3.filepost import encode_multipart_formdata
+
+from six.moves import configparser
 
 from rebasehelper.exceptions import LookasideCacheError, DownloadError
 from rebasehelper.logger import logger
 from rebasehelper.helpers.download_helper import DownloadHelper
-
-try:
-    from requests_gssapi import HTTPSPNEGOAuth as SPNEGOAuth
-except ImportError:
-    from requests_kerberos import HTTPKerberosAuth as SPNEGOAuth
 
 
 class LookasideCacheHelper(object):
@@ -125,7 +122,7 @@ class LookasideCacheHelper(object):
             cls._download_source(tool, url, package, source['filename'], source['hashtype'], source['hash'])
 
     @classmethod
-    def _upload_source(cls, url, package, filename, hashtype, hsh, auth=SPNEGOAuth()):
+    def _upload_source(cls, url, package, filename, hashtype, hsh, auth=requests_gssapi.HTTPSPNEGOAuth()):
         class ChunkedData(object):
             def __init__(self, check_only, chunksize=8192):
                 self.check_only = check_only
@@ -148,7 +145,7 @@ class LookasideCacheHelper(object):
 
             def __iter__(self):
                 if self.uploaded:
-                    # ensure the progressbar is shown only once (SPNEGOAuth causes second request)
+                    # ensure the progressbar is shown only once (HTTPSPNEGOAuth causes second request)
                     yield self.data
                 else:
                     totalsize = len(self.data)

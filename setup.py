@@ -53,9 +53,7 @@ def get_requirements():
         'copr',
         'pyquery',
         'requests',
-        # this is obsoleted by requests-gssapi, but we have to wait
-        # until it's more widely available in distributions
-        'requests-kerberos',
+        'requests-gssapi',
         'six',
         'GitPython',
         'ansicolors',
