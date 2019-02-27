@@ -49,14 +49,16 @@ class HTTPServer(object):
                     return
                 event = self.headers.get('X-GitHub-Event')
                 if event == 'ping':
-                    self.send_response(200)
+                    self.send_response(204)
+                    self.end_headers()
                     return
                 if event == 'release':
                     data = json.loads(data)
                     url = data.get('clone_url')
                     tag = data.get('release', {}).get('tag_name')
                     PyPI.release(url, tag)
-                self.send_response(200)
+                self.send_response(204)
+                self.end_headers()
 
         self.server = BaseHTTPServer.HTTPServer(('', port), RequestHandler)
 
