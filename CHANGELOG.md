@@ -2,6 +2,34 @@
 
 ## [Unreleased]
 
+## [0.16.0] - 2019-02-27
+### Added
+- Added category for *R* packages
+- Added `make test-podman` as an alternative to `make test-docker`
+- Added `--skip-upload` option (to be used in conjunction with `--update-sources`)
+- Added check that all sources for the new version are present
+- Added SPEC hook for escaping macros in comments
+
+### Changed
+- `--get-old-build-from-koji` now tries to get specific version build (as opposed to the latest one)
+- Implemented parsing of multiline macros and shell expansions in SPEC files
+- **rebase-helper** can now handle multiline enquoted strings in *%prep* section
+- Refactored `GitPatchTool` to make the rebase process more robust and to preserve as much of the original downstream patches as possible
+- `git mergetool` is now run again if there are some unresolved conflicts left
+- Associated comments are now removed along with patches
+
+### Fixed
+- Fixed populating list of logs on build failures
+- Added missing abort after failed `git am`
+- Fixed processing SPEC files without *%prep* section
+- Fixed several issues in **ruby-helper** SPEC hook
+- Fixed unwanted expansion of *%autosetup* macro
+- Fixed automatic rebulding based on build log hooks result
+- Fixed removal of *%doc* and *%license* files in subpackages
+
+### Removed
+- Removed `requests-kerberos` support and switched to `requests-gssapi` exclusively
+
 ## [0.15.0] - 2018-12-21
 ### Added
 - Implemented build log hooks and added **files** hook to detect and fix missing/unpackaged files
