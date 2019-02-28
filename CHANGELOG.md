@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+## [0.16.1] - 2019-02-28
+### Fixed
+- Made `GitPatchTool` auto-skip empty commits caused by new rebase implementation in **git** 2.20
+- Fixed `TestGitHelper` to work on real systems with existing git configuration
+
 ## [0.16.0] - 2019-02-27
 ### Added
 - Added category for *R* packages
