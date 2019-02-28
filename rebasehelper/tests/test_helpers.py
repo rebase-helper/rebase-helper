@@ -64,8 +64,7 @@ class TestGitHelper(object):
     def test_get_user_and_email(self, config, workdir):
         name = 'Foo Bar'
         email = 'foo@bar.com'
-        env_git_config = os.environ.get('GIT_CONFIG')
-        env_xdg_config_home = os.environ.get('XDG_CONFIG_HOME')
+        env = os.environ.copy()
 
         try:
             if config == 'global':
@@ -74,6 +73,7 @@ class TestGitHelper(object):
 
                 config_file = os.path.join(work_git_path, 'config')
                 self.write_config_file(config_file, name, email)
+                os.environ['HOME'] = workdir
                 os.environ['XDG_CONFIG_HOME'] = workdir
             elif config == 'global_include':
                 work_git_path = os.path.join(workdir, 'git')
@@ -85,6 +85,7 @@ class TestGitHelper(object):
                             '    path = included_config\n')
                 included_config_file = os.path.join(work_git_path, 'included_config')
                 self.write_config_file(included_config_file, name, email)
+                os.environ['HOME'] = workdir
                 os.environ['XDG_CONFIG_HOME'] = workdir
             elif config == 'local':
                 repo = git.Repo.init(workdir)
@@ -100,14 +101,7 @@ class TestGitHelper(object):
             assert name == GitHelper.get_user()
             assert email == GitHelper.get_email()
         finally:
-            if env_git_config:
-                os.environ['GIT_CONFIG'] = env_git_config
-            elif 'GIT_CONFIG' in os.environ:
-                del os.environ['GIT_CONFIG']
-            if env_xdg_config_home:
-                os.environ['XDG_CONFIG_HOME'] = env_xdg_config_home
-            elif 'XDG_CONFIG_HOME' in os.environ:
-                del os.environ['XDG_CONFIG_HOME']
+            os.environ = env
 
 
 class TestConsoleHelper(object):
