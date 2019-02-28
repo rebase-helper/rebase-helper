@@ -192,12 +192,22 @@ class GitPatchTool(PatchBase):
         modified_patches = []
         inapplicable_patches = []
         while ret_code != 0:
+            if not cls.old_repo.index.unmerged_blobs() and not cls.old_repo.index.diff(cls.old_repo.commit()):
+                # empty commit - conflict has been automatically resolved - skip
+                try:
+                    cls.output_data = cls.old_repo.git.rebase(skip=True, stdout_as_string=six.PY3)
+                except git.GitCommandError as e:
+                    ret_code = e.status
+                    cls.output_data = e.stdout
+                    continue
+                else:
+                    break
             try:
                 with open(os.path.join(cls.old_sources, '.git', 'rebase-apply', 'next')) as f:
                     next_index = int(f.readline())
                 with open(os.path.join(cls.old_sources, '.git', 'rebase-apply', 'last')) as f:
                     last_index = int(f.readline())
-            except IOError:
+            except (FileNotFoundError, IOError):
                 raise RuntimeError('Git rebase failed with unknown reason. Please check log file')
             patch_name = cls.patches[next_index - 1].get_patch_name()
             inapplicable = False
