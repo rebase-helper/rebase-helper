@@ -8,4 +8,4 @@ include rebase-helper.bash.in
 include CHANGELOG.md
 include .gitlab-ci.yml
 include .travis.yml
-include .landscape.yml
+include .prospector.yml
