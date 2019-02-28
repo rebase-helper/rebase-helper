@@ -54,7 +54,7 @@ class HTTPServer(object):
                     return
                 if event == 'release':
                     data = json.loads(data)
-                    url = data.get('clone_url')
+                    url = data.get('repository', {}).get('clone_url')
                     tag = data.get('release', {}).get('tag_name')
                     PyPI.release(url, tag)
                 self.send_response(204)
