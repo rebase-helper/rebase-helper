@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import json
+import multiprocessing
 import os
 import sys
 import tempfile
@@ -56,7 +57,7 @@ class HTTPServer(object):
                     data = json.loads(data)
                     url = data.get('repository', {}).get('clone_url')
                     tag = data.get('release', {}).get('tag_name')
-                    PyPI.release(url, tag)
+                    multiprocessing.Process(target=PyPI.release, args=(url, tag)).start()
                 self.send_response(204)
                 self.end_headers()
 
