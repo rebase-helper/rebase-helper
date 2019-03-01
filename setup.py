@@ -53,14 +53,14 @@ def get_requirements():
         'copr',
         'pyquery',
         'requests',
-        'requests-gssapi',
         'six',
         'GitPython',
         'ansicolors',
     ]
-    # there is no rpm inside RTD build environment
+    # there is no rpm nor gssapi inside RTD build environment
     if not os.getenv('READTHEDOCS'):
         result.append(get_rpm_distribution())
+        result.append('requests-gssapi')
     return result
 
 
