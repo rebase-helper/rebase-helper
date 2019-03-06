@@ -121,6 +121,7 @@ setup(
             'commit-hash-updater = rebasehelper.spec_hooks.commit_hash_updater:CommitHashUpdaterHook',
             'paths-to-rpm-macros = rebasehelper.spec_hooks.paths_to_rpm_macros:PathsToRPMMacrosHook',
             'escape-macros = rebasehelper.spec_hooks.escape_macros:EscapeMacrosHook',
+            'replace-old-version = rebasehelper.spec_hooks.replace_old_version:ReplaceOldVersionSpecHook',
         ],
         'rebasehelper.build_log_hooks': [
             'files = rebasehelper.build_log_hooks.files_build_log_hook:FilesBuildLogHook',
