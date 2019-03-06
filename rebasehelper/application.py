@@ -816,7 +816,12 @@ class Application(object):
                            '\nThe error message is: %s', six.text_type(e))
 
     def prepare_next_run(self, results_dir):
-        changes_made = build_log_hook_runner.run(self.spec_file, self.rebase_spec_file, **self.kwargs)
+        # Running build log hooks only makes sense after a failed build
+        # of new RPM packages. The folder results_dir/new-build/RPM
+        # doesn't exist unless the build of new RPM packages has been run.
+        changes_made = False
+        if os.path.exists(os.path.join(results_dir, 'new-build', 'RPM')):
+            changes_made = build_log_hook_runner.run(self.spec_file, self.rebase_spec_file, **self.kwargs)
         # Save current rebase spec file content
         self.rebase_spec_file.save()
         if not self.conf.non_interactive and \
