@@ -50,10 +50,11 @@ class KojiHelper(object):
     functional = koji_helper_functional
 
     @classmethod
-    def create_session(cls, profile='koji'):
+    def create_session(cls, login=False, profile='koji'):
         """Creates new Koji session and immediately logs in to a Koji hub.
 
         Args:
+            login (bool): Whether to perform a login.
             profile (str): Koji profile to use.
 
         Returns:
@@ -65,6 +66,8 @@ class KojiHelper(object):
         """
         config = koji.read_config(profile)
         session = koji.ClientSession(config['server'], opts=config)
+        if not login:
+            return session
         try:
             session.gssapi_login()
         except Exception:  # pylint: disable=broad-except

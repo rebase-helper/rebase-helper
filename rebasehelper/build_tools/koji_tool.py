@@ -78,7 +78,7 @@ class KojiBuildTool(BuildToolBase):
 
     @classmethod
     def _scratch_build(cls, srpm, **kwargs):
-        session = KojiHelper.create_session()
+        session = KojiHelper.create_session(login=True)
         remote = KojiHelper.upload_srpm(session, srpm)
         task_id = session.build(remote, cls.target_tag, dict(scratch=True))
         if kwargs['builds_nowait']:
