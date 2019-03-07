@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+## [0.16.2] - 2019-03-07
+### Added
+- Added support for [packit](https://github.com/packit-service/packit)
+- Added SPEC hook for replacing old version string
+
+### Fixed
+- Fixed documentation building by mocking `requests-gssapi`
+- Fixed `TestOutputTool` for checkers
+
+### Changed
+- Build log hooks are now run only if build of **new** binary packages fails
+- It is now possible to use `--get-old-build-from-koji` option without FAS
+
 ## [0.16.1] - 2019-02-28
 ### Fixed
 - Made `GitPatchTool` auto-skip empty commits caused by new rebase implementation in **git** 2.20
