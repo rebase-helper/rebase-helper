@@ -1203,16 +1203,18 @@ class SpecFile(object):
         except IOError:
             raise RebaseHelperError("Unable to write updated data to SPEC file '%s'" % self.path)
 
-    def copy(self, new_path=None):
-        """
-        Create a copy of the current object and copy the SPEC file the new object
-        represents to a new location.
+    def copy(self, new_path):
+        """Creates a copy of the current object and copies the SPEC file
+        to a new location.
 
-        :param new_path: new path to which to copy the SPEC file
-        :return: copy of the current object
+        Args:
+            new_path (str): Path to copy the new SPEC file to.
+
+        Returns:
+            SpecFile: The created SpecFile instance.
+
         """
-        if new_path:
-            shutil.copy(self.path, new_path)
+        shutil.copy(self.path, new_path)
         new_object = SpecFile(new_path, self.changelog_entry, self.sources_location, self.download)
         return new_object
 
