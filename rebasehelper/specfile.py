@@ -1269,6 +1269,12 @@ class SpecFile(object):
         """
         return [r.decode(constants.DEFENC) if six.PY3 else r for r in self.hdr[rpm.RPMTAG_REQUIRES]]
 
+    def update_changelog(self):
+        """Inserts new entry into the changelog and saves the SpecFile."""
+        new_entry = self.get_new_log()
+        self.spec_content.sections['%changelog'][0:0] = new_entry
+        self.save()
+
     def get_new_log(self):
         new_record = []
         today = date.today()

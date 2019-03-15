@@ -228,6 +228,8 @@ class Application(object):
                 <= parse_version(self.spec_file.get_version()):
             raise RebaseHelperError("Current version is equal to or newer than the requested version, nothing to do.")
 
+        self.rebase_spec_file.update_changelog()
+
         # run spec hooks
         spec_hooks_runner.run_spec_hooks(self.spec_file, self.rebase_spec_file, **self.kwargs)
 
@@ -443,10 +445,6 @@ class Application(object):
     def patch_sources(self, sources):
         # Patch sources
         patch = Patcher('git')
-        new_log = self.rebase_spec_file.get_new_log()
-        new_log.extend(self.rebase_spec_file.spec_content.sections['%changelog'])
-        self.rebase_spec_file.spec_content.sections['%changelog'] = new_log
-        self.rebase_spec_file.save()
         try:
             self.rebased_patches = patch.patch(sources[0],
                                                sources[1],
