@@ -1206,13 +1206,15 @@ class SpecFile(object):
     def copy(self, new_path=None):
         """
         Create a copy of the current object and copy the SPEC file the new object
-        represents to a new location.
+        represents to a new location. If new_path is not set, utilize the current path
 
         :param new_path: new path to which to copy the SPEC file
         :return: copy of the current object
         """
         if new_path:
             shutil.copy(self.path, new_path)
+        else:
+            new_path = self.path
         new_object = SpecFile(new_path, self.changelog_entry, self.sources_location, self.download)
         return new_object
 
