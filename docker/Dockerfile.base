@@ -5,7 +5,7 @@ RUN echo -e "deltarpm=0\ninstall_weak_deps=0\ntsflags=nodocs" >> /etc/dnf/dnf.co
   # update GPG keys first in case some of them are missing
   && dnf -y --nogpgcheck update fedora-gpg-keys || true \
   # workaround conflict between coreutils and coreutils-single
-  && dnf -y --allowerasing install coreutils \
+  && dnf -y --allowerasing install coreutils fedora-release \
   && dnf -y update \
   && dnf -y install \
     python2 \
