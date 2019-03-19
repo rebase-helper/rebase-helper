@@ -188,7 +188,6 @@ class Application(object):
         self.rebase_spec_file_path = get_rebase_name(self.rebased_sources_dir, self.spec_file_path)
 
         self.spec_file = SpecFile(self.spec_file_path,
-                                  self.conf.changelog_entry,
                                   self.execution_dir,
                                   download=not self.conf.not_download_sources)
         # Check whether test suite is enabled at build time
@@ -228,7 +227,7 @@ class Application(object):
                 <= parse_version(self.spec_file.get_version()):
             raise RebaseHelperError("Current version is equal to or newer than the requested version, nothing to do.")
 
-        self.rebase_spec_file.update_changelog()
+        self.rebase_spec_file.update_changelog(self.conf.changelog_entry)
 
         # run spec hooks
         spec_hooks_runner.run_spec_hooks(self.spec_file, self.rebase_spec_file, **self.kwargs)
