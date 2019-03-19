@@ -199,11 +199,10 @@ class SpecFile(object):
     prep_section = []
     removed_patches = []
 
-    def __init__(self, path, changelog_entry, sources_location='', download=True):
+    def __init__(self, path, sources_location='', download=True):
         self.path = path
         self.download = download
         self.sources_location = sources_location
-        self.changelog_entry = changelog_entry
         #  Read the content of the whole SPEC file
         self._read_spec_content()
         # Load rpm information
@@ -1215,7 +1214,7 @@ class SpecFile(object):
 
         """
         shutil.copy(self.path, new_path)
-        new_object = SpecFile(new_path, self.changelog_entry, self.sources_location, self.download)
+        new_object = SpecFile(new_path, self.sources_location, self.download)
         return new_object
 
     def save(self):
@@ -1271,13 +1270,27 @@ class SpecFile(object):
         """
         return [r.decode(constants.DEFENC) if six.PY3 else r for r in self.hdr[rpm.RPMTAG_REQUIRES]]
 
-    def update_changelog(self):
-        """Inserts new entry into the changelog and saves the SpecFile."""
-        new_entry = self.get_new_log()
+    def update_changelog(self, changelog_entry):
+        """Inserts a new entry into the changelog and saves the SpecFile.
+
+        Args:
+            changelog_entry (str): Message to use in the entry.
+
+        """
+        new_entry = self.get_new_log(changelog_entry)
         self.spec_content.sections['%changelog'][0:0] = new_entry
         self.save()
 
-    def get_new_log(self):
+    def get_new_log(self, changelog_entry):
+        """Constructs a new changelog entry.
+
+        Args:
+            changelog_entry (str): Message to use in the entry.
+
+        Returns:
+            list: List of lines of the new entry.
+
+        """
         new_record = []
         today = date.today()
         evr = '{epoch}:{ver}-{rel}'.format(epoch=self.get_epoch_number(),
@@ -1289,7 +1302,7 @@ class SpecFile(object):
                                                                     email=GitHelper.get_email(),
                                                                     evr=evr))
         self._update_data()
-        new_record.append(MacroHelper.expand(self.changelog_entry, self.changelog_entry))
+        new_record.append(MacroHelper.expand(changelog_entry, changelog_entry))
         new_record.append('')
         return new_record
 
