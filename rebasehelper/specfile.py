@@ -233,9 +233,8 @@ class SpecFile(object):
     prep_section = []
     removed_patches = []
 
-    def __init__(self, path, sources_location='', download=True):
+    def __init__(self, path, sources_location=''):
         self.path = path
-        self.download = download
         self.sources_location = sources_location
         #  Read the content of the whole SPEC file
         self._read_spec_content()
@@ -1251,7 +1250,7 @@ class SpecFile(object):
 
         """
         shutil.copy(self.path, new_path)
-        new_object = SpecFile(new_path, self.sources_location, self.download)
+        new_object = SpecFile(new_path, self.sources_location)
         return new_object
 
     def save(self):

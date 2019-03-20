@@ -187,9 +187,7 @@ class Application(object):
         """
         self.rebase_spec_file_path = get_rebase_name(self.rebased_sources_dir, self.spec_file_path)
 
-        self.spec_file = SpecFile(self.spec_file_path,
-                                  self.execution_dir,
-                                  download=not self.conf.not_download_sources)
+        self.spec_file = SpecFile(self.spec_file_path, self.execution_dir)
         # Check whether test suite is enabled at build time
         if not self.spec_file.is_test_suite_enabled():
             results_store.set_info_text('WARNING', 'Test suite is not enabled at build time.')
@@ -233,8 +231,8 @@ class Application(object):
         spec_hooks_runner.run_spec_hooks(self.spec_file, self.rebase_spec_file, **self.kwargs)
 
         # spec file object has been sanitized downloading can proceed
-        for spec_file in [self.spec_file, self.rebase_spec_file]:
-            if spec_file.download:
+        if not self.conf.not_download_sources:
+            for spec_file in [self.spec_file, self.rebase_spec_file]:
                 spec_file.download_remote_sources()
                 # parse spec again with sources downloaded to properly expand %prep section
                 spec_file._update_data()  # pylint: disable=protected-access
