@@ -4,14 +4,13 @@ synced_files:
     - rebase-helper.spec
 jobs:
     - trigger: release
-        release_to:
-            - master
+      release_to:
+          - master
     - trigger: pull_request
-        release_to:
-            - master
-upstream_name: rebase-helper
-package_name: rebase-helper
-dist_git_url: https://src.fedoraproject.org/rpms/rebase-helper.git
+      release_to:
+          - master
+upstream_project_name: rebase-helper
+downstream_package_name: rebase-helper
 checks:
     - name: simple-koji-ci
     - name: Fedora CI
