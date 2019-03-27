@@ -46,11 +46,12 @@ class PyPIURLFixHook(BaseSpecHook):
 
     @classmethod
     def run(cls, spec_file, rebase_spec_file, **kwargs):
-        for index, line in enumerate(rebase_spec_file.spec_content.sections['%package']):
+        preamble = rebase_spec_file.spec_content.section('%package')
+        for index, line in enumerate(preamble):
             if line.startswith("URL"):
-                rebase_spec_file.spec_content.sections['%package'][index] = cls._transform_url(line)
+                preamble[index] = cls._transform_url(line)
             elif line.startswith("Source"):
-                rebase_spec_file.spec_content.sections['%package'][index] = cls._transform_sources_url(line)
+                preamble[index] = cls._transform_sources_url(line)
         rebase_spec_file.save()
 
     @classmethod

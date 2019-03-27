@@ -22,8 +22,6 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-import six
-
 from rebasehelper.specfile import BaseSpecHook
 from rebasehelper.helpers.macro_helper import MacroHelper
 
@@ -38,9 +36,9 @@ class PathsToRPMMacrosHook(BaseSpecHook):
         # ensure maximal greediness
         macros.sort(key=lambda k: len(k['value']), reverse=True)
 
-        for sec_name, sec_content in six.iteritems(rebase_spec_file.spec_content.sections):
+        for sec_name, sec_content in rebase_spec_file.spec_content.sections:
             if sec_name.startswith('%files'):
                 for index, line in enumerate(sec_content):
                     new_path = MacroHelper.substitute_path_with_macros(line, macros)
-                    rebase_spec_file.spec_content.sections[sec_name][index] = new_path
+                    sec_content[index] = new_path
         rebase_spec_file.save()

@@ -24,8 +24,6 @@
 
 import re
 
-import six
-
 from rebasehelper.specfile import BaseSpecHook
 
 
@@ -53,6 +51,6 @@ class EscapeMacrosHook(BaseSpecHook):
 
     @classmethod
     def run(cls, spec_file, rebase_spec_file, **kwargs):
-        for sec_name, sec_content in six.iteritems(rebase_spec_file.spec_content.sections):
-            for index, line in enumerate(sec_content):
-                rebase_spec_file.spec_content.sections[sec_name][index] = cls._escape_macros_in_comment(line)
+        for _, section in rebase_spec_file.spec_content.sections:
+            for index, line in enumerate(section):
+                section[index] = cls._escape_macros_in_comment(line)
