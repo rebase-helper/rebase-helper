@@ -172,7 +172,7 @@ class FilesBuildLogHook(BaseBuildLogHook):
         """
         best_match = ''
         best_match_section = ''
-        for sec_name, sec_content in six.iteritems(rebase_spec_file.spec_content.sections):
+        for sec_name, sec_content in rebase_spec_file.spec_content.sections:
             if sec_name.startswith('%files'):
                 for line in sec_content:
                     new_best_match = difflib.get_close_matches(file, [best_match, MacroHelper.expand(line)])
@@ -201,11 +201,11 @@ class FilesBuildLogHook(BaseBuildLogHook):
             section = cls._get_best_matching_files_section(rebase_spec_file, file)
             substituted_path = MacroHelper.substitute_path_with_macros(file, macros)
             try:
-                index = [i for i, l in enumerate(rebase_spec_file.spec_content.sections[section]) if l][-1] + 1
+                index = [i for i, l in enumerate(rebase_spec_file.spec_content.section(section)) if l][-1] + 1
             except IndexError:
                 # section is empty
                 index = 0
-            rebase_spec_file.spec_content.sections[section].insert(index, substituted_path)
+            rebase_spec_file.spec_content.section(section).insert(index, substituted_path)
             result['added'][section].append(substituted_path)
             logger.info("Added %s to '%s' section", substituted_path, section)
 
@@ -219,7 +219,7 @@ class FilesBuildLogHook(BaseBuildLogHook):
 
         """
         result = collections.defaultdict(lambda: collections.defaultdict(list))
-        for sec_name, sec_content in six.iteritems(rebase_spec_file.spec_content.sections):
+        for sec_name, sec_content in rebase_spec_file.spec_content.sections:
             if sec_name.startswith('%files'):
                 subpackage = rebase_spec_file.get_subpackage_name(sec_name)
                 i = 0
@@ -261,9 +261,9 @@ class FilesBuildLogHook(BaseBuildLogHook):
                             j += 1
 
                     if not split_line:
-                        del rebase_spec_file.spec_content.sections[sec_name][i]
+                        del sec_content[i]
                     else:
-                        rebase_spec_file.spec_content.sections[sec_name][i] = ' '.join(original_line)
+                        sec_content[i] = ' '.join(original_line)
                         i += 1
 
                     if not files:

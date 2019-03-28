@@ -20,8 +20,6 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
-import six
-
 from rebasehelper.specfile import BaseSpecHook
 
 
@@ -53,8 +51,8 @@ class ReplaceOldVersionSpecHook(BaseSpecHook):
     def run(cls, spec_file, rebase_spec_file, **kwargs):
         old_version = spec_file.get_version()
         new_version = rebase_spec_file.get_version()
-        for sec_name, sec_content in six.iteritems(rebase_spec_file.spec_content.sections):
-            for index, line in enumerate(sec_content):
-                rebase_spec_file.spec_content.sections[sec_name][index] = cls._replace(line, old_version, new_version)
+        for _, section in rebase_spec_file.spec_content.sections:
+            for index, line in enumerate(section):
+                section[index] = cls._replace(line, old_version, new_version)
 
         rebase_spec_file.save()

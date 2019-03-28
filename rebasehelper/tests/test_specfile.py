@@ -201,7 +201,7 @@ class TestSpecFile(object):
 
     def test_set_extra_version_some_extra_version(self, spec_object):
         spec_object.set_extra_version('b1')
-        preamble = spec_object.spec_content.sections['%package']
+        preamble = spec_object.spec_content.section('%package')
         assert preamble[0] == '%global REBASE_EXTRA_VER b1'
         assert preamble[1] == '%global REBASE_VER %{version}%{REBASE_EXTRA_VER}'
         old_source_index = preamble.index('#Source: ftp://ftp.test.org/%{name}-%{version}.tar.xz')
@@ -215,14 +215,14 @@ class TestSpecFile(object):
 
     def test_set_extra_version_no_extra_version(self, spec_object):
         spec_object.set_extra_version('')
-        assert spec_object.spec_content.sections['%package'][0] != '%global REBASE_EXTRA_VER b1'
-        assert spec_object.spec_content.sections['%package'][1] != '%global REBASE_VER %{version}%{REBASE_EXTRA_VER}'
+        assert spec_object.spec_content.section('%package')[0] != '%global REBASE_EXTRA_VER b1'
+        assert spec_object.spec_content.section('%package')[1] != '%global REBASE_VER %{version}%{REBASE_EXTRA_VER}'
         assert spec_object.get_release_number() == '1'
 
     def test_redefine_release_with_macro(self, spec_object):
         macro = '%{REBASE_VER}'
         spec_object.redefine_release_with_macro(macro)
-        preamble = spec_object.spec_content.sections['%package']
+        preamble = spec_object.spec_content.section('%package')
         old_release_index = preamble.index('#Release: %{release_str}')
         assert preamble[old_release_index + 1] == 'Release: 34' + '.' + macro + '%{?dist}'
 
@@ -230,7 +230,7 @@ class TestSpecFile(object):
         macro = '%{REBASE_VER}'
         spec_object.redefine_release_with_macro(macro)
         spec_object.revert_redefine_release_with_macro(macro)
-        assert 'Release: %{release_str}' in spec_object.spec_content.sections['%package']
+        assert 'Release: %{release_str}' in spec_object.spec_content.section('%package')
 
     def test_get_extra_version_not_set(self, spec_object):
         assert spec_object.get_extra_version() == ''
@@ -240,17 +240,17 @@ class TestSpecFile(object):
         assert spec_object.get_extra_version() == 'rc1'
 
     def test_update_setup_dirname(self, spec_object):
-        prep = spec_object.spec_content.sections['%prep']
+        prep = spec_object.spec_content.section('%prep')
         spec_object.update_setup_dirname('test-1.0.2')
-        assert spec_object.spec_content.sections['%prep'] == prep
+        assert spec_object.spec_content.section('%prep') == prep
 
         spec_object.update_setup_dirname('test-1.0.2rc1')
-        prep = spec_object.spec_content.sections['%prep']
+        prep = spec_object.spec_content.section('%prep')
         setup = [l for l in prep if l.startswith('%setup')][0]
         assert '-n %{name}-%{REBASE_VER}' in setup
 
         spec_object.update_setup_dirname('test-1.0.2-rc1')
-        prep = spec_object.spec_content.sections['%prep']
+        prep = spec_object.spec_content.section('%prep')
         setup = [l for l in prep if l.startswith('%setup')][0]
         assert '-n %{name}-%{version}-%{REBASE_EXTRA_VER}' in setup
 
@@ -261,11 +261,9 @@ class TestSpecFile(object):
         assert target == 'test-1.0.2/misc'
 
     def test_typo_fix_spec_hook(self, spec_object):
-        assert '- This is chnagelog entry with some indentional typos' in spec_object.spec_content.sections[
-            '%changelog']
+        assert '- This is chnagelog entry with some indentional typos' in spec_object.spec_content.section('%changelog')
         TypoFixHook.run(spec_object, spec_object)
-        assert '- This is changelog entry with some intentional typos' in spec_object.spec_content.sections[
-            '%changelog']
+        assert '- This is changelog entry with some intentional typos' in spec_object.spec_content.section('%changelog')
 
     def test_paths_to_rpm_macros_spec_hook(self, spec_object):
         files = [
@@ -282,12 +280,12 @@ class TestSpecFile(object):
             '',
         ]
         PathsToRPMMacrosHook.run(spec_object, spec_object)
-        assert files == spec_object.spec_content.sections['%files']
-        assert files_devel == spec_object.spec_content.sections['%files devel']
+        assert files == spec_object.spec_content.section('%files')
+        assert files_devel == spec_object.spec_content.section('%files devel')
 
     def test_escape_macros_spec_hook(self, spec_object):
         EscapeMacrosHook.run(spec_object, spec_object)
-        assert spec_object.spec_content.sections['%build'][0] == "autoreconf -vi # Unescaped macros %%name %%{name}"
+        assert spec_object.spec_content.section('%build')[0] == "autoreconf -vi # Unescaped macros %%name %%{name}"
 
     def test_pypi_to_python_hosted_url_trans(self, spec_object):
         # pylint: disable=protected-access
@@ -300,12 +298,12 @@ class TestSpecFile(object):
         Check updated paths to patches in the rebased directory
         :return:
         """
-        line = [l for l in spec_object.spec_content.sections['%package'] if l.startswith('Patch5')][0]
+        line = [l for l in spec_object.spec_content.section('%package') if l.startswith('Patch5')][0]
         assert 'rebased-sources' in line
 
         spec_object.update_paths_to_patches()
 
-        line = [l for l in spec_object.spec_content.sections['%package'] if l.startswith('Patch5')][0]
+        line = [l for l in spec_object.spec_content.section('%package') if l.startswith('Patch5')][0]
         assert 'rebased-sources' not in line
 
     @pytest.mark.parametrize('preserve_macros', [
@@ -391,4 +389,4 @@ class TestSpecFile(object):
     def test_set_tag(self, spec_object, preserve_macros, tag, value, lines, lines_preserve):
         spec_object.set_tag(tag, value, preserve_macros=preserve_macros)
         for line in lines_preserve if preserve_macros else lines:
-            assert line in spec_object.spec_content.sections['%package']
+            assert line in spec_object.spec_content.section('%package')
