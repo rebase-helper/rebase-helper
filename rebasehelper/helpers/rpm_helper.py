@@ -112,8 +112,8 @@ class RpmHelper(object):
         with open(rpm_name, "r") as f:
             return ts.hdrFromFdno(f)
 
-    @staticmethod
-    def get_info_from_rpm(rpm_name, info):
+    @classmethod
+    def get_info_from_rpm(cls, rpm_name, info):
         """Gets package name from an RPM file.
 
         Args:
@@ -125,9 +125,8 @@ class RpmHelper(object):
 
         :return:
         """
-        h = RpmHelper.get_header_from_rpm(rpm_name)
-        name = h[info].decode(DEFENC) if six.PY3 else h[info]
-        return name
+        h = cls.get_header_from_rpm(rpm_name)
+        return cls.decode(h[info])
 
     @staticmethod
     def get_arches():
@@ -180,3 +179,9 @@ class RpmHelper(object):
                     if line:
                         logger.verbose('rpm: %s', line)
                 return result
+
+    @classmethod
+    def decode(cls, data):
+        if six.PY3 and isinstance(data, bytes):
+            return data.decode(DEFENC)
+        return data
