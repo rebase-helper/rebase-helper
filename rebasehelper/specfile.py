@@ -39,8 +39,8 @@ from operator import itemgetter
 
 from six.moves import urllib
 
-from rebasehelper.logger import logger
 from rebasehelper import constants
+from rebasehelper.logger import logger
 from rebasehelper.plugins import Plugin, PluginLoader
 from rebasehelper.archive import Archive
 from rebasehelper.exceptions import RebaseHelperError, DownloadError, ParseError, LookasideCacheError
@@ -277,16 +277,12 @@ class SpecFile(object):
         :return:
         """
         def guess_category():
-            def _decode(s):
-                if six.PY3:
-                    return s.decode(constants.DEFENC)
-                return s
             for pkg in self.spc.packages:
                 for category, regexp in six.iteritems(constants.PACKAGE_CATEGORIES):
-                    if regexp.match(_decode(pkg.header[rpm.RPMTAG_NAME])):
+                    if regexp.match(RpmHelper.decode(pkg.header[rpm.RPMTAG_NAME])):
                         return category
                     for provide in pkg.header[rpm.RPMTAG_PROVIDENAME]:
-                        if regexp.match(_decode(provide)):
+                        if regexp.match(RpmHelper.decode(provide)):
                             return category
             return None
 
@@ -599,7 +595,7 @@ class SpecFile(object):
 
         :return:
         """
-        return self.hdr[rpm.RPMTAG_RELEASE].decode(constants.DEFENC) if six.PY3 else self.hdr[rpm.RPMTAG_RELEASE]
+        return RpmHelper.decode(self.hdr[rpm.RPMTAG_RELEASE])
 
     def get_release_number(self):
         """
@@ -619,7 +615,7 @@ class SpecFile(object):
 
         :return:
         """
-        return self.hdr[rpm.RPMTAG_VERSION].decode(constants.DEFENC) if six.PY3 else self.hdr[rpm.RPMTAG_VERSION]
+        return RpmHelper.decode(self.hdr[rpm.RPMTAG_VERSION])
 
     def get_extra_version(self):
         """
@@ -1301,7 +1297,7 @@ class SpecFile(object):
 
         :return:
         """
-        return self.hdr[rpm.RPMTAG_NAME].decode(constants.DEFENC) if six.PY3 else self.hdr[rpm.RPMTAG_NAME]
+        return RpmHelper.decode(self.hdr[rpm.RPMTAG_NAME])
 
     def get_requires(self):
         """
@@ -1309,7 +1305,7 @@ class SpecFile(object):
 
         :return:
         """
-        return [r.decode(constants.DEFENC) if six.PY3 else r for r in self.hdr[rpm.RPMTAG_REQUIRES]]
+        return [RpmHelper.decode(r) for r in self.hdr[rpm.RPMTAG_REQUIRES]]
 
     def update_changelog(self, changelog_entry):
         """Inserts a new entry into the changelog and saves the SpecFile.
