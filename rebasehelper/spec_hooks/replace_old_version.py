@@ -51,7 +51,9 @@ class ReplaceOldVersionSpecHook(BaseSpecHook):
     def run(cls, spec_file, rebase_spec_file, **kwargs):
         old_version = spec_file.get_version()
         new_version = rebase_spec_file.get_version()
-        for _, section in rebase_spec_file.spec_content.sections:
+        for sec_name, section in rebase_spec_file.spec_content.sections:
+            if sec_name.startswith('%changelog'):
+                continue
             for index, line in enumerate(section):
                 section[index] = cls._replace(line, old_version, new_version)
 
