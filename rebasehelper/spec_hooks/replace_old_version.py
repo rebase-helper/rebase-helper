@@ -20,11 +20,29 @@
 # Authors: Petr Hracek <phracek@redhat.com>
 #          Tomas Hozza <thozza@redhat.com>
 
+from six.moves import urllib
+
 from rebasehelper.specfile import BaseSpecHook
 
 
 class ReplaceOldVersionSpecHook(BaseSpecHook):
     """SpecHook for replacing occurrences of old version string."""
+
+    @classmethod
+    def _is_local_source(cls, line):
+        """Checks if a line contains a local source.
+
+        Args:
+            line (str): Line to be checked.
+
+        Returns:
+            bool: Whether the line contains a local source
+
+        """
+        if not (line.startswith('Patch') or line.startswith('Source')):
+            return False
+        source = line.split()[1]
+        return not urllib.parse.urlparse(source).scheme
 
     @classmethod
     def _replace(cls, line, old, new, replace_with_macro=False):
@@ -41,6 +59,8 @@ class ReplaceOldVersionSpecHook(BaseSpecHook):
             str: Modified line with replaced old version strings.
 
         """
+        if cls._is_local_source(line):
+            return line
         try:
             comment = line.index('#')
         except ValueError:
