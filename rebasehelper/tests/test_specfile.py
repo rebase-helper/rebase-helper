@@ -73,7 +73,7 @@ class TestSpecFile(object):
 
     @pytest.fixture
     def spec_object(self, workdir):
-        sf = SpecFile(self.SPEC_FILE, workdir, download=False)
+        sf = SpecFile(self.SPEC_FILE, workdir)
         return sf
 
     def test_get_release(self, spec_object):
