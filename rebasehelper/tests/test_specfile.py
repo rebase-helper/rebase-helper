@@ -31,7 +31,7 @@ from rebasehelper.specfile import SpecFile, SpecContent
 from rebasehelper.spec_hooks.typo_fix import TypoFixHook
 from rebasehelper.spec_hooks.pypi_url_fix import PyPIURLFixHook
 from rebasehelper.spec_hooks.escape_macros import EscapeMacrosHook
-
+from rebasehelper.spec_hooks.replace_old_version import ReplaceOldVersionSpecHook
 from rebasehelper.spec_hooks.paths_to_rpm_macros import PathsToRPMMacrosHook
 
 
@@ -286,6 +286,19 @@ class TestSpecFile(object):
     def test_escape_macros_spec_hook(self, spec_object):
         EscapeMacrosHook.run(spec_object, spec_object)
         assert spec_object.spec_content.section('%build')[0] == "autoreconf -vi # Unescaped macros %%name %%{name}"
+
+    def test_replace_old_version_spec_hook(self, spec_object):
+        new_spec = spec_object.copy('new.spec')
+        new_spec.set_version('1.0.3')
+        ReplaceOldVersionSpecHook.run(spec_object, new_spec)
+        # Check if the version has been updated
+        test_source = [line for line in new_spec.spec_content.section('%package') if line.startswith('Source9')]
+        assert test_source
+        assert test_source[0].split()[1] == 'https://test.com/test-hardcoded-version-1.0.3.tar.gz'
+
+        # Check if version in changelog hasn't been changed
+        changelog = new_spec.spec_content.section('%changelog')
+        assert '1.0.2' in changelog[0]
 
     def test_pypi_to_python_hosted_url_trans(self, spec_object):
         # pylint: disable=protected-access

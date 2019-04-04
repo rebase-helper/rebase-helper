@@ -59,6 +59,8 @@ class TestApplication(object):
         SOURCE_TESTS,
         'positional-1.1.0.tar.gz',
         'rebase-helper-d70cb5a2f523db5b6088427563531f43b7703859.tar.gz',
+        'test-hardcoded-version-1.0.2.tar.gz',
+        'test-hardcoded-version-1.0.3.tar.gz',
     ]
 
     cmd_line_args = ['--not-download-sources', '1.0.3']
