@@ -298,12 +298,9 @@ class SpecFile(object):
         # load rpm information
         try:
             self.spc = RpmHelper.parse_spec(self.path, flags=rpm.RPMSPEC_ANYARCH)
-        except ValueError:
-            try:
-                # try again with RPMSPEC_FORCE flag (the default)
-                self.spc = RpmHelper.parse_spec(self.path)
-            except ValueError:
-                raise RebaseHelperError("Problem with parsing SPEC file '%s'" % self.path)
+        except RebaseHelperError:
+            # try again with RPMSPEC_FORCE flag (the default)
+            self.spc = RpmHelper.parse_spec(self.path)
         self.category = guess_category()
         self.sources = self._get_spec_sources_list(self.spc)
         self.prep_section = self.spc.prep

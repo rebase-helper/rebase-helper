@@ -39,6 +39,9 @@ class RebaseHelperError(Exception):
             self.msg = args[0]
         self.logfiles = kwargs.get('logfiles')
 
+    def __str__(self):
+        return str(self.msg) if self.msg else ''
+
 
 class CheckerNotFoundError(RuntimeError):
     """Error indicating failure unable to find checker binary"""
