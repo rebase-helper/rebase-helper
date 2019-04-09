@@ -173,11 +173,15 @@ class RpmHelper(object):
                 # remove BuildArch to workaround rpm bug
                 tmp.write(b''.join([l for l in orig.readlines() if not l.startswith(b'BuildArch')]))
                 tmp.flush()
-                with ConsoleHelper.Capturer(stderr=True) as capturer:
-                    result = rpm.spec(tmp.name, flags) if flags is not None else rpm.spec(tmp.name)
-                for line in capturer.stderr.split('\n'):
-                    if line:
-                        logger.verbose('rpm: %s', line)
+                capturer = None
+                try:
+                    with ConsoleHelper.Capturer(stderr=True) as capturer:
+                        result = rpm.spec(tmp.name, flags) if flags is not None else rpm.spec(tmp.name)
+                except ValueError:
+                    output = capturer.stderr.strip().split('\n') if capturer else []
+                    if len(output) == 1:
+                        output = output[0]
+                    raise RebaseHelperError('Failed to parse SPEC file{0}'.format(': ' + str(output) if output else ''))
                 return result
 
     @classmethod
