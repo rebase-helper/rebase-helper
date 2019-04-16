@@ -2,15 +2,5 @@ specfile_path: rebase-helper.spec
 synced_files:
     - .packit.yml
     - rebase-helper.spec
-jobs:
-    - trigger: release
-      release_to:
-          - master
-    - trigger: pull_request
-      release_to:
-          - master
 upstream_project_name: rebase-helper
 downstream_package_name: rebase-helper
-checks:
-    - name: simple-koji-ci
-    - name: Fedora CI
