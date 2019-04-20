@@ -174,6 +174,7 @@ class TestBuildLogHooks(object):
         # removed files
         assert '-%license LICENSE README\n' in spec_file[1].source
         assert '+%license LICENSE\n' in spec_file[1].target
+        assert '-%license /licensedir/test_license\n' in spec_file[1].source
         assert '-/dirA/fileB\n' in spec_file[1].source
         assert '-/dirB/fileY\n' in spec_file[1].source
         assert '-%doc docs_dir/AUTHORS\n' in spec_file[1].source
@@ -190,6 +191,7 @@ class TestBuildLogHooks(object):
             assert '/dirB/fileW' in added['%files devel']
             removed = report['build_log_hooks']['files']['removed']
             assert 'README' in removed['%files']
+            assert '/licensedir/test_license' in removed['%files']
             assert '/dirA/fileB' in removed['%files']
             assert '/dirB/fileY' in removed['%files devel']
             assert 'docs_dir/AUTHORS' in removed['%files devel']
