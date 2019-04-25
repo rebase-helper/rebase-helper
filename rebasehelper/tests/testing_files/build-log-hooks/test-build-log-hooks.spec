@@ -31,6 +31,7 @@ Test subpackage
 
 %files
 %license LICENSE README
+%license /licensedir/test_license
 /dirA/fileA
 /dirA/fileB
 

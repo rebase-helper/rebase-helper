@@ -239,7 +239,9 @@ class FilesBuildLogHook(BaseBuildLogHook):
                             split_line.remove(element)
 
                     if prepend_macro:
-                        split_line = [os.path.join(prepend_macro, subpackage, os.path.basename(p)) for p in split_line]
+                        for j, path in enumerate(split_line):
+                            if not os.path.isabs(path):
+                                split_line[j] = os.path.join(prepend_macro, subpackage, os.path.basename(path))
                     split_line = [MacroHelper.expand(p) for p in split_line]
 
                     j = 0
