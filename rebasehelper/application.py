@@ -591,6 +591,7 @@ class Application(object):
                 else:
                     msg = 'Building {} SRPM packages failed; see logs in {} for more information'.format(
                         version, os.path.join(results_dir, 'SRPM'))
+                logger.error(msg)
                 raise RebaseHelperError(msg, logfiles=builder.get_logs().get('logs'))
             except Exception:
                 raise RebaseHelperError('Building package failed with unknown reason. '
@@ -676,7 +677,7 @@ class Application(object):
                 else:
                     msg = 'Building {} RPM packages failed; see {} for more information'.format(version, e.logfile)
 
-                logger.info(msg)
+                logger.error(msg)
                 raise RebaseHelperError(msg, logfiles=builder.get_logs().get('logs'))
             except Exception:
                 raise RebaseHelperError('Building package failed with unknown reason. '
