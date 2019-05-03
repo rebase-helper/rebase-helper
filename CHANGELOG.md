@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+## [0.16.3] - 2019-05-03
+### Fixed
+- Fixed handling of SPEC files with conditionalized sections
+- Fixed **replace-old-version** SPEC hook not to update version in *%changelog* and local sources
+- Fixed capturing RPM error output during SPEC parsing
+- Fixed handling of absolute *%license* and *%doc* paths in **files** build log hook
+- Fixed logging of SRPM and RPM build errors
+
+### Changed
+- Updated packit configuration for packit 0.2.0
+- Adapted to upcoming change in RPM python API
+- Made `SpecFile` class more suitable for external use
+
 ## [0.16.2] - 2019-03-07
 ### Added
 - Added support for [packit](https://github.com/packit-service/packit)
