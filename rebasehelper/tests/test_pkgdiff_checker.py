@@ -22,7 +22,7 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-from rebasehelper.checker import checkers_runner
+from rebasehelper.plugins.checkers import checkers_runner
 from .conftest import TEST_FILES_DIR
 
 

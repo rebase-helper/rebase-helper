@@ -24,12 +24,13 @@
 
 import os
 
-from rebasehelper.build_helper import build_helper, srpm_build_helper
-from rebasehelper.checker import checkers_runner
-from rebasehelper.output_tool import output_tools_runner
-from rebasehelper.versioneer import versioneers_runner
-from rebasehelper.specfile import spec_hooks_runner
-from rebasehelper.build_log_hook import build_log_hook_runner
+from rebasehelper.plugins.build_tools.rpm import build_helper
+from rebasehelper.plugins.build_tools.srpm import srpm_build_helper
+from rebasehelper.plugins.checkers import checkers_runner
+from rebasehelper.plugins.output_tools import output_tools_runner
+from rebasehelper.plugins.versioneers import versioneers_runner
+from rebasehelper.plugins.spec_hooks import spec_hooks_runner
+from rebasehelper.plugins.build_log_hooks import build_log_hook_runner
 from rebasehelper.constants import CONFIG_PATH, CONFIG_FILENAME
 
 

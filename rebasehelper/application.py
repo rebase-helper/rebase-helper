@@ -34,17 +34,20 @@ import six
 from pkg_resources import parse_version
 
 from rebasehelper.archive import Archive
-from rebasehelper.specfile import SpecFile, get_rebase_name, spec_hooks_runner
-from rebasehelper.build_log_hook import build_log_hook_runner
+from rebasehelper.specfile import SpecFile, get_rebase_name
+from rebasehelper.plugins.spec_hooks import spec_hooks_runner
 from rebasehelper.logger import logger, log_formatter, debug_log_formatter, LoggerHelper, CustomLogger
 from rebasehelper import constants
-from rebasehelper.output_tool import output_tools_runner
-from rebasehelper.checker import checkers_runner
-from rebasehelper.build_helper import srpm_build_helper, build_helper, SourcePackageBuildError, BinaryPackageBuildError
+from rebasehelper.plugins.checkers import checkers_runner
+from rebasehelper.plugins.build_tools.rpm import build_helper
+from rebasehelper.plugins.build_tools.srpm import srpm_build_helper
+from rebasehelper.plugins.build_log_hooks import build_log_hook_runner
+from rebasehelper.plugins.versioneers import versioneers_runner
+from rebasehelper.plugins.output_tools import output_tools_runner
 from rebasehelper.patch_helper import Patcher
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
+from rebasehelper.exceptions import SourcePackageBuildError, BinaryPackageBuildError
 from rebasehelper.results_store import results_store
-from rebasehelper.versioneer import versioneers_runner
 from rebasehelper.version import VERSION
 from rebasehelper.helpers.path_helper import PathHelper
 from rebasehelper.helpers.macro_helper import MacroHelper

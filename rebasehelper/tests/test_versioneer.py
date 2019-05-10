@@ -26,12 +26,12 @@ import pytest
 
 from pkg_resources import parse_version
 
-from rebasehelper.versioneer import versioneers_runner
-from rebasehelper.versioneers.anitya_versioneer import AnityaVersioneer
-from rebasehelper.versioneers.pypi_versioneer import PyPIVersioneer
-from rebasehelper.versioneers.npmjs_versioneer import NPMJSVersioneer
-from rebasehelper.versioneers.cpan_versioneer import CPANVersioneer
-from rebasehelper.versioneers.hackage_versioneer import HackageVersioneer
+from rebasehelper.plugins.versioneers import versioneers_runner
+from rebasehelper.plugins.versioneers.anitya import Anitya
+from rebasehelper.plugins.versioneers.pypi import PyPI
+from rebasehelper.plugins.versioneers.npmjs import NPMJS
+from rebasehelper.plugins.versioneers.cpan import CPAN
+from rebasehelper.plugins.versioneers.hackage import Hackage
 
 
 class TestVersioneer(object):
@@ -45,9 +45,9 @@ class TestVersioneer(object):
     ])
     @pytest.mark.integration
     def test_anitya_versioneer(self, package, min_version):
-        assert AnityaVersioneer.name in versioneers_runner.versioneers
-        AnityaVersioneer.API_URL = 'https://integration:4430/versioneers'
-        version = versioneers_runner.run(AnityaVersioneer.name, package, None)
+        assert Anitya.name in versioneers_runner.versioneers
+        Anitya.API_URL = 'https://integration:4430/versioneers'
+        version = versioneers_runner.run(Anitya.name, package, None)
         assert parse_version(version) >= parse_version(min_version)
 
     @pytest.mark.parametrize('package, min_version', [
@@ -59,9 +59,9 @@ class TestVersioneer(object):
     ])
     @pytest.mark.integration
     def test_pypi_versioneer(self, package, min_version):
-        assert PyPIVersioneer.name in versioneers_runner.versioneers
-        PyPIVersioneer.API_URL = 'https://integration:4430/versioneers'
-        version = versioneers_runner.run(PyPIVersioneer.name, package, None)
+        assert PyPI.name in versioneers_runner.versioneers
+        PyPI.API_URL = 'https://integration:4430/versioneers'
+        version = versioneers_runner.run(PyPI.name, package, None)
         assert parse_version(version) >= parse_version(min_version)
 
     @pytest.mark.parametrize('package, min_version', [
@@ -73,9 +73,9 @@ class TestVersioneer(object):
     ])
     @pytest.mark.integration
     def test_npmjs_versioneer(self, package, min_version):
-        assert NPMJSVersioneer.name in versioneers_runner.versioneers
-        NPMJSVersioneer.API_URL = 'https://integration:4430/versioneers'
-        version = versioneers_runner.run(NPMJSVersioneer.name, package, None)
+        assert NPMJS.name in versioneers_runner.versioneers
+        NPMJS.API_URL = 'https://integration:4430/versioneers'
+        version = versioneers_runner.run(NPMJS.name, package, None)
         assert parse_version(version) >= parse_version(min_version)
 
     @pytest.mark.parametrize('package, min_version', [
@@ -87,9 +87,9 @@ class TestVersioneer(object):
     ])
     @pytest.mark.integration
     def test_cpan_versioneer(self, package, min_version):
-        assert CPANVersioneer.name in versioneers_runner.versioneers
-        CPANVersioneer.API_URL = 'https://integration:4430/versioneers'
-        version = versioneers_runner.run(CPANVersioneer.name, package, None)
+        assert CPAN.name in versioneers_runner.versioneers
+        CPAN.API_URL = 'https://integration:4430/versioneers'
+        version = versioneers_runner.run(CPAN.name, package, None)
         assert parse_version(version) >= parse_version(min_version)
 
     @pytest.mark.parametrize('package, min_version', [
@@ -101,7 +101,7 @@ class TestVersioneer(object):
     ])
     @pytest.mark.integration
     def test_hackage_versioneer(self, package, min_version):
-        assert HackageVersioneer.name in versioneers_runner.versioneers
-        HackageVersioneer.API_URL = 'https://integration:4430/versioneers'
-        version = versioneers_runner.run(HackageVersioneer.name, package, None)
+        assert Hackage.name in versioneers_runner.versioneers
+        Hackage.API_URL = 'https://integration:4430/versioneers'
+        version = versioneers_runner.run(Hackage.name, package, None)
         assert parse_version(version) >= parse_version(min_version)
