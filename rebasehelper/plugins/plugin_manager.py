@@ -24,6 +24,8 @@
 
 import re
 
+import six
+
 from rebasehelper.plugins.build_log_hooks import BuildLogHookCollection
 from rebasehelper.plugins.build_tools.rpm import BuildToolCollection
 from rebasehelper.plugins.build_tools.srpm import SRPMBuildToolCollection
@@ -57,6 +59,19 @@ class PluginManager(object):
             name = convert_class_name(collection.__name__)
             entrypoint = 'rebasehelper.' + name
             self.plugin_collections[name] = collection(entrypoint, self)
+
+    def get_options(self):
+        """Gets options of all plugins.
+
+        Returns:
+            list: List of plugins' options.
+
+        """
+        options = []
+        for collection in six.itervalues(self.plugin_collections):
+            options.extend(collection.get_options())
+
+        return options
 
     def __getattr__(self, name):
         return self.plugin_collections.get(name)

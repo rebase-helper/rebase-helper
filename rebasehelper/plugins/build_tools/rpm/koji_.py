@@ -47,6 +47,14 @@ class Koji(BuildToolBase):
     CREATES_TASKS = True
 
     CMD = "koji"
+    OPTIONS = [
+        {
+            "name": ["--get-old-build-from-koji"],
+            "default": False,
+            "switch": True,
+            "help": "do not build old sources, download latest build from Koji instead",
+        },
+    ]
     logs = []
 
     target_tag = 'rawhide'

@@ -46,3 +46,17 @@ class PluginCollection(object):
             return self.plugins[tool]
         except KeyError:
             raise NotImplementedError("Unsupported plugin")
+
+    def get_options(self):
+        """Gets options of all plugins of one type.
+
+        Returns:
+            list: List of plugins' options.
+
+        """
+        options = []
+        for plugin in six.itervalues(self.plugins):
+            if plugin:
+                options.extend(plugin.OPTIONS)
+
+        return options

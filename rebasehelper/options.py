@@ -193,12 +193,6 @@ OPTIONS = [
         "help": "disable inapplicable patches in rebased SPEC file",
     },
     {
-        "name": ["--get-old-build-from-koji"],
-        "default": False,
-        "switch": True,
-        "help": "do not build old sources, download latest build from Koji instead",
-    },
-    {
         "name": ["--skip-version-check"],
         "default": False,
         "switch": True,
