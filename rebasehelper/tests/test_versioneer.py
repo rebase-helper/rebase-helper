@@ -26,7 +26,7 @@ import pytest
 
 from pkg_resources import parse_version
 
-from rebasehelper.plugins.versioneers import versioneers_runner
+from rebasehelper.plugins.plugin_manager import plugin_manager
 from rebasehelper.plugins.versioneers.anitya import Anitya
 from rebasehelper.plugins.versioneers.pypi import PyPI
 from rebasehelper.plugins.versioneers.npmjs import NPMJS
@@ -45,9 +45,9 @@ class TestVersioneer(object):
     ])
     @pytest.mark.integration
     def test_anitya_versioneer(self, package, min_version):
-        assert Anitya.name in versioneers_runner.versioneers
+        assert Anitya.name in plugin_manager.versioneers.plugins
         Anitya.API_URL = 'https://integration:4430/versioneers'
-        version = versioneers_runner.run(Anitya.name, package, None)
+        version = plugin_manager.versioneers.run(Anitya.name, package, None)
         assert parse_version(version) >= parse_version(min_version)
 
     @pytest.mark.parametrize('package, min_version', [
@@ -59,9 +59,9 @@ class TestVersioneer(object):
     ])
     @pytest.mark.integration
     def test_pypi_versioneer(self, package, min_version):
-        assert PyPI.name in versioneers_runner.versioneers
+        assert PyPI.name in plugin_manager.versioneers.plugins
         PyPI.API_URL = 'https://integration:4430/versioneers'
-        version = versioneers_runner.run(PyPI.name, package, None)
+        version = plugin_manager.versioneers.run(PyPI.name, package, None)
         assert parse_version(version) >= parse_version(min_version)
 
     @pytest.mark.parametrize('package, min_version', [
@@ -73,9 +73,9 @@ class TestVersioneer(object):
     ])
     @pytest.mark.integration
     def test_npmjs_versioneer(self, package, min_version):
-        assert NPMJS.name in versioneers_runner.versioneers
+        assert NPMJS.name in plugin_manager.versioneers.plugins
         NPMJS.API_URL = 'https://integration:4430/versioneers'
-        version = versioneers_runner.run(NPMJS.name, package, None)
+        version = plugin_manager.versioneers.run(NPMJS.name, package, None)
         assert parse_version(version) >= parse_version(min_version)
 
     @pytest.mark.parametrize('package, min_version', [
@@ -87,9 +87,9 @@ class TestVersioneer(object):
     ])
     @pytest.mark.integration
     def test_cpan_versioneer(self, package, min_version):
-        assert CPAN.name in versioneers_runner.versioneers
+        assert CPAN.name in plugin_manager.versioneers.plugins
         CPAN.API_URL = 'https://integration:4430/versioneers'
-        version = versioneers_runner.run(CPAN.name, package, None)
+        version = plugin_manager.versioneers.run(CPAN.name, package, None)
         assert parse_version(version) >= parse_version(min_version)
 
     @pytest.mark.parametrize('package, min_version', [
@@ -101,7 +101,7 @@ class TestVersioneer(object):
     ])
     @pytest.mark.integration
     def test_hackage_versioneer(self, package, min_version):
-        assert Hackage.name in versioneers_runner.versioneers
+        assert Hackage.name in plugin_manager.versioneers.plugins
         Hackage.API_URL = 'https://integration:4430/versioneers'
-        version = versioneers_runner.run(Hackage.name, package, None)
+        version = plugin_manager.versioneers.run(Hackage.name, package, None)
         assert parse_version(version) >= parse_version(min_version)

@@ -24,10 +24,26 @@
 
 import re
 
+from rebasehelper.plugins.build_log_hooks import BuildLogHookCollection
+from rebasehelper.plugins.build_tools.rpm import BuildToolCollection
+from rebasehelper.plugins.build_tools.srpm import SRPMBuildToolCollection
+from rebasehelper.plugins.checkers import CheckerCollection
+from rebasehelper.plugins.output_tools import OutputToolCollection
+from rebasehelper.plugins.spec_hooks import SpecHookCollection
+from rebasehelper.plugins.versioneers import VersioneerCollection
+
 
 class PluginManager(object):
 
-    COLLECTIONS = []
+    COLLECTIONS = [
+        BuildLogHookCollection,
+        BuildToolCollection,
+        SRPMBuildToolCollection,
+        CheckerCollection,
+        OutputToolCollection,
+        SpecHookCollection,
+        VersioneerCollection,
+    ]
 
     def __init__(self):
         def convert_class_name(class_name):
@@ -40,7 +56,11 @@ class PluginManager(object):
         for collection in self.COLLECTIONS:
             name = convert_class_name(collection.__name__)
             entrypoint = 'rebasehelper.' + name
-            self.plugin_collections[name] = collection(entrypoint)
+            self.plugin_collections[name] = collection(entrypoint, self)
 
     def __getattr__(self, name):
         return self.plugin_collections.get(name)
+
+
+# Global instance of PluginManager, it is enough to load it once per application run.
+plugin_manager = PluginManager()

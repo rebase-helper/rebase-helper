@@ -29,7 +29,7 @@ from rebasehelper.plugins.plugin import Plugin
 
 class PluginLoader(object):
     @classmethod
-    def load(cls, entrypoint):
+    def load(cls, entrypoint, manager):
         result = {}
         for ep in pkg_resources.iter_entry_points(entrypoint):
             result[ep.name] = None
@@ -46,5 +46,8 @@ class PluginLoader(object):
                 continue
             else:
                 plugin.name = ep.name
+                # Some plugins require access to other plugins. Avoid cyclic
+                # imports by setting manager as an attribute.
+                plugin.manager = manager
             result[ep.name] = plugin
         return result

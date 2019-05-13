@@ -24,10 +24,8 @@
 
 import shlex
 
-import six
-
 from rebasehelper.plugins.plugin import Plugin
-from rebasehelper.plugins.plugin_loader import PluginLoader
+from rebasehelper.plugins.plugin_collection import PluginCollection
 
 
 class SRPMBuildToolBase(Plugin):
@@ -69,26 +67,5 @@ class SRPMBuildToolBase(Plugin):
         raise NotImplementedError()
 
 
-class SRPMBuildHelper(object):
-    def __init__(self):
-        self.srpm_build_tools = PluginLoader.load('rebasehelper.srpm_build_tools')
-
-    def get_all_tools(self):
-        return list(self.srpm_build_tools)
-
-    def get_supported_tools(self):
-        return [k for k, v in six.iteritems(self.srpm_build_tools) if v]
-
-    def get_default_tool(self):
-        default = [k for k, v in six.iteritems(self.srpm_build_tools) if v and v.DEFAULT]
-        return default[0] if default else None
-
-    def get_tool(self, tool):
-        try:
-            return self.srpm_build_tools[tool]
-        except KeyError:
-            raise NotImplementedError('Unsupported SRPM build tool')
-
-
-# Global instances of SRPMBuildHelper. It is enough to load them once per application run.
-srpm_build_helper = SRPMBuildHelper()
+class SRPMBuildToolCollection(PluginCollection):
+    """Collection of SRPM build tools."""

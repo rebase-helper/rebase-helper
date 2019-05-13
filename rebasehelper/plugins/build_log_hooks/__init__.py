@@ -25,7 +25,7 @@
 import six
 
 from rebasehelper.plugins.plugin import Plugin
-from rebasehelper.plugins.plugin_loader import PluginLoader
+from rebasehelper.plugins.plugin_collection import PluginCollection
 from rebasehelper.logger import logger
 from rebasehelper.results_store import results_store
 
@@ -62,22 +62,16 @@ class BaseBuildLogHook(Plugin):
         raise NotImplementedError()
 
 
-class BuildLogHookRunner(object):
-    def __init__(self):
-        self.build_log_hooks = PluginLoader.load('rebasehelper.build_log_hooks')
-
-    def get_all_tools(self):
-        return list(self.build_log_hooks)
-
-    def get_supported_tools(self):
-        return [k for k, v in six.iteritems(self.build_log_hooks) if v]
-
+class BuildLogHookCollection(PluginCollection):
     def run(self, spec_file, rebase_spec_file, non_interactive, force_build_log_hooks, **kwargs):
         """Runs all non-blacklisted build log hooks.
 
         Args:
             spec_file (rebasehelper.specfile.SpecFile): Original SpecFile object.
             rebase_spec_file (rebasehelper.specfile.SpecFile): Rebased SpecFile object.
+            non_interactive (bool): Whether rebase-helper is in non-interactive mode.
+            force_build_log_hooks (bool): Whether to run the hooks even in
+                non-interactive mode.
             kwargs (dict): Keyword arguments from instance of Application.
 
         Returns:
@@ -87,7 +81,7 @@ class BuildLogHookRunner(object):
         changes_made = False
         if not non_interactive or force_build_log_hooks:
             blacklist = kwargs.get('build_log_hook_blacklist', [])
-            for name, build_log_hook in six.iteritems(self.build_log_hooks):
+            for name, build_log_hook in six.iteritems(self.plugins):
                 if not build_log_hook or name in blacklist:
                     continue
                 categories = build_log_hook.CATEGORIES
@@ -99,7 +93,3 @@ class BuildLogHookRunner(object):
                     if rerun:
                         changes_made = True
         return changes_made
-
-
-# Global instance of BuildLogHookRunner. It is enough to load it once per application run.
-build_log_hook_runner = BuildLogHookRunner()

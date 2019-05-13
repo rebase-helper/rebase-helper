@@ -24,10 +24,8 @@
 
 import os
 
-import six
-
 from rebasehelper.plugins.plugin import Plugin
-from rebasehelper.plugins.plugin_loader import PluginLoader
+from rebasehelper.plugins.plugin_collection import PluginCollection
 from rebasehelper.logger import logger
 from rebasehelper.constants import RESULTS_DIR
 
@@ -86,36 +84,29 @@ class BaseChecker(Plugin):
         """
 
 
-class CheckersRunner(object):
+class CheckerCollection(PluginCollection):
     """
     Class representing the process of running various checkers on final packages.
     """
 
-    def __init__(self):
-        self.checkers = PluginLoader.load('rebasehelper.checkers')
+    def run(self, results_dir, checker_name, **kwargs):
+        """Runs a particular checker and returns the results.
 
-    def get_all_tools(self):
-        return list(self.checkers)
+        Args:
+            results_dir (str): Path to a directory in which the checker
+                should store the results.
+            checker_name(str): Name of the checker to be run.
 
-    def get_supported_tools(self):
-        return [k for k, v in six.iteritems(self.checkers) if v]
+        Raises:
+            NotImplementedError: If a checker with the given name doesn't
+                exist.
 
-    def get_default_tools(self):
-        return [k for k, v in six.iteritems(self.checkers) if v and v.DEFAULT]
+        Returns:
+            Results of the checker.
 
-    def run_checker(self, results_dir, checker_name, **kwargs):
-        """
-        Runs a particular checker and returns the results.
-
-        :param results_dir: Path to a directory in which the checker should store the results.
-        :type results_dir: str
-        :param checker_name: Name of the checker to run. Ideally this should be name of existing checker.
-        :type checker_name: str
-        :raises NotImplementedError: If checker with the given name does not exist.
-        :return: results from the checker
         """
         try:
-            checker = self.checkers[checker_name]
+            checker = self.plugins[checker_name]
         except KeyError:
             return None
         if checker.CATEGORY != kwargs.get('category'):
@@ -123,7 +114,3 @@ class CheckersRunner(object):
 
         logger.info("Running checks on packages using '%s'", checker_name)
         return checker.run_check(results_dir, **kwargs)
-
-
-# Global instance of CheckersRunner. It is enough to load it once per application run.
-checkers_runner = CheckersRunner()

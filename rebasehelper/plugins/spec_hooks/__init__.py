@@ -25,7 +25,7 @@
 import six
 
 from rebasehelper.plugins.plugin import Plugin
-from rebasehelper.plugins.plugin_loader import PluginLoader
+from rebasehelper.plugins.plugin_collection import PluginCollection
 from rebasehelper.logger import logger
 
 
@@ -47,38 +47,26 @@ class BaseSpecHook(Plugin):
         raise NotImplementedError()
 
 
-class SpecHooksRunner(object):
+class SpecHookCollection(PluginCollection):
     """
     Class representing the process of running various spec file hooks.
     """
 
-    def __init__(self):
-        self.spec_hooks = PluginLoader.load('rebasehelper.spec_hooks')
+    def run(self, spec_file, rebase_spec_file, **kwargs):
+        """Runs all non-blacklisted spec hooks.
 
-    def get_all_spec_hooks(self):
-        return list(self.spec_hooks)
+        Args:
+            spec_file (rebasehelper.specfile.SpecFile): Original SpecFile object.
+            rebase_spec_file (rebasehelper.specfile.SpecFile): Rebased SpecFile object.
+            **kwargs: Keyword arguments from Application instance.
 
-    def get_available_spec_hooks(self):
-        return [k for k, v in six.iteritems(self.spec_hooks) if v]
-
-    def run_spec_hooks(self, spec_file, rebase_spec_file, **kwargs):
-        """
-        Runs all non-blacklisted spec hooks.
-
-        :param spec_file: Original spec file object
-        :param rebase_spec_file: Rebased spec file object
-        :param kwargs: Keyword arguments from Application instance
         """
         blacklist = kwargs.get("spec_hook_blacklist", [])
 
-        for name, spec_hook in six.iteritems(self.spec_hooks):
+        for name, spec_hook in six.iteritems(self.plugins):
             if not spec_hook or name in blacklist:
                 continue
             categories = spec_hook.CATEGORIES
             if not categories or spec_file.category in categories:
                 logger.info("Running '%s' spec hook", name)
                 spec_hook.run(spec_file, rebase_spec_file, **kwargs)
-
-
-# Global instance of SpecHooksRunner. It is enough to load it once per application run.
-spec_hooks_runner = SpecHooksRunner()

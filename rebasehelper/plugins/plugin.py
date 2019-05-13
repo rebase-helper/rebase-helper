@@ -25,3 +25,4 @@
 
 class Plugin(object):
     name = None
+    manager = None

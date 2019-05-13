@@ -28,8 +28,8 @@ from rebasehelper.plugins.plugin_loader import PluginLoader
 
 
 class PluginCollection(object):
-    def __init__(self, entrypoint):
-        self.plugins = PluginLoader.load(entrypoint)
+    def __init__(self, entrypoint, manager):
+        self.plugins = PluginLoader.load(entrypoint, manager)
 
     def get_all_plugins(self):
         return list(self.plugins)
