@@ -27,9 +27,9 @@ import json
 
 import pytest
 
-from rebasehelper.output_tool import output_tools_runner
-from rebasehelper.output_tools.json_output_tool import JSONOutputTool
-from rebasehelper.output_tools.text_output_tool import TextOutputTool
+from rebasehelper.plugins.output_tools.json_ import JSON
+from rebasehelper.plugins.output_tools.text import Text
+from rebasehelper.plugins.plugin_manager import plugin_manager
 from rebasehelper.results_store import ResultsStore
 
 
@@ -180,16 +180,16 @@ Binary packages and logs are in directory rebase-helper-results/new-build/RPM:
         return expected_output
 
     def test_text_output_tool(self, results_file_path, results_store):
-        assert TextOutputTool.name in output_tools_runner.output_tools
-        TextOutputTool.print_summary(results_file_path, results_store)
+        assert Text.name in plugin_manager.output_tools.plugins
+        Text.print_summary(results_file_path, results_store)
 
         with open(results_file_path) as f:
             lines = [y.strip() for y in f.readlines()]
             assert lines == self.get_expected_text_output(os.path.dirname(results_file_path)).split('\n')
 
     def test_json_output_tool(self, results_file_path, results_store):
-        assert JSONOutputTool.name in output_tools_runner.output_tools
-        JSONOutputTool.print_summary(results_file_path, results_store)
+        assert JSON.name in plugin_manager.output_tools.plugins
+        JSON.print_summary(results_file_path, results_store)
 
         with open(results_file_path) as f:
             json_dict = json.load(f, encoding='utf-8')

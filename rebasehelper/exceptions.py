@@ -24,10 +24,11 @@
 
 
 class RebaseHelperError(Exception):
-    """
-    Class representing Error raised inside rebase-helper after intentionally
+    """Class representing Error raised inside rebase-helper after intentionally
     catching some expected and well known exception/error.
+
     """
+
     def __init__(self, *args, **kwargs):
         """Constructor of RebaseHelperError"""
         super(RebaseHelperError, self).__init__()
@@ -44,11 +45,11 @@ class RebaseHelperError(Exception):
 
 
 class CheckerNotFoundError(RuntimeError):
-    """Error indicating failure unable to find checker binary"""
+    """Error indicating not being able to find checker binary."""
 
 
 class DownloadError(Exception):
-    """Exception indicating that download of a file failed"""
+    """Exception indicating that download of a file failed."""
 
 
 class ParseError(Exception):
@@ -56,4 +57,38 @@ class ParseError(Exception):
 
 
 class LookasideCacheError(Exception):
-    """Exception indicating a problem accessing lookaside cache"""
+    """Exception indicating a problem in accessing lookaside cache."""
+
+
+class SourcePackageBuildError(RuntimeError):
+    """Error indicating failure during the build of source package"""
+
+    def __init__(self, *args, **kwargs):
+        """Constructor of SourcePackageBuildError.
+
+        Args:
+            *args: List of arguments to be stored in the exception instance.
+            **kwargs: Keyword arguments containing paths to logs with errors.
+
+        """
+        super(SourcePackageBuildError, self).__init__()
+        self.args = args
+        self.logfile = kwargs.get('logfile')
+
+
+class BinaryPackageBuildError(RuntimeError):
+    """Error indicating failure during the build of binary package."""
+
+    def __init__(self, *args, **kwargs):
+        """Constructor of BinaryPackageBuildError.
+
+        Args:
+            *args: List of arguments to be stored in the exception instance.
+            **kwargs: Keyword arguments containing paths to logs with errors.
+
+        """
+        super(BinaryPackageBuildError, self).__init__()
+        self.args = args
+        # Return code obtained from koji only at this time
+        self.return_code = kwargs.get('return_code')
+        self.logfile = kwargs.get('logfile')

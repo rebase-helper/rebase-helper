@@ -34,17 +34,14 @@ import six
 from pkg_resources import parse_version
 
 from rebasehelper.archive import Archive
-from rebasehelper.specfile import SpecFile, get_rebase_name, spec_hooks_runner
-from rebasehelper.build_log_hook import build_log_hook_runner
+from rebasehelper.specfile import SpecFile, get_rebase_name
 from rebasehelper.logger import logger, log_formatter, debug_log_formatter, LoggerHelper, CustomLogger
 from rebasehelper import constants
-from rebasehelper.output_tool import output_tools_runner
-from rebasehelper.checker import checkers_runner
-from rebasehelper.build_helper import srpm_build_helper, build_helper, SourcePackageBuildError, BinaryPackageBuildError
 from rebasehelper.patch_helper import Patcher
+from rebasehelper.plugins.plugin_manager import plugin_manager
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
+from rebasehelper.exceptions import SourcePackageBuildError, BinaryPackageBuildError
 from rebasehelper.results_store import results_store
-from rebasehelper.versioneer import versioneers_runner
 from rebasehelper.version import VERSION
 from rebasehelper.helpers.path_helper import PathHelper
 from rebasehelper.helpers.macro_helper import MacroHelper
@@ -195,10 +192,10 @@ class Application(object):
         self.rebase_spec_file = self.spec_file.copy(self.rebase_spec_file_path)
 
         if not self.conf.sources:
-            self.conf.sources = versioneers_runner.run(self.conf.versioneer,
-                                                       self.spec_file.get_package_name(),
-                                                       self.spec_file.category,
-                                                       self.conf.versioneer_blacklist)
+            self.conf.sources = plugin_manager.versioneers.run(self.conf.versioneer,
+                                                               self.spec_file.get_package_name(),
+                                                               self.spec_file.category,
+                                                               self.conf.versioneer_blacklist)
             if self.conf.sources:
                 logger.info("Determined latest upstream version '%s'", self.conf.sources)
             else:
@@ -228,7 +225,7 @@ class Application(object):
         self.rebase_spec_file.update_changelog(self.conf.changelog_entry)
 
         # run spec hooks
-        spec_hooks_runner.run_spec_hooks(self.spec_file, self.rebase_spec_file, **self.kwargs)
+        plugin_manager.spec_hooks.run(self.spec_file, self.rebase_spec_file, **self.kwargs)
 
         # spec file object has been sanitized downloading can proceed
         if not self.conf.not_download_sources:
@@ -541,10 +538,10 @@ class Application(object):
 
     def build_source_packages(self):
         try:
-            builder = srpm_build_helper.get_tool(self.conf.srpm_buildtool)
+            builder = plugin_manager.srpm_build_tools.get_plugin(self.conf.srpm_buildtool)
         except NotImplementedError as e:
             raise RebaseHelperError('{}. Supported SRPM build tools are {}'.format(
-                six.text_type(e), srpm_build_helper.get_supported_tools()))
+                six.text_type(e), plugin_manager.srpm_build_tools.get_supported_tools()))
 
         for version in ['old', 'new']:
             koji_build_id = None
@@ -600,10 +597,10 @@ class Application(object):
     def build_binary_packages(self):
         """Function calls build class for building packages"""
         try:
-            builder = build_helper.get_tool(self.conf.buildtool)
+            builder = plugin_manager.build_tools.get_plugin(self.conf.buildtool)
         except NotImplementedError as e:
             raise RebaseHelperError('{}. Supported build tools are {}'.format(
-                six.text_type(e), build_helper.get_supported_tools()))
+                six.text_type(e), plugin_manager.build_tools.get_supported_tools()))
 
         for version in ['old', 'new']:
             results_dir = '{}-build'.format(os.path.join(self.results_dir, version))
@@ -701,7 +698,7 @@ class Application(object):
 
         for checker_name in self.conf.pkgcomparetool:
             try:
-                data = checkers_runner.run_checker(os.path.join(results_dir, 'checkers'),
+                data = plugin_manager.checkers.run(os.path.join(results_dir, 'checkers'),
                                                    checker_name,
                                                    **kwargs)
                 if data:
@@ -763,7 +760,7 @@ class Application(object):
 
     def print_summary(self, exception=None):
         """
-        Save rebase-helper result and print the summary using output_tools_runner
+        Save rebase-helper result and print the summary using output tools.
         :param exception: Error message from rebase-helper
         :return:
         """
@@ -784,7 +781,7 @@ class Application(object):
             self.rebase_spec_file.update_paths_to_patches()
             self.generate_patch()
 
-        output_tools_runner.run_output_tool(self.conf.outputtool, logs, self)
+        plugin_manager.output_tools.run(self.conf.outputtool, logs, self)
 
     def print_task_info(self, builder):
         logs = self.get_new_build_logs()['build_ref']
@@ -819,7 +816,7 @@ class Application(object):
         # doesn't exist unless the build of new RPM packages has been run.
         changes_made = False
         if os.path.exists(os.path.join(results_dir, 'new-build', 'RPM')):
-            changes_made = build_log_hook_runner.run(self.spec_file, self.rebase_spec_file, **self.kwargs)
+            changes_made = plugin_manager.build_log_hooks.run(self.spec_file, self.rebase_spec_file, **self.kwargs)
         # Save current rebase spec file content
         self.rebase_spec_file.save()
         if not self.conf.non_interactive and \
@@ -844,7 +841,10 @@ class Application(object):
 
     def run(self):
         # Certain options can be used only with specific build tools
-        tools_creating_tasks = [k for k, v in six.iteritems(build_helper.build_tools) if v and v.CREATES_TASKS]
+        tools_creating_tasks = []
+        for tool_name, tool in six.iteritems(plugin_manager.build_tools.plugins):
+            if tool and tool.CREATES_TASKS:
+                tools_creating_tasks.append(tool_name)
         if self.conf.buildtool not in tools_creating_tasks:
             options_used = []
             if self.conf.build_tasks is not None:
@@ -860,7 +860,10 @@ class Application(object):
                                     ('--builds-nowait', '--get-old-build-from-koji')
                                     )
 
-        tools_accepting_options = [k for k, v in six.iteritems(build_helper.build_tools) if v and v.ACCEPTS_OPTIONS]
+        tools_accepting_options = []
+        for tool_name, tool in six.iteritems(plugin_manager.build_tools.plugins):
+            if tool and tool.ACCEPTS_OPTIONS:
+                tools_accepting_options.append(tool_name)
         if self.conf.buildtool not in tools_accepting_options:
             options_used = []
             if self.conf.builder_options is not None:

@@ -38,6 +38,7 @@ from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.helpers.console_helper import ConsoleHelper
 from rebasehelper.config import Config
 from rebasehelper.argument_parser import CustomArgumentParser, CustomHelpFormatter, CustomAction
+from rebasehelper.plugins.plugin_manager import plugin_manager
 
 
 class CLI(object):
@@ -50,7 +51,7 @@ class CLI(object):
 
         group = parser.add_mutually_exclusive_group()
         current_group = 0
-        for option in traverse_options(OPTIONS):
+        for option in traverse_options(OPTIONS + plugin_manager.get_options()):
             available_choices = option.pop("available_choices", option.get("choices"))
             if available_choices_only:
                 option["choices"] = available_choices

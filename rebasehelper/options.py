@@ -24,13 +24,8 @@
 
 import os
 
-from rebasehelper.build_helper import build_helper, srpm_build_helper
-from rebasehelper.checker import checkers_runner
-from rebasehelper.output_tool import output_tools_runner
-from rebasehelper.versioneer import versioneers_runner
-from rebasehelper.specfile import spec_hooks_runner
-from rebasehelper.build_log_hook import build_log_hook_runner
 from rebasehelper.constants import CONFIG_PATH, CONFIG_FILENAME
+from rebasehelper.plugins.plugin_manager import plugin_manager
 
 
 OPTIONS = [
@@ -97,62 +92,62 @@ OPTIONS = [
     # tool selection
     {
         "name": ["--buildtool"],
-        "choices": build_helper.get_all_tools(),
-        "available_choices": build_helper.get_supported_tools(),
-        "default": build_helper.get_default_tool(),
+        "choices": plugin_manager.build_tools.get_all_plugins(),
+        "available_choices": plugin_manager.build_tools.get_supported_plugins(),
+        "default": plugin_manager.build_tools.get_default_plugins(True),
         "help": "build tool to use, defaults to %(default)s",
     },
     {
         "name": ["--srpm-buildtool"],
-        "choices": srpm_build_helper.get_all_tools(),
-        "available_choices": srpm_build_helper.get_supported_tools(),
-        "default": srpm_build_helper.get_default_tool(),
+        "choices": plugin_manager.srpm_build_tools.get_all_plugins(),
+        "available_choices": plugin_manager.srpm_build_tools.get_supported_plugins(),
+        "default": plugin_manager.srpm_build_tools.get_default_plugins(True),
         "help": "SRPM build tool to use, defaults to %(default)s",
     },
     {
         "name": ["--pkgcomparetool"],
-        "choices": checkers_runner.get_all_tools(),
-        "available_choices": checkers_runner.get_supported_tools(),
-        "default": checkers_runner.get_default_tools(),
+        "choices": plugin_manager.checkers.get_all_plugins(),
+        "available_choices": plugin_manager.checkers.get_supported_plugins(),
+        "default": plugin_manager.checkers.get_default_plugins(),
         "type": lambda s: s.split(','),
         "help": "set of tools to use for package comparison, defaults to "
                 "%(default)s if available",
     },
     {
         "name": ["--outputtool"],
-        "choices": output_tools_runner.get_all_tools(),
-        "available_choices": output_tools_runner.get_supported_tools(),
-        "default": output_tools_runner.get_default_tool(),
+        "choices": plugin_manager.output_tools.get_all_plugins(),
+        "available_choices": plugin_manager.output_tools.get_supported_plugins(),
+        "default": plugin_manager.output_tools.get_default_plugins(True),
         "help": "tool to use for formatting rebase output, defaults to %(default)s",
     },
     {
         "name": ["--versioneer"],
-        "choices": versioneers_runner.get_all_versioneers(),
-        "available_choices": versioneers_runner.get_available_versioneers(),
+        "choices": plugin_manager.versioneers.get_all_plugins(),
+        "available_choices": plugin_manager.versioneers.get_supported_plugins(),
         "default": None,
         "help": "tool to use for determining latest upstream version",
     },
     # blacklists
     {
         "name": ["--versioneer-blacklist"],
-        "choices": versioneers_runner.get_all_versioneers(),
-        "available_choices": versioneers_runner.get_available_versioneers(),
+        "choices": plugin_manager.versioneers.get_all_plugins(),
+        "available_choices": plugin_manager.versioneers.get_supported_plugins(),
         "default": [],
         "type": lambda s: s.split(","),
         "help": "prevent specified versioneers from being run",
     },
     {
         "name": ["--spec-hook-blacklist"],
-        "choices": spec_hooks_runner.get_all_spec_hooks(),
-        "available_choices": spec_hooks_runner.get_available_spec_hooks(),
+        "choices": plugin_manager.spec_hooks.get_all_plugins(),
+        "available_choices": plugin_manager.spec_hooks.get_supported_plugins(),
         "default": [],
         "type": lambda s: s.split(","),
         "help": "prevent specified spec hooks from being run",
     },
     {
         "name": ["--build-log-hook-blacklist"],
-        "choices": build_log_hook_runner.get_all_tools(),
-        "available_choices": build_log_hook_runner.get_supported_tools(),
+        "choices": plugin_manager.build_log_hooks.get_all_plugins(),
+        "available_choices": plugin_manager.build_log_hooks.get_supported_plugins(),
         "default": [],
         "type": lambda s: s.split(","),
         "help": "prevent specified build log hooks from being run"
@@ -196,12 +191,6 @@ OPTIONS = [
         "switch": True,
         "dest": "disable_inapplicable_patches",
         "help": "disable inapplicable patches in rebased SPEC file",
-    },
-    {
-        "name": ["--get-old-build-from-koji"],
-        "default": False,
-        "switch": True,
-        "help": "do not build old sources, download latest build from Koji instead",
     },
     {
         "name": ["--skip-version-check"],
