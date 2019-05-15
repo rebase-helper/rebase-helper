@@ -31,7 +31,7 @@ from rebasehelper.helpers.download_helper import DownloadHelper
 
 class Anitya(BaseVersioneer):
 
-    CATEGORIES = None
+    CATEGORIES = []
 
     BASE_URL = 'https://release-monitoring.org'
     API_URL = '{}/api'.format(BASE_URL)

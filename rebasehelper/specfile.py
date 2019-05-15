@@ -23,6 +23,7 @@
 #          František Nečas <fifinecas@seznam.cz>
 
 import argparse
+import enum
 import itertools
 import os
 import re
@@ -98,6 +99,16 @@ class PatchObject:
 
     def get_strip(self):
         return self.strip
+
+
+class PackageCategory(enum.Enum):
+    python = re.compile(r'^python[23]?-')
+    perl = re.compile(r'^perl-')
+    ruby = re.compile(r'^rubygem-')
+    nodejs = re.compile(r'^nodejs-')
+    php = re.compile(r'^php-')
+    haskell = re.compile(r'^ghc-')
+    R = re.compile(r'^R-')
 
 
 class SpecContent:
@@ -273,11 +284,11 @@ class SpecFile:
         """
         def guess_category():
             for pkg in self.spc.packages:
-                for category, regexp in constants.PACKAGE_CATEGORIES.items():
-                    if regexp.match(RpmHelper.decode(pkg.header[rpm.RPMTAG_NAME])):
+                for category in PackageCategory:
+                    if category.value.match(RpmHelper.decode(pkg.header[rpm.RPMTAG_NAME])):
                         return category
                     for provide in pkg.header[rpm.RPMTAG_PROVIDENAME]:
-                        if regexp.match(RpmHelper.decode(provide)):
+                        if category.value.match(RpmHelper.decode(provide)):
                             return category
             return None
 

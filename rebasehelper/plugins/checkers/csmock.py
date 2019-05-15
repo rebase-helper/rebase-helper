@@ -29,13 +29,13 @@ from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.helpers.path_helper import PathHelper
 from rebasehelper.exceptions import CheckerNotFoundError
 from rebasehelper.results_store import results_store
-from rebasehelper.plugins.checkers import BaseChecker
+from rebasehelper.plugins.checkers import BaseChecker, CheckerCategory
 
 
 class CsMock(BaseChecker):
     """csmock checker"""
 
-    CATEGORY = 'SRPM'
+    CATEGORY = CheckerCategory.SRPM
 
     CMD = 'csmock'
 

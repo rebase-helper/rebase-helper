@@ -30,8 +30,7 @@ from rebasehelper.logger import logger
 class BaseSpecHook(Plugin):
     """Base class for a spec hook"""
 
-    # spec hook categories, see PACKAGE_CATEGORIES in constants for a complete list
-    CATEGORIES = None
+    CATEGORIES = []
 
     @classmethod
     def run(cls, spec_file, rebase_spec_file, **kwargs):

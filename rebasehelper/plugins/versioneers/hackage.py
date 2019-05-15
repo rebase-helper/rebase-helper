@@ -23,12 +23,14 @@
 #          František Nečas <fifinecas@seznam.cz>
 
 from rebasehelper.plugins.versioneers import BaseVersioneer
+from rebasehelper.specfile import PackageCategory
 from rebasehelper.logger import logger
 from rebasehelper.helpers.download_helper import DownloadHelper
 
 
 class Hackage(BaseVersioneer):
-    CATEGORIES = ['haskell']
+
+    CATEGORIES = [PackageCategory.haskell]
 
     BASE_URL = 'https://haskell.org'
     API_URL = 'https://hackage.haskell.org'

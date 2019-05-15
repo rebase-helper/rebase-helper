@@ -29,7 +29,7 @@ from xml.etree import ElementTree
 from rebasehelper.logger import logger
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
 from rebasehelper.results_store import results_store
-from rebasehelper.plugins.checkers import BaseChecker
+from rebasehelper.plugins.checkers import BaseChecker, CheckerCategory
 from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.helpers.rpm_helper import RpmHelper
 
@@ -38,7 +38,7 @@ class PkgDiff(BaseChecker):
     """ Pkgdiff compare tool. """
 
     DEFAULT = True
-    CATEGORY = 'RPM'
+    CATEGORY = CheckerCategory.RPM
 
     CMD = 'pkgdiff'
     CHECKER_TAGS = ['added', 'removed', 'changed', 'moved', 'renamed']

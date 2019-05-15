@@ -37,6 +37,7 @@ from rebasehelper.logger import logger, log_formatter, debug_log_formatter, Logg
 from rebasehelper import constants
 from rebasehelper.patch_helper import Patcher
 from rebasehelper.plugins.plugin_manager import plugin_manager
+from rebasehelper.plugins.checkers import CheckerCategory
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
 from rebasehelper.exceptions import SourcePackageBuildError, BinaryPackageBuildError
 from rebasehelper.results_store import results_store
@@ -872,7 +873,10 @@ class Application:
 
         if self.conf.build_tasks is None:
             old_sources, new_sources = self.prepare_sources()
-            self.run_package_checkers(self.results_dir, category='SOURCE', old_dir=old_sources, new_dir=new_sources)
+            self.run_package_checkers(self.results_dir,
+                                      category=CheckerCategory.SOURCE,
+                                      old_dir=old_sources,
+                                      new_dir=new_sources)
             if not self.conf.build_only and not self.conf.comparepkgs:
                 try:
                     self.patch_sources([old_sources, new_sources])
@@ -888,11 +892,11 @@ class Application:
                     try:
                         if self.conf.build_tasks is None:
                             self.build_source_packages()
-                        self.run_package_checkers(self.results_dir, category='SRPM')
+                        self.run_package_checkers(self.results_dir, category=CheckerCategory.SRPM)
                         self.build_binary_packages()
                         if self.conf.builds_nowait and not self.conf.build_tasks:
                             return
-                        self.run_package_checkers(self.results_dir, category='RPM')
+                        self.run_package_checkers(self.results_dir, category=CheckerCategory.RPM)
                     # Print summary and return error
                     except RebaseHelperError as e:
                         if self.prepare_next_run(self.results_dir):
@@ -903,8 +907,8 @@ class Application:
                         break
             else:
                 if self.get_rpm_packages(self.conf.comparepkgs):
-                    self.run_package_checkers(self.results_dir, category='SRPM')
-                    self.run_package_checkers(self.results_dir, category='RPM')
+                    self.run_package_checkers(self.results_dir, category=CheckerCategory.SRPM)
+                    self.run_package_checkers(self.results_dir, category=CheckerCategory.RPM)
 
         if not self.conf.keep_workspace:
             self._delete_workspace_dir()

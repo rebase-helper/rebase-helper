@@ -23,7 +23,6 @@
 #          František Nečas <fifinecas@seznam.cz>
 
 import locale
-import re
 
 
 PROGRAM_DESCRIPTION = 'Tool to help package maintainers rebase their packages to the latest upstream version'
@@ -51,15 +50,5 @@ GIT_CONFIG = '.gitconfig'
 
 CONFIG_PATH = '$XDG_CONFIG_HOME'
 CONFIG_FILENAME = 'rebase-helper.cfg'
-
-PACKAGE_CATEGORIES = {
-    'python': re.compile(r'^python[23]?-'),
-    'perl': re.compile(r'^perl-'),
-    'ruby': re.compile(r'^rubygem-'),
-    'nodejs': re.compile(r'^nodejs-'),
-    'php': re.compile(r'^php-'),
-    'haskell': re.compile(r'^ghc-'),
-    'R': re.compile(r'^R-'),
-}
 
 SYSTEM_ENCODING = locale.getpreferredencoding()

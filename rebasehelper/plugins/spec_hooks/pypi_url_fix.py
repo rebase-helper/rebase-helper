@@ -25,6 +25,7 @@
 import re
 
 from rebasehelper.plugins.spec_hooks import BaseSpecHook
+from rebasehelper.specfile import PackageCategory
 
 
 class PyPIURLFix(BaseSpecHook):
@@ -35,7 +36,7 @@ class PyPIURLFix(BaseSpecHook):
 
     """
 
-    CATEGORIES = ['python']
+    CATEGORIES = [PackageCategory.python]
 
     URL_TRANSFORMATIONS = [
         (r'https?://pypi\.python\.org/pypi/', 'https://pypi.org/project/'),

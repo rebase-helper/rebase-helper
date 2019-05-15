@@ -22,6 +22,7 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
+import enum
 import os
 
 from rebasehelper.plugins.plugin import Plugin
@@ -30,12 +31,18 @@ from rebasehelper.logger import logger
 from rebasehelper.constants import RESULTS_DIR
 
 
+class CheckerCategory(enum.Enum):
+    SOURCE = 1
+    SRPM = 2
+    RPM = 3
+
+
 class BaseChecker(Plugin):
     """Base class of package checkers.
 
     Attributes:
         DEFAULT(bool): If True, the checker is run by default.
-        CATEGORY(str): Category which determines when the checker is run. Valid options: SRPM/RPM/SOURCE.
+        CATEGORY(CheckerCategory): Category which determines when the checker is run.
         results_dir(str): Path where the results are stored.
     """
 

@@ -25,13 +25,14 @@
 import re
 
 from rebasehelper.plugins.versioneers import BaseVersioneer
+from rebasehelper.specfile import PackageCategory
 from rebasehelper.logger import logger
 from rebasehelper.helpers.download_helper import DownloadHelper
 
 
 class PyPI(BaseVersioneer):
 
-    CATEGORIES = ['python']
+    CATEGORIES = [PackageCategory.python]
 
     BASE_URL = 'https://pypi.org'
     API_URL = '{}/pypi'.format(BASE_URL)

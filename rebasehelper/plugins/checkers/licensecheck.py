@@ -27,7 +27,7 @@ import os
 import re
 
 from rebasehelper.helpers.process_helper import ProcessHelper
-from rebasehelper.plugins.checkers import BaseChecker
+from rebasehelper.plugins.checkers import BaseChecker, CheckerCategory
 
 
 class LicenseCheck(BaseChecker):
@@ -39,7 +39,7 @@ class LicenseCheck(BaseChecker):
     """
 
     DEFAULT = True
-    CATEGORY = 'SOURCE'
+    CATEGORY = CheckerCategory.SOURCE
 
     CMD = 'licensecheck'
     license_changes = False

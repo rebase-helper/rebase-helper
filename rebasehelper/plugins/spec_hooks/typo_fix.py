@@ -30,7 +30,7 @@ from rebasehelper.plugins.spec_hooks import BaseSpecHook
 class TypoFix(BaseSpecHook):
     """Sample spec hook that fixes typos in spec file"""
 
-    CATEGORIES = ['sample']
+    CATEGORIES = [None]
 
     REPLACEMENTS = [
         ('chnagelog', 'changelog'),

@@ -23,12 +23,14 @@
 #          František Nečas <fifinecas@seznam.cz>
 
 from rebasehelper.plugins.versioneers import BaseVersioneer
+from rebasehelper.specfile import PackageCategory
 from rebasehelper.logger import logger
 from rebasehelper.helpers.download_helper import DownloadHelper
 
 
 class CPAN(BaseVersioneer):
-    CATEGORIES = ['perl']
+
+    CATEGORIES = [PackageCategory.perl]
 
     BASE_URL = 'https://metacpan.org'
     API_URL = 'https://fastapi.metacpan.org/v1'
