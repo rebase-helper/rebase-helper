@@ -26,6 +26,8 @@ import io
 import os
 import re
 
+from typing import List, Optional
+
 from rebasehelper.logger import logger
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
 from rebasehelper.results_store import results_store
@@ -37,11 +39,11 @@ from rebasehelper.helpers.rpm_helper import RpmHelper
 class RpmDiff(BaseChecker):
     """rpmdiff compare tool"""
 
-    DEFAULT = True
-    CATEGORY = CheckerCategory.RPM
+    DEFAULT: bool = True
+    CATEGORY: Optional[CheckerCategory] = CheckerCategory.RPM
 
-    CMD = 'rpmdiff'
-    CHECKER_TAGS = ['added', 'removed', 'changed', 'moved', 'renamed']
+    CMD: str = 'rpmdiff'
+    CHECKER_TAGS: List[str] = ['added', 'removed', 'changed', 'moved', 'renamed']
 
     @classmethod
     def is_available(cls):

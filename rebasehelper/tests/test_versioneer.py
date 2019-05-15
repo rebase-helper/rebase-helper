@@ -22,7 +22,7 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-import pytest
+import pytest  # type: ignore
 
 from pkg_resources import parse_version
 

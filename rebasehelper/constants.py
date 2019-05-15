@@ -25,30 +25,30 @@
 import locale
 
 
-PROGRAM_DESCRIPTION = 'Tool to help package maintainers rebase their packages to the latest upstream version'
-NEW_ISSUE_LINK = 'https://github.com/rebase-helper/rebase-helper/issues/new'
+PROGRAM_DESCRIPTION: str = 'Tool to help package maintainers rebase their packages to the latest upstream version'
+NEW_ISSUE_LINK: str = 'https://github.com/rebase-helper/rebase-helper/issues/new'
 
-RESULTS_DIR = 'rebase-helper-results'
-WORKSPACE_DIR = 'rebase-helper-workspace'
+RESULTS_DIR: str = 'rebase-helper-results'
+WORKSPACE_DIR: str = 'rebase-helper-workspace'
 
-REBASED_SOURCES_DIR = 'rebased-sources'
-OLD_BUILD_DIR = 'old-build'
-NEW_BUILD_DIR = 'new-build'
-CHECKERS_DIR = 'checkers'
+REBASED_SOURCES_DIR: str = 'rebased-sources'
+OLD_BUILD_DIR: str = 'old-build'
+NEW_BUILD_DIR: str = 'new-build'
+CHECKERS_DIR: str = 'checkers'
 
-LOGS_DIR = 'logs'
-DEBUG_LOG = 'debug.log'
-TRACEBACK_LOG = 'traceback.log'
-VERBOSE_LOG = 'verbose.log'
-INFO_LOG = 'info.log'
-REPORT = 'report'
+LOGS_DIR: str = 'logs'
+DEBUG_LOG: str = 'debug.log'
+TRACEBACK_LOG: str = 'traceback.log'
+VERBOSE_LOG: str = 'verbose.log'
+INFO_LOG: str = 'info.log'
+REPORT: str = 'report'
 
-OLD_SOURCES_DIR = 'old_sources'
-NEW_SOURCES_DIR = 'new_sources'
+OLD_SOURCES_DIR: str = 'old_sources'
+NEW_SOURCES_DIR: str = 'new_sources'
 
-GIT_CONFIG = '.gitconfig'
+GIT_CONFIG: str = '.gitconfig'
 
-CONFIG_PATH = '$XDG_CONFIG_HOME'
-CONFIG_FILENAME = 'rebase-helper.cfg'
+CONFIG_PATH: str = '$XDG_CONFIG_HOME'
+CONFIG_FILENAME: str = 'rebase-helper.cfg'
 
-SYSTEM_ENCODING = locale.getpreferredencoding()
+SYSTEM_ENCODING: str = locale.getpreferredencoding()

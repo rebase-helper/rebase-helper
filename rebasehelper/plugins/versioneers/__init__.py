@@ -22,15 +22,18 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
+from typing import List, Optional
+
 from rebasehelper.plugins.plugin import Plugin
 from rebasehelper.plugins.plugin_collection import PluginCollection
+from rebasehelper.types import PackageCategories
 from rebasehelper.logger import logger
 
 
 class BaseVersioneer(Plugin):
     """Base class for a versioneer"""
 
-    CATEGORIES = []
+    CATEGORIES: PackageCategories = []
 
     @classmethod
     def run(cls, package_name):

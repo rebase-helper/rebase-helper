@@ -28,16 +28,19 @@ import fnmatch
 import os
 import re
 
+from typing import Dict, Optional
+
 from rebasehelper.plugins.build_log_hooks import BaseBuildLogHook
+from rebasehelper.types import PackageCategories
 from rebasehelper.helpers.macro_helper import MacroHelper
 from rebasehelper.logger import logger
 
 
 class Files(BaseBuildLogHook):
-    CATEGORIES = None
+    CATEGORIES: PackageCategories = []
 
     # taken from build/files.c in RPM source
-    FILES_DIRECTIVES = {
+    FILES_DIRECTIVES: Dict[str, Optional[str]] = {
         '%artifact': None,
         '%attr': None,
         '%caps': None,

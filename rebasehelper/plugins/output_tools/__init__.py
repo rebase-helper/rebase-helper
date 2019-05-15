@@ -37,8 +37,8 @@ class BaseOutputTool(Plugin):
     print_cli_summary must be overridden in order to produce different CLI output
     """
 
-    DEFAULT = False
-    EXTENSION = ''
+    DEFAULT: bool = False
+    EXTENSION: str = ''
 
     @classmethod
     def get_report_path(cls, app):

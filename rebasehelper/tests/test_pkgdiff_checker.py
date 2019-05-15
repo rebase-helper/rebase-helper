@@ -22,14 +22,16 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
+from typing import List
+
 from rebasehelper.plugins.plugin_manager import plugin_manager
-from .conftest import TEST_FILES_DIR
+from rebasehelper.tests.conftest import TEST_FILES_DIR
 
 
 class TestPkgDiff:
-    FILE_XML = "files.xml"
-    PKGDIFF_HTML = "pkgdiff_reports.html"
-    TEST_FILES = [
+    FILE_XML: str = "files.xml"
+    PKGDIFF_HTML: str = "pkgdiff_reports.html"
+    TEST_FILES: List[str] = [
         FILE_XML,
         PKGDIFF_HTML
     ]

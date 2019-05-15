@@ -24,9 +24,12 @@
 
 import os
 
-import git
+import git  # type: ignore
+
+from typing import List, Optional
 
 from rebasehelper.logger import logger
+from rebasehelper.specfile import PatchObject
 from rebasehelper.helpers.git_helper import GitHelper
 from rebasehelper.helpers.input_helper import InputHelper
 from rebasehelper.constants import SYSTEM_ENCODING
@@ -36,14 +39,14 @@ class Patcher:
 
     """Class for git command used for patching old and new sources"""
 
-    source_dir = None
-    old_sources = None
-    new_sources = None
-    output_data = None
-    old_repo = None
-    new_repo = None
-    non_interactive = False
-    patches = []
+    source_dir: Optional[str] = None
+    old_sources: Optional[str] = None
+    new_sources: Optional[str] = None
+    output_data: Optional[str] = None
+    old_repo: Optional[git.Repo] = None
+    new_repo: Optional[git.Repo] = None
+    non_interactive: bool = False
+    patches: List[PatchObject] = []
 
     @staticmethod
     def decorate_patch_name(patch_name):

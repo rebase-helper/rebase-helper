@@ -24,6 +24,7 @@
 
 import os
 
+from typing import Dict, List, Optional
 from xml.etree import ElementTree
 
 from rebasehelper.logger import logger
@@ -37,15 +38,15 @@ from rebasehelper.helpers.rpm_helper import RpmHelper
 class PkgDiff(BaseChecker):
     """ Pkgdiff compare tool. """
 
-    DEFAULT = True
-    CATEGORY = CheckerCategory.RPM
+    DEFAULT: bool = True
+    CATEGORY: Optional[CheckerCategory] = CheckerCategory.RPM
 
-    CMD = 'pkgdiff'
-    CHECKER_TAGS = ['added', 'removed', 'changed', 'moved', 'renamed']
-    pkgdiff_results_filename = 'report'
-    files_xml = 'files.xml'
-    results_dir = ''
-    results_dict = {}
+    CMD: str = 'pkgdiff'
+    CHECKER_TAGS: List[str] = ['added', 'removed', 'changed', 'moved', 'renamed']
+    pkgdiff_results_filename: str = 'report'
+    files_xml: str = 'files.xml'
+    results_dir: str = ''
+    results_dict: Dict[str, List[str]] = {}
 
     @classmethod
     def is_available(cls):

@@ -25,14 +25,14 @@
 import configparser
 import os
 
-import pytest
+import pytest  # type: ignore
 
 from rebasehelper.cli import CLI
 from rebasehelper.config import Config
 
 
 class TestConfig:
-    CONFIG_FILE = 'test_config.cfg'
+    CONFIG_FILE: str = 'test_config.cfg'
 
     @pytest.fixture
     def config_file(self, config_args):

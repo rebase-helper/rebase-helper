@@ -30,10 +30,10 @@ import sys
 import time
 
 import requests
-import requests_gssapi
+import requests_gssapi  # type: ignore
 
-from urllib3.fields import RequestField
-from urllib3.filepost import encode_multipart_formdata
+from urllib3.fields import RequestField  # type: ignore
+from urllib3.filepost import encode_multipart_formdata  # type: ignore
 
 from rebasehelper.exceptions import LookasideCacheError, DownloadError
 from rebasehelper.logger import logger
@@ -44,7 +44,7 @@ class LookasideCacheHelper:
 
     """Class for downloading files from Fedora/RHEL lookaside cache"""
 
-    rpkg_config_dir = '/etc/rpkg'
+    rpkg_config_dir: str = '/etc/rpkg'
 
     @classmethod
     def _read_config(cls, tool):

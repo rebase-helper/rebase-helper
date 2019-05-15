@@ -36,7 +36,7 @@ class TemporaryEnvironment:
 
     """
 
-    TEMPDIR = 'TEMPDIR'
+    TEMPDIR: str = 'TEMPDIR'
 
     def __init__(self, exit_callback=None):
         self._env = {}

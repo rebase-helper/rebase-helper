@@ -31,11 +31,12 @@ import shlex
 import shutil
 import urllib
 
-import rpm
+import rpm  # type: ignore
 
 from datetime import date
 from difflib import SequenceMatcher
 from operator import itemgetter
+from typing import List, Optional, Pattern
 
 from rebasehelper import constants
 from rebasehelper.logger import logger
@@ -75,10 +76,9 @@ class PatchObject:
 
     """Class represents set of information about patches"""
 
-    path = ''
-    index = ''
-    strip = ''
-    git_generated = ''
+    path: str = ''
+    index: str = ''
+    strip: str = ''
 
     def __init__(self, path, index, strip):
         self.path = path
@@ -102,19 +102,19 @@ class PatchObject:
 
 
 class PackageCategory(enum.Enum):
-    python = re.compile(r'^python[23]?-')
-    perl = re.compile(r'^perl-')
-    ruby = re.compile(r'^rubygem-')
-    nodejs = re.compile(r'^nodejs-')
-    php = re.compile(r'^php-')
-    haskell = re.compile(r'^ghc-')
-    R = re.compile(r'^R-')
+    python: Pattern[str] = re.compile(r'^python[23]?-')
+    perl: Pattern[str] = re.compile(r'^perl-')
+    ruby: Pattern[str] = re.compile(r'^rubygem-')
+    nodejs: Pattern[str] = re.compile(r'^nodejs-')
+    php: Pattern[str] = re.compile(r'^php-')
+    haskell: Pattern[str] = re.compile(r'^ghc-')
+    R: Pattern[str] = re.compile(r'^R-')
 
 
 class SpecContent:
     """Class representing content of a SPEC file."""
 
-    SECTION_HEADERS = [
+    SECTION_HEADERS: List[str] = [
         '%package',
         '%prep',
         '%build',
@@ -228,17 +228,17 @@ class SpecFile:
 
     """Class representing a SPEC file"""
 
-    path = ''
-    download = False
-    spec_content = None
-    spc = None
-    hdr = None
-    extra_version = None
-    category = None
-    sources = None
-    patches = None
-    prep_section = []
-    removed_patches = []
+    path: str = ''
+    download: bool = False
+    spec_content: Optional[SpecContent] = None
+    spc: Optional[rpm.spec] = None
+    hdr: Optional[rpm.hdr] = None
+    extra_version: Optional[str] = None
+    category: Optional[PackageCategory] = None
+    sources: Optional[List[str]] = None
+    patches: Optional[List[str]] = None
+    prep_section: Optional[str] = None
+    removed_patches: List[str] = []
 
     def __init__(self, path, sources_location=''):
         self.path = path

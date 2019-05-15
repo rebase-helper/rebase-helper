@@ -36,7 +36,7 @@ class SRPMBuildToolBase(Plugin):
 
     """
 
-    DEFAULT = False
+    DEFAULT: bool = False
 
     @staticmethod
     def get_srpm_builder_options(**kwargs):

@@ -24,18 +24,20 @@
 
 import logging
 
+from typing import Dict, Optional
+
 from rebasehelper.helpers.console_helper import ConsoleHelper
 
 
 class CustomLogger(logging.Logger):
 
-    TRACE = logging.DEBUG + 1
-    VERBOSE = logging.DEBUG + 2
-    SUCCESS = logging.INFO + 5
-    HEADING = logging.INFO + 6
-    IMPORTANT = logging.INFO + 7
+    TRACE: int = logging.DEBUG + 1
+    VERBOSE: int = logging.DEBUG + 2
+    SUCCESS: int = logging.INFO + 5
+    HEADING: int = logging.INFO + 6
+    IMPORTANT: int = logging.INFO + 7
 
-    _nameToLevel = {
+    _nameToLevel: Dict[str, int] = {
         'TRACE': TRACE,
         'VERBOSE': VERBOSE,
         'SUCCESS': SUCCESS,
@@ -131,7 +133,7 @@ class LoggerHelper:
 
 
 class ColorizingStreamHandler(logging.StreamHandler):
-    colors = {
+    colors: Dict[str, Dict[int, Dict[str, Optional[str]]]] = {
         'dark': {
             logging.DEBUG: {'fg': 'brightblack', 'bg': 'default', 'style': None},
             CustomLogger.TRACE: {'fg': 'red', 'bg': 'default', 'style': None},
@@ -158,7 +160,7 @@ class ColorizingStreamHandler(logging.StreamHandler):
         },
     }
 
-    terminal_background = 'dark'
+    terminal_background: str = 'dark'
 
     def set_terminal_background(self, background):
         if background == 'auto':
@@ -178,16 +180,17 @@ class ColorizingStreamHandler(logging.StreamHandler):
 
 logging.setLoggerClass(CustomLogger)
 #  the main rebase-helper logger
-logger = LoggerHelper.get_basic_logger('rebase-helper')
+logger: CustomLogger = LoggerHelper.get_basic_logger('rebase-helper')
 #  logger for output tool
-logger_output = LoggerHelper.get_basic_logger('output-tool', logging.INFO)
-logger_report = LoggerHelper.get_basic_logger('rebase-helper-report', logging.INFO)
-logger_traceback = LoggerHelper.get_basic_logger('traceback', CustomLogger.TRACE)
-logger_upstream = LoggerHelper.get_basic_logger('rebase-helper-upstream')
+logger_output: CustomLogger = LoggerHelper.get_basic_logger('output-tool', logging.INFO)
+logger_report: CustomLogger = LoggerHelper.get_basic_logger('rebase-helper-report', logging.INFO)
+logger_traceback: CustomLogger = LoggerHelper.get_basic_logger('traceback', CustomLogger.TRACE)
+logger_upstream: CustomLogger = LoggerHelper.get_basic_logger('rebase-helper-upstream')
 
-console_formatter = logging.Formatter("%(levelname)s: %(message)s")
-log_formatter = logging.Formatter("%(message)s")
-debug_log_formatter = logging.Formatter("%(asctime)s %(filename)s:%(lineno)s %(funcName)s: %(message)s")
+console_formatter: logging.Formatter = logging.Formatter("%(levelname)s: %(message)s")
+log_formatter: logging.Formatter = logging.Formatter("%(message)s")
+debug_log_formatter: logging.Formatter = logging.Formatter(
+    "%(asctime)s %(filename)s:%(lineno)s %(funcName)s: %(message)s")
 
-main_handler = LoggerHelper.add_stream_handler(logger, logging.INFO, console_formatter)
-output_tool_handler = LoggerHelper.add_stream_handler(logger_output)
+main_handler: ColorizingStreamHandler = LoggerHelper.add_stream_handler(logger, logging.INFO, console_formatter)
+output_tool_handler: ColorizingStreamHandler = LoggerHelper.add_stream_handler(logger_output)

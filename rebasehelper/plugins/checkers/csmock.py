@@ -25,6 +25,8 @@
 import io
 import os
 
+from typing import Optional
+
 from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.helpers.path_helper import PathHelper
 from rebasehelper.exceptions import CheckerNotFoundError
@@ -35,9 +37,9 @@ from rebasehelper.plugins.checkers import BaseChecker, CheckerCategory
 class CsMock(BaseChecker):
     """csmock checker"""
 
-    CATEGORY = CheckerCategory.SRPM
+    CATEGORY: Optional[CheckerCategory] = CheckerCategory.SRPM
 
-    CMD = 'csmock'
+    CMD: str = 'csmock'
 
     @classmethod
     def is_available(cls):

@@ -23,6 +23,7 @@
 #          František Nečas <fifinecas@seznam.cz>
 
 from rebasehelper.plugins.versioneers import BaseVersioneer
+from rebasehelper.types import PackageCategories
 from rebasehelper.specfile import PackageCategory
 from rebasehelper.logger import logger
 from rebasehelper.helpers.download_helper import DownloadHelper
@@ -30,10 +31,10 @@ from rebasehelper.helpers.download_helper import DownloadHelper
 
 class CPAN(BaseVersioneer):
 
-    CATEGORIES = [PackageCategory.perl]
+    CATEGORIES: PackageCategories = [PackageCategory.perl]
 
-    BASE_URL = 'https://metacpan.org'
-    API_URL = 'https://fastapi.metacpan.org/v1'
+    BASE_URL: str = 'https://metacpan.org'
+    API_URL: str = 'https://fastapi.metacpan.org/v1'
 
     @classmethod
     def _get_version(cls, package_name):

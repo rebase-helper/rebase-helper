@@ -24,6 +24,8 @@
 
 import os
 
+from typing import List
+
 from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.helpers.input_helper import InputHelper
 from rebasehelper.logger import logger
@@ -39,10 +41,10 @@ class Rpmbuild(BuildToolBase):  # pylint: disable=abstract-method
     Class representing rpmbuild build tool.
     """
 
-    ACCEPTS_OPTIONS = True
+    ACCEPTS_OPTIONS: bool = True
 
-    CMD = "rpmbuild"
-    logs = []
+    CMD: str = 'rpmbuild'
+    logs: List[str] = []
 
     @classmethod
     def _build_rpm(cls, srpm, workdir, results_dir, rpm_results_dir, builder_options=None):

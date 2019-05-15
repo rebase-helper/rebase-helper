@@ -23,6 +23,7 @@
 #          František Nečas <fifinecas@seznam.cz>
 
 from rebasehelper.plugins.versioneers import BaseVersioneer
+from rebasehelper.types import PackageCategories
 from rebasehelper.specfile import PackageCategory
 from rebasehelper.logger import logger
 from rebasehelper.helpers.download_helper import DownloadHelper
@@ -30,10 +31,10 @@ from rebasehelper.helpers.download_helper import DownloadHelper
 
 class NPMJS(BaseVersioneer):
 
-    CATEGORIES = [PackageCategory.nodejs]
+    CATEGORIES: PackageCategories = [PackageCategory.nodejs]
 
-    BASE_URL = 'https://www.npmjs.com'
-    API_URL = 'http://registry.npmjs.org'
+    BASE_URL: str = 'https://www.npmjs.com'
+    API_URL: str = 'http://registry.npmjs.org'
 
     @classmethod
     def _get_version(cls, package_name):

@@ -26,6 +26,7 @@ import os
 import sys
 
 from argparse import SUPPRESS
+from typing import List
 
 from rebasehelper.cli import CLI
 from rebasehelper.constants import CONFIG_PATH, CONFIG_FILENAME
@@ -33,13 +34,13 @@ from rebasehelper.constants import CONFIG_PATH, CONFIG_FILENAME
 
 class SampleConfig:
 
-    DESCRIPTION = [
+    DESCRIPTION: List[str] = [
         '# sample configuration file for rebase-helper',
         '# copy this file to {} and edit it as necessary'.format(os.path.join(CONFIG_PATH, CONFIG_FILENAME)),
         '# all options specified here can be overridden on the command line',
     ]
 
-    BLACKLIST = [
+    BLACKLIST: List[str] = [
         'help',
         'version',
         'config-file',

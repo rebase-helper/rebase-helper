@@ -22,15 +22,18 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
+from typing import List, Optional
+
 from rebasehelper.plugins.plugin import Plugin
 from rebasehelper.plugins.plugin_collection import PluginCollection
+from rebasehelper.types import PackageCategories
 from rebasehelper.logger import logger
 
 
 class BaseSpecHook(Plugin):
     """Base class for a spec hook"""
 
-    CATEGORIES = []
+    CATEGORIES: PackageCategories = []
 
     @classmethod
     def run(cls, spec_file, rebase_spec_file, **kwargs):

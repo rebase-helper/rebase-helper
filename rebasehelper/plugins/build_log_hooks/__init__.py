@@ -24,6 +24,7 @@
 
 from rebasehelper.plugins.plugin import Plugin
 from rebasehelper.plugins.plugin_collection import PluginCollection
+from rebasehelper.types import PackageCategories
 from rebasehelper.logger import logger
 from rebasehelper.results_store import results_store
 
@@ -31,8 +32,7 @@ from rebasehelper.results_store import results_store
 class BaseBuildLogHook(Plugin):
     """Base class for a build log hook."""
 
-    # build log hook categories, see PACKAGE_CATEGORIES in constants for a complete list
-    CATEGORIES = None
+    CATEGORIES: PackageCategories = []
 
     @classmethod
     def format(cls, data):

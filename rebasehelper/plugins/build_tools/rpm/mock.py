@@ -24,6 +24,8 @@
 
 import os
 
+from typing import List
+
 from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.logger import logger
 from rebasehelper.helpers.path_helper import PathHelper
@@ -37,11 +39,11 @@ class Mock(BuildToolBase):  # pylint: disable=abstract-method
     Class representing Mock build tool.
     """
 
-    DEFAULT = True
-    ACCEPTS_OPTIONS = True
+    DEFAULT: bool = True
+    ACCEPTS_OPTIONS: bool = True
 
-    CMD = "mock"
-    logs = []
+    CMD: str = 'mock'
+    logs: List[str] = []
 
     @classmethod
     def _build_rpm(cls, srpm, results_dir, rpm_results_dir, root=None, arch=None, builder_options=None):

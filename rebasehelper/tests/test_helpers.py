@@ -28,9 +28,11 @@ import random
 import string
 import sys
 
-import git
-import rpm
-import pytest
+import git  # type: ignore
+import rpm  # type: ignore
+import pytest  # type: ignore
+
+from typing import List
 
 from rebasehelper.helpers.git_helper import GitHelper
 from rebasehelper.helpers.console_helper import ConsoleHelper
@@ -263,15 +265,15 @@ class TestProcessHelper:
 
     class TestRunSubprocess:
         """ ProcessHelper - run_subprocess() tests """
-        TEMP_FILE = "temp_file"
-        TEMP_DIR = "temp_dir"
-        OUT_FILE = "output_file"
-        IN_FILE = "input_file"
-        PHRASE = "hello world"
-        ECHO_COMMAND = ["echo", PHRASE]
-        TOUCH_COMMAND = ["touch", TEMP_FILE]
-        LS_COMMAND = ["ls"]
-        CAT_COMMAND = ["cat"]
+        TEMP_FILE: str = "temp_file"
+        TEMP_DIR: str = "temp_dir"
+        OUT_FILE: str = "output_file"
+        IN_FILE: str = "input_file"
+        PHRASE: str = "hello world"
+        ECHO_COMMAND: List[str] = ["echo", PHRASE]
+        TOUCH_COMMAND: List[str] = ["touch", TEMP_FILE]
+        LS_COMMAND: List[str] = ["ls"]
+        CAT_COMMAND: List[str] = ["cat"]
 
         def test_simple_cmd(self):
             ret = ProcessHelper.run_subprocess(self.TOUCH_COMMAND)
@@ -362,13 +364,13 @@ class TestProcessHelper:
 
     class TestRunSubprocessCwd:
         """ ProcessHelper - run_subprocess_cwd() tests """
-        TEMP_FILE = "temp_file"
-        TEMP_DIR = "temp_dir"
-        OUT_FILE = "output_file"
-        PHRASE = "hello world"
-        ECHO_COMMAND = ["echo", PHRASE]
-        TOUCH_COMMAND = ["touch", TEMP_FILE]
-        LS_COMMAND = ["ls"]
+        TEMP_FILE: str = "temp_file"
+        TEMP_DIR: str = "temp_dir"
+        OUT_FILE: str = "output_file"
+        PHRASE: str = "hello world"
+        ECHO_COMMAND: List[str] = ["echo", PHRASE]
+        TOUCH_COMMAND: List[str] = ["touch", TEMP_FILE]
+        LS_COMMAND: List[str] = ["ls"]
 
         def test_simple_cmd_changed_work_dir(self):
             os.mkdir(self.TEMP_DIR)
@@ -390,8 +392,8 @@ class TestProcessHelper:
 
     class TestRunSubprocessCwdEnv:
         """ ProcessHelper - run_subprocess_cwd_env() tests """
-        OUT_FILE = "output_file"
-        PHRASE = "hello world"
+        OUT_FILE: str = "output_file"
+        PHRASE: str = "hello world"
 
         def test_setting_new_env(self):
             # make copy of existing environment
@@ -593,7 +595,7 @@ class TestMacroHelper:
 
 class TestLookasideCacheHelper:
 
-    TEST_FILES = [
+    TEST_FILES: List[str] = [
         'documentation.tar.xz',
         'archive.tar.bz2',
     ]

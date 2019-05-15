@@ -34,9 +34,10 @@ from rebasehelper.helpers.console_helper import ConsoleHelper
 from rebasehelper.helpers.rpm_helper import RpmHelper
 from rebasehelper.helpers.download_helper import DownloadHelper
 
+koji_helper_functional: bool
 try:
-    import koji
-    from koji_cli.lib import TaskWatcher
+    import koji  # type: ignore
+    from koji_cli.lib import TaskWatcher  # type: ignore
 except ImportError:
     koji_helper_functional = False
 else:
@@ -45,7 +46,7 @@ else:
 
 class KojiHelper:
 
-    functional = koji_helper_functional
+    functional: bool = koji_helper_functional
 
     @classmethod
     def create_session(cls, login=False, profile='koji'):

@@ -32,7 +32,7 @@ import tempfile
 import termios
 import tty
 
-import colors
+import colors  # type: ignore
 
 from rebasehelper.constants import SYSTEM_ENCODING
 
@@ -41,7 +41,7 @@ class ConsoleHelper:
 
     """Class for interacting with the command line."""
 
-    use_colors = False
+    use_colors: bool = False
 
     @classmethod
     def should_use_colors(cls, conf):

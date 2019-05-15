@@ -28,13 +28,13 @@ import copy
 class ResultsStore:
     """Class for storing information about results from rebase-helper actions."""
 
-    RESULTS_INFORMATION = 'information'
-    RESULTS_CHECKERS = 'checkers'
-    RESULTS_BUILD_LOG_HOOKS = 'build_log_hooks'
-    RESULTS_BUILDS = 'builds'
-    RESULTS_PATCHES = 'patches'
-    RESULTS_CHANGES_PATCH = 'changes_patch'
-    RESULTS_SUCCESS = 'result'
+    RESULTS_INFORMATION: str = 'information'
+    RESULTS_CHECKERS: str = 'checkers'
+    RESULTS_BUILD_LOG_HOOKS: str = 'build_log_hooks'
+    RESULTS_BUILDS: str = 'builds'
+    RESULTS_PATCHES: str = 'patches'
+    RESULTS_CHANGES_PATCH: str = 'changes_patch'
+    RESULTS_SUCCESS: str = 'result'
 
     def __init__(self):
         self._data_store = dict()
@@ -118,4 +118,4 @@ class ResultsStore:
 
 
 # global results store
-results_store = ResultsStore()
+results_store: ResultsStore = ResultsStore()

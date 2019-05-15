@@ -25,6 +25,8 @@
 import enum
 import os
 
+from typing import Optional
+
 from rebasehelper.plugins.plugin import Plugin
 from rebasehelper.plugins.plugin_collection import PluginCollection
 from rebasehelper.logger import logger
@@ -32,9 +34,9 @@ from rebasehelper.constants import RESULTS_DIR
 
 
 class CheckerCategory(enum.Enum):
-    SOURCE = 1
-    SRPM = 2
-    RPM = 3
+    SOURCE: int = 1
+    SRPM: int = 2
+    RPM: int = 3
 
 
 class BaseChecker(Plugin):
@@ -46,9 +48,9 @@ class BaseChecker(Plugin):
         results_dir(str): Path where the results are stored.
     """
 
-    DEFAULT = False
-    CATEGORY = None
-    results_dir = None
+    DEFAULT: bool = False
+    CATEGORY: Optional[CheckerCategory] = None
+    results_dir: Optional[str] = None
 
     @classmethod
     def get_checker_output_dir_short(cls):

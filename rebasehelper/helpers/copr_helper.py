@@ -27,8 +27,8 @@ import os
 import time
 import urllib
 
-import copr
-import pyquery
+import copr  # type: ignore
+import pyquery  # type: ignore
 
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.logger import logger

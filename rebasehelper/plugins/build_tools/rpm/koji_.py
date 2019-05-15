@@ -25,11 +25,14 @@
 import os
 import re
 
-import koji  # pylint: disable=import-error
+import koji  # type: ignore  # pylint: disable=import-error
 
 # unused import needed to prevent loading koji buildtool with Koji < 1.13
-import koji_cli.lib  # pylint: disable=import-error,unused-import
+import koji_cli.lib  # type: ignore  # pylint: disable=import-error,unused-import
 
+from typing import List
+
+from rebasehelper.types import Options
 from rebasehelper.helpers.koji_helper import KojiHelper
 from rebasehelper.logger import logger
 from rebasehelper.exceptions import RebaseHelperError
@@ -42,10 +45,7 @@ class Koji(BuildToolBase):
     Class representing Koji build tool.
     """
 
-    CREATES_TASKS = True
-
-    CMD = "koji"
-    OPTIONS = [
+    OPTIONS: Options = [
         {
             "name": ["--get-old-build-from-koji"],
             "default": False,
@@ -53,9 +53,13 @@ class Koji(BuildToolBase):
             "help": "do not build old sources, download latest build from Koji instead",
         },
     ]
-    logs = []
 
-    target_tag = 'rawhide'
+    CREATES_TASKS: bool = True
+
+    CMD: str = 'koji'
+    logs: List[str] = []
+
+    target_tag: str = 'rawhide'
 
     @classmethod
     def _verify_tasks(cls, session, task_dict):

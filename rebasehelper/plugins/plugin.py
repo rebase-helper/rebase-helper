@@ -22,9 +22,17 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
+from typing import Optional, TYPE_CHECKING
+
+from rebasehelper.types import Options
+
+if TYPE_CHECKING:
+    # avoid cyclic import at runtime
+    from rebasehelper.plugins.plugin_manager import PluginManager
+
 
 class Plugin:
-    name = None
-    manager = None
+    name: Optional[str] = None
+    manager: Optional['PluginManager'] = None
 
-    OPTIONS = []
+    OPTIONS: Options = []

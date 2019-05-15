@@ -25,7 +25,7 @@
 import os
 import json
 
-import pytest
+import pytest  # type: ignore
 
 from rebasehelper.plugins.output_tools.json_ import JSON
 from rebasehelper.plugins.output_tools.text import Text

@@ -29,11 +29,13 @@ import shutil
 import tarfile
 import zipfile
 
+from typing import Dict, Type
+
 from rebasehelper.logger import logger
 
 
 # supported archive types
-archive_types = {}
+archive_types: Dict[str, Type['ArchiveTypeBase']] = {}
 
 
 def register_archive_type(archive):
@@ -43,7 +45,8 @@ def register_archive_type(archive):
 
 class ArchiveTypeBase:
     """ Base class for various archive types """
-    EXTENSION = ""
+
+    EXTENSION: str = ''
 
     @classmethod
     def match(cls, filename=None):
@@ -80,7 +83,7 @@ class TarXzArchiveType(ArchiveTypeBase):
 
     """ .tar.xz archive type """
 
-    EXTENSION = ".tar.xz"
+    EXTENSION: str = '.tar.xz'
 
     @classmethod
     def open(cls, filename=None):
@@ -102,7 +105,7 @@ class Bz2ArchiveType(ArchiveTypeBase):
 
     """ .bz2 archive type """
 
-    EXTENSION = ".bz2"
+    EXTENSION: str = '.bz2'
 
     @classmethod
     def open(cls, filename=None):
@@ -133,7 +136,7 @@ class TarBz2ArchiveType(Bz2ArchiveType):
 
     """ .tar.bz2 archive type """
 
-    EXTENSION = ".tar.bz2"
+    EXTENSION: str = '.tar.bz2'
 
 
 @register_archive_type
@@ -141,7 +144,7 @@ class TarGzArchiveType(TarBz2ArchiveType):
 
     """ .tar.gz archive type """
 
-    EXTENSION = ".tar.gz"
+    EXTENSION: str = '.tar.gz'
 
     @classmethod
     def open(cls, filename=None):
@@ -160,19 +163,22 @@ class TarGzArchiveType(TarBz2ArchiveType):
 @register_archive_type
 class TgzArchiveType(TarGzArchiveType):
     """ .tgz archive type """
-    EXTENSION = ".tgz"
+
+    EXTENSION: str = '.tgz'
 
 
 @register_archive_type
 class TarArchiveType(TarGzArchiveType):
     """ .tar archive type """
-    EXTENSION = ".tar"
+
+    EXTENSION: str = '.tar'
 
 
 @register_archive_type
 class ZipArchiveType(ArchiveTypeBase):
     """ .zip archive type """
-    EXTENSION = ".zip"
+
+    EXTENSION: str = '.zip'
 
     @classmethod
     def match(cls, filename=None):
@@ -198,7 +204,8 @@ class ZipArchiveType(ArchiveTypeBase):
 @register_archive_type
 class GemPseudoArchiveType(ArchiveTypeBase):
     """ .gem files are not archives - this is a pseudo type """
-    EXTENSION = ".gem"
+
+    EXTENSION: str = '.gem'
 
     @classmethod
     def open(cls, filename=None):

@@ -33,10 +33,10 @@ from rebasehelper.logger import logger
 class BuildTemporaryEnvironment(TemporaryEnvironment):
     """Class representing temporary environment."""
 
-    TEMPDIR_SOURCES = TemporaryEnvironment.TEMPDIR + '_SOURCES'
-    TEMPDIR_SPEC = TemporaryEnvironment.TEMPDIR + '_SPEC'
-    TEMPDIR_SPECS = TemporaryEnvironment.TEMPDIR + '_SPECS'
-    TEMPDIR_RESULTS = TemporaryEnvironment.TEMPDIR + '_RESULTS'
+    TEMPDIR_SOURCES: str = TemporaryEnvironment.TEMPDIR + '_SOURCES'
+    TEMPDIR_SPEC: str = TemporaryEnvironment.TEMPDIR + '_SPEC'
+    TEMPDIR_SPECS: str = TemporaryEnvironment.TEMPDIR + '_SPECS'
+    TEMPDIR_RESULTS: str = TemporaryEnvironment.TEMPDIR + '_RESULTS'
 
     def __init__(self, sources, patches, spec, results_dir):
         super(BuildTemporaryEnvironment, self).__init__(self._build_env_exit_callback)
@@ -93,11 +93,11 @@ class BuildTemporaryEnvironment(TemporaryEnvironment):
 class RpmbuildTemporaryEnvironment(BuildTemporaryEnvironment):
     """Class representing temporary environment for RpmbuildBuildTool."""
 
-    TEMPDIR_RPMBUILD = TemporaryEnvironment.TEMPDIR + '_RPMBUILD'
-    TEMPDIR_BUILD = TemporaryEnvironment.TEMPDIR + '_BUILD'
-    TEMPDIR_BUILDROOT = TemporaryEnvironment.TEMPDIR + '_BUILDROOT'
-    TEMPDIR_RPMS = TemporaryEnvironment.TEMPDIR + '_RPMS'
-    TEMPDIR_SRPMS = TemporaryEnvironment.TEMPDIR + '_SRPMS'
+    TEMPDIR_RPMBUILD: str = TemporaryEnvironment.TEMPDIR + '_RPMBUILD'
+    TEMPDIR_BUILD: str = TemporaryEnvironment.TEMPDIR + '_BUILD'
+    TEMPDIR_BUILDROOT: str = TemporaryEnvironment.TEMPDIR + '_BUILDROOT'
+    TEMPDIR_RPMS: str = TemporaryEnvironment.TEMPDIR + '_RPMS'
+    TEMPDIR_SRPMS: str = TemporaryEnvironment.TEMPDIR + '_SRPMS'
 
     def _create_directory_structure(self):
         # create rpmbuild directory structure

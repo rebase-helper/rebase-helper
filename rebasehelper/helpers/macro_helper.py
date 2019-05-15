@@ -24,7 +24,9 @@
 
 import re
 
-import rpm
+import rpm  # type: ignore
+
+from typing import List
 
 from pkg_resources import parse_version
 
@@ -35,7 +37,7 @@ class MacroHelper:
 
     """Class for working with RPM macros"""
 
-    MACROS_WHITELIST = [
+    MACROS_WHITELIST: List[str] = [
         '_bindir',
         '_datadir',
         '_includedir',

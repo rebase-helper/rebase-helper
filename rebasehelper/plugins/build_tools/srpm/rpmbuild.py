@@ -24,6 +24,8 @@
 
 import os
 
+from typing import List
+
 from rebasehelper.logger import logger
 from rebasehelper.plugins.build_tools import RpmbuildTemporaryEnvironment
 from rebasehelper.plugins.build_tools.srpm import SRPMBuildToolBase
@@ -34,10 +36,10 @@ from rebasehelper.exceptions import SourcePackageBuildError
 
 class Rpmbuild(SRPMBuildToolBase):
 
-    DEFAULT = True
+    DEFAULT: bool = True
 
-    CMD = "rpmbuild"
-    logs = []
+    CMD: str = 'rpmbuild'
+    logs: List[str] = []
 
     @classmethod
     def _build_srpm(cls, spec, workdir, results_dir, srpm_results_dir, srpm_builder_options):

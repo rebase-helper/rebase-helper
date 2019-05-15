@@ -24,15 +24,18 @@
 
 import re
 
+from typing import List, Tuple
+
 from rebasehelper.plugins.spec_hooks import BaseSpecHook
+from rebasehelper.types import PackageCategories
 
 
 class TypoFix(BaseSpecHook):
     """Sample spec hook that fixes typos in spec file"""
 
-    CATEGORIES = [None]
+    CATEGORIES: PackageCategories = [None]
 
-    REPLACEMENTS = [
+    REPLACEMENTS: List[Tuple[str, str]] = [
         ('chnagelog', 'changelog'),
         ('indentional', 'intentional'),
     ]

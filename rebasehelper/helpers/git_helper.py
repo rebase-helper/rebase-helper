@@ -24,7 +24,7 @@
 
 import os
 
-import git
+import git  # type: ignore
 
 from rebasehelper.logger import logger
 from rebasehelper.helpers.process_helper import ProcessHelper
@@ -35,8 +35,8 @@ class GitHelper:
     """Class which operates with git repositories"""
 
     # provide fallback values if system is not configured
-    GIT_USER_NAME = 'rebase-helper'
-    GIT_USER_EMAIL = 'rebase-helper@localhost.local'
+    GIT_USER_NAME: str = 'rebase-helper'
+    GIT_USER_EMAIL: str = 'rebase-helper@localhost.local'
 
     @classmethod
     def get_user(cls):

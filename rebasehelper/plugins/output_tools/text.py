@@ -33,8 +33,8 @@ class Text(BaseOutputTool):
 
     """ Text output tool. """
 
-    DEFAULT = True
-    EXTENSION = 'txt'
+    DEFAULT: bool = True
+    EXTENSION: str = 'txt'
 
     @classmethod
     def print_success_message(cls):

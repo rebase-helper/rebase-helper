@@ -34,7 +34,7 @@ class ProcessHelper:
 
     """Class for executing subprocesses."""
 
-    DEV_NULL = os.devnull
+    DEV_NULL: str = os.devnull
 
     @staticmethod
     def run_subprocess(cmd, input_file=None, output_file=None, ignore_stderr=False):

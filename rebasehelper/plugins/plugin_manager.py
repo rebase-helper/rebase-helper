@@ -24,6 +24,9 @@
 
 import re
 
+from typing import List, Type
+
+from rebasehelper.plugins.plugin_collection import PluginCollection
 from rebasehelper.plugins.build_log_hooks import BuildLogHookCollection
 from rebasehelper.plugins.build_tools.rpm import BuildToolCollection
 from rebasehelper.plugins.build_tools.srpm import SRPMBuildToolCollection
@@ -35,7 +38,7 @@ from rebasehelper.plugins.versioneers import VersioneerCollection
 
 class PluginManager:
 
-    COLLECTIONS = [
+    COLLECTIONS: List[Type[PluginCollection]] = [
         BuildLogHookCollection,
         BuildToolCollection,
         SRPMBuildToolCollection,
@@ -76,4 +79,4 @@ class PluginManager:
 
 
 # Global instance of PluginManager, it is enough to load it once per application run.
-plugin_manager = PluginManager()
+plugin_manager: PluginManager = PluginManager()

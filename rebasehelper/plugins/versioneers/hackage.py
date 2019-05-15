@@ -23,6 +23,7 @@
 #          František Nečas <fifinecas@seznam.cz>
 
 from rebasehelper.plugins.versioneers import BaseVersioneer
+from rebasehelper.types import PackageCategories
 from rebasehelper.specfile import PackageCategory
 from rebasehelper.logger import logger
 from rebasehelper.helpers.download_helper import DownloadHelper
@@ -30,10 +31,10 @@ from rebasehelper.helpers.download_helper import DownloadHelper
 
 class Hackage(BaseVersioneer):
 
-    CATEGORIES = [PackageCategory.haskell]
+    CATEGORIES: PackageCategories = [PackageCategory.haskell]
 
-    BASE_URL = 'https://haskell.org'
-    API_URL = 'https://hackage.haskell.org'
+    BASE_URL: str = 'https://haskell.org'
+    API_URL: str = 'https://hackage.haskell.org'
 
     @classmethod
     def _get_version(cls, package_name):

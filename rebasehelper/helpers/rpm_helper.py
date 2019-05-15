@@ -26,7 +26,9 @@ import os
 import re
 import tempfile
 
-import rpm
+import rpm  # type: ignore
+
+from typing import List
 
 from rebasehelper.constants import SYSTEM_ENCODING
 from rebasehelper.exceptions import RebaseHelperError
@@ -40,7 +42,7 @@ class RpmHelper:
 
     """Class for working with RPM database and packages."""
 
-    ARCHES = []
+    ARCHES: List[str] = []
 
     @staticmethod
     def is_package_installed(pkg_name=None):

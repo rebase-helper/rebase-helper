@@ -24,26 +24,28 @@
 
 import os
 
-import pytest
+import pytest  # type: ignore
+
+from typing import List
 
 from rebasehelper.archive import Archive
 
 
 class TestArchive:
-    TAR_GZ = 'archive.tar.gz'
-    TGZ = 'archive.tgz'
-    TAR_XZ = 'archive.tar.xz'
-    TAR_BZ2 = 'archive.tar.bz2'
-    ZIP = 'archive.zip'
-    BZ2 = 'file.txt.bz2'
-    INVALID_TAR_BZ2 = 'archive-invalid.tar.bz2'
-    INVALID_TAR_XZ = 'archive-invalid.tar.xz'
+    TAR_GZ: str = 'archive.tar.gz'
+    TGZ: str = 'archive.tgz'
+    TAR_XZ: str = 'archive.tar.xz'
+    TAR_BZ2: str = 'archive.tar.bz2'
+    ZIP: str = 'archive.zip'
+    BZ2: str = 'file.txt.bz2'
+    INVALID_TAR_BZ2: str = 'archive-invalid.tar.bz2'
+    INVALID_TAR_XZ: str = 'archive-invalid.tar.xz'
 
-    ARCHIVED_FILE = 'file.txt'
-    ARCHIVED_FILE_CONTENT = 'simple testing file'
+    ARCHIVED_FILE: str = 'file.txt'
+    ARCHIVED_FILE_CONTENT: str = 'simple testing file'
 
     #  These files located in TEST_FILES_DIR will be copied into the testing environment
-    TEST_FILES = [
+    TEST_FILES: List[str] = [
         TAR_GZ,
         TGZ,
         TAR_XZ,

@@ -26,6 +26,8 @@ import io
 import os
 import re
 
+from typing import Dict, Optional
+
 from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.plugins.checkers import BaseChecker, CheckerCategory
 
@@ -38,12 +40,12 @@ class LicenseCheck(BaseChecker):
         license_files_changes(dict): Dictionary of {license: change_type + file_name} pairs.
     """
 
-    DEFAULT = True
-    CATEGORY = CheckerCategory.SOURCE
+    DEFAULT: bool = True
+    CATEGORY: Optional[CheckerCategory] = CheckerCategory.SOURCE
 
-    CMD = 'licensecheck'
-    license_changes = False
-    license_files_changes = dict()
+    CMD: str = 'licensecheck'
+    license_changes: bool = False
+    license_files_changes: Dict[str, str] = {}
 
     @classmethod
     def is_available(cls):

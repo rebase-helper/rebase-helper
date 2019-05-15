@@ -27,7 +27,9 @@ import os
 import shutil
 import logging
 
-import git
+import git  # type: ignore
+
+from typing import Any, Dict, List, Optional
 
 from pkg_resources import parse_version
 
@@ -51,21 +53,21 @@ from rebasehelper.helpers.lookaside_cache_helper import LookasideCacheHelper
 
 
 class Application:
-    result_file = ""
-    temp_dir = ""
-    kwargs = {}
-    old_sources = ""
-    new_sources = ""
-    old_rest_sources = []
-    new_rest_sources = []
-    spec_file = None
-    spec_file_path = None
-    rebase_spec_file = None
-    rebase_spec_file_path = None
-    debug_log_file = None
-    report_log_file = None
-    rebased_patches = {}
-    rebased_repo = None
+    result_file: str = ''
+    temp_dir: str = ''
+    kwargs: Dict[str, Any] = {}
+    old_sources: str = ''
+    new_sources: str = ''
+    old_rest_sources: List[str] = []
+    new_rest_sources: List[str] = []
+    spec_file: Optional[SpecFile] = None
+    spec_file_path: Optional[str] = None
+    rebase_spec_file: Optional[SpecFile] = None
+    rebase_spec_file_path: Optional[str] = None
+    debug_log_file: Optional[str] = None
+    report_log_file: Optional[str] = None
+    rebased_patches: Dict[str, List[str]] = {}
+    rebased_repo: Optional[git.Repo] = None
 
     def __init__(self, cli_conf, execution_dir, results_dir, debug_log_file):
         """

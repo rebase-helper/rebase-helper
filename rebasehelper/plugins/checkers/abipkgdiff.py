@@ -25,7 +25,9 @@
 import os
 import re
 
-import rpm
+import rpm  # type: ignore
+
+from typing import Optional
 
 from rebasehelper.logger import logger
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
@@ -42,14 +44,14 @@ class AbiPkgDiff(BaseChecker):
         abi_changes(bool): True if ABI changes were detected.
     """
 
-    DEFAULT = True
-    CATEGORY = CheckerCategory.RPM
-    results_dir = ''
+    DEFAULT: bool = True
+    CATEGORY: Optional[CheckerCategory] = CheckerCategory.RPM
+    results_dir: Optional[str] = ''
 
-    CMD = 'abipkgdiff'
-    ABIDIFF_ERROR = 1
-    ABIDIFF_USAGE_ERROR = 2
-    abi_changes = None
+    CMD: str = 'abipkgdiff'
+    ABIDIFF_ERROR: int = 1
+    ABIDIFF_USAGE_ERROR: int = 2
+    abi_changes: bool = False
 
     @classmethod
     def is_available(cls):
@@ -91,7 +93,7 @@ class AbiPkgDiff(BaseChecker):
     def run_check(cls, results_dir, **kwargs):
         """Compares old and new RPMs using abipkgdiff"""
         # Check if ABI changes occured
-        cls.abi_changes = None
+        cls.abi_changes = False
         cls.results_dir = os.path.join(results_dir, cls.name)
         os.makedirs(cls.results_dir)
         debug_old, rest_pkgs_old = cls._get_packages_for_abipkgdiff(results_store.get_build('old'))

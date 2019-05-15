@@ -22,20 +22,30 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-import pytest
+import pytest  # type: ignore
+
+from typing import Dict, List, Union
 
 from rebasehelper.results_store import ResultsStore
 
 
 class TestResultsStore:
-    old_rpm_data = {'rpm': ['rpm-0.1.0.x86_64.rpm', ' rpm-devel-0.1.0.x86_64.rpm'], 'srpm': 'rpm-0.1.0.src.rpm',
-                    'logs': ['logfile1.log', 'logfile2.log']}
-    new_rpm_data = {'rpm': ['rpm-0.2.0.x86_64.rpm', ' rpm-devel-0.2.0.x86_64.rpm'], 'srpm': 'rpm-0.2.0.src.rpm',
-                    'logs': ['logfile3.log', 'logfile4.log']}
-    patches_data = {'deleted': ['del_patch1.patch', 'del_patch2.patch'],
-                    'modified': ['mod_patch1.patch', 'mod_patch2.patch']}
-    info_data = {'Information text': 'some information text'}
-    info_data2 = {'Next Information': 'some another information text'}
+    old_rpm_data: Dict[str, Union[str, List[str]]] = {
+        'rpm': ['rpm-0.1.0.x86_64.rpm', ' rpm-devel-0.1.0.x86_64.rpm'],
+        'srpm': 'rpm-0.1.0.src.rpm',
+        'logs': ['logfile1.log', 'logfile2.log']
+    }
+    new_rpm_data: Dict[str, Union[str, List[str]]] = {
+        'rpm': ['rpm-0.2.0.x86_64.rpm', ' rpm-devel-0.2.0.x86_64.rpm'],
+        'srpm': 'rpm-0.2.0.src.rpm',
+        'logs': ['logfile3.log', 'logfile4.log']
+    }
+    patches_data: Dict[str, List[str]] = {
+        'deleted': ['del_patch1.patch', 'del_patch2.patch'],
+        'modified': ['mod_patch1.patch', 'mod_patch2.patch']
+    }
+    info_data: Dict[str, str] = {'Information text': 'some information text'}
+    info_data2: Dict[str, str] = {'Next Information': 'some another information text'}
 
     @pytest.fixture
     def results_store(self):
