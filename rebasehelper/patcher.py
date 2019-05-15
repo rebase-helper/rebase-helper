@@ -32,54 +32,18 @@ from rebasehelper.helpers.input_helper import InputHelper
 from rebasehelper.constants import SYSTEM_ENCODING
 
 
-patch_tools = {}
-
-
-def register_patch_tool(patch_tool):
-    patch_tools[patch_tool.CMD] = patch_tool
-    return patch_tool
-
-
-class PatchBase:
-
-    """
-    Class used for using several patching command tools, ...
-    Each method should overwrite method like run_check
-    """
-
-    @classmethod
-    def match(cls, cmd=None):  # pylint: disable=unused-argument
-        """Method checks whether it is usefull patch method"""
-        return NotImplementedError()
-
-    @classmethod
-    def run_patch(cls, old_dir, new_dir, rest_sources, patches, **kwargs):  # pylint: disable=unused-argument
-        """Method will check all patches in relevant package"""
-        return NotImplementedError()
-
-
-@register_patch_tool
-class GitPatchTool(PatchBase):
+class Patcher:
 
     """Class for git command used for patching old and new sources"""
 
-    CMD = 'git'
-    source_dir = ""
-    old_sources = ""
-    new_sources = ""
-    diff_cls = None
+    source_dir = None
+    old_sources = None
+    new_sources = None
     output_data = None
     old_repo = None
     new_repo = None
     non_interactive = False
     patches = []
-
-    @classmethod
-    def match(cls, cmd=None):
-        if cmd is not None and cmd == cls.CMD:
-            return True
-        else:
-            return False
 
     @staticmethod
     def decorate_patch_name(patch_name):
@@ -326,7 +290,7 @@ class GitPatchTool(PatchBase):
         return repo
 
     @classmethod
-    def run_patch(cls, old_dir, new_dir, rest_sources, patches, **kwargs):
+    def patch(cls, old_dir, new_dir, rest_sources, patches, **kwargs):
         """
         The function can be used for patching one
         directory against another
@@ -351,43 +315,3 @@ class GitPatchTool(PatchBase):
             cls.new_repo = git.Repo(new_dir)
 
         return cls._git_rebase()
-
-
-class Patcher:
-
-    """
-    Class representing a process of applying and generating rebased patch using specific tool.
-    """
-
-    def __init__(self, tool=None):
-        """
-        Constructor
-
-        :param tool: tool to be used. If not supported, raises NotImplementedError
-        :return: None
-        """
-        if tool is None:
-            raise TypeError("Expected argument 'tool' (pos 1) is missing")
-        self._patch_tool_name = tool
-        self._tool = None
-
-        for patch_tool in patch_tools.values():
-            if patch_tool.match(self._patch_tool_name):
-                self._tool = patch_tool
-
-        if self._tool is None:
-            raise NotImplementedError("Unsupported patch tool")
-
-    def patch(self, old_dir, new_dir, rest_sources, patches, **kwargs):
-        """
-        Apply patches and generate rebased patches if needed
-
-        :param old_dir: path to dir with old patches
-        :param new_dir: path to dir with new patches
-        :param patches: old patches
-        :param rebased_patches: rebased patches
-        :param kwargs: --
-        :return:
-        """
-        logger.verbose("Patching source by patch tool %s", self._patch_tool_name)
-        return self._tool.run_patch(old_dir, new_dir, rest_sources, patches, **kwargs)

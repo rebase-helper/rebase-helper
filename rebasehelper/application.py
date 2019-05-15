@@ -35,7 +35,7 @@ from rebasehelper.archive import Archive
 from rebasehelper.specfile import SpecFile, get_rebase_name
 from rebasehelper.logger import logger, log_formatter, debug_log_formatter, LoggerHelper, CustomLogger
 from rebasehelper import constants
-from rebasehelper.patch_helper import Patcher
+from rebasehelper.patcher import Patcher
 from rebasehelper.plugins.plugin_manager import plugin_manager
 from rebasehelper.plugins.checkers import CheckerCategory
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
@@ -437,14 +437,13 @@ class Application:
         return [old_dir, new_dir]
 
     def patch_sources(self, sources):
-        # Patch sources
-        patch = Patcher('git')
         try:
-            self.rebased_patches = patch.patch(sources[0],
-                                               sources[1],
-                                               self.old_rest_sources,
-                                               self.spec_file.get_applied_patches(),
-                                               **self.kwargs)
+            # Patch sources
+            self.rebased_patches = Patcher.patch(sources[0],
+                                                 sources[1],
+                                                 self.old_rest_sources,
+                                                 self.spec_file.get_applied_patches(),
+                                                 **self.kwargs)
         except RuntimeError:
             raise RebaseHelperError('Patching failed')
         self.rebase_spec_file.write_updated_patches(self.rebased_patches,
