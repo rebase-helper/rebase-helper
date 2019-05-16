@@ -39,7 +39,7 @@ class CustomHelpFormatter(argparse.HelpFormatter):
     def _expand_help(self, action):
         action.default = getattr(action, 'actual_default', None)
         if isinstance(action.default, list):
-            default_str = ','.join([str(c) for c in action.default])
+            default_str = ','.join(str(c) for c in action.default)
             action.default = default_str
         return super(CustomHelpFormatter, self)._expand_help(action)
 

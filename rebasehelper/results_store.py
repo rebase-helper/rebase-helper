@@ -25,7 +25,7 @@
 import copy
 
 
-class ResultsStore(object):
+class ResultsStore:
     """Class for storing information about results from rebase-helper actions."""
 
     RESULTS_INFORMATION = 'information'
@@ -52,7 +52,7 @@ class ResultsStore(object):
                 self.RESULTS_CHANGES_PATCH,
                 self.RESULTS_SUCCESS
         ):
-            raise ValueError('Trying to set unsupported type of results: %s!' % results_type)
+            raise ValueError('Trying to set unsupported type of results: {}!'.format(results_type))
 
         try:
             dict_to_update = self._data_store[results_type]

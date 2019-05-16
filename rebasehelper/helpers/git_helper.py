@@ -25,13 +25,12 @@
 import os
 
 import git
-import six
 
 from rebasehelper.logger import logger
 from rebasehelper.helpers.process_helper import ProcessHelper
 
 
-class GitHelper(object):
+class GitHelper:
 
     """Class which operates with git repositories"""
 
@@ -42,7 +41,7 @@ class GitHelper(object):
     @classmethod
     def get_user(cls):
         try:
-            return git.cmd.Git().config('user.name', get=True, stdout_as_string=six.PY3)
+            return git.cmd.Git().config('user.name', get=True, stdout_as_string=True)
         except git.GitCommandError:
             logger.warning("Failed to get configured git user name, using '%s'", cls.GIT_USER_NAME)
             return cls.GIT_USER_NAME
@@ -50,7 +49,7 @@ class GitHelper(object):
     @classmethod
     def get_email(cls):
         try:
-            return git.cmd.Git().config('user.email', get=True, stdout_as_string=six.PY3)
+            return git.cmd.Git().config('user.email', get=True, stdout_as_string=True)
         except git.GitCommandError:
             logger.warning("Failed to get configured git user email, using '%s'", cls.GIT_USER_EMAIL)
             return cls.GIT_USER_EMAIL

@@ -26,13 +26,11 @@ import os
 import subprocess
 import tempfile
 
-import six
-
-from rebasehelper.constants import DEFENC
+from rebasehelper.constants import SYSTEM_ENCODING
 from rebasehelper.logger import logger
 
 
-class ProcessHelper(object):
+class ProcessHelper:
 
     """Class for executing subprocesses."""
 
@@ -160,7 +158,7 @@ class ProcessHelper(object):
             except AttributeError:
                 spooled_in_file.close()
             else:
-                spooled_in_file.write(in_data.encode(DEFENC) if six.PY3 else in_data)
+                spooled_in_file.write(in_data.encode(SYSTEM_ENCODING))
                 spooled_in_file.seek(0)
                 in_file = spooled_in_file
                 close_in_file = True
@@ -190,7 +188,7 @@ class ProcessHelper(object):
             # read the output
             for line in sp.stdout:
                 try:
-                    out_file.write(line.decode(DEFENC) if six.PY3 else line)
+                    out_file.write(line.decode(SYSTEM_ENCODING))
                 except TypeError:
                     out_file.write(line)
             # TODO: Need to figure out how to send output to stdout (without logger) and to logger
@@ -212,6 +210,6 @@ class ProcessHelper(object):
 
         sp.wait()
 
-        logger.debug("subprocess exited with return code %s", six.text_type(sp.returncode))
+        logger.debug("subprocess exited with return code %s", str(sp.returncode))
 
         return sp.returncode

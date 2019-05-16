@@ -13,7 +13,7 @@ import twine.commands.upload
 from six.moves import BaseHTTPServer
 
 
-class PyPI(object):
+class PyPI:
 
     @staticmethod
     def release(url, tag):
@@ -27,7 +27,7 @@ class PyPI(object):
             twine.commands.upload.main([os.path.join(wd, 'dist', '*')])
 
 
-class HTTPServer(object):
+class HTTPServer:
 
     def __init__(self, port):
         class RequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):

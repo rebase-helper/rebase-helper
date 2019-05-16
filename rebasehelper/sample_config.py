@@ -31,7 +31,7 @@ from rebasehelper.cli import CLI
 from rebasehelper.constants import CONFIG_PATH, CONFIG_FILENAME
 
 
-class SampleConfig(object):
+class SampleConfig:
 
     DESCRIPTION = [
         '# sample configuration file for rebase-helper',

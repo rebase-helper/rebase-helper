@@ -33,7 +33,7 @@ from rebasehelper.plugins.plugin_manager import plugin_manager
 from rebasehelper.results_store import ResultsStore
 
 
-class TestOutputTool(object):
+class TestOutputTool:
     @pytest.fixture
     def results_file_path(self, workdir):
         return os.path.join(workdir, 'output_file')

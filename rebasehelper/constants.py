@@ -62,5 +62,4 @@ PACKAGE_CATEGORIES = {
     'R': re.compile(r'^R-'),
 }
 
-DEFENC = locale.getpreferredencoding()
-DEFENC = 'utf-8' if DEFENC == 'ascii' else DEFENC
+SYSTEM_ENCODING = locale.getpreferredencoding()

@@ -22,25 +22,23 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
+import configparser
 import os
 
 import pytest
-import six
-
-from six.moves import configparser
 
 from rebasehelper.cli import CLI
 from rebasehelper.config import Config
 
 
-class TestConfig(object):
+class TestConfig:
     CONFIG_FILE = 'test_config.cfg'
 
     @pytest.fixture
     def config_file(self, config_args):
         config = configparser.ConfigParser()
         config.add_section('Section1')
-        for key, value in six.iteritems(config_args):
+        for key, value in config_args.items():
             config.set('Section1', key, value)
         with open(self.CONFIG_FILE, 'w') as configfile:
             config.write(configfile)
@@ -59,7 +57,7 @@ class TestConfig(object):
     ])
     def test_get_config(self, config_args, config_file):
         config = Config(config_file)
-        expected_result = {k.replace('-', '_'): v for k, v in six.iteritems(config_args)}
+        expected_result = {k.replace('-', '_'): v for k, v in config_args.items()}
         assert expected_result == config.config
 
     @pytest.mark.parametrize('cli_args, config_args, merged', [
@@ -83,9 +81,9 @@ class TestConfig(object):
             'CLI with config',
     ])
     def test_merge(self, cli_args, merged, config_file):
-        expected_result = {k.replace('-', '_'): v for k, v in six.iteritems(merged)}
+        expected_result = {k.replace('-', '_'): v for k, v in merged.items()}
         cli = CLI(cli_args)
         config = Config(config_file)
         config.merge(cli)
         # True if expected_result is a subset of conf.config
-        assert six.viewitems(expected_result) <= six.viewitems(config.config)
+        assert expected_result.items() <= config.config.items()

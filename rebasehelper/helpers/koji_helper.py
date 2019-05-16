@@ -28,8 +28,6 @@ import string
 import sys
 import time
 
-import six
-
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.logger import logger
 from rebasehelper.helpers.console_helper import ConsoleHelper
@@ -45,7 +43,7 @@ else:
     koji_helper_functional = True
 
 
-class KojiHelper(object):
+class KojiHelper:
 
     functional = koji_helper_functional
 
@@ -79,7 +77,7 @@ class KojiHelper(object):
         try:
             session.krb_login()
         except exc as e:
-            raise RebaseHelperError('Login failed: {}'.format(six.text_type(e)))
+            raise RebaseHelperError('Login failed: {}'.format(str(e)))
         else:
             return session
 
@@ -100,15 +98,15 @@ class KojiHelper(object):
         """
         def progress(uploaded, total, chunksize, t1, t2):  # pylint: disable=unused-argument
             DownloadHelper.progress(total, uploaded, upload_start)
-        suffix = ''.join([random.choice(string.ascii_letters) for _ in range(8)])
-        path = os.path.join('cli-build', six.text_type(time.time()), suffix)
+        suffix = ''.join(random.choice(string.ascii_letters) for _ in range(8))
+        path = os.path.join('cli-build', str(time.time()), suffix)
         logger.info('Uploading SRPM')
         try:
             try:
                 upload_start = time.time()
                 session.uploadWrapper(srpm, path, callback=progress)
             except koji.GenericError as e:
-                raise RebaseHelperError('Upload failed: {}'.format(six.text_type(e)))
+                raise RebaseHelperError('Upload failed: {}'.format(str(e)))
         finally:
             sys.stdout.write('\n')
             sys.stdout.flush()

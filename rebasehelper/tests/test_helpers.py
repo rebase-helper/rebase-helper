@@ -22,6 +22,7 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
+import io
 import os
 import random
 import string
@@ -30,8 +31,6 @@ import sys
 import git
 import rpm
 import pytest
-
-from six import StringIO
 
 from rebasehelper.helpers.git_helper import GitHelper
 from rebasehelper.helpers.console_helper import ConsoleHelper
@@ -45,7 +44,7 @@ from rebasehelper.helpers.lookaside_cache_helper import LookasideCacheHelper
 from rebasehelper.exceptions import DownloadError
 
 
-class TestGitHelper(object):
+class TestGitHelper:
 
     def write_config_file(self, config_file, name, email):
         with open(config_file, 'w') as f:
@@ -106,7 +105,7 @@ class TestGitHelper(object):
             os.environ = env
 
 
-class TestConsoleHelper(object):
+class TestConsoleHelper:
 
     def test_capture_output(self):
         def write():
@@ -150,7 +149,7 @@ class TestConsoleHelper(object):
         assert ConsoleHelper.color_is_light(rgb_tuple, bit_width) == expected_result
 
 
-class TestInputHelper(object):
+class TestInputHelper:
 
     @pytest.mark.parametrize('suffix, answer, kwargs, expected_input', [
         (' [Y/n]? ', 'yes', None, True),
@@ -171,13 +170,13 @@ class TestInputHelper(object):
     ])
     def test_get_message(self, monkeypatch, capsys, suffix, answer, kwargs, expected_input):
         question = 'bla bla'
-        monkeypatch.setattr('sys.stdin', StringIO(answer))
+        monkeypatch.setattr('sys.stdin', io.StringIO(answer))
         inp = InputHelper.get_message(question, **(kwargs or {}))
         assert capsys.readouterr()[0] == question + suffix
         assert inp is expected_input
 
 
-class TestDownloadHelper(object):
+class TestDownloadHelper:
     """ DownloadHelper tests """
 
     def test_keyboard_interrupt_situation(self, monkeypatch):
@@ -211,7 +210,7 @@ class TestDownloadHelper(object):
         """
         Test that progress of a download is shown correctly. Test the case when size parameters are passed as integers.
         """
-        buf = StringIO()
+        buf = io.StringIO()
         monkeypatch.setattr('sys.stdout', buf)
         monkeypatch.setattr('time.time', lambda: 10.0)
         DownloadHelper.progress(total, downloaded, 0.0)
@@ -259,10 +258,10 @@ class TestDownloadHelper(object):
         assert not os.path.isfile(local_file)
 
 
-class TestProcessHelper(object):
+class TestProcessHelper:
     """ ProcessHelper tests """
 
-    class TestRunSubprocess(object):
+    class TestRunSubprocess:
         """ ProcessHelper - run_subprocess() tests """
         TEMP_FILE = "temp_file"
         TEMP_DIR = "temp_dir"
@@ -287,7 +286,7 @@ class TestProcessHelper(object):
             assert open(self.OUT_FILE).readline().strip('\n') == self.PHRASE
 
         def test_simple_cmd_with_redirected_output_fileobject(self):
-            buff = StringIO()
+            buff = io.StringIO()
             ret = ProcessHelper.run_subprocess(self.ECHO_COMMAND,
                                                output_file=buff)
             assert ret == 0
@@ -310,7 +309,7 @@ class TestProcessHelper(object):
             assert open(self.OUT_FILE).readline().strip('\n') == self.PHRASE
 
         def test_simple_cmd_with_input_fileobject_and_redirected_output_path(self):
-            in_buff = StringIO()
+            in_buff = io.StringIO()
             in_buff.write(self.PHRASE)
 
             assert not os.path.exists(self.IN_FILE)
@@ -326,7 +325,7 @@ class TestProcessHelper(object):
             assert open(self.OUT_FILE).readline().strip('\n') == self.PHRASE
 
         def test_simple_cmd_with_input_path_and_redirected_output_fileobject(self):
-            out_buff = StringIO()
+            out_buff = io.StringIO()
             with open(self.IN_FILE, 'w') as f:
                 f.write(self.PHRASE)
 
@@ -343,8 +342,8 @@ class TestProcessHelper(object):
             out_buff.close()
 
         def test_simple_cmd_with_input_fileobject_and_redirected_output_fileobject(self):
-            out_buff = StringIO()
-            in_buff = StringIO()
+            out_buff = io.StringIO()
+            in_buff = io.StringIO()
             in_buff.write(self.PHRASE)
 
             assert not os.path.exists(self.IN_FILE)
@@ -361,7 +360,7 @@ class TestProcessHelper(object):
             assert out_buff.readline().strip('\n') == self.PHRASE
             out_buff.close()
 
-    class TestRunSubprocessCwd(object):
+    class TestRunSubprocessCwd:
         """ ProcessHelper - run_subprocess_cwd() tests """
         TEMP_FILE = "temp_file"
         TEMP_DIR = "temp_dir"
@@ -389,7 +388,7 @@ class TestProcessHelper(object):
             assert os.path.exists(self.OUT_FILE)
             assert open(self.OUT_FILE).readline().strip("\n") == self.TEMP_FILE
 
-    class TestRunSubprocessCwdEnv(object):
+    class TestRunSubprocessCwdEnv:
         """ ProcessHelper - run_subprocess_cwd_env() tests """
         OUT_FILE = "output_file"
         PHRASE = "hello world"
@@ -433,7 +432,7 @@ class TestProcessHelper(object):
             assert open(self.OUT_FILE).readline().strip("\n") == self.PHRASE
 
 
-class TestPathHelper(object):
+class TestPathHelper:
     """ PathHelper tests """
 
     @pytest.fixture
@@ -463,7 +462,7 @@ class TestPathHelper(object):
 
         return files
 
-    class TestFindFirstDirWithFile(object):
+    class TestFindFirstDirWithFile:
         """ PathHelper - find_first_dir_with_file() tests """
         def test_find_file(self, filelist):
             assert PathHelper.find_first_dir_with_file(
@@ -493,7 +492,7 @@ class TestPathHelper(object):
             assert PathHelper.find_first_dir_with_file(
                 "dir1/bar", "pythooon") is None
 
-    class TestFindFirstFile(object):
+    class TestFindFirstFile:
         """ PathHelper - find_first_file() tests """
         def test_find_file(self, filelist):
             assert PathHelper.find_first_file(
@@ -527,7 +526,7 @@ class TestPathHelper(object):
             assert PathHelper.find_first_file(os.path.curdir, "*.spec") == os.path.abspath(filelist[-1])
 
 
-class TestRpmHelper(object):
+class TestRpmHelper:
     """ RpmHelper class tests. """
 
     def test_is_package_installed_existing(self):
@@ -580,7 +579,7 @@ class TestRpmHelper(object):
                                                     release=release, arch=arch)
 
 
-class TestMacroHelper(object):
+class TestMacroHelper:
 
     def test_get_macros(self):
         rpm.addMacro('test_macro', 'test_macro value')
@@ -592,7 +591,7 @@ class TestMacroHelper(object):
         assert macros[0]['level'] == -1
 
 
-class TestLookasideCacheHelper(object):
+class TestLookasideCacheHelper:
 
     TEST_FILES = [
         'documentation.tar.xz',

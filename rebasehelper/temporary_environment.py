@@ -28,7 +28,7 @@ from rebasehelper.logger import logger
 from rebasehelper.helpers.path_helper import PathHelper
 
 
-class TemporaryEnvironment(object):
+class TemporaryEnvironment:
 
     """Class representing a temporary environment (directory) that can be used as a workspace.
 

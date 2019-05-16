@@ -27,7 +27,7 @@ import pytest
 from rebasehelper.results_store import ResultsStore
 
 
-class TestResultsStore(object):
+class TestResultsStore:
     old_rpm_data = {'rpm': ['rpm-0.1.0.x86_64.rpm', ' rpm-devel-0.1.0.x86_64.rpm'], 'srpm': 'rpm-0.1.0.src.rpm',
                     'logs': ['logfile1.log', 'logfile2.log']}
     new_rpm_data = {'rpm': ['rpm-0.2.0.x86_64.rpm', ' rpm-devel-0.2.0.x86_64.rpm'], 'srpm': 'rpm-0.2.0.src.rpm',

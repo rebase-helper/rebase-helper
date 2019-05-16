@@ -22,8 +22,6 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-import six
-
 from rebasehelper.plugins.plugin import Plugin
 from rebasehelper.plugins.plugin_collection import PluginCollection
 from rebasehelper.logger import logger
@@ -69,7 +67,7 @@ class VersioneerCollection(PluginCollection):
             logger.info("Running '%s' versioneer", versioneer)
             return self.plugins[versioneer].run(package_name)
         # run all versioneers, except those disabled in config, categorized first
-        allowed_versioneers = [v for k, v in six.iteritems(self.plugins) if v and k not in versioneer_blacklist]
+        allowed_versioneers = [v for k, v in self.plugins.items() if v and k not in versioneer_blacklist]
         for versioneer in sorted(allowed_versioneers, key=lambda v: not v.CATEGORIES):
             categories = versioneer.CATEGORIES
             if not categories or category in categories:

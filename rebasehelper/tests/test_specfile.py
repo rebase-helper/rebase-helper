@@ -35,7 +35,7 @@ from rebasehelper.plugins.spec_hooks.replace_old_version import ReplaceOldVersio
 from rebasehelper.plugins.spec_hooks.paths_to_rpm_macros import PathsToRPMMacros
 
 
-class TestSpecFile(object):
+class TestSpecFile:
     NAME = 'test'
     VERSION = '1.0.2'
     OLD_ARCHIVE = NAME + '-' + VERSION + '.tar.xz'

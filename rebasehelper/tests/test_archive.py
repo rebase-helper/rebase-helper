@@ -29,7 +29,7 @@ import pytest
 from rebasehelper.archive import Archive
 
 
-class TestArchive(object):
+class TestArchive:
     TAR_GZ = 'archive.tar.gz'
     TGZ = 'archive.tgz'
     TAR_XZ = 'archive.tar.xz'

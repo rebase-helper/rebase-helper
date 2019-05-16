@@ -23,7 +23,6 @@
 #          František Nečas <fifinecas@seznam.cz>
 
 import os
-import six
 
 from rebasehelper.plugins.plugin import Plugin
 from rebasehelper.plugins.plugin_collection import PluginCollection
@@ -83,7 +82,7 @@ class BaseOutputTool(Plugin):
 
         if not app.conf.patch_only:
             if 'success' in result:
-                logger_output.success('\n%s' % result['success'])
+                logger_output.success('\n%s', result['success'])
             # Error is printed out through exception caught in CliHelper.run()
         else:
             if results_store.get_patches()['success']:
@@ -95,8 +94,8 @@ class BaseOutputTool(Plugin):
     def print_important_checkers_output(cls):
         """Iterates over all checkers output to highlight important checkers warning"""
         checkers_results = results_store.get_checkers()
-        for check_tool in six.itervalues(cls.manager.checkers.plugins):
-            for check, data in sorted(six.iteritems(checkers_results)):
+        for check_tool in cls.manager.checkers.plugins.values():
+            for check, data in sorted(checkers_results.items()):
                 if check == check_tool.name:
                     out = check_tool.get_important_changes(data)
                     if out:
@@ -105,7 +104,7 @@ class BaseOutputTool(Plugin):
     @classmethod
     def print_report_file_path(cls):
         """Print path to the report file"""
-        logger_output.heading('%s report:' % cls.name)
+        logger_output.heading('%s report:', cls.name)
         logger_output.info('%s', cls.prepend_results_dir_name('report.' + cls.EXTENSION))
 
     @classmethod
@@ -117,7 +116,7 @@ class BaseOutputTool(Plugin):
             'deleted': logger_output.success,
         }
 
-        for patch_type, logger_method in six.iteritems(patch_dict):
+        for patch_type, logger_method in patch_dict.items():
             cls.print_patches_section_cli(logger_method, patch_type)
 
     @classmethod

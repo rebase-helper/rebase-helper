@@ -27,9 +27,8 @@ import re
 import tempfile
 
 import rpm
-import six
 
-from rebasehelper.constants import DEFENC
+from rebasehelper.constants import SYSTEM_ENCODING
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.logger import logger
 from rebasehelper.helpers.macro_helper import MacroHelper
@@ -37,7 +36,7 @@ from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.helpers.console_helper import ConsoleHelper
 
 
-class RpmHelper(object):
+class RpmHelper:
 
     """Class for working with RPM database and packages."""
 
@@ -171,7 +170,7 @@ class RpmHelper(object):
         with open(path, 'rb') as orig:
             with tempfile.NamedTemporaryFile() as tmp:
                 # remove BuildArch to workaround rpm bug
-                tmp.write(b''.join([l for l in orig.readlines() if not l.startswith(b'BuildArch')]))
+                tmp.write(b''.join(l for l in orig.readlines() if not l.startswith(b'BuildArch')))
                 tmp.flush()
                 capturer = None
                 try:
@@ -186,6 +185,6 @@ class RpmHelper(object):
 
     @classmethod
     def decode(cls, data):
-        if six.PY3 and isinstance(data, bytes):
-            return data.decode(DEFENC)
+        if isinstance(data, bytes):
+            return data.decode(SYSTEM_ENCODING)
         return data

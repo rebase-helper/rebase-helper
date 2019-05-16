@@ -22,12 +22,10 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-from __future__ import print_function
 import os
 import re
 
 import rpm
-import six
 
 from rebasehelper.logger import logger
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
@@ -196,7 +194,7 @@ class AbiPkgDiff(BaseChecker):
             return result_dict
 
         pkgs = {}
-        for pkg, ret_code in six.iteritems(reports):
+        for pkg, ret_code in reports.items():
             # If no abi changes for the package, store empty dictionary
             if ret_code:
                 with open(os.path.join(cls.results_dir, pkg + '.txt'), 'r') as f:
@@ -210,18 +208,18 @@ class AbiPkgDiff(BaseChecker):
         if not data['abi_changes']:
             output_lines.append('No ABI changes occured.')
             return output_lines
-        for pkg_name, pkg_changes in sorted(six.iteritems(data['packages'])):
+        for pkg_name, pkg_changes in sorted(data['packages'].items()):
             if not pkg_changes:
                 continue
             output_lines.append("ABI changes in {}:".format(pkg_name))
-            for filename, file_changes in six.iteritems(pkg_changes):
+            for filename, file_changes in pkg_changes.items():
                 output_lines.append(" - {}:".format(filename))
-                for sum_title, changes_list in sorted(six.iteritems(file_changes)):
+                for sum_title, changes_list in sorted(file_changes.items()):
                     if not changes_list:
                         continue
                     output_lines.append("   - {}:".format(sum_title))
 
-                    for change_name, change_info in sorted(six.iteritems(changes_list)):
+                    for change_name, change_info in sorted(changes_list.items()):
                         if change_info['filtered_out']:
                             output_lines.append("     - {} {} (filtered out {})".format(change_name,
                                                                                         change_info['count'],
@@ -229,7 +227,7 @@ class AbiPkgDiff(BaseChecker):
                         else:
                             output_lines.append("     - {} {}".format(change_name, change_info['count']))
         output_lines.append("Details in {}:".format(data['path']))
-        for pkg_name, pkg_changes in sorted(six.iteritems(data['packages'])):
+        for pkg_name, pkg_changes in sorted(data['packages'].items()):
             output_lines.append(" - {}.txt".format(pkg_name))
 
         return output_lines

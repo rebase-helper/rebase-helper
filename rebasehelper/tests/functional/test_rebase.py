@@ -47,7 +47,7 @@ def initialized_git_repo(workdir):
     return repo
 
 
-class TestRebase(object):
+class TestRebase:
 
     TEST_FILES = [
         'rebase/test.spec',
@@ -136,7 +136,7 @@ class TestRebase(object):
         assert '- New upstream release {}'.format(self.NEW_VERSION) in repo.commit().summary
 
 
-class TestBuildLogHooks(object):
+class TestBuildLogHooks:
     TEST_FILES = [
         'build-log-hooks/test-build-log-hooks.spec'
     ]

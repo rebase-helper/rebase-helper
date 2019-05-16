@@ -25,19 +25,17 @@
 import gzip
 import os
 import time
+import urllib
 
 import copr
 import pyquery
-import six
-
-from six.moves import urllib
 
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.logger import logger
 from rebasehelper.helpers.download_helper import DownloadHelper
 
 
-class CoprHelper(object):
+class CoprHelper:
 
     @classmethod
     def get_client(cls):
@@ -127,7 +125,7 @@ class CoprHelper(object):
                 'Failed to get copr build details for {}: {}'.format(build_id, str(e)))
         rpms = []
         logs = []
-        for _, url in six.iteritems(result.data['results_by_chroot']):
+        for _, url in result.data['results_by_chroot'].items():
             url = url if url.endswith('/') else url + '/'
             d = pyquery.PyQuery(url)
             d.make_links_absolute()

@@ -22,12 +22,10 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-from __future__ import absolute_import
-
 import os
-import six
-import koji  # pylint: disable=import-error
 import re
+
+import koji  # pylint: disable=import-error
 
 # unused import needed to prevent loading koji buildtool with Koji < 1.13
 import koji_cli.lib  # pylint: disable=import-error,unused-import
@@ -71,7 +69,7 @@ class Koji(BuildToolBase):
             int: Mock exit code or -1 if any task failed, otherwise None.
 
         """
-        for task_id, state in six.iteritems(task_dict):
+        for task_id, state in task_dict.items():
             if state == koji.TASK_STATES['FAILED']:
                 try:
                     session.getTaskResult(task_id)
@@ -79,7 +77,7 @@ class Koji(BuildToolBase):
                     # typical error message:
                     #   BuildError: error building package (arch noarch),
                     #   mock exited with status 1; see build.log for more information
-                    match = re.search(r'mock exited with status (\d+)', six.text_type(e))
+                    match = re.search(r'mock exited with status (\d+)', str(e))
                     if match:
                         return int(match.group(1))
                     else:

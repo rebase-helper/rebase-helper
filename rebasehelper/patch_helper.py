@@ -22,16 +22,14 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-from __future__ import print_function
 import os
 
 import git
-import six
 
 from rebasehelper.logger import logger
 from rebasehelper.helpers.git_helper import GitHelper
 from rebasehelper.helpers.input_helper import InputHelper
-from rebasehelper.constants import DEFENC
+from rebasehelper.constants import SYSTEM_ENCODING
 
 
 patch_tools = {}
@@ -42,7 +40,7 @@ def register_patch_tool(patch_tool):
     return patch_tool
 
 
-class PatchBase(object):
+class PatchBase:
 
     """
     Class used for using several patching command tools, ...
@@ -100,7 +98,7 @@ class GitPatchTool(PatchBase):
 
     @classmethod
     def strip_patch_name(cls, diff, patch_name):
-        token = '\n\n{0}'.format(cls.decorate_patch_name(patch_name)).encode(DEFENC)
+        token = '\n\n{0}'.format(cls.decorate_patch_name(patch_name)).encode(SYSTEM_ENCODING)
         try:
             idx = diff.index(token)
             return diff[:idx] + diff[idx + len(token):]
@@ -174,7 +172,7 @@ class GitPatchTool(PatchBase):
                 cls.output_data = cls.old_repo.git.rebase(root_commit, last_commit,
                                                           strategy_option=strategy_option,
                                                           onto='{}/master'.format(upstream),
-                                                          stdout_as_string=six.PY3)
+                                                          stdout_as_string=True)
             except git.GitCommandError as e:
                 ret_code = e.status
                 cls.output_data = e.stdout
@@ -183,7 +181,7 @@ class GitPatchTool(PatchBase):
         else:
             logger.info('git-rebase operation continues...')
             try:
-                cls.output_data = cls.old_repo.git.rebase('--continue', stdout_as_string=six.PY3)
+                cls.output_data = cls.old_repo.git.rebase('--continue', stdout_as_string=True)
             except git.GitCommandError as e:
                 ret_code = e.status
                 cls.output_data = e.stdout
@@ -197,7 +195,7 @@ class GitPatchTool(PatchBase):
             if not cls.old_repo.index.unmerged_blobs() and not cls.old_repo.index.diff(cls.old_repo.commit()):
                 # empty commit - conflict has been automatically resolved - skip
                 try:
-                    cls.output_data = cls.old_repo.git.rebase(skip=True, stdout_as_string=six.PY3)
+                    cls.output_data = cls.old_repo.git.rebase(skip=True, stdout_as_string=True)
                 except git.GitCommandError as e:
                     ret_code = e.status
                     cls.output_data = e.stdout
@@ -245,7 +243,7 @@ class GitPatchTool(PatchBase):
             if inapplicable:
                 inapplicable_patches.append(patch_name)
                 try:
-                    cls.output_data = cls.old_repo.git.rebase(skip=True, stdout_as_string=six.PY3)
+                    cls.output_data = cls.old_repo.git.rebase(skip=True, stdout_as_string=True)
                 except git.GitCommandError as e:
                     ret_code = e.status
                     cls.output_data = e.stdout
@@ -260,9 +258,9 @@ class GitPatchTool(PatchBase):
                     raise KeyboardInterrupt
             try:
                 if diff:
-                    cls.output_data = cls.old_repo.git.rebase('--continue', stdout_as_string=six.PY3)
+                    cls.output_data = cls.old_repo.git.rebase('--continue', stdout_as_string=True)
                 else:
-                    cls.output_data = cls.old_repo.git.rebase(skip=True, stdout_as_string=six.PY3)
+                    cls.output_data = cls.old_repo.git.rebase(skip=True, stdout_as_string=True)
             except git.GitCommandError as e:
                 ret_code = e.status
                 cls.output_data = e.stdout
@@ -355,7 +353,7 @@ class GitPatchTool(PatchBase):
         return cls._git_rebase()
 
 
-class Patcher(object):
+class Patcher:
 
     """
     Class representing a process of applying and generating rebased patch using specific tool.

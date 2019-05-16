@@ -22,12 +22,10 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-import six
-
 from rebasehelper.plugins.plugin_loader import PluginLoader
 
 
-class PluginCollection(object):
+class PluginCollection:
     def __init__(self, entrypoint, manager):
         self.plugins = PluginLoader.load(entrypoint, manager)
 
@@ -35,10 +33,10 @@ class PluginCollection(object):
         return list(self.plugins)
 
     def get_supported_plugins(self):
-        return [k for k, v in six.iteritems(self.plugins) if v]
+        return [k for k, v in self.plugins.items() if v]
 
     def get_default_plugins(self, return_one=False):
-        default = [k for k, v in six.iteritems(self.plugins) if v and getattr(v, 'DEFAULT', False)]
+        default = [k for k, v in self.plugins.items() if v and getattr(v, 'DEFAULT', False)]
         return default if not return_one else default[0] if default else None
 
     def get_plugin(self, tool):
@@ -55,7 +53,7 @@ class PluginCollection(object):
 
         """
         options = []
-        for plugin in six.itervalues(self.plugins):
+        for plugin in self.plugins.values():
             if plugin:
                 options.extend(plugin.OPTIONS)
 

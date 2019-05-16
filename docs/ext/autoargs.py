@@ -1,5 +1,4 @@
 import re
-import six
 
 from argparse import ArgumentParser, SUPPRESS
 
@@ -54,7 +53,7 @@ class AutoArgsDirective(Directive):
         replacements = dict(prog=r'\\ :program:`\1`\\ ',
                             default=r'\\ ``\1``\\ ',
                             metavar=r'\\ ``\1``\\ ')
-        for k, v in six.iteritems(replacements):
+        for k, v in replacements.items():
             text = re.sub(template.format(k), v, text or '')
         return text
 
@@ -275,7 +274,7 @@ class AutoArgsDirective(Directive):
             actions = parser._get_positional_actions() + parser._get_optional_actions()
             actions = [a for a in actions if a.help is not SUPPRESS]
             for action in actions:
-                cc = [v for k, v in six.iteritems(custom_content) if k in action.option_strings]
+                cc = [v for k, v in custom_content.items() if k in action.option_strings]
                 result.append(self._build_option(parser, action, cc[0] if cc else None))
         else:
             for group in parser._action_groups:
@@ -284,7 +283,7 @@ class AutoArgsDirective(Directive):
                     title = nodes.title(text=group.title.capitalize())
                     options = nodes.container()
                     for action in actions:
-                        cc = [v for k, v in six.iteritems(custom_content) if k in action.option_strings]
+                        cc = [v for k, v in custom_content.items() if k in action.option_strings]
                         options.append(self._build_option(parser, action, cc[0] if cc else None))
                     result.append(nodes.section('', title, options, ids=[group.title.lower()]))
         return result

@@ -32,7 +32,7 @@ from rebasehelper.application import Application
 from rebasehelper import constants
 
 
-class TestApplication(object):
+class TestApplication:
     OLD_SOURCES = 'test-1.0.2.tar.xz'
     NEW_SOURCES = 'test-1.0.3.tar.xz'
     SPEC_FILE = 'test.spec'

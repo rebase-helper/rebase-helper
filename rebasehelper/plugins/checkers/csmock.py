@@ -22,10 +22,8 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-from __future__ import print_function
+import io
 import os
-
-import six
 
 from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.helpers.path_helper import PathHelper
@@ -64,7 +62,7 @@ class CsMock(BaseChecker):
             cmd.append(old_pkgs)
             cmd.append(new_pkgs)
             cmd.extend(['-o', results_dir])
-            output = six.StringIO()
+            output = io.StringIO()
             try:
                 ProcessHelper.run_subprocess(cmd, output_file=output)
             except OSError:
@@ -84,7 +82,7 @@ class CsMock(BaseChecker):
         """
         output_lines = [cls.get_underlined_title("csmock")]
         output_lines.append("Details in {}:".format(data['path']))
-        for key, files_list in six.iteritems(data):
+        for key, files_list in data.items():
             if key in ['error', 'txt', 'log'] and files_list:
                 for f in files_list:
                     output_lines.append(" - {}".format(os.path.basename(f)))

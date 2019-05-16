@@ -43,7 +43,7 @@ Example
            :param spec_file: SpecFile object representing original SPEC file
            :param rebase_spec_file: SpecFile object representing rebased SPEC file
            """
-           rebase_spec_file.spec_content.insert(0, '# processed by %s\n' % cls.NAME)
+           rebase_spec_file.spec_content.section('%package').insert(0, '# processed by {}\n'.format(cls.NAME))
            rebase_spec_file.save()
 
 .. code-block:: python

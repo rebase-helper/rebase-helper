@@ -22,19 +22,12 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-from __future__ import print_function
-import tarfile
-import zipfile
 import bz2
+import lzma
 import os
 import shutil
-
-import six
-
-try:
-    import lzma
-except ImportError:
-    from backports import lzma
+import tarfile
+import zipfile
 
 from rebasehelper.logger import logger
 
@@ -48,7 +41,7 @@ def register_archive_type(archive):
     return archive
 
 
-class ArchiveTypeBase(object):
+class ArchiveTypeBase:
     """ Base class for various archive types """
     EXTENSION = ""
 
@@ -220,7 +213,7 @@ class GemPseudoArchiveType(ArchiveTypeBase):
         shutil.copy(filename, final_dir)
 
 
-class Archive(object):
+class Archive:
 
     """ Class representing an archive with sources """
 
@@ -250,14 +243,9 @@ class Archive(object):
         logger.verbose("Extracting '%s' into '%s'", self._filename, path)
 
         try:
-            LZMAError = lzma.LZMAError
-        except AttributeError:
-            LZMAError = lzma.error
-
-        try:
             archive = self._archive_type.open(self._filename)
-        except (tarfile.ReadError, LZMAError) as e:
-            raise IOError(six.text_type(e))
+        except (EOFError, tarfile.ReadError, lzma.LZMAError) as e:
+            raise IOError(str(e))
 
         self._archive_type.extract(archive, self._filename, path)
         try:

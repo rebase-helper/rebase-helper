@@ -23,7 +23,7 @@
 #          František Nečas <fifinecas@seznam.cz>
 
 
-class Plugin(object):
+class Plugin:
     name = None
     manager = None
 

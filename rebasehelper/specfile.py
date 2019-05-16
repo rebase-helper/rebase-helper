@@ -22,22 +22,19 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-from __future__ import print_function
 import argparse
 import itertools
 import os
 import re
-import shutil
 import shlex
+import shutil
+import urllib
 
 import rpm
-import six
 
 from datetime import date
 from difflib import SequenceMatcher
 from operator import itemgetter
-
-from six.moves import urllib
 
 from rebasehelper import constants
 from rebasehelper.logger import logger
@@ -73,7 +70,7 @@ class PatchList(list):
         return super(PatchList, self).__getitem__(self._get_index_list(item))
 
 
-class PatchObject(object):
+class PatchObject:
 
     """Class represents set of information about patches"""
 
@@ -103,7 +100,7 @@ class PatchObject(object):
         return self.strip
 
 
-class SpecContent(object):
+class SpecContent:
     """Class representing content of a SPEC file."""
 
     SECTION_HEADERS = [
@@ -216,7 +213,7 @@ class SpecContent(object):
         return sections
 
 
-class SpecFile(object):
+class SpecFile:
 
     """Class representing a SPEC file"""
 
@@ -253,7 +250,7 @@ class SpecFile(object):
             LookasideCacheHelper.download('fedpkg', os.path.dirname(self.path), self.get_package_name())
         except LookasideCacheError as e:
             logger.verbose("Downloading sources from lookaside cache failed. "
-                           "Reason: %s.", six.text_type(e))
+                           "Reason: %s.", str(e))
 
         # filter out only sources with URL
         remote_files = [source for source in self.sources if bool(urllib.parse.urlparse(source).scheme)]
@@ -276,7 +273,7 @@ class SpecFile(object):
         """
         def guess_category():
             for pkg in self.spc.packages:
-                for category, regexp in six.iteritems(constants.PACKAGE_CATEGORIES):
+                for category, regexp in constants.PACKAGE_CATEGORIES.items():
                     if regexp.match(RpmHelper.decode(pkg.header[rpm.RPMTAG_NAME])):
                         return category
                     for provide in pkg.header[rpm.RPMTAG_PROVIDENAME]:
@@ -965,8 +962,8 @@ class SpecFile(object):
 
         def _sync_macros(s):
             """Makes all macros present in a string up-to-date in rpm context"""
-            macros = set([m for m, _ in _find_macros(s)])
-            macros.update([m for m, _ in _find_macros(_expand_macros(s))])
+            macros = {m for m, _ in _find_macros(s)}
+            macros.update(m for m, _ in _find_macros(_expand_macros(s)))
             for macro in macros:
                 m = '%{{{}}}'.format(macro)
                 while MacroHelper.expand(m, m) != m:
@@ -1222,7 +1219,7 @@ class SpecFile(object):
             with open(self.path) as f:
                 content = f.read()
         except IOError:
-            raise RebaseHelperError("Unable to open and read SPEC file '%s'" % self.path)
+            raise RebaseHelperError("Unable to open and read SPEC file '{}'".format(self.path))
         self.spec_content = SpecContent(content)
 
     def _write_spec_file_to_disc(self):
@@ -1232,7 +1229,7 @@ class SpecFile(object):
             with open(self.path, "w") as f:
                 f.write(str(self.spec_content))
         except IOError:
-            raise RebaseHelperError("Unable to write updated data to SPEC file '%s'" % self.path)
+            raise RebaseHelperError("Unable to write updated data to SPEC file '{}'".format(self.path))
 
     def copy(self, new_path):
         """Creates a copy of the current object and copies the SPEC file

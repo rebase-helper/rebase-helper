@@ -22,10 +22,9 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
+import io
 import os
 import re
-
-import six
 
 from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.plugins.checkers import BaseChecker
@@ -68,7 +67,7 @@ class LicenseCheck(BaseChecker):
         diffs = []
         possible_license_names = r'COPYING|LICENSE|LICENCE|LICENSING|BSD|(L)?GPL(v[23][+]?)?'
         for source_dir in [old_dir, new_dir]:
-            out = six.StringIO()
+            out = io.StringIO()
             ProcessHelper.run_subprocess(["/usr/bin/licensecheck", source_dir, "--machine", "--recursive"],
                                          output_file=out, ignore_stderr=True)
             diff = {}
@@ -84,9 +83,9 @@ class LicenseCheck(BaseChecker):
         old_lics, new_lics = set(), set()
         changes = {'appeared': {}, 'transitioned': {}, 'disappeared': {}}
         # Get changed licenses in existing files
-        for new_file, new_license in six.iteritems(diffs[1]):
+        for new_file, new_license in diffs[1].items():
             new_lics.add(new_license)
-            for old_file, old_license in six.iteritems(diffs[0]):
+            for old_file, old_license in diffs[0].items():
                 old_lics.add(old_license)
 
                 if (new_file == old_file and
@@ -116,7 +115,7 @@ class LicenseCheck(BaseChecker):
                             changes['transitioned'][new_key].append(new_file)
 
         # Get newly appeared files
-        for new_file, new_license in six.iteritems(diffs[1]):
+        for new_file, new_license in diffs[1].items():
             if new_file not in diffs[0]:
                 if new_license == 'UNKNOWN':
                     continue
@@ -127,7 +126,7 @@ class LicenseCheck(BaseChecker):
                 changes['appeared'][new_license].append(new_file)
 
         # Get removed files
-        for old_file, old_license in six.iteritems(diffs[0]):
+        for old_file, old_license in diffs[0].items():
             if old_file not in diffs[1]:
                 if old_license == 'UNKNOWN':
                     continue
@@ -169,11 +168,11 @@ class LicenseCheck(BaseChecker):
         output_string = [cls.get_underlined_title("licensecheck").lstrip()]
         if cls.license_changes:
             output_string.append('License changes occured!')
-            for change_name, change_info in sorted(six.iteritems(changes)):
+            for change_name, change_info in sorted(changes.items()):
                 if not change_info:
                     continue
                 output_string.append(cls.get_underlined_title('The following license(s) {}'.format(change_name)))
-                for license_name, files in sorted(six.iteritems(change_info)):
+                for license_name, files in sorted(change_info.items()):
                     output_string.append('* {}'.format(license_name))
                     for f in sorted(files):
                         output_string.append(' - {}'.format(f))
@@ -190,7 +189,7 @@ class LicenseCheck(BaseChecker):
         if data['license_changes']:
             if data['license_files_changes']:
                 output_string.append('Major license changes:')
-                for license_change, change_type in six.iteritems(cls.license_files_changes):
+                for license_change, change_type in cls.license_files_changes.items():
                     output_string.append(' - {} {}'.format(license_change, change_type))
                     # Remove already mentioned transition to avoid duplicity in the report
                     if license_change in data['new_licenses']:

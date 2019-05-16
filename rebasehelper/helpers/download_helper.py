@@ -28,15 +28,12 @@ import time
 import urllib
 
 import requests
-import six
-
-from six.moves import urllib
 
 from rebasehelper.exceptions import DownloadError
 from rebasehelper.logger import logger
 
 
-class DownloadHelper(object):
+class DownloadHelper:
 
     """Class for downloading files and performing HTTP requests."""
 
@@ -128,7 +125,7 @@ class DownloadHelper(object):
         try:
             return session.get(url, **kwargs)
         except requests.exceptions.RequestException as e:
-            logger.error('%s: %s', type(e).__name__, six.text_type(e))
+            logger.error('%s: %s', type(e).__name__, str(e))
             return None
 
     @staticmethod

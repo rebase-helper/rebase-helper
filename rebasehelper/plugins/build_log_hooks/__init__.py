@@ -22,8 +22,6 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-import six
-
 from rebasehelper.plugins.plugin import Plugin
 from rebasehelper.plugins.plugin_collection import PluginCollection
 from rebasehelper.logger import logger
@@ -81,7 +79,7 @@ class BuildLogHookCollection(PluginCollection):
         changes_made = False
         if not non_interactive or force_build_log_hooks:
             blacklist = kwargs.get('build_log_hook_blacklist', [])
-            for name, build_log_hook in six.iteritems(self.plugins):
+            for name, build_log_hook in self.plugins.items():
                 if not build_log_hook or name in blacklist:
                     continue
                 categories = build_log_hook.CATEGORIES

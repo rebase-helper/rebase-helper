@@ -32,7 +32,7 @@ from rebasehelper.patch_helper import GitPatchTool
 from rebasehelper.specfile import PatchObject
 
 
-class TestPatchHelper(object):
+class TestPatchHelper:
 
     USER = 'John Doe'
     EMAIL = 'john.doe@example.com'

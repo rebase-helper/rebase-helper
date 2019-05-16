@@ -22,8 +22,6 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-from __future__ import absolute_import
-
 import os
 
 from rebasehelper.helpers.process_helper import ProcessHelper
@@ -76,7 +74,7 @@ class Mock(BuildToolBase):  # pylint: disable=abstract-method
         else:
             logfile = Mock.get_mock_logfile_path(ret, rpm_results_dir, tmp_path=results_dir)
         logs = [l for l in PathHelper.find_all_files(results_dir, '*.log')]
-        cls.logs.extend([os.path.join(rpm_results_dir, os.path.basename(l)) for l in logs])
+        cls.logs.extend(os.path.join(rpm_results_dir, os.path.basename(l)) for l in logs)
         raise BinaryPackageBuildError("Building RPMs failed!", rpm_results_dir, logfile=logfile)
 
     @staticmethod
@@ -145,7 +143,7 @@ class Mock(BuildToolBase):  # pylint: disable=abstract-method
         logger.verbose("Successfully built RPMs: '%s'", str(rpms))
 
         # gather logs
-        cls.logs.extend([l for l in PathHelper.find_all_files(rpm_results_dir, '*.log')])
+        cls.logs.extend(l for l in PathHelper.find_all_files(rpm_results_dir, '*.log'))
         logger.verbose("logs: '%s'", str(cls.logs))
 
         return dict(rpm=rpms, logs=cls.logs)

@@ -24,8 +24,6 @@
 
 import re
 
-import six
-
 from rebasehelper.plugins.build_log_hooks import BuildLogHookCollection
 from rebasehelper.plugins.build_tools.rpm import BuildToolCollection
 from rebasehelper.plugins.build_tools.srpm import SRPMBuildToolCollection
@@ -35,7 +33,7 @@ from rebasehelper.plugins.spec_hooks import SpecHookCollection
 from rebasehelper.plugins.versioneers import VersioneerCollection
 
 
-class PluginManager(object):
+class PluginManager:
 
     COLLECTIONS = [
         BuildLogHookCollection,
@@ -68,7 +66,7 @@ class PluginManager(object):
 
         """
         options = []
-        for collection in six.itervalues(self.plugin_collections):
+        for collection in self.plugin_collections.values():
             options.extend(collection.get_options())
 
         return options

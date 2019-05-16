@@ -26,7 +26,7 @@ from rebasehelper.plugins.plugin_manager import plugin_manager
 from .conftest import TEST_FILES_DIR
 
 
-class TestPkgDiff(object):
+class TestPkgDiff:
     FILE_XML = "files.xml"
     PKGDIFF_HTML = "pkgdiff_reports.html"
     TEST_FILES = [

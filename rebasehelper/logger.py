@@ -23,7 +23,6 @@
 #          František Nečas <fifinecas@seznam.cz>
 
 import logging
-import six
 
 from rebasehelper.helpers.console_helper import ConsoleHelper
 
@@ -47,7 +46,7 @@ class CustomLogger(logging.Logger):
     def __init__(self, name, level=logging.NOTSET):
         super(CustomLogger, self).__init__(name, level)
 
-        for lev, severity in six.iteritems(self._nameToLevel):
+        for lev, severity in self._nameToLevel.items():
             logging.addLevelName(severity, lev)
 
     def __getattr__(self, level):
@@ -63,7 +62,7 @@ class CustomLogger(logging.Logger):
         raise AttributeError
 
 
-class LoggerHelper(object):
+class LoggerHelper:
     """
     Helper class for setting up a logger
     """

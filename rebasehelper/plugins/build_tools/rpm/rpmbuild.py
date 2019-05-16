@@ -73,7 +73,7 @@ class Rpmbuild(BuildToolBase):  # pylint: disable=abstract-method
         # An error occurred, raise an exception
         logfile = build_log_path
         logs = [l for l in PathHelper.find_all_files(results_dir, '*.log')]
-        cls.logs.extend([os.path.join(rpm_results_dir, os.path.basename(l)) for l in logs])
+        cls.logs.extend(os.path.join(rpm_results_dir, os.path.basename(l)) for l in logs)
         raise BinaryPackageBuildError("Building RPMs failed!", results_dir, logfile=logfile)
 
     @classmethod
@@ -121,7 +121,7 @@ class Rpmbuild(BuildToolBase):  # pylint: disable=abstract-method
         logger.verbose("Successfully built RPMs: '%s'", str(rpms))
 
         # gather logs
-        cls.logs.extend([l for l in PathHelper.find_all_files(rpm_results_dir, '*.log')])
+        cls.logs.extend(l for l in PathHelper.find_all_files(rpm_results_dir, '*.log'))
         logger.verbose("logs: '%s'", str(cls.logs))
 
         return dict(rpm=rpms, logs=cls.logs)

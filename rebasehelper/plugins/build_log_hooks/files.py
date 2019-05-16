@@ -28,8 +28,6 @@ import fnmatch
 import os
 import re
 
-import six
-
 from rebasehelper.plugins.build_log_hooks import BaseBuildLogHook
 from rebasehelper.helpers.macro_helper import MacroHelper
 from rebasehelper.logger import logger
@@ -63,13 +61,13 @@ class Files(BaseBuildLogHook):
     @classmethod
     def format(cls, data):
         output = []
-        for file_type, related_files in six.iteritems(data):
+        for file_type, related_files in data.items():
             output.append(' - {}'.format(file_type))
             if isinstance(related_files, list):
                 for file in related_files:
                     output.append('\t- {}'.format(file))
             else:
-                for section, files in six.iteritems(related_files):
+                for section, files in related_files.items():
                     output.append('\t- {}'.format(section))
                     for file in files:
                         output.append('\t\t- {}'.format(file))
@@ -78,7 +76,7 @@ class Files(BaseBuildLogHook):
 
     @classmethod
     def merge_two_results(cls, old, new):
-        for file_type, related_files in six.iteritems(new):
+        for file_type, related_files in new.items():
             if file_type not in old:
                 old[file_type] = related_files
                 continue
@@ -87,7 +85,7 @@ class Files(BaseBuildLogHook):
                 old[file_type].extend(related_files)
                 continue
 
-            for section, files in six.iteritems(related_files):
+            for section, files in related_files.items():
                 if section not in old[file_type]:
                     old[file_type][section] = files
                     continue

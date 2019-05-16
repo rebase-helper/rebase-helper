@@ -1,26 +1,24 @@
 import cgi
 import hashlib
+import http.server
 import io
 import os
 import posixpath
 import ssl
 import threading
 import time
+import urllib
 
 import pyftpdlib.authorizers
 import pyftpdlib.handlers
 import pyftpdlib.servers
-import six
-
-from six.moves import BaseHTTPServer
-from six.moves import urllib
 
 
-class FTPServer(object):
+class FTPServer:
 
     def __init__(self, port, root, report_size):
         class FTPHandlerNoSIZE(pyftpdlib.handlers.FTPHandler):
-            proto_cmds = {k: v for k, v in six.iteritems(pyftpdlib.handlers.proto_cmds) if k != 'SIZE'}
+            proto_cmds = {k: v for k, v in pyftpdlib.handlers.proto_cmds.items() if k != 'SIZE'}
 
         authorizer = pyftpdlib.authorizers.DummyAuthorizer()
         authorizer.add_anonymous(root)
@@ -32,10 +30,10 @@ class FTPServer(object):
         self.server.serve_forever()
 
 
-class HTTPServer(object):
+class HTTPServer:
 
     def __init__(self, port, cert, root, report_size):
-        class RequestHandler(BaseHTTPServer.BaseHTTPRequestHandler):
+        class RequestHandler(http.server.BaseHTTPRequestHandler):
 
             def do_GET(self):
                 path = self.path.split('?', 1)[0].split('#', 1)[0]
@@ -109,7 +107,7 @@ class HTTPServer(object):
                 except (KeyError, IndexError):
                     self.send_error(400)
 
-        self.server = BaseHTTPServer.HTTPServer(('', port), RequestHandler)
+        self.server = http.server.HTTPServer(('', port), RequestHandler)
         if cert:
             self.server.socket = ssl.wrap_socket(self.server.socket, certfile=cert, server_side=True)
 

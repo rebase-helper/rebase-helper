@@ -27,7 +27,7 @@ import os
 import tempfile
 
 
-class PathHelper(object):
+class PathHelper:
 
     """Class for performing path related tasks."""
 

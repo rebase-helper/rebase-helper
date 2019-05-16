@@ -22,15 +22,14 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
+import configparser
 import os
-
-from six.moves import configparser
 
 from rebasehelper.options import OPTIONS, traverse_options
 from rebasehelper.constants import CONFIG_PATH, CONFIG_FILENAME
 
 
-class Config(object):
+class Config:
 
     def __init__(self, config_file=None):
         self.path_to_config = self.get_config_path(config_file)
