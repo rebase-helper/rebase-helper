@@ -39,9 +39,9 @@ class BuildToolBase(Plugin):
 
     """
 
-    DEFAULT = False
-    ACCEPTS_OPTIONS = False
-    CREATES_TASKS = False
+    DEFAULT: bool = False
+    ACCEPTS_OPTIONS: bool = False
+    CREATES_TASKS: bool = False
 
     @classmethod
     def prepare(cls, spec, conf):

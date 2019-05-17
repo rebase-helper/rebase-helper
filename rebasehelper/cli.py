@@ -27,8 +27,6 @@ import logging
 import os
 import sys
 
-import six
-
 from rebasehelper.options import OPTIONS, traverse_options
 from rebasehelper.constants import PROGRAM_DESCRIPTION, NEW_ISSUE_LINK, LOGS_DIR, TRACEBACK_LOG
 from rebasehelper.version import VERSION
@@ -41,7 +39,7 @@ from rebasehelper.argument_parser import CustomArgumentParser, CustomHelpFormatt
 from rebasehelper.plugins.plugin_manager import plugin_manager
 
 
-class CLI(object):
+class CLI:
     """ Class for processing data from commandline """
 
     @staticmethod
@@ -98,7 +96,7 @@ class CLI(object):
             return object.__getattribute__(self, name)
 
 
-class CliHelper(object):
+class CliHelper:
 
     @staticmethod
     def run():
@@ -131,7 +129,7 @@ class CliHelper(object):
             if e.msg:
                 logger.error('%s', e.msg)
             else:
-                logger.error('%s', six.text_type(e))
+                logger.error('%s', str(e))
             sys.exit(1)
         except SystemExit as e:
             sys.exit(e.code)

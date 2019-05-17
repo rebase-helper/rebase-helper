@@ -24,11 +24,12 @@
 
 import os
 import re
-
-from six.moves import urllib
+import urllib
 
 from rebasehelper.plugins.spec_hooks import BaseSpecHook
 from rebasehelper.temporary_environment import TemporaryEnvironment
+from rebasehelper.types import PackageCategories
+from rebasehelper.specfile import PackageCategory
 from rebasehelper.logger import logger
 from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.helpers.macro_helper import MacroHelper
@@ -36,7 +37,7 @@ from rebasehelper.helpers.macro_helper import MacroHelper
 
 class RubyHelper(BaseSpecHook):
 
-    CATEGORIES = ['ruby']
+    CATEGORIES: PackageCategories = [PackageCategory.ruby]
 
     @classmethod
     def _get_instructions(cls, comments, old_version, new_version):

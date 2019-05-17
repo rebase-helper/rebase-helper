@@ -22,16 +22,16 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-from __future__ import print_function
+import io
 import os
-import six
 import re
-from six import StringIO
+
+from typing import List, Optional
 
 from rebasehelper.logger import logger
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
 from rebasehelper.results_store import results_store
-from rebasehelper.plugins.checkers import BaseChecker
+from rebasehelper.plugins.checkers import BaseChecker, CheckerCategory
 from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.helpers.rpm_helper import RpmHelper
 
@@ -39,11 +39,11 @@ from rebasehelper.helpers.rpm_helper import RpmHelper
 class RpmDiff(BaseChecker):
     """rpmdiff compare tool"""
 
-    DEFAULT = True
-    CATEGORY = 'RPM'
+    DEFAULT: bool = True
+    CATEGORY: Optional[CheckerCategory] = CheckerCategory.RPM
 
-    CMD = 'rpmdiff'
-    CHECKER_TAGS = ['added', 'removed', 'changed', 'moved', 'renamed']
+    CMD: str = 'rpmdiff'
+    CHECKER_TAGS: List[str] = ['added', 'removed', 'changed', 'moved', 'renamed']
 
     @classmethod
     def is_available(cls):
@@ -116,7 +116,7 @@ class RpmDiff(BaseChecker):
         not_catched_flags = ['T', 'F', 'G', 'U', 'V', 'L', 'D', 'N']
         old_pkgs = cls._get_rpms(results_store.get_old_build().get('rpm', None))
         new_pkgs = cls._get_rpms(results_store.get_new_build().get('rpm', None))
-        for key, value in six.iteritems(old_pkgs):
+        for key, value in old_pkgs.items():
             if 'debuginfo' in key or 'debugsource' in key:
                 # skip debug{info,source} packages
                 continue
@@ -131,16 +131,16 @@ class RpmDiff(BaseChecker):
             except KeyError:
                 logger.warning('New version of package %s was not found!', key)
                 continue
-            output = StringIO()
+            output = io.StringIO()
             try:
                 ProcessHelper.run_subprocess(cmd, output_file=output)
             except OSError:
                 raise CheckerNotFoundError("Checker '{}' was not found or installed.".format(cls.name))
             results_dict = cls._analyze_logs(output, results_dict)
         results_dict = cls.update_added_removed(results_dict)
-        cls.results_dict = {k: v for k, v in six.iteritems(results_dict) if v}
+        cls.results_dict = {k: v for k, v in results_dict.items() if v}
         lines = []
-        for key, val in six.iteritems(results_dict):
+        for key, val in results_dict.items():
             if val:
                 if lines:
                     lines.append('')
@@ -149,7 +149,7 @@ class RpmDiff(BaseChecker):
 
         rpmdiff_report = os.path.join(cls.results_dir, 'report.txt')
 
-        counts = {k: len(v) for k, v in six.iteritems(results_dict)}
+        counts = {k: len(v) for k, v in results_dict.items()}
 
         try:
             with open(rpmdiff_report, "w") as f:

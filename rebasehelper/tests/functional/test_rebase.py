@@ -25,9 +25,11 @@
 import json
 import os
 
-import git
-import pytest
-import unidiff
+import git  # type: ignore
+import pytest  # type: ignore
+import unidiff  # type: ignore
+
+from typing import List
 
 from rebasehelper.cli import CLI
 from rebasehelper.config import Config
@@ -47,16 +49,16 @@ def initialized_git_repo(workdir):
     return repo
 
 
-class TestRebase(object):
+class TestRebase:
 
-    TEST_FILES = [
+    TEST_FILES: List[str] = [
         'rebase/test.spec',
         'rebase/applicable.patch',
         'rebase/conflicting.patch',
         'rebase/backported.patch',
     ]
 
-    NEW_VERSION = '0.2'
+    NEW_VERSION: str = '0.2'
 
     @pytest.mark.parametrize('buildtool', [
         pytest.param('rpmbuild', marks=pytest.mark.skipif(
@@ -136,12 +138,12 @@ class TestRebase(object):
         assert '- New upstream release {}'.format(self.NEW_VERSION) in repo.commit().summary
 
 
-class TestBuildLogHooks(object):
-    TEST_FILES = [
+class TestBuildLogHooks:
+    TEST_FILES: List[str] = [
         'build-log-hooks/test-build-log-hooks.spec'
     ]
 
-    NEW_VERSION = '0.2'
+    NEW_VERSION: str = '0.2'
 
     @pytest.mark.parametrize('buildtool', [
         pytest.param('rpmbuild', marks=pytest.mark.skipif(

@@ -32,17 +32,16 @@ import tempfile
 import termios
 import tty
 
-import colors
-import six
+import colors  # type: ignore
 
-from rebasehelper.constants import DEFENC
+from rebasehelper.constants import SYSTEM_ENCODING
 
 
-class ConsoleHelper(object):
+class ConsoleHelper:
 
     """Class for interacting with the command line."""
 
-    use_colors = False
+    use_colors: bool = False
 
     @classmethod
     def should_use_colors(cls, conf):
@@ -104,7 +103,7 @@ class ConsoleHelper(object):
         match = re.match(r'^rgb:([A-Fa-f0-9]{1,4})/([A-Fa-f0-9]{1,4})/([A-Fa-f0-9]{1,4})$', str(specification))
         if match:
             rgb = match.groups()
-            bit_width = max([len(str(x)) for x in rgb]) * 4
+            bit_width = max(len(str(x)) for x in rgb) * 4
             return tuple(int(x, 16) for x in rgb), bit_width
         return None, None
 
@@ -186,7 +185,7 @@ class ConsoleHelper(object):
                 termios.tcsetattr(sys.stdin, termios.TCSADRAIN, attrs)
                 fcntl.fcntl(sys.stdin.fileno(), fcntl.F_SETFL, flags)
 
-    class Capturer(object):
+    class Capturer:
         """ContextManager for capturing stdout/stderr"""
 
         def __init__(self, stdout=False, stderr=False):
@@ -230,15 +229,11 @@ class ConsoleHelper(object):
             if self._stdout_tmp:
                 self._stdout_tmp.flush()
                 self._stdout_tmp.seek(0, io.SEEK_SET)
-                self.stdout = self._stdout_tmp.read()
-                if six.PY3:
-                    self.stdout = self.stdout.decode(DEFENC)
+                self.stdout = self._stdout_tmp.read().decode(SYSTEM_ENCODING)
             if self._stderr_tmp:
                 self._stderr_tmp.flush()
                 self._stderr_tmp.seek(0, io.SEEK_SET)
-                self.stderr = self._stderr_tmp.read()
-                if six.PY3:
-                    self.stderr = self.stderr.decode(DEFENC)
+                self.stderr = self._stderr_tmp.read().decode(SYSTEM_ENCODING)
 
             if self._stdout_tmp:
                 self._stdout_tmp.close()

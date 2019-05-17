@@ -24,6 +24,8 @@
 
 import os
 
+from typing import List
+
 from rebasehelper.logger import logger
 from rebasehelper.plugins.build_tools import MockTemporaryEnvironment
 from rebasehelper.plugins.build_tools.srpm import SRPMBuildToolBase
@@ -34,8 +36,8 @@ from rebasehelper.helpers.process_helper import ProcessHelper
 
 class Mock(SRPMBuildToolBase):
 
-    CMD = "mock"
-    logs = []
+    CMD: str = 'mock'
+    logs: List[str] = []
 
     @classmethod
     def _build_srpm(cls, spec, workdir, results_dir, srpm_results_dir, srpm_builder_options):

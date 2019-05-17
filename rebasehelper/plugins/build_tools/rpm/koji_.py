@@ -22,16 +22,17 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-from __future__ import absolute_import
-
 import os
-import six
-import koji  # pylint: disable=import-error
 import re
 
-# unused import needed to prevent loading koji buildtool with Koji < 1.13
-import koji_cli.lib  # pylint: disable=import-error,unused-import
+import koji  # type: ignore  # pylint: disable=import-error
 
+# unused import needed to prevent loading koji buildtool with Koji < 1.13
+import koji_cli.lib  # type: ignore  # pylint: disable=import-error,unused-import
+
+from typing import List
+
+from rebasehelper.types import Options
 from rebasehelper.helpers.koji_helper import KojiHelper
 from rebasehelper.logger import logger
 from rebasehelper.exceptions import RebaseHelperError
@@ -44,10 +45,7 @@ class Koji(BuildToolBase):
     Class representing Koji build tool.
     """
 
-    CREATES_TASKS = True
-
-    CMD = "koji"
-    OPTIONS = [
+    OPTIONS: Options = [
         {
             "name": ["--get-old-build-from-koji"],
             "default": False,
@@ -55,9 +53,13 @@ class Koji(BuildToolBase):
             "help": "do not build old sources, download latest build from Koji instead",
         },
     ]
-    logs = []
 
-    target_tag = 'rawhide'
+    CREATES_TASKS: bool = True
+
+    CMD: str = 'koji'
+    logs: List[str] = []
+
+    target_tag: str = 'rawhide'
 
     @classmethod
     def _verify_tasks(cls, session, task_dict):
@@ -71,7 +73,7 @@ class Koji(BuildToolBase):
             int: Mock exit code or -1 if any task failed, otherwise None.
 
         """
-        for task_id, state in six.iteritems(task_dict):
+        for task_id, state in task_dict.items():
             if state == koji.TASK_STATES['FAILED']:
                 try:
                     session.getTaskResult(task_id)
@@ -79,7 +81,7 @@ class Koji(BuildToolBase):
                     # typical error message:
                     #   BuildError: error building package (arch noarch),
                     #   mock exited with status 1; see build.log for more information
-                    match = re.search(r'mock exited with status (\d+)', six.text_type(e))
+                    match = re.search(r'mock exited with status (\d+)', str(e))
                     if match:
                         return int(match.group(1))
                     else:

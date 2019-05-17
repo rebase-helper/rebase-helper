@@ -24,8 +24,6 @@
 
 import os
 
-import six
-
 from rebasehelper.plugins.output_tools import BaseOutputTool
 from rebasehelper.logger import LoggerHelper, logger, logger_report
 from rebasehelper.results_store import results_store
@@ -35,8 +33,8 @@ class Text(BaseOutputTool):
 
     """ Text output tool. """
 
-    DEFAULT = True
-    EXTENSION = 'txt'
+    DEFAULT: bool = True
+    EXTENSION: str = 'txt'
 
     @classmethod
     def print_success_message(cls):
@@ -75,7 +73,7 @@ class Text(BaseOutputTool):
         logger_report.info("[ ] = patch untouched")
 
         patches_out = list()
-        for patch_type, patch_list in sorted(six.iteritems(patches)):
+        for patch_type, patch_list in sorted(patches.items()):
             if patch_list:
                 symbols = dict(deleted='-', modified='*', inapplicable='!')
                 for patch in sorted(patch_list):
@@ -138,7 +136,7 @@ class Text(BaseOutputTool):
     def print_summary(cls, path, results):
         """Function is used for printing summary information"""
         if results.get_summary_info():
-            for key, value in six.iteritems(results.get_summary_info()):
+            for key, value in results.get_summary_info().items():
                 logger.info("%s %s\n", key, value)
 
         LoggerHelper.add_file_handler(logger_report, path)
@@ -166,14 +164,14 @@ class Text(BaseOutputTool):
     @classmethod
     def print_checkers_text_output(cls, checkers_results):
         """Function prints text output for every checker"""
-        for check_tool in six.itervalues(cls.manager.checkers.plugins):
-            for check, data in sorted(six.iteritems(checkers_results)):
+        for check_tool in cls.manager.checkers.plugins.values():
+            for check, data in sorted(checkers_results.items()):
                 if check == check_tool.name:
                     logger_report.info('\n'.join(check_tool.format(data)))
 
     @classmethod
     def print_build_log_hooks_result(cls, build_log_hooks_result):
-        for hook, data in six.iteritems(build_log_hooks_result):
+        for hook, data in build_log_hooks_result.items():
             if data:
                 cls.print_message_and_separator('\n{} build log hook'.format(hook))
                 logger_report.info('\n'.join(cls.manager.build_log_hooks.get_plugin(hook).format(data)))

@@ -49,13 +49,11 @@ def get_rpm_distribution():
 
 def get_requirements():
     result = [
-        'backports.lzma;python_version<"3.3"',
         # need stable marshmallow for copr
         'marshmallow<3.0.0',
         'copr',
         'pyquery',
         'requests',
-        'six',
         'GitPython',
         # https://github.com/jonathaneunice/colors/pull/1
         'ansicolors@git+https://github.com/FrNecas/colors.git@frnecas-bright-colors',
@@ -153,7 +151,7 @@ setup(
         'Intended Audience :: Developers',
         'License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)',
         'Operating System :: POSIX :: Linux',
-        'Programming Language :: Python',
+        'Programming Language :: Python :: 3 :: Only',
         'Topic :: Software Development',
         'Topic :: System :: Operating System',
         'Topic :: System :: Software Distribution',

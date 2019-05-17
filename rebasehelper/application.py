@@ -22,14 +22,14 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-from __future__ import print_function
 import fnmatch
 import os
 import shutil
 import logging
 
-import git
-import six
+import git  # type: ignore
+
+from typing import Any, Dict, List, Optional
 
 from pkg_resources import parse_version
 
@@ -37,8 +37,9 @@ from rebasehelper.archive import Archive
 from rebasehelper.specfile import SpecFile, get_rebase_name
 from rebasehelper.logger import logger, log_formatter, debug_log_formatter, LoggerHelper, CustomLogger
 from rebasehelper import constants
-from rebasehelper.patch_helper import Patcher
+from rebasehelper.patcher import Patcher
 from rebasehelper.plugins.plugin_manager import plugin_manager
+from rebasehelper.plugins.checkers import CheckerCategory
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
 from rebasehelper.exceptions import SourcePackageBuildError, BinaryPackageBuildError
 from rebasehelper.results_store import results_store
@@ -51,22 +52,22 @@ from rebasehelper.helpers.koji_helper import KojiHelper
 from rebasehelper.helpers.lookaside_cache_helper import LookasideCacheHelper
 
 
-class Application(object):
-    result_file = ""
-    temp_dir = ""
-    kwargs = {}
-    old_sources = ""
-    new_sources = ""
-    old_rest_sources = []
-    new_rest_sources = []
-    spec_file = None
-    spec_file_path = None
-    rebase_spec_file = None
-    rebase_spec_file_path = None
-    debug_log_file = None
-    report_log_file = None
-    rebased_patches = {}
-    rebased_repo = None
+class Application:
+    result_file: str = ''
+    temp_dir: str = ''
+    kwargs: Dict[str, Any] = {}
+    old_sources: str = ''
+    new_sources: str = ''
+    old_rest_sources: List[str] = []
+    new_rest_sources: List[str] = []
+    spec_file: Optional[SpecFile] = None
+    spec_file_path: Optional[str] = None
+    rebase_spec_file: Optional[SpecFile] = None
+    rebase_spec_file_path: Optional[str] = None
+    debug_log_file: Optional[str] = None
+    report_log_file: Optional[str] = None
+    rebased_patches: Dict[str, List[str]] = {}
+    rebased_repo: Optional[git.Repo] = None
 
     def __init__(self, cli_conf, execution_dir, results_dir, debug_log_file):
         """
@@ -281,7 +282,8 @@ class Application(object):
         """Function gets the spec file from the execution_dir directory"""
         self.spec_file_path = PathHelper.find_first_file(self.execution_dir, '*.spec', 0)
         if not self.spec_file_path:
-            raise RebaseHelperError("Could not find any SPEC file in the current directory '%s'" % self.execution_dir)
+            raise RebaseHelperError("Could not find any SPEC file "
+                                    "in the current directory '{}'".format(self.execution_dir))
 
     def _delete_old_builds(self):
         """
@@ -360,16 +362,16 @@ class Application(object):
         """
         try:
             archive = Archive(archive_path)
-        except NotImplementedError as ni_e:
-            raise RebaseHelperError('%s. Supported archives are %s' % (six.text_type(ni_e),
+        except NotImplementedError as e:
+            raise RebaseHelperError('{}. Supported archives are {}'.format(str(e),
                                     Archive.get_supported_archives()))
 
         try:
             archive.extract_archive(destination)
         except IOError:
-            raise RebaseHelperError("Archive '%s' can not be extracted" % archive_path)
+            raise RebaseHelperError("Archive '{}' can not be extracted".format(archive_path))
         except (EOFError, SystemError):
-            raise RebaseHelperError("Archive '%s' is damaged" % archive_path)
+            raise RebaseHelperError("Archive '{}' is damaged".format(archive_path))
 
     @staticmethod
     def extract_sources(archive_path, destination):
@@ -437,14 +439,13 @@ class Application(object):
         return [old_dir, new_dir]
 
     def patch_sources(self, sources):
-        # Patch sources
-        patch = Patcher('git')
         try:
-            self.rebased_patches = patch.patch(sources[0],
-                                               sources[1],
-                                               self.old_rest_sources,
-                                               self.spec_file.get_applied_patches(),
-                                               **self.kwargs)
+            # Patch sources
+            self.rebased_patches = Patcher.patch(sources[0],
+                                                 sources[1],
+                                                 self.old_rest_sources,
+                                                 self.spec_file.get_applied_patches(),
+                                                 **self.kwargs)
         except RuntimeError:
             raise RebaseHelperError('Patching failed')
         self.rebase_spec_file.write_updated_patches(self.rebased_patches,
@@ -534,14 +535,14 @@ class Application(object):
             'builder_options',
             'srpm_builder_options',
         ]
-        return {k: v for k, v in six.iteritems(build_dict) if k not in blacklist}
+        return {k: v for k, v in build_dict.items() if k not in blacklist}
 
     def build_source_packages(self):
         try:
             builder = plugin_manager.srpm_build_tools.get_plugin(self.conf.srpm_buildtool)
         except NotImplementedError as e:
             raise RebaseHelperError('{}. Supported SRPM build tools are {}'.format(
-                six.text_type(e), plugin_manager.srpm_build_tools.get_supported_tools()))
+                str(e), plugin_manager.srpm_build_tools.get_supported_tools()))
 
         for version in ['old', 'new']:
             koji_build_id = None
@@ -580,7 +581,7 @@ class Application(object):
                 raise
             except SourcePackageBuildError as e:
                 build_dict.update(builder.get_logs())
-                build_dict['source_package_build_error'] = six.text_type(e)
+                build_dict['source_package_build_error'] = str(e)
                 build_dict = self._sanitize_build_dict(build_dict)
                 results_store.set_build_data(version, build_dict)
                 if e.logfile:
@@ -600,7 +601,7 @@ class Application(object):
             builder = plugin_manager.build_tools.get_plugin(self.conf.buildtool)
         except NotImplementedError as e:
             raise RebaseHelperError('{}. Supported build tools are {}'.format(
-                six.text_type(e), plugin_manager.build_tools.get_supported_tools()))
+                str(e), plugin_manager.build_tools.get_supported_tools()))
 
         for version in ['old', 'new']:
             results_dir = '{}-build'.format(os.path.join(self.results_dir, version))
@@ -663,7 +664,7 @@ class Application(object):
                 raise
             except BinaryPackageBuildError as e:
                 build_dict.update(builder.get_logs())
-                build_dict['binary_package_build_error'] = six.text_type(e)
+                build_dict['binary_package_build_error'] = str(e)
                 build_dict = self._sanitize_build_dict(build_dict)
                 results_store.set_build_data(version, build_dict)
 
@@ -706,7 +707,7 @@ class Application(object):
             except CheckerNotFoundError:
                 logger.error("Rebase-helper did not find checker '%s'.", checker_name)
 
-        for diff_name, result in six.iteritems(results):
+        for diff_name, result in results.items():
             results_store.set_checker_output(diff_name, result)
 
     def get_all_log_files(self):
@@ -732,9 +733,9 @@ class Application(object):
 
     def get_checker_outputs(self):
         checkers = {}
-        for check, data in six.iteritems(results_store.get_checkers()):
+        for check, data in results_store.get_checkers().items():
             if data:
-                for log in six.iterkeys(data):
+                for log in data:
                     if PathHelper.file_available(log):
                         checkers[check] = log
             else:
@@ -750,9 +751,9 @@ class Application(object):
         patches = False
         output_patch_string = []
         if results_store.get_patches():
-            for key, val in six.iteritems(results_store.get_patches()):
+            for key, val in results_store.get_patches().items():
                 if key:
-                    output_patch_string.append('Following patches have been %s:\n%s' % (key, val))
+                    output_patch_string.append('Following patches have been {}:\n{}'.format(key, val))
                     patches = True
         if not patches:
             output_patch_string.append('Patches were not touched. All were applied properly')
@@ -808,7 +809,7 @@ class Application(object):
             repo.git.am(patch['changes_patch'])
         except git.GitCommandError as e:
             logger.warning('changes.patch was not applied properly. Please review changes manually.'
-                           '\nThe error message is: %s', six.text_type(e))
+                           '\nThe error message is: %s', str(e))
 
     def prepare_next_run(self, results_dir):
         # Running build log hooks only makes sense after a failed build
@@ -842,7 +843,7 @@ class Application(object):
     def run(self):
         # Certain options can be used only with specific build tools
         tools_creating_tasks = []
-        for tool_name, tool in six.iteritems(plugin_manager.build_tools.plugins):
+        for tool_name, tool in plugin_manager.build_tools.plugins.items():
             if tool and tool.CREATES_TASKS:
                 tools_creating_tasks.append(tool_name)
         if self.conf.buildtool not in tools_creating_tasks:
@@ -856,12 +857,10 @@ class Application(object):
                                         " and ".join(options_used),
                                         ", ".join(tools_creating_tasks)))
         elif self.conf.builds_nowait and self.conf.get_old_build_from_koji:
-            raise RebaseHelperError("%s can't be used with: %s" %
-                                    ('--builds-nowait', '--get-old-build-from-koji')
-                                    )
+            raise RebaseHelperError("{} can't be used with: {}".format('--builds-nowait', '--get-old-build-from-koji'))
 
         tools_accepting_options = []
-        for tool_name, tool in six.iteritems(plugin_manager.build_tools.plugins):
+        for tool_name, tool in plugin_manager.build_tools.plugins.items():
             if tool and tool.ACCEPTS_OPTIONS:
                 tools_accepting_options.append(tool_name)
         if self.conf.buildtool not in tools_accepting_options:
@@ -875,7 +874,10 @@ class Application(object):
 
         if self.conf.build_tasks is None:
             old_sources, new_sources = self.prepare_sources()
-            self.run_package_checkers(self.results_dir, category='SOURCE', old_dir=old_sources, new_dir=new_sources)
+            self.run_package_checkers(self.results_dir,
+                                      category=CheckerCategory.SOURCE,
+                                      old_dir=old_sources,
+                                      new_dir=new_sources)
             if not self.conf.build_only and not self.conf.comparepkgs:
                 try:
                     self.patch_sources([old_sources, new_sources])
@@ -891,11 +893,11 @@ class Application(object):
                     try:
                         if self.conf.build_tasks is None:
                             self.build_source_packages()
-                        self.run_package_checkers(self.results_dir, category='SRPM')
+                        self.run_package_checkers(self.results_dir, category=CheckerCategory.SRPM)
                         self.build_binary_packages()
                         if self.conf.builds_nowait and not self.conf.build_tasks:
                             return
-                        self.run_package_checkers(self.results_dir, category='RPM')
+                        self.run_package_checkers(self.results_dir, category=CheckerCategory.RPM)
                     # Print summary and return error
                     except RebaseHelperError as e:
                         if self.prepare_next_run(self.results_dir):
@@ -906,8 +908,8 @@ class Application(object):
                         break
             else:
                 if self.get_rpm_packages(self.conf.comparepkgs):
-                    self.run_package_checkers(self.results_dir, category='SRPM')
-                    self.run_package_checkers(self.results_dir, category='RPM')
+                    self.run_package_checkers(self.results_dir, category=CheckerCategory.SRPM)
+                    self.run_package_checkers(self.results_dir, category=CheckerCategory.RPM)
 
         if not self.conf.keep_workspace:
             self._delete_workspace_dir()

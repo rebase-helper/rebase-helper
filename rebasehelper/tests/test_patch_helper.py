@@ -25,26 +25,28 @@
 import os
 import shutil
 
-import git
-import pytest
+import git  # type: ignore
+import pytest  # type: ignore
 
-from rebasehelper.patch_helper import GitPatchTool
+from typing import List
+
+from rebasehelper.patcher import Patcher
 from rebasehelper.specfile import PatchObject
 
 
-class TestPatchHelper(object):
+class TestPatchHelper:
 
-    USER = 'John Doe'
-    EMAIL = 'john.doe@example.com'
+    USER: str = 'John Doe'
+    EMAIL: str = 'john.doe@example.com'
 
-    LIPSUM_OLD = 'patch_helper/lipsum_old.txt'
-    LIPSUM_NEW = 'patch_helper/lipsum_new.txt'
-    PATCH1 = 'patch_helper/1.patch'
-    PATCH2 = 'patch_helper/2.patch'
-    PATCH3 = 'patch_helper/3.patch'
-    PATCH4 = 'patch_helper/4.patch'
+    LIPSUM_OLD: str = 'patch_helper/lipsum_old.txt'
+    LIPSUM_NEW: str = 'patch_helper/lipsum_new.txt'
+    PATCH1: str = 'patch_helper/1.patch'
+    PATCH2: str = 'patch_helper/2.patch'
+    PATCH3: str = 'patch_helper/3.patch'
+    PATCH4: str = 'patch_helper/4.patch'
 
-    TEST_FILES = [
+    TEST_FILES: List[str] = [
         LIPSUM_OLD,
         LIPSUM_NEW,
         PATCH1,
@@ -83,7 +85,7 @@ class TestPatchHelper(object):
             patch_name = os.path.basename(getattr(self, 'PATCH{0}'.format(n)))
             repo.git.apply(os.path.join(os.getcwd(), patch_name))
             repo.git.add(all=True)
-            repo.index.commit(GitPatchTool.insert_patch_name('P{0}'.format(n), patch_name), skip_hooks=True)
+            repo.index.commit(Patcher.insert_patch_name('P{0}'.format(n), patch_name), skip_hooks=True)
         return repo
 
     @pytest.fixture
@@ -106,17 +108,17 @@ class TestPatchHelper(object):
         'no_favors',
     ])
     def test__git_rebase(self, rebased_sources, old_sources, new_sources, old_repo, new_repo, favor_on_conflict):
-        GitPatchTool.cont = False
-        GitPatchTool.non_interactive = True
-        GitPatchTool.kwargs = dict(rebased_sources_dir=rebased_sources)
-        GitPatchTool.old_sources = old_sources
-        GitPatchTool.new_sources = new_sources
-        GitPatchTool.old_repo = old_repo
-        GitPatchTool.new_repo = new_repo
-        GitPatchTool.favor_on_conflict = favor_on_conflict
-        GitPatchTool.patches = [PatchObject(os.path.basename(getattr(self, 'PATCH{0}'.format(n))), n, 1)
-                                for n in range(1, 5)]
-        patches = GitPatchTool._git_rebase()  # pylint: disable=protected-access
+        Patcher.cont = False
+        Patcher.non_interactive = True
+        Patcher.kwargs = dict(rebased_sources_dir=rebased_sources)
+        Patcher.old_sources = old_sources
+        Patcher.new_sources = new_sources
+        Patcher.old_repo = old_repo
+        Patcher.new_repo = new_repo
+        Patcher.favor_on_conflict = favor_on_conflict
+        Patcher.patches = [PatchObject(os.path.basename(getattr(self, 'PATCH{0}'.format(n))), n, 1)
+                           for n in range(1, 5)]
+        patches = Patcher._git_rebase()  # pylint: disable=protected-access
         assert patches['untouched'] == [os.path.basename(self.PATCH1)]
         if favor_on_conflict == 'upstream':
             assert patches['modified'] == [os.path.basename(self.PATCH2)]
@@ -134,4 +136,4 @@ class TestPatchHelper(object):
             content = f.read()
             assert 'From: {0} <{1}>\n'.format(self.USER, self.EMAIL) in content
             assert 'Subject: [PATCH] P2\n' in content
-            assert GitPatchTool.decorate_patch_name(os.path.basename(self.PATCH2)) not in content
+            assert Patcher.decorate_patch_name(os.path.basename(self.PATCH2)) not in content

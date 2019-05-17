@@ -22,39 +22,12 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-import os
+from typing import Any, Dict, List, Optional, Union
 
-import pytest  # type: ignore
-
-from rebasehelper.constants import RESULTS_DIR, DEBUG_LOG
+from rebasehelper.specfile import PackageCategory
 
 
-def make_logs_report():
-    logs = [
-        DEBUG_LOG,
-        'old-build/SRPM/build.log',
-        'old-build/RPM/build.log',
-        'old-build/RPM/root.log',
-        'old-build/RPM/mock_output.log',
-        'new-build/SRPM/build.log',
-        'new-build/RPM/build.log',
-        'new-build/RPM/root.log',
-        'new-build/RPM/mock_output.log',
-    ]
-    report = []
-    for log in logs:
-        try:
-            with open(os.path.join(RESULTS_DIR, log)) as f:
-                content = f.read()
-                report.append(' {} '.format(log).center(80, '_'))
-                report.append(content)
-        except IOError:
-            continue
-    return '\n'.join(report)
+Option = Dict[str, Any]
+Options = List[Union[Option, List[Option]]]
 
-
-@pytest.mark.hookwrapper
-def pytest_runtest_makereport():
-    outcome = yield
-    report = outcome.get_result()
-    report.sections.append(('Logs', make_logs_report()))
+PackageCategories = List[Optional[PackageCategory]]

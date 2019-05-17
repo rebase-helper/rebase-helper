@@ -24,11 +24,12 @@
 
 import os
 
+from rebasehelper.types import Options
 from rebasehelper.constants import CONFIG_PATH, CONFIG_FILENAME
 from rebasehelper.plugins.plugin_manager import plugin_manager
 
 
-OPTIONS = [
+OPTIONS: Options = [
     # basic
     {
         "name": ["--version"],

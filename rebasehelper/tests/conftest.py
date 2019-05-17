@@ -25,11 +25,11 @@
 import os
 import shutil
 
-import pytest
+import pytest  # type: ignore
 
 
-TESTS_DIR = os.path.dirname(__file__)
-TEST_FILES_DIR = os.path.join(TESTS_DIR, 'testing_files')
+TESTS_DIR: str = os.path.dirname(__file__)
+TEST_FILES_DIR: str = os.path.join(TESTS_DIR, 'testing_files')
 
 
 @pytest.yield_fixture(autouse=True)

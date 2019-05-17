@@ -22,13 +22,12 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-from six.moves import input
 from distutils.util import strtobool
 
 from rebasehelper.logger import logger
 
 
-class InputHelper(object):
+class InputHelper:
 
     """Class for command line interaction with the user."""
 

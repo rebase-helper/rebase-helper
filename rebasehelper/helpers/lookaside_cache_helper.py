@@ -22,6 +22,7 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
+import configparser
 import hashlib
 import os
 import re
@@ -29,24 +30,21 @@ import sys
 import time
 
 import requests
-import requests_gssapi
-import six
+import requests_gssapi  # type: ignore
 
-from urllib3.fields import RequestField
-from urllib3.filepost import encode_multipart_formdata
-
-from six.moves import configparser
+from urllib3.fields import RequestField  # type: ignore
+from urllib3.filepost import encode_multipart_formdata  # type: ignore
 
 from rebasehelper.exceptions import LookasideCacheError, DownloadError
 from rebasehelper.logger import logger
 from rebasehelper.helpers.download_helper import DownloadHelper
 
 
-class LookasideCacheHelper(object):
+class LookasideCacheHelper:
 
     """Class for downloading files from Fedora/RHEL lookaside cache"""
 
-    rpkg_config_dir = '/etc/rpkg'
+    rpkg_config_dir: str = '/etc/rpkg'
 
     @classmethod
     def _read_config(cls, tool):
@@ -111,7 +109,7 @@ class LookasideCacheHelper(object):
         try:
             DownloadHelper.download_file(url, target)
         except DownloadError as e:
-            raise LookasideCacheError(six.text_type(e))
+            raise LookasideCacheError(str(e))
 
     @classmethod
     def download(cls, tool, basepath, package):
@@ -125,7 +123,7 @@ class LookasideCacheHelper(object):
 
     @classmethod
     def _upload_source(cls, url, package, filename, hashtype, hsh, auth=requests_gssapi.HTTPSPNEGOAuth()):
-        class ChunkedData(object):
+        class ChunkedData:
             def __init__(self, check_only, chunksize=8192):
                 self.check_only = check_only
                 self.chunksize = chunksize

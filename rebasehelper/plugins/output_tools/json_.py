@@ -31,7 +31,7 @@ from rebasehelper.results_store import results_store
 class JSON(BaseOutputTool):
     """ JSON output tool """
 
-    EXTENSION = "json"
+    EXTENSION: str = 'json'
 
     @classmethod
     def print_summary(cls, path, results):

@@ -43,3 +43,6 @@ htmlcov
 
 # PyCharm virtual environments
 venv
+
+# Mypy
+.mypy_cache

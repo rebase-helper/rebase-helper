@@ -25,16 +25,17 @@
 from pkg_resources import parse_version
 
 from rebasehelper.plugins.versioneers import BaseVersioneer
+from rebasehelper.types import PackageCategories
 from rebasehelper.logger import logger
 from rebasehelper.helpers.download_helper import DownloadHelper
 
 
 class Anitya(BaseVersioneer):
 
-    CATEGORIES = None
+    CATEGORIES: PackageCategories = []
 
-    BASE_URL = 'https://release-monitoring.org'
-    API_URL = '{}/api'.format(BASE_URL)
+    BASE_URL: str = 'https://release-monitoring.org'
+    API_URL: str = '{}/api'.format(BASE_URL)
 
     @classmethod
     def _get_version_using_distro_api(cls, package_name):

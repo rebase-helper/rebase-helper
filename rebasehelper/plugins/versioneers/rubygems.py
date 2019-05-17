@@ -25,16 +25,18 @@
 import re
 
 from rebasehelper.plugins.versioneers import BaseVersioneer
+from rebasehelper.types import PackageCategories
+from rebasehelper.specfile import PackageCategory
 from rebasehelper.logger import logger
 from rebasehelper.helpers.download_helper import DownloadHelper
 
 
 class RubyGems(BaseVersioneer):
 
-    CATEGORIES = ['ruby']
+    CATEGORIES: PackageCategories = [PackageCategory.ruby]
 
-    BASE_URL = 'https://rubygems.org'
-    API_URL = '{}/api/v1/gems'.format(BASE_URL)
+    BASE_URL: str = 'https://rubygems.org'
+    API_URL: str = '{}/api/v1/gems'.format(BASE_URL)
 
     @classmethod
     def _get_version(cls, package_name):

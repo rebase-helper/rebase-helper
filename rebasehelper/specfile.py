@@ -22,22 +22,21 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-from __future__ import print_function
 import argparse
+import enum
 import itertools
 import os
 import re
-import shutil
 import shlex
+import shutil
+import urllib
 
-import rpm
-import six
+import rpm  # type: ignore
 
 from datetime import date
 from difflib import SequenceMatcher
 from operator import itemgetter
-
-from six.moves import urllib
+from typing import List, Optional, Pattern
 
 from rebasehelper import constants
 from rebasehelper.logger import logger
@@ -73,14 +72,13 @@ class PatchList(list):
         return super(PatchList, self).__getitem__(self._get_index_list(item))
 
 
-class PatchObject(object):
+class PatchObject:
 
     """Class represents set of information about patches"""
 
-    path = ''
-    index = ''
-    strip = ''
-    git_generated = ''
+    path: str = ''
+    index: str = ''
+    strip: str = ''
 
     def __init__(self, path, index, strip):
         self.path = path
@@ -103,10 +101,20 @@ class PatchObject(object):
         return self.strip
 
 
-class SpecContent(object):
+class PackageCategory(enum.Enum):
+    python: Pattern[str] = re.compile(r'^python[23]?-')
+    perl: Pattern[str] = re.compile(r'^perl-')
+    ruby: Pattern[str] = re.compile(r'^rubygem-')
+    nodejs: Pattern[str] = re.compile(r'^nodejs-')
+    php: Pattern[str] = re.compile(r'^php-')
+    haskell: Pattern[str] = re.compile(r'^ghc-')
+    R: Pattern[str] = re.compile(r'^R-')
+
+
+class SpecContent:
     """Class representing content of a SPEC file."""
 
-    SECTION_HEADERS = [
+    SECTION_HEADERS: List[str] = [
         '%package',
         '%prep',
         '%build',
@@ -216,21 +224,21 @@ class SpecContent(object):
         return sections
 
 
-class SpecFile(object):
+class SpecFile:
 
     """Class representing a SPEC file"""
 
-    path = ''
-    download = False
-    spec_content = None
-    spc = None
-    hdr = None
-    extra_version = None
-    category = None
-    sources = None
-    patches = None
-    prep_section = []
-    removed_patches = []
+    path: str = ''
+    download: bool = False
+    spec_content: Optional[SpecContent] = None
+    spc: Optional[rpm.spec] = None
+    hdr: Optional[rpm.hdr] = None
+    extra_version: Optional[str] = None
+    category: Optional[PackageCategory] = None
+    sources: Optional[List[str]] = None
+    patches: Optional[List[str]] = None
+    prep_section: Optional[str] = None
+    removed_patches: List[str] = []
 
     def __init__(self, path, sources_location=''):
         self.path = path
@@ -253,7 +261,7 @@ class SpecFile(object):
             LookasideCacheHelper.download('fedpkg', os.path.dirname(self.path), self.get_package_name())
         except LookasideCacheError as e:
             logger.verbose("Downloading sources from lookaside cache failed. "
-                           "Reason: %s.", six.text_type(e))
+                           "Reason: %s.", str(e))
 
         # filter out only sources with URL
         remote_files = [source for source in self.sources if bool(urllib.parse.urlparse(source).scheme)]
@@ -276,11 +284,11 @@ class SpecFile(object):
         """
         def guess_category():
             for pkg in self.spc.packages:
-                for category, regexp in six.iteritems(constants.PACKAGE_CATEGORIES):
-                    if regexp.match(RpmHelper.decode(pkg.header[rpm.RPMTAG_NAME])):
+                for category in PackageCategory:
+                    if category.value.match(RpmHelper.decode(pkg.header[rpm.RPMTAG_NAME])):
                         return category
                     for provide in pkg.header[rpm.RPMTAG_PROVIDENAME]:
-                        if regexp.match(RpmHelper.decode(provide)):
+                        if category.value.match(RpmHelper.decode(provide)):
                             return category
             return None
 
@@ -965,8 +973,8 @@ class SpecFile(object):
 
         def _sync_macros(s):
             """Makes all macros present in a string up-to-date in rpm context"""
-            macros = set([m for m, _ in _find_macros(s)])
-            macros.update([m for m, _ in _find_macros(_expand_macros(s))])
+            macros = {m for m, _ in _find_macros(s)}
+            macros.update(m for m, _ in _find_macros(_expand_macros(s)))
             for macro in macros:
                 m = '%{{{}}}'.format(macro)
                 while MacroHelper.expand(m, m) != m:
@@ -1222,7 +1230,7 @@ class SpecFile(object):
             with open(self.path) as f:
                 content = f.read()
         except IOError:
-            raise RebaseHelperError("Unable to open and read SPEC file '%s'" % self.path)
+            raise RebaseHelperError("Unable to open and read SPEC file '{}'".format(self.path))
         self.spec_content = SpecContent(content)
 
     def _write_spec_file_to_disc(self):
@@ -1232,7 +1240,7 @@ class SpecFile(object):
             with open(self.path, "w") as f:
                 f.write(str(self.spec_content))
         except IOError:
-            raise RebaseHelperError("Unable to write updated data to SPEC file '%s'" % self.path)
+            raise RebaseHelperError("Unable to write updated data to SPEC file '{}'".format(self.path))
 
     def copy(self, new_path):
         """Creates a copy of the current object and copies the SPEC file

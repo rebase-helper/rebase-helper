@@ -22,66 +22,31 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-from __future__ import print_function
 import os
 
-import git
-import six
+import git  # type: ignore
+
+from typing import List, Optional
 
 from rebasehelper.logger import logger
+from rebasehelper.specfile import PatchObject
 from rebasehelper.helpers.git_helper import GitHelper
 from rebasehelper.helpers.input_helper import InputHelper
-from rebasehelper.constants import DEFENC
+from rebasehelper.constants import SYSTEM_ENCODING
 
 
-patch_tools = {}
-
-
-def register_patch_tool(patch_tool):
-    patch_tools[patch_tool.CMD] = patch_tool
-    return patch_tool
-
-
-class PatchBase(object):
-
-    """
-    Class used for using several patching command tools, ...
-    Each method should overwrite method like run_check
-    """
-
-    @classmethod
-    def match(cls, cmd=None):  # pylint: disable=unused-argument
-        """Method checks whether it is usefull patch method"""
-        return NotImplementedError()
-
-    @classmethod
-    def run_patch(cls, old_dir, new_dir, rest_sources, patches, **kwargs):  # pylint: disable=unused-argument
-        """Method will check all patches in relevant package"""
-        return NotImplementedError()
-
-
-@register_patch_tool
-class GitPatchTool(PatchBase):
+class Patcher:
 
     """Class for git command used for patching old and new sources"""
 
-    CMD = 'git'
-    source_dir = ""
-    old_sources = ""
-    new_sources = ""
-    diff_cls = None
-    output_data = None
-    old_repo = None
-    new_repo = None
-    non_interactive = False
-    patches = []
-
-    @classmethod
-    def match(cls, cmd=None):
-        if cmd is not None and cmd == cls.CMD:
-            return True
-        else:
-            return False
+    source_dir: Optional[str] = None
+    old_sources: Optional[str] = None
+    new_sources: Optional[str] = None
+    output_data: Optional[str] = None
+    old_repo: Optional[git.Repo] = None
+    new_repo: Optional[git.Repo] = None
+    non_interactive: bool = False
+    patches: List[PatchObject] = []
 
     @staticmethod
     def decorate_patch_name(patch_name):
@@ -100,7 +65,7 @@ class GitPatchTool(PatchBase):
 
     @classmethod
     def strip_patch_name(cls, diff, patch_name):
-        token = '\n\n{0}'.format(cls.decorate_patch_name(patch_name)).encode(DEFENC)
+        token = '\n\n{0}'.format(cls.decorate_patch_name(patch_name)).encode(SYSTEM_ENCODING)
         try:
             idx = diff.index(token)
             return diff[:idx] + diff[idx + len(token):]
@@ -174,7 +139,7 @@ class GitPatchTool(PatchBase):
                 cls.output_data = cls.old_repo.git.rebase(root_commit, last_commit,
                                                           strategy_option=strategy_option,
                                                           onto='{}/master'.format(upstream),
-                                                          stdout_as_string=six.PY3)
+                                                          stdout_as_string=True)
             except git.GitCommandError as e:
                 ret_code = e.status
                 cls.output_data = e.stdout
@@ -183,7 +148,7 @@ class GitPatchTool(PatchBase):
         else:
             logger.info('git-rebase operation continues...')
             try:
-                cls.output_data = cls.old_repo.git.rebase('--continue', stdout_as_string=six.PY3)
+                cls.output_data = cls.old_repo.git.rebase('--continue', stdout_as_string=True)
             except git.GitCommandError as e:
                 ret_code = e.status
                 cls.output_data = e.stdout
@@ -197,7 +162,7 @@ class GitPatchTool(PatchBase):
             if not cls.old_repo.index.unmerged_blobs() and not cls.old_repo.index.diff(cls.old_repo.commit()):
                 # empty commit - conflict has been automatically resolved - skip
                 try:
-                    cls.output_data = cls.old_repo.git.rebase(skip=True, stdout_as_string=six.PY3)
+                    cls.output_data = cls.old_repo.git.rebase(skip=True, stdout_as_string=True)
                 except git.GitCommandError as e:
                     ret_code = e.status
                     cls.output_data = e.stdout
@@ -245,7 +210,7 @@ class GitPatchTool(PatchBase):
             if inapplicable:
                 inapplicable_patches.append(patch_name)
                 try:
-                    cls.output_data = cls.old_repo.git.rebase(skip=True, stdout_as_string=six.PY3)
+                    cls.output_data = cls.old_repo.git.rebase(skip=True, stdout_as_string=True)
                 except git.GitCommandError as e:
                     ret_code = e.status
                     cls.output_data = e.stdout
@@ -260,9 +225,9 @@ class GitPatchTool(PatchBase):
                     raise KeyboardInterrupt
             try:
                 if diff:
-                    cls.output_data = cls.old_repo.git.rebase('--continue', stdout_as_string=six.PY3)
+                    cls.output_data = cls.old_repo.git.rebase('--continue', stdout_as_string=True)
                 else:
-                    cls.output_data = cls.old_repo.git.rebase(skip=True, stdout_as_string=six.PY3)
+                    cls.output_data = cls.old_repo.git.rebase(skip=True, stdout_as_string=True)
             except git.GitCommandError as e:
                 ret_code = e.status
                 cls.output_data = e.stdout
@@ -328,7 +293,7 @@ class GitPatchTool(PatchBase):
         return repo
 
     @classmethod
-    def run_patch(cls, old_dir, new_dir, rest_sources, patches, **kwargs):
+    def patch(cls, old_dir, new_dir, rest_sources, patches, **kwargs):
         """
         The function can be used for patching one
         directory against another
@@ -353,43 +318,3 @@ class GitPatchTool(PatchBase):
             cls.new_repo = git.Repo(new_dir)
 
         return cls._git_rebase()
-
-
-class Patcher(object):
-
-    """
-    Class representing a process of applying and generating rebased patch using specific tool.
-    """
-
-    def __init__(self, tool=None):
-        """
-        Constructor
-
-        :param tool: tool to be used. If not supported, raises NotImplementedError
-        :return: None
-        """
-        if tool is None:
-            raise TypeError("Expected argument 'tool' (pos 1) is missing")
-        self._patch_tool_name = tool
-        self._tool = None
-
-        for patch_tool in patch_tools.values():
-            if patch_tool.match(self._patch_tool_name):
-                self._tool = patch_tool
-
-        if self._tool is None:
-            raise NotImplementedError("Unsupported patch tool")
-
-    def patch(self, old_dir, new_dir, rest_sources, patches, **kwargs):
-        """
-        Apply patches and generate rebased patches if needed
-
-        :param old_dir: path to dir with old patches
-        :param new_dir: path to dir with new patches
-        :param patches: old patches
-        :param rebased_patches: rebased patches
-        :param kwargs: --
-        :return:
-        """
-        logger.verbose("Patching source by patch tool %s", self._patch_tool_name)
-        return self._tool.run_patch(old_dir, new_dir, rest_sources, patches, **kwargs)

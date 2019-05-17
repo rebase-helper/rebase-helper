@@ -22,18 +22,18 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-import six
+from typing import List, Optional
 
 from rebasehelper.plugins.plugin import Plugin
 from rebasehelper.plugins.plugin_collection import PluginCollection
+from rebasehelper.types import PackageCategories
 from rebasehelper.logger import logger
 
 
 class BaseSpecHook(Plugin):
     """Base class for a spec hook"""
 
-    # spec hook categories, see PACKAGE_CATEGORIES in constants for a complete list
-    CATEGORIES = None
+    CATEGORIES: PackageCategories = []
 
     @classmethod
     def run(cls, spec_file, rebase_spec_file, **kwargs):
@@ -63,7 +63,7 @@ class SpecHookCollection(PluginCollection):
         """
         blacklist = kwargs.get("spec_hook_blacklist", [])
 
-        for name, spec_hook in six.iteritems(self.plugins):
+        for name, spec_hook in self.plugins.items():
             if not spec_hook or name in blacklist:
                 continue
             categories = spec_hook.CATEGORIES

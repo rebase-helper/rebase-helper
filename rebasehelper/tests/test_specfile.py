@@ -25,7 +25,9 @@
 import os
 import re
 
-import pytest
+import pytest  # type: ignore
+
+from typing import List
 
 from rebasehelper.specfile import SpecFile, SpecContent
 from rebasehelper.plugins.spec_hooks.typo_fix import TypoFix
@@ -35,26 +37,26 @@ from rebasehelper.plugins.spec_hooks.replace_old_version import ReplaceOldVersio
 from rebasehelper.plugins.spec_hooks.paths_to_rpm_macros import PathsToRPMMacros
 
 
-class TestSpecFile(object):
-    NAME = 'test'
-    VERSION = '1.0.2'
-    OLD_ARCHIVE = NAME + '-' + VERSION + '.tar.xz'
-    SPEC_FILE = 'test.spec'
-    SOURCE_0 = 'test-source.sh'
-    SOURCE_1 = 'source-tests.sh'
-    SOURCE_2 = ''
-    SOURCE_4 = 'file.txt.bz2'
-    SOURCE_5 = 'documentation.tar.xz'
-    SOURCE_6 = 'misc.zip'
-    SOURCE_7 = 'positional-1.1.0.tar.gz'
-    PATCH_1 = 'test-testing.patch'
-    PATCH_2 = 'test-testing2.patch'
-    PATCH_3 = 'test-testing3.patch'
-    PATCH_4 = 'test-testing4.patch'
-    BUILD_MISSING_LOG = 'build_missing.log'
-    BUILD_OBSOLETES_LOG = 'build_obsoletes.log'
+class TestSpecFile:
+    NAME: str = 'test'
+    VERSION: str = '1.0.2'
+    OLD_ARCHIVE: str = NAME + '-' + VERSION + '.tar.xz'
+    SPEC_FILE: str = 'test.spec'
+    SOURCE_0: str = 'test-source.sh'
+    SOURCE_1: str = 'source-tests.sh'
+    SOURCE_2: str = ''
+    SOURCE_4: str = 'file.txt.bz2'
+    SOURCE_5: str = 'documentation.tar.xz'
+    SOURCE_6: str = 'misc.zip'
+    SOURCE_7: str = 'positional-1.1.0.tar.gz'
+    PATCH_1: str = 'test-testing.patch'
+    PATCH_2: str = 'test-testing2.patch'
+    PATCH_3: str = 'test-testing3.patch'
+    PATCH_4: str = 'test-testing4.patch'
+    BUILD_MISSING_LOG: str = 'build_missing.log'
+    BUILD_OBSOLETES_LOG: str = 'build_obsoletes.log'
 
-    TEST_FILES = [
+    TEST_FILES: List[str] = [
         OLD_ARCHIVE,
         SPEC_FILE,
         SOURCE_0,

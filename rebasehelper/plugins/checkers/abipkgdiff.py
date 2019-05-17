@@ -22,17 +22,17 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-from __future__ import print_function
 import os
 import re
 
-import rpm
-import six
+import rpm  # type: ignore
+
+from typing import Optional
 
 from rebasehelper.logger import logger
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
 from rebasehelper.results_store import results_store
-from rebasehelper.plugins.checkers import BaseChecker
+from rebasehelper.plugins.checkers import BaseChecker, CheckerCategory
 from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.helpers.rpm_helper import RpmHelper
 
@@ -44,14 +44,14 @@ class AbiPkgDiff(BaseChecker):
         abi_changes(bool): True if ABI changes were detected.
     """
 
-    DEFAULT = True
-    CATEGORY = 'RPM'
-    results_dir = ''
+    DEFAULT: bool = True
+    CATEGORY: Optional[CheckerCategory] = CheckerCategory.RPM
+    results_dir: Optional[str] = ''
 
-    CMD = 'abipkgdiff'
-    ABIDIFF_ERROR = 1
-    ABIDIFF_USAGE_ERROR = 2
-    abi_changes = None
+    CMD: str = 'abipkgdiff'
+    ABIDIFF_ERROR: int = 1
+    ABIDIFF_USAGE_ERROR: int = 2
+    abi_changes: bool = False
 
     @classmethod
     def is_available(cls):
@@ -93,7 +93,7 @@ class AbiPkgDiff(BaseChecker):
     def run_check(cls, results_dir, **kwargs):
         """Compares old and new RPMs using abipkgdiff"""
         # Check if ABI changes occured
-        cls.abi_changes = None
+        cls.abi_changes = False
         cls.results_dir = os.path.join(results_dir, cls.name)
         os.makedirs(cls.results_dir)
         debug_old, rest_pkgs_old = cls._get_packages_for_abipkgdiff(results_store.get_build('old'))
@@ -196,7 +196,7 @@ class AbiPkgDiff(BaseChecker):
             return result_dict
 
         pkgs = {}
-        for pkg, ret_code in six.iteritems(reports):
+        for pkg, ret_code in reports.items():
             # If no abi changes for the package, store empty dictionary
             if ret_code:
                 with open(os.path.join(cls.results_dir, pkg + '.txt'), 'r') as f:
@@ -210,18 +210,18 @@ class AbiPkgDiff(BaseChecker):
         if not data['abi_changes']:
             output_lines.append('No ABI changes occured.')
             return output_lines
-        for pkg_name, pkg_changes in sorted(six.iteritems(data['packages'])):
+        for pkg_name, pkg_changes in sorted(data['packages'].items()):
             if not pkg_changes:
                 continue
             output_lines.append("ABI changes in {}:".format(pkg_name))
-            for filename, file_changes in six.iteritems(pkg_changes):
+            for filename, file_changes in pkg_changes.items():
                 output_lines.append(" - {}:".format(filename))
-                for sum_title, changes_list in sorted(six.iteritems(file_changes)):
+                for sum_title, changes_list in sorted(file_changes.items()):
                     if not changes_list:
                         continue
                     output_lines.append("   - {}:".format(sum_title))
 
-                    for change_name, change_info in sorted(six.iteritems(changes_list)):
+                    for change_name, change_info in sorted(changes_list.items()):
                         if change_info['filtered_out']:
                             output_lines.append("     - {} {} (filtered out {})".format(change_name,
                                                                                         change_info['count'],
@@ -229,7 +229,7 @@ class AbiPkgDiff(BaseChecker):
                         else:
                             output_lines.append("     - {} {}".format(change_name, change_info['count']))
         output_lines.append("Details in {}:".format(data['path']))
-        for pkg_name, pkg_changes in sorted(six.iteritems(data['packages'])):
+        for pkg_name, pkg_changes in sorted(data['packages'].items()):
             output_lines.append(" - {}.txt".format(pkg_name))
 
         return output_lines

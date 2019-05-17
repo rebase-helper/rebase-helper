@@ -28,7 +28,7 @@ import tempfile
 from rebasehelper.temporary_environment import TemporaryEnvironment
 
 
-class TestTemporaryEnvironment(object):
+class TestTemporaryEnvironment:
     """ TemporaryEnvironment class tests. """
 
     def test_with_statement(self):

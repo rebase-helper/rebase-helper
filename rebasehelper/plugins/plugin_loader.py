@@ -27,7 +27,7 @@ import pkg_resources
 from rebasehelper.plugins.plugin import Plugin
 
 
-class PluginLoader(object):
+class PluginLoader:
     @classmethod
     def load(cls, entrypoint, manager):
         result = {}

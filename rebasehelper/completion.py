@@ -29,7 +29,7 @@ from rebasehelper.cli import CLI
 from rebasehelper.archive import Archive
 
 
-class Completion(object):
+class Completion:
 
     @staticmethod
     def extensions():
@@ -67,9 +67,9 @@ class Completion(object):
             # pattern list of extensions
             'RH_EXTENSIONS': '@({})'.format('|'.join(cls.extensions())),
             # array of options
-            'RH_OPTIONS': '({})'.format(' '.join(['"{}"'.format(' '.join(o['options'])) for o in options])),
+            'RH_OPTIONS': '({})'.format(' '.join('"{}"'.format(' '.join(o['options'])) for o in options)),
             # array of choices of respective options
-            'RH_CHOICES': '({})'.format(' '.join(['"{}"'.format(' '.join(o['choices'])) for o in options])),
+            'RH_CHOICES': '({})'.format(' '.join('"{}"'.format(' '.join(o['choices'])) for o in options)),
         }
 
 

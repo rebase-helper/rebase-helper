@@ -24,6 +24,8 @@
 
 import os
 
+from typing import List
+
 from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.helpers.input_helper import InputHelper
 from rebasehelper.logger import logger
@@ -39,10 +41,10 @@ class Rpmbuild(BuildToolBase):  # pylint: disable=abstract-method
     Class representing rpmbuild build tool.
     """
 
-    ACCEPTS_OPTIONS = True
+    ACCEPTS_OPTIONS: bool = True
 
-    CMD = "rpmbuild"
-    logs = []
+    CMD: str = 'rpmbuild'
+    logs: List[str] = []
 
     @classmethod
     def _build_rpm(cls, srpm, workdir, results_dir, rpm_results_dir, builder_options=None):
@@ -73,7 +75,7 @@ class Rpmbuild(BuildToolBase):  # pylint: disable=abstract-method
         # An error occurred, raise an exception
         logfile = build_log_path
         logs = [l for l in PathHelper.find_all_files(results_dir, '*.log')]
-        cls.logs.extend([os.path.join(rpm_results_dir, os.path.basename(l)) for l in logs])
+        cls.logs.extend(os.path.join(rpm_results_dir, os.path.basename(l)) for l in logs)
         raise BinaryPackageBuildError("Building RPMs failed!", results_dir, logfile=logfile)
 
     @classmethod
@@ -121,7 +123,7 @@ class Rpmbuild(BuildToolBase):  # pylint: disable=abstract-method
         logger.verbose("Successfully built RPMs: '%s'", str(rpms))
 
         # gather logs
-        cls.logs.extend([l for l in PathHelper.find_all_files(rpm_results_dir, '*.log')])
+        cls.logs.extend(l for l in PathHelper.find_all_files(rpm_results_dir, '*.log'))
         logger.verbose("logs: '%s'", str(cls.logs))
 
         return dict(rpm=rpms, logs=cls.logs)

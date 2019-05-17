@@ -24,7 +24,11 @@
 
 import re
 
+from typing import List, Tuple
+
 from rebasehelper.plugins.spec_hooks import BaseSpecHook
+from rebasehelper.types import PackageCategories
+from rebasehelper.specfile import PackageCategory
 
 
 class PyPIURLFix(BaseSpecHook):
@@ -35,12 +39,12 @@ class PyPIURLFix(BaseSpecHook):
 
     """
 
-    CATEGORIES = ['python']
+    CATEGORIES: PackageCategories = [PackageCategory.python]
 
-    URL_TRANSFORMATIONS = [
+    URL_TRANSFORMATIONS: List[Tuple[str, str]] = [
         (r'https?://pypi\.python\.org/pypi/', 'https://pypi.org/project/'),
     ]
-    SOURCES_URL_TRANSFORMATIONS = [
+    SOURCES_URL_TRANSFORMATIONS: List[Tuple[str, str]] = [
         (r'https?://pypi(\.python)?\.org/', 'https://files.pythonhosted.org/'),
     ]
 

@@ -8,8 +8,8 @@ RUN echo -e "deltarpm=0\ninstall_weak_deps=0\ntsflags=nodocs" >> /etc/dnf/dnf.co
   && dnf -y --allowerasing install coreutils fedora-release \
   && dnf -y update \
   && dnf -y install \
-    python2 \
-    python2-devel \
+    python36 \
+    python38 \
     python3 \
     python3-devel \
     python3-tox \

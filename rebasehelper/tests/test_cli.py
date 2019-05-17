@@ -22,12 +22,10 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-import six
-
 from rebasehelper.cli import CLI
 
 
-class TestCLI(object):
+class TestCLI:
     def test_cli_unit(self):
         """Function tests cli class with all arguments"""
         conf = {
@@ -71,5 +69,5 @@ class TestCLI(object):
             '--srpm-buildtool', 'mock',
         ]
         cli = CLI(arguments)
-        for key, value in six.iteritems(cli.args.__dict__):
+        for key, value in cli.args.__dict__.items():
             assert value == conf[key]

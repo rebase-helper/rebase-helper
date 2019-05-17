@@ -22,7 +22,7 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-import pytest
+import pytest  # type: ignore
 
 from pkg_resources import parse_version
 
@@ -34,7 +34,7 @@ from rebasehelper.plugins.versioneers.cpan import CPAN
 from rebasehelper.plugins.versioneers.hackage import Hackage
 
 
-class TestVersioneer(object):
+class TestVersioneer:
 
     @pytest.mark.parametrize('package, min_version', [
         ('vim-go', 'v1.13'),

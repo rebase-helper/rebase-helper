@@ -24,19 +24,20 @@
 
 import re
 
-import rpm
-import six
+import rpm  # type: ignore
+
+from typing import List
 
 from pkg_resources import parse_version
 
 from rebasehelper.helpers.console_helper import ConsoleHelper
 
 
-class MacroHelper(object):
+class MacroHelper:
 
     """Class for working with RPM macros"""
 
-    MACROS_WHITELIST = [
+    MACROS_WHITELIST: List[str] = [
         '_bindir',
         '_datadir',
         '_includedir',
@@ -164,6 +165,6 @@ class MacroHelper(object):
         def _test(macro):
             return all(macro.get(k[4:]) >= v if k.startswith('min_') else
                        macro.get(k[4:]) <= v if k.startswith('max_') else
-                       macro.get(k) == v for k, v in six.iteritems(kwargs))
+                       macro.get(k) == v for k, v in kwargs.items())
 
         return [m for m in macros if _test(m)]

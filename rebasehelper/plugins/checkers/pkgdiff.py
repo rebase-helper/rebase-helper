@@ -22,31 +22,31 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-from __future__ import print_function
 import os
-import six
+
+from typing import Dict, List, Optional
+from xml.etree import ElementTree
 
 from rebasehelper.logger import logger
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
 from rebasehelper.results_store import results_store
-from rebasehelper.plugins.checkers import BaseChecker
+from rebasehelper.plugins.checkers import BaseChecker, CheckerCategory
 from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.helpers.rpm_helper import RpmHelper
-from xml.etree import ElementTree
 
 
 class PkgDiff(BaseChecker):
     """ Pkgdiff compare tool. """
 
-    DEFAULT = True
-    CATEGORY = 'RPM'
+    DEFAULT: bool = True
+    CATEGORY: Optional[CheckerCategory] = CheckerCategory.RPM
 
-    CMD = 'pkgdiff'
-    CHECKER_TAGS = ['added', 'removed', 'changed', 'moved', 'renamed']
-    pkgdiff_results_filename = 'report'
-    files_xml = 'files.xml'
-    results_dir = ''
-    results_dict = {}
+    CMD: str = 'pkgdiff'
+    CHECKER_TAGS: List[str] = ['added', 'removed', 'changed', 'moved', 'renamed']
+    pkgdiff_results_filename: str = 'report'
+    files_xml: str = 'files.xml'
+    results_dir: str = ''
+    results_dict: Dict[str, List[str]] = {}
 
     @classmethod
     def is_available(cls):
@@ -195,7 +195,7 @@ class PkgDiff(BaseChecker):
         cls.results_dict['moved'] = cls._update_changed_moved('moved')
 
         # Remove empty items
-        return dict((k, v) for k, v in six.iteritems(cls.results_dict) if v)
+        return dict((k, v) for k, v in cls.results_dict.items() if v)
 
     @classmethod
     def run_check(cls, results_dir, **kwargs):
@@ -232,7 +232,7 @@ class PkgDiff(BaseChecker):
         results_dict = cls.process_xml_results(cls.results_dir)
         lines = []
 
-        for key, val in six.iteritems(results_dict):
+        for key, val in results_dict.items():
             if val:
                 if lines:
                     lines.append('')

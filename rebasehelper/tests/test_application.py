@@ -24,7 +24,9 @@
 
 import os
 
-import pytest
+import pytest  # type: ignore
+
+from typing import List
 
 from rebasehelper.cli import CLI
 from rebasehelper.config import Config
@@ -32,20 +34,20 @@ from rebasehelper.application import Application
 from rebasehelper import constants
 
 
-class TestApplication(object):
-    OLD_SOURCES = 'test-1.0.2.tar.xz'
-    NEW_SOURCES = 'test-1.0.3.tar.xz'
-    SPEC_FILE = 'test.spec'
-    PATCH_1 = 'test-testing.patch'
-    PATCH_2 = 'test-testing2.patch'
-    PATCH_3 = 'test-testing3.patch'
-    SOURCE_1 = 'file.txt.bz2'
-    SOURCE_2 = 'documentation.tar.xz'
-    SOURCE_3 = 'misc.zip'
-    TEST_SOURCE = 'test-source.sh'
-    SOURCE_TESTS = 'source-tests.sh'
+class TestApplication:
+    OLD_SOURCES: str = 'test-1.0.2.tar.xz'
+    NEW_SOURCES: str = 'test-1.0.3.tar.xz'
+    SPEC_FILE: str = 'test.spec'
+    PATCH_1: str = 'test-testing.patch'
+    PATCH_2: str = 'test-testing2.patch'
+    PATCH_3: str = 'test-testing3.patch'
+    SOURCE_1: str = 'file.txt.bz2'
+    SOURCE_2: str = 'documentation.tar.xz'
+    SOURCE_3: str = 'misc.zip'
+    TEST_SOURCE: str = 'test-source.sh'
+    SOURCE_TESTS: str = 'source-tests.sh'
 
-    TEST_FILES = [
+    TEST_FILES: List[str] = [
         OLD_SOURCES,
         NEW_SOURCES,
         SPEC_FILE,
@@ -63,7 +65,7 @@ class TestApplication(object):
         'test-hardcoded-version-1.0.3.tar.gz',
     ]
 
-    cmd_line_args = ['--not-download-sources', '1.0.3']
+    cmd_line_args: List[str] = ['--not-download-sources', '1.0.3']
 
     def test_application_sources(self, workdir):
         expected_dict = {

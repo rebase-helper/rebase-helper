@@ -24,6 +24,8 @@
 
 import os
 
+from typing import List, Optional
+
 from rebasehelper.helpers.copr_helper import CoprHelper
 from rebasehelper.logger import logger
 from rebasehelper.exceptions import RebaseHelperError
@@ -36,17 +38,17 @@ class Copr(BuildToolBase):
     Class representing Copr build tool.
     """
 
-    CREATES_TASKS = True
+    CREATES_TASKS: bool = True
 
-    CMD = "copr"
-    logs = []
-    copr_helper = None
+    CMD: str = 'copr'
+    logs: List[str] = []
+    copr_helper: Optional[CoprHelper] = None
 
-    prefix = 'rebase-helper-'
-    chroot = 'fedora-rawhide-x86_64'
-    description = 'Repository containing rebase-helper builds.'
-    instructions = '''You can use this repository to test functionality
-                      of rebased packages.'''
+    prefix: str = 'rebase-helper-'
+    chroot: str = 'fedora-rawhide-x86_64'
+    description: str = 'Repository containing rebase-helper builds.'
+    instructions: str = '''You can use this repository to test functionality
+                         of rebased packages.'''
 
     @classmethod
     def _build_rpms(cls, srpm, name, **kwargs):
