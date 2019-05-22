@@ -24,7 +24,7 @@
 
 import os
 import re
-import urllib
+import urllib.parse
 
 from rebasehelper.plugins.spec_hooks import BaseSpecHook
 from rebasehelper.temporary_environment import TemporaryEnvironment

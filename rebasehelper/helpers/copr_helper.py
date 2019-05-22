@@ -25,7 +25,7 @@
 import gzip
 import os
 import time
-import urllib
+import urllib.parse
 
 import copr  # type: ignore
 import pyquery  # type: ignore

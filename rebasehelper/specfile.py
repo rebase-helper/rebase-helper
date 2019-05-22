@@ -29,7 +29,7 @@ import os
 import re
 import shlex
 import shutil
-import urllib
+import urllib.parse
 
 import rpm  # type: ignore
 

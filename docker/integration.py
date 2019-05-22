@@ -7,7 +7,7 @@ import posixpath
 import ssl
 import threading
 import time
-import urllib
+import urllib.parse
 
 import pyftpdlib.authorizers
 import pyftpdlib.handlers

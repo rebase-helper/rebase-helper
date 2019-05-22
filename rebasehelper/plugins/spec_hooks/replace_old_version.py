@@ -22,7 +22,7 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-import urllib
+import urllib.parse
 
 from rebasehelper.plugins.spec_hooks import BaseSpecHook
 
