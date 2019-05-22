@@ -165,9 +165,10 @@ class Text(BaseOutputTool):
     def print_checkers_text_output(cls, checkers_results):
         """Function prints text output for every checker"""
         for check_tool in cls.manager.checkers.plugins.values():
-            for check, data in sorted(checkers_results.items()):
-                if check == check_tool.name:
-                    logger_report.info('\n'.join(check_tool.format(data)))
+            if check_tool:
+                for check, data in sorted(checkers_results.items()):
+                    if check == check_tool.name:
+                        logger_report.info('\n'.join(check_tool.format(data)))
 
     @classmethod
     def print_build_log_hooks_result(cls, build_log_hooks_result):

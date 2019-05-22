@@ -95,11 +95,12 @@ class BaseOutputTool(Plugin):
         """Iterates over all checkers output to highlight important checkers warning"""
         checkers_results = results_store.get_checkers()
         for check_tool in cls.manager.checkers.plugins.values():
-            for check, data in sorted(checkers_results.items()):
-                if check == check_tool.name:
-                    out = check_tool.get_important_changes(data)
-                    if out:
-                        logger_output.warning('\n'.join(out))
+            if check_tool:
+                for check, data in sorted(checkers_results.items()):
+                    if check == check_tool.name:
+                        out = check_tool.get_important_changes(data)
+                        if out:
+                            logger_output.warning('\n'.join(out))
 
     @classmethod
     def print_report_file_path(cls):
