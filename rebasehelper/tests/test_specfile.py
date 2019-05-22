@@ -289,14 +289,25 @@ class TestSpecFile:
         EscapeMacros.run(spec_object, spec_object)
         assert spec_object.spec_content.section('%build')[0] == "autoreconf -vi # Unescaped macros %%name %%{name}"
 
-    def test_replace_old_version_spec_hook(self, spec_object):
+    @pytest.mark.parametrize('replace_with_macro', [
+        True,
+        False,
+    ], ids=[
+        'new-version',
+        'macro',
+    ])
+    def test_replace_old_version_spec_hook(self, spec_object, replace_with_macro):
         new_spec = spec_object.copy('new.spec')
         new_spec.set_version('1.0.3')
-        ReplaceOldVersion.run(spec_object, new_spec)
+        ReplaceOldVersion.run(spec_object, new_spec, replace_old_version_with_macro=replace_with_macro)
         # Check if the version has been updated
         test_source = [line for line in new_spec.spec_content.section('%package') if line.startswith('Source9')]
         assert test_source
-        assert test_source[0].split()[1] == 'https://test.com/test-hardcoded-version-1.0.3.tar.gz'
+        if replace_with_macro:
+            expected_result = 'https://test.com/test-hardcoded-version-%{version}.tar.gz'
+        else:
+            expected_result = 'https://test.com/test-hardcoded-version-1.0.3.tar.gz'
+        assert test_source[0].split()[1] == expected_result
 
         # Check if version in changelog hasn't been changed
         changelog = new_spec.spec_content.section('%changelog')
