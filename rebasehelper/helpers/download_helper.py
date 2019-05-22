@@ -25,7 +25,8 @@
 import os
 import sys
 import time
-import urllib
+import urllib.error
+import urllib.request
 
 import requests
 
