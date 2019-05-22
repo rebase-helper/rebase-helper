@@ -84,25 +84,13 @@ class Application:
 
         self.debug_log_file = debug_log_file
 
+        self.kwargs.update(self.conf.config)
         # Temporary workspace for Builder, checks, ...
         self.kwargs['workspace_dir'] = self.workspace_dir = os.path.join(self.execution_dir, constants.WORKSPACE_DIR)
         # Directory where results should be put
         self.kwargs['results_dir'] = self.results_dir = results_dir
-
         # Directory contaning only those files, which are relevant for the new rebased version
         self.kwargs['rebased_sources_dir'] = self.rebased_sources_dir
-
-        self.kwargs['non_interactive'] = self.conf.non_interactive
-
-        self.kwargs['favor_on_conflict'] = self.conf.favor_on_conflict
-
-        self.kwargs['changelog_entry'] = self.conf.changelog_entry
-
-        self.kwargs['spec_hook_blacklist'] = self.conf.spec_hook_blacklist
-
-        self.kwargs['build_log_hook_blacklist'] = self.conf.build_log_hook_blacklist
-
-        self.kwargs['force_build_log_hooks'] = self.conf.force_build_log_hooks
 
         logger.verbose("Rebase-helper version: %s", VERSION)
 
