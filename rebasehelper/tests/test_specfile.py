@@ -288,6 +288,9 @@ class TestSpecFile:
     def test_escape_macros_spec_hook(self, spec_object):
         EscapeMacros.run(spec_object, spec_object)
         assert spec_object.spec_content.section('%build')[0] == "autoreconf -vi # Unescaped macros %%name %%{name}"
+        # Test that the string after `#` wasn't recognized as a comment.
+        source9 = [line for line in spec_object.spec_content.section('%package') if line.startswith('Source9')][0]
+        assert source9 == "Source9: https://test.com/#/%{name}-hardcoded-version-1.0.2.tar.gz"
 
     @pytest.mark.parametrize('replace_with_macro', [
         True,
@@ -304,9 +307,9 @@ class TestSpecFile:
         test_source = [line for line in new_spec.spec_content.section('%package') if line.startswith('Source9')]
         assert test_source
         if replace_with_macro:
-            expected_result = 'https://test.com/test-hardcoded-version-%{version}.tar.gz'
+            expected_result = 'https://test.com/#/%{name}-hardcoded-version-%{version}.tar.gz'
         else:
-            expected_result = 'https://test.com/test-hardcoded-version-1.0.3.tar.gz'
+            expected_result = 'https://test.com/#/%{name}-hardcoded-version-1.0.3.tar.gz'
         assert test_source[0].split()[1] == expected_result
 
         # Check if version in changelog hasn't been changed

@@ -73,11 +73,7 @@ class ReplaceOldVersion(BaseSpecHook):
         """
         if cls._is_local_source(line):
             return line
-        try:
-            comment = line.index('#')
-        except ValueError:
-            comment = len(line)
-        return line[:comment].replace(old, '%{version}' if replace_with_macro else new) + line[comment:]
+        return line.replace(old, '%{version}' if replace_with_macro else new)
 
     @classmethod
     def run(cls, spec_file, rebase_spec_file, **kwargs):
@@ -88,6 +84,8 @@ class ReplaceOldVersion(BaseSpecHook):
             if sec_name.startswith('%changelog'):
                 continue
             for index, line in enumerate(section):
-                section[index] = cls._replace(line, old_version, new_version, replace_with_macro)
+                start, end = spec_file.spec_content.get_comment_span(line, sec_name)
+                updated_line = cls._replace(line[:start], old_version, new_version, replace_with_macro)
+                section[index] = updated_line + line[start:end]
 
         rebase_spec_file.save()

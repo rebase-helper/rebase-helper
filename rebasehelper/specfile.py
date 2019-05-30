@@ -36,7 +36,7 @@ import rpm  # type: ignore
 from datetime import date
 from difflib import SequenceMatcher
 from operator import itemgetter
-from typing import List, Optional, Pattern
+from typing import List, Optional, Pattern, Tuple
 
 from rebasehelper import constants
 from rebasehelper.logger import logger
@@ -147,6 +147,16 @@ class SpecContent:
         '%transfiletriggerpostun',
     ]
 
+    # Comments in these sections can only be on a separate line.
+    DISALLOW_INLINE_COMMENTS: List[str] = [
+        '%package',
+        '%patchlist',
+        '%sourcelist',
+        '%description',
+        '%files',
+        '%changelog',
+    ]
+
     def __init__(self, content):
         self.sections = self._split_sections(content)
 
@@ -159,6 +169,23 @@ class SpecContent:
             for line in section:
                 content.append(line + '\n')
         return ''.join(content)
+
+    @classmethod
+    def get_comment_span(cls, line: str, section: str) -> Tuple[int, int]:
+        """Gets span of a comment depending on the section.
+
+        Args:
+            line: Line to find the comment in.
+            section: Section the line is in.
+
+        Returns:
+            Span of the comment. If no comment is found, both tuple elements
+            are equal to the length of the line for convenient use in a slice.
+
+        """
+        inline_comment_allowed = not any(section.startswith(s) for s in cls.DISALLOW_INLINE_COMMENTS)
+        comment = re.search(r" #.*" if inline_comment_allowed else r"^\s*#.*", line)
+        return comment.span() if comment else (len(line), len(line))
 
     def section(self, name):
         """Gets content of a section.

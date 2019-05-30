@@ -30,27 +30,10 @@ from rebasehelper.plugins.spec_hooks import BaseSpecHook
 class EscapeMacros(BaseSpecHook):
     """Spec hook escaping RPM macros in comments."""
 
-    @staticmethod
-    def _escape_macros_in_comment(line):
-        """Escapes RPM macros in comment.
-
-        Args:
-            line (str): String to escape macros in.
-
-        Returns:
-            str: String with escaped macros.
-
-        """
-        comment = re.search(r"#.*", line)
-        if not comment:
-            return line
-
-        start, end = comment.span()
-        new_comment = re.sub(r'(?<!%)(%(?P<brace>{\??)?\w+(?(brace)}))', r'%\1', line[start:end])
-        return line[:start] + new_comment
-
     @classmethod
     def run(cls, spec_file, rebase_spec_file, **kwargs):
-        for _, section in rebase_spec_file.spec_content.sections:
+        for sec_name, section in rebase_spec_file.spec_content.sections:
             for index, line in enumerate(section):
-                section[index] = cls._escape_macros_in_comment(line)
+                start, end = spec_file.spec_content.get_comment_span(line, sec_name)
+                new_comment = re.sub(r'(?<!%)(%(?P<brace>{\??)?\w+(?(brace)}))', r'%\1', line[start:end])
+                section[index] = line[:start] + new_comment
