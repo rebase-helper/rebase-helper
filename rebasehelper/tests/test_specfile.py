@@ -30,18 +30,13 @@ import pytest  # type: ignore
 from typing import List
 
 from rebasehelper.specfile import SpecFile, SpecContent
-from rebasehelper.plugins.spec_hooks.typo_fix import TypoFix
-from rebasehelper.plugins.spec_hooks.pypi_url_fix import PyPIURLFix
-from rebasehelper.plugins.spec_hooks.escape_macros import EscapeMacros
-from rebasehelper.plugins.spec_hooks.replace_old_version import ReplaceOldVersion
-from rebasehelper.plugins.spec_hooks.paths_to_rpm_macros import PathsToRPMMacros
+from rebasehelper.tests.conftest import SPEC_FILE
 
 
 class TestSpecFile:
     NAME: str = 'test'
     VERSION: str = '1.0.2'
     OLD_ARCHIVE: str = NAME + '-' + VERSION + '.tar.xz'
-    SPEC_FILE: str = 'test.spec'
     SOURCE_0: str = 'test-source.sh'
     SOURCE_1: str = 'source-tests.sh'
     SOURCE_2: str = ''
@@ -58,7 +53,6 @@ class TestSpecFile:
 
     TEST_FILES: List[str] = [
         OLD_ARCHIVE,
-        SPEC_FILE,
         SOURCE_0,
         SOURCE_1,
         SOURCE_4,
@@ -72,11 +66,6 @@ class TestSpecFile:
         BUILD_MISSING_LOG,
         BUILD_OBSOLETES_LOG
     ]
-
-    @pytest.fixture
-    def spec_object(self, workdir):
-        sf = SpecFile(self.SPEC_FILE, workdir)
-        return sf
 
     def test_get_release(self, spec_object):
         match = re.search(r'([0-9.]*[0-9]+)\w*', spec_object.get_release())
@@ -116,7 +105,7 @@ class TestSpecFile:
         new_content = 'testing line 1\ntesting line 2\n'
         spec_object.spec_content = SpecContent(new_content)
         spec_object._write_spec_file_to_disc()
-        with open(self.SPEC_FILE) as spec:
+        with open(SPEC_FILE) as spec:
             assert new_content == spec.read()
 
     def test__get_raw_source_string(self, spec_object):
@@ -261,66 +250,6 @@ class TestSpecFile:
         assert target == 'test-1.0.2'
         target = spec_object.find_archive_target_in_prep('misc.zip')
         assert target == 'test-1.0.2/misc'
-
-    def test_typo_fix_spec_hook(self, spec_object):
-        assert '- This is chnagelog entry with some indentional typos' in spec_object.spec_content.section('%changelog')
-        TypoFix.run(spec_object, spec_object)
-        assert '- This is changelog entry with some intentional typos' in spec_object.spec_content.section('%changelog')
-
-    def test_paths_to_rpm_macros_spec_hook(self, spec_object):
-        files = [
-            '%{_mandir}/man1/*',
-            '%{_bindir}/%{name}',
-            '%config(noreplace) %{_sysconfdir}/test/test.conf',
-            '',
-        ]
-        files_devel = [
-            '%{_bindir}/test_example',
-            '%{_libdir}/my_test.so',
-            '%{_datadir}/test1.txt',
-            '/no/macros/here',
-            '',
-        ]
-        PathsToRPMMacros.run(spec_object, spec_object)
-        assert files == spec_object.spec_content.section('%files')
-        assert files_devel == spec_object.spec_content.section('%files devel')
-
-    def test_escape_macros_spec_hook(self, spec_object):
-        EscapeMacros.run(spec_object, spec_object)
-        assert spec_object.spec_content.section('%build')[0] == "autoreconf -vi # Unescaped macros %%name %%{name}"
-        # Test that the string after `#` wasn't recognized as a comment.
-        source9 = [line for line in spec_object.spec_content.section('%package') if line.startswith('Source9')][0]
-        assert source9 == "Source9: https://test.com/#/%{name}-hardcoded-version-1.0.2.tar.gz"
-
-    @pytest.mark.parametrize('replace_with_macro', [
-        True,
-        False,
-    ], ids=[
-        'new-version',
-        'macro',
-    ])
-    def test_replace_old_version_spec_hook(self, spec_object, replace_with_macro):
-        new_spec = spec_object.copy('new.spec')
-        new_spec.set_version('1.0.3')
-        ReplaceOldVersion.run(spec_object, new_spec, replace_old_version_with_macro=replace_with_macro)
-        # Check if the version has been updated
-        test_source = [line for line in new_spec.spec_content.section('%package') if line.startswith('Source9')]
-        assert test_source
-        if replace_with_macro:
-            expected_result = 'https://test.com/#/%{name}-hardcoded-version-%{version}.tar.gz'
-        else:
-            expected_result = 'https://test.com/#/%{name}-hardcoded-version-1.0.3.tar.gz'
-        assert test_source[0].split()[1] == expected_result
-
-        # Check if version in changelog hasn't been changed
-        changelog = new_spec.spec_content.section('%changelog')
-        assert '1.0.2' in changelog[0]
-
-    def test_pypi_to_python_hosted_url_trans(self, spec_object):
-        # pylint: disable=protected-access
-        assert 'https://pypi.python.org/' in spec_object._get_raw_source_string(7)
-        PyPIURLFix.run(spec_object, spec_object)
-        assert 'https://files.pythonhosted.org/' in spec_object._get_raw_source_string(7)
 
     def test_update_paths_to_patches(self, spec_object):
         """
