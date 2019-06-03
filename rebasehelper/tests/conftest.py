@@ -27,9 +27,12 @@ import shutil
 
 import pytest  # type: ignore
 
+from rebasehelper.specfile import SpecFile
+
 
 TESTS_DIR: str = os.path.dirname(__file__)
 TEST_FILES_DIR: str = os.path.join(TESTS_DIR, 'testing_files')
+SPEC_FILE: str = 'test.spec'
 
 
 @pytest.yield_fixture(autouse=True)
@@ -40,6 +43,12 @@ def workdir(request, tmpdir_factory):
         for file_name in getattr(request.cls, 'TEST_FILES', []):
             shutil.copy(os.path.join(TEST_FILES_DIR, file_name), wd)
         yield wd
+
+
+@pytest.fixture
+def spec_object(workdir):  # pylint: disable=redefined-outer-name
+    shutil.copy(os.path.join(TEST_FILES_DIR, SPEC_FILE), workdir)
+    return SpecFile(SPEC_FILE, workdir)
 
 
 def pytest_collection_modifyitems(items):

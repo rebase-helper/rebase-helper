@@ -95,6 +95,8 @@ setup(
         'rebasehelper.plugins.versioneers',
         'rebasehelper.tests',
         'rebasehelper.tests.functional',
+        'rebasehelper.tests.helpers',
+        'rebasehelper.tests.plugins',
     ],
     include_package_data=True,
     entry_points={
