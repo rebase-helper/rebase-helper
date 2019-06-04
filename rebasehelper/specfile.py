@@ -1252,7 +1252,7 @@ class SpecFile:
     #############################################
 
     def _read_spec_content(self):
-        """Method reads the content SPEC file and updates internal variables."""
+        """Reads the content of the Spec file."""
         try:
             with open(self.path) as f:
                 content = f.read()
@@ -1260,8 +1260,8 @@ class SpecFile:
             raise RebaseHelperError("Unable to open and read SPEC file '{}'".format(self.path))
         self.spec_content = SpecContent(content)
 
-    def _write_spec_file_to_disc(self):
-        """Write the current SPEC file to the disc"""
+    def _write_spec_content(self):
+        """Writes the current state of SpecContent into a file."""
         logger.verbose("Writing SPEC file '%s' to the disc", self.path)
         try:
             with open(self.path, "w") as f:
@@ -1284,11 +1284,16 @@ class SpecFile:
         new_object = SpecFile(new_path, self.sources_location)
         return new_object
 
+    def reload(self):
+        """Reloads the whole Spec file."""
+        self._read_spec_content()
+        self._update_data()
+
     def save(self):
         """Save changes made to the spec_content to the disc and update internal variables"""
         # TODO: Create a decorator from this method
         #  Write changes to the disc
-        self._write_spec_file_to_disc()
+        self._write_spec_content()
         #  Update internal variables
         self._update_data()
 

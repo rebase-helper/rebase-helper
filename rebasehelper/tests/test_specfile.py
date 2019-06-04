@@ -100,11 +100,11 @@ class TestSpecFile:
     def test_get_package_name(self, spec_object):
         assert spec_object.get_package_name() == self.NAME
 
-    def test__write_spec_file_to_disc(self, spec_object):
+    def test__write_spec_content(self, spec_object):
         # pylint: disable=protected-access
         new_content = 'testing line 1\ntesting line 2\n'
         spec_object.spec_content = SpecContent(new_content)
-        spec_object._write_spec_file_to_disc()
+        spec_object._write_spec_content()
         with open(SPEC_FILE) as spec:
             assert new_content == spec.read()
 
