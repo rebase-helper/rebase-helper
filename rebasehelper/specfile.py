@@ -251,6 +251,15 @@ class SpecContent:
         return sections
 
 
+def saves(func):
+    """Decorator for saving the SpecFile after a method is run."""
+    def wrapper(spec, *args, **kwargs):
+        func(spec, *args, **kwargs)
+        spec.save()
+
+    return wrapper
+
+
 class SpecFile:
 
     """Class representing a SPEC file"""
@@ -525,6 +534,7 @@ class SpecFile:
                         break
             i += 1
 
+    @saves
     def update_paths_to_patches(self):
         # Fix paths in rebase_spec_file to patches to current directory
         rebased_sources_path = os.path.join(constants.RESULTS_DIR, constants.REBASED_SOURCES_DIR)
@@ -532,8 +542,8 @@ class SpecFile:
             if line.startswith('Patch'):
                 mod_line = re.sub(rebased_sources_path + os.path.sep, '', line)
                 self.spec_content.section('%package')[index] = mod_line
-        self.save()
 
+    @saves
     def write_updated_patches(self, patches, disable_inapplicable):
         """Function writes the patches to -rebase.spec file"""
         def is_comment(line):
@@ -600,9 +610,6 @@ class SpecFile:
             i += 1
 
         self._process_patches(inapplicable_patches, removed_patches, disable_inapplicable)
-
-        #  save changes
-        self.save()
 
     ###################################
     # PACKAGE VERSION RELATED METHODS #
@@ -684,6 +691,7 @@ class SpecFile:
         logger.verbose("Changing release number to '%s'", release)
         self.set_tag('Release', '{}%{{?dist}}'.format(release), preserve_macros=True)
 
+    @saves
     def redefine_release_with_macro(self, macro):
         """
         Method redefines the Release: line to include passed macro and comments out the old line
@@ -700,9 +708,9 @@ class SpecFile:
                 line = 'Release: {}'.format(release)
                 logger.verbose("Inserting new Release line '%s'", line)
                 preamble.insert(index + 1, line)
-                self.save()
                 break
 
+    @saves
     def revert_redefine_release_with_macro(self, macro):
         """
         Method removes the redefined the Release: line with given macro and uncomments the old Release line.
@@ -726,9 +734,9 @@ class SpecFile:
                 preamble[index - 1] = preamble[index - 1].lstrip('#')
                 logger.verbose("Removing redefined Release line '%s'", line.strip())
                 preamble.pop(index)
-                self.save()
                 break
 
+    @saves
     def set_extra_version(self, extra_version):
         """
         Method to update the extra version in the SPEC file. Redefined Source0 if needed and also changes
@@ -808,9 +816,6 @@ class SpecFile:
             self.revert_redefine_release_with_macro(extra_version_macro)
             # TODO: handle empty extra_version as removal of the definitions!
 
-        # save changes
-        self.save()
-
     def set_extra_version_separator(self, separator):
         """
         Set the string that separates the version and extra version
@@ -840,6 +845,7 @@ class SpecFile:
         self.set_extra_version_separator(separator)
         self.set_extra_version(extra_version)
 
+    @saves
     def set_tag(self, tag, value, preserve_macros=False):
         """Sets value of a tag while trying to preserve macros if requested"""
         macro_def_re = re.compile(
@@ -1105,7 +1111,6 @@ class SpecFile:
             new_line = line[:match.start('value')] + value + line[match.end('value'):]
             self.spec_content.section('%package')[index] = new_line
             break
-        self.save()
 
     def set_version(self, version):
         """
@@ -1290,9 +1295,7 @@ class SpecFile:
         self._update_data()
 
     def save(self):
-        """Save changes made to the spec_content to the disc and update internal variables"""
-        # TODO: Create a decorator from this method
-        #  Write changes to the disc
+        """Saves changes made to SpecContent and updates the internal state."""
         self._write_spec_content()
         #  Update internal variables
         self._update_data()
@@ -1342,6 +1345,7 @@ class SpecFile:
         """
         return [RpmHelper.decode(r) for r in self.hdr[rpm.RPMTAG_REQUIRES]]
 
+    @saves
     def update_changelog(self, changelog_entry):
         """Inserts a new entry into the changelog and saves the SpecFile.
 
@@ -1351,7 +1355,6 @@ class SpecFile:
         """
         new_entry = self.get_new_log(changelog_entry)
         self.spec_content.section('%changelog')[0:0] = new_entry
-        self.save()
 
     def get_new_log(self, changelog_entry):
         """Constructs a new changelog entry.
@@ -1427,6 +1430,7 @@ class SpecFile:
 
         return None
 
+    @saves
     def update_setup_dirname(self, dirname):
         """
         Update %setup or %autosetup dirname argument if needed
@@ -1497,7 +1501,6 @@ class SpecFile:
 
                     prep[index] = '#{0}'.format(line)
                     prep.insert(index + 1, ' '.join(args))
-                    self.save()
 
     def find_archive_target_in_prep(self, archive):
         """
