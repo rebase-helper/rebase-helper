@@ -36,7 +36,7 @@ import rpm  # type: ignore
 from datetime import date
 from difflib import SequenceMatcher
 from operator import itemgetter
-from typing import List, Optional, Pattern, Tuple
+from typing import List, Optional, Pattern, Tuple, Dict
 
 from rebasehelper import constants
 from rebasehelper.logger import logger
@@ -264,26 +264,21 @@ class SpecFile:
 
     """Class representing a SPEC file"""
 
-    path: str = ''
-    download: bool = False
-    spec_content: Optional[SpecContent] = None
-    spc: Optional[rpm.spec] = None
-    hdr: Optional[rpm.hdr] = None
-    extra_version: Optional[str] = None
-    category: Optional[PackageCategory] = None
-    sources: Optional[List[str]] = None
-    patches: Optional[List[str]] = None
-    prep_section: Optional[str] = None
-    removed_patches: List[str] = []
+    def __init__(self, path: str, sources_location: str = ''):
+        # Initialize attributes
+        self.path: str = path
+        self.removed_patches: List[str] = []
+        self.sources_location: str = sources_location
+        self.prep_section: str = ''
+        self.patches: Dict[str, List[PatchObject]] = {}
+        self.sources: List[str] = []
+        self.extra_version: str = ''
+        self.category: Optional[PackageCategory] = None
+        self.spc: rpm.spec = RpmHelper.get_rpm_spec(self.path)
+        self.spec_content: SpecContent = self._read_spec_content()
 
-    def __init__(self, path, sources_location=''):
-        self.path = path
-        self.sources_location = sources_location
-        #  Read the content of the whole SPEC file
-        self._read_spec_content()
         # Load rpm information
         self.set_extra_version_separator('')
-        self.removed_patches = []
         self._update_data()
 
     def download_remote_sources(self):
@@ -338,17 +333,10 @@ class SpecFile:
         # explicitly discard old instance to prevent rpm from destroying
         # "sources" and "patches" lua tables after new instance is created
         self.spc = None
-        # load rpm information
-        try:
-            self.spc = RpmHelper.parse_spec(self.path, flags=rpm.RPMSPEC_ANYARCH)
-        except RebaseHelperError:
-            # try again with RPMSPEC_FORCE flag (the default)
-            self.spc = RpmHelper.parse_spec(self.path)
+        self.spc = RpmHelper.get_rpm_spec(self.path)
         self.category = guess_category()
         self.sources = self._get_spec_sources_list(self.spc)
         self.prep_section = self.spc.prep
-        # HEADER of SPEC file
-        self.hdr = self.spc.sourceHeader
         # determine the extra_version
         logger.debug("Updating the extra version")
         _, self.extra_version, separator = SpecFile.extract_version_from_archive_name(
@@ -356,7 +344,7 @@ class SpecFile:
             self._get_raw_source_string(0))
         self.set_extra_version_separator(separator)
 
-        self.patches = self._get_initial_patches_list()
+        self.patches = self._get_initial_patches()
         self.macros = MacroHelper.dump()
 
     ###########################
@@ -418,8 +406,8 @@ class SpecFile:
     # PATCHES RELATED METHODS #
     ###########################
 
-    def _get_initial_patches_list(self):
-        """Method returns a list of patches from a spec file"""
+    def _get_initial_patches(self) -> Dict[str, List[PatchObject]]:
+        """Returns a dict of patches from a spec file"""
         patches_applied = []
         patches_not_used = []
         patches_list = [p for p in self.spc.sources if p[2] == 2]
@@ -618,21 +606,13 @@ class SpecFile:
     def get_NVR(self):
         return '{}-{}-{}'.format(self.get_package_name(), self.get_full_version(), self.get_release())
 
-    def get_epoch_number(self):
-        """
-        Method for getting epoch of the package
+    def get_epoch_number(self) -> str:
+        """Returns Epoch of the package."""
+        return self.spc.sourceHeader[rpm.RPMTAG_EPOCHNUM]
 
-        :return:
-        """
-        return self.hdr[rpm.RPMTAG_EPOCHNUM]
-
-    def get_release(self):
-        """
-        Method for getting full release string of the package
-
-        :return:
-        """
-        return RpmHelper.decode(self.hdr[rpm.RPMTAG_RELEASE])
+    def get_release(self) -> str:
+        """Returns the whole release string of the package."""
+        return RpmHelper.decode(self.spc.sourceHeader[rpm.RPMTAG_RELEASE])
 
     def get_release_number(self):
         """
@@ -646,13 +626,9 @@ class SpecFile:
             release = release.replace(dist, '')
         return re.sub(r'([0-9.]*[0-9]+).*', r'\1', release)
 
-    def get_version(self):
-        """
-        Method returns the version
-
-        :return:
-        """
-        return RpmHelper.decode(self.hdr[rpm.RPMTAG_VERSION])
+    def get_version(self) -> str:
+        """Returns the package version."""
+        return RpmHelper.decode(self.spc.sourceHeader[rpm.RPMTAG_VERSION])
 
     def get_extra_version(self):
         """
@@ -1256,14 +1232,22 @@ class SpecFile:
     # SPEC CONTENT MANIPULATION RELATED METHODS #
     #############################################
 
-    def _read_spec_content(self):
-        """Reads the content of the Spec file."""
+    def _read_spec_content(self) -> SpecContent:
+        """Reads the content of the Spec file.
+
+        Returns:
+            The created SpecContent instance.
+
+        Raises:
+            RebaseHelperError: If the Spec file cannot be read.
+
+        """
         try:
             with open(self.path) as f:
                 content = f.read()
         except IOError:
             raise RebaseHelperError("Unable to open and read SPEC file '{}'".format(self.path))
-        self.spec_content = SpecContent(content)
+        return SpecContent(content)
 
     def _write_spec_content(self):
         """Writes the current state of SpecContent into a file."""
@@ -1329,21 +1313,13 @@ class SpecFile:
         else:
             return False
 
-    def get_package_name(self):
-        """
-        Function returns a package name
+    def get_package_name(self) -> str:
+        """Returns name of the package."""
+        return RpmHelper.decode(self.spc.sourceHeader[rpm.RPMTAG_NAME])
 
-        :return:
-        """
-        return RpmHelper.decode(self.hdr[rpm.RPMTAG_NAME])
-
-    def get_requires(self):
-        """
-        Function returns a package requirements
-
-        :return:
-        """
-        return [RpmHelper.decode(r) for r in self.hdr[rpm.RPMTAG_REQUIRES]]
+    def get_requires(self) -> List[str]:
+        """Returns package requirements."""
+        return [RpmHelper.decode(r) for r in self.spc.sourceHeader[rpm.RPMTAG_REQUIRES]]
 
     @saves
     def update_changelog(self, changelog_entry):

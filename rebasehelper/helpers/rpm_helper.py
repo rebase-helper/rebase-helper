@@ -186,6 +186,15 @@ class RpmHelper:
                 return result
 
     @classmethod
+    def get_rpm_spec(cls, path) -> rpm.spec:
+        try:
+            spec = cls.parse_spec(path, flags=rpm.RPMSPEC_ANYARCH)
+        except RebaseHelperError:
+            # try again with RPMSPEC_FORCE flag (the default)
+            spec = cls.parse_spec(path)
+        return spec
+
+    @classmethod
     def decode(cls, data):
         if isinstance(data, bytes):
             return data.decode(SYSTEM_ENCODING)
