@@ -819,8 +819,7 @@ class Application:
                 InputHelper.get_message('Do you want to continue with the rebuild now'):
             return False
         # Update rebase spec file content after potential manual modifications
-        self.rebase_spec_file._read_spec_content()  # pylint: disable=protected-access
-        self.rebase_spec_file._update_data()  # pylint: disable=protected-access
+        self.rebase_spec_file.reload()
         # clear current version output directories
         if os.path.exists(os.path.join(results_dir, 'old-build')):
             shutil.rmtree(os.path.join(results_dir, 'old-build'))
