@@ -1183,7 +1183,7 @@ class SpecFile:
         """Function returns whole prep section"""
         def unmatched_quotation(s):
             try:
-                shlex.split(s)
+                shlex.split(s, comments=True)
             except ValueError:
                 return True
             return False
