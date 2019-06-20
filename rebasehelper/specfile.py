@@ -555,10 +555,6 @@ class SpecFile:
                 fields = line.strip().split()
                 patch_name = fields[1]
                 patch_num = self._get_patch_number(fields)
-                # We check if patch is mentioned in SPEC file but not used.
-                # We comment out the patch
-                check_not_applied = [x for x in self.get_not_used_patches() if
-                                     int(x.get_index()) == int(patch_num)]
 
                 if 'deleted' in patches:
                     patch_removed = [x for x in patches['deleted'] if patch_name in x]
@@ -569,7 +565,7 @@ class SpecFile:
                 else:
                     patch_inapplicable = None
 
-                if patch_removed or check_not_applied:
+                if patch_removed:
                     # remove the line of the patch that was removed
                     self.removed_patches.append(patch_name)
                     removed_patches.append(patch_num)
