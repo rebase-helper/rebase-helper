@@ -22,6 +22,7 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
+import re
 import urllib.parse
 
 from rebasehelper.types import Options
@@ -41,14 +42,14 @@ class ReplaceOldVersion(BaseSpecHook):
     ]
 
     @classmethod
-    def _is_local_source(cls, line):
+    def _is_local_source(cls, line: str) -> bool:
         """Checks if a line contains a local source.
 
         Args:
-            line (str): Line to be checked.
+            line: Line to be checked.
 
         Returns:
-            bool: Whether the line contains a local source
+            Whether the line contains a local source
 
         """
         if not (line.startswith('Patch') or line.startswith('Source')):
@@ -57,35 +58,20 @@ class ReplaceOldVersion(BaseSpecHook):
         return not urllib.parse.urlparse(source).scheme
 
     @classmethod
-    def _replace(cls, line, old, new, replace_with_macro=False):
-        """Replaces occurrences of old version on a line with new version.
-
-        Args:
-            line (str): String to replace the version in.
-            old (str): Old version string.
-            new (str): New version string.
-            replace_with_macro (bool): Whether %{version} macro should
-                be used as a substitution.
-
-        Returns:
-            str: Modified line with replaced old version strings.
-
-        """
-        if cls._is_local_source(line):
-            return line
-        return line.replace(old, '%{version}' if replace_with_macro else new)
-
-    @classmethod
     def run(cls, spec_file, rebase_spec_file, **kwargs):
         old_version = spec_file.get_version()
         new_version = rebase_spec_file.get_version()
         replace_with_macro = kwargs.get('replace_old_version_with_macro')
+        pattern = re.compile(r'([/\-\s]){}([/.\-\s])'.format(re.escape(old_version)))
         for sec_name, section in rebase_spec_file.spec_content.sections:
             if sec_name.startswith('%changelog'):
                 continue
             for index, line in enumerate(section):
+                if cls._is_local_source(line):
+                    continue
                 start, end = spec_file.spec_content.get_comment_span(line, sec_name)
-                updated_line = cls._replace(line[:start], old_version, new_version, replace_with_macro)
+                replacement = r'\g<1>' + ('%{version}' if replace_with_macro else new_version) + r'\g<2>'
+                updated_line = pattern.sub(replacement, line[:start])
                 section[index] = updated_line + line[start:end]
 
         rebase_spec_file.save()
