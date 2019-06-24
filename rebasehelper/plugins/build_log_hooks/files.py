@@ -28,7 +28,7 @@ import fnmatch
 import os
 import re
 
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 from rebasehelper.plugins.build_log_hooks import BaseBuildLogHook
 from rebasehelper.types import PackageCategories
@@ -60,6 +60,12 @@ class Files(BaseBuildLogHook):
         '%readme': None,
         '%verify': None,
     }
+
+    PROHIBITED_KEYWORDS: List[str] = [
+        '%if',
+        '%else',
+        '%endif',
+    ]
 
     @classmethod
     def format(cls, data):
@@ -226,7 +232,11 @@ class Files(BaseBuildLogHook):
                 i = 0
                 while i < len(sec_content):
                     original_line = sec_content[i].split()
-                    if not original_line:
+                    # Expand the whole line to check for occurrences of
+                    # special keywords, such as %global and %if blocks.
+                    # Macro definitions expand to empty string.
+                    expanded = MacroHelper.expand(sec_content[i])
+                    if not original_line or not expanded or any(k in expanded for k in cls.PROHIBITED_KEYWORDS):
                         i += 1
                         continue
                     split_line = original_line[:]
