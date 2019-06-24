@@ -192,6 +192,16 @@ class Files(BaseBuildLogHook):
         return best_match_section or rebase_spec_file.get_main_files_section()
 
     @classmethod
+    def _sanitize_path(cls, path):
+        """Changes the path to follow Fedora Packaging Guidelines."""
+        if path.startswith('%{_mandir}'):
+            # substitute compression extension with *
+            directory, name = os.path.split(path)
+            name = '{0}.{1}*'.format(*name.split('.')[:2])
+            path = os.path.join(directory, name)
+        return path
+
+    @classmethod
     def _correct_missing_files(cls, rebase_spec_file, files):
         """Adds files found in buildroot which are missing in %files
         sections in the SPEC file. Each file is added to a %files section
@@ -206,7 +216,7 @@ class Files(BaseBuildLogHook):
         result = collections.defaultdict(lambda: collections.defaultdict(list))
         for file in files:
             section = cls._get_best_matching_files_section(rebase_spec_file, file)
-            substituted_path = MacroHelper.substitute_path_with_macros(file, macros)
+            substituted_path = cls._sanitize_path(MacroHelper.substitute_path_with_macros(file, macros))
             try:
                 index = [i for i, l in enumerate(rebase_spec_file.spec_content.section(section)) if l][-1] + 1
             except IndexError:
