@@ -61,8 +61,14 @@ class MacroHelper:
         except rpm.error:
             return default
 
-    @staticmethod
-    def expand_macros(macros):
+    @classmethod
+    def purge_macro(cls, macro: str) -> None:
+        m = '%{{{}}}'.format(macro)
+        while cls.expand(m, m) != m:
+            rpm.delMacro(macro)
+
+    @classmethod
+    def expand_macros(cls, macros):
         """Expands values of multiple macros.
 
         Args:
@@ -74,7 +80,7 @@ class MacroHelper:
 
         """
         for macro in macros:
-            macro['value'] = MacroHelper.expand(macro['value'])
+            macro['value'] = cls.expand(macro['value'])
         return macros
 
     @staticmethod
