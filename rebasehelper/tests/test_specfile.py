@@ -231,6 +231,8 @@ class TestSpecFile:
         assert spec_object.get_extra_version() == 'rc1'
 
     def test_update_setup_dirname(self, spec_object):
+        spec_object.set_extra_version('rc1')
+
         prep = spec_object.spec_content.section('%prep')
         spec_object.update_setup_dirname('test-1.0.2')
         assert spec_object.spec_content.section('%prep') == prep

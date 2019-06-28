@@ -322,14 +322,11 @@ class SpecFile:
                         if category.value.match(RpmHelper.decode(provide)):
                             return category
             return None
-
-        def replace_macro(macro, value):
-            m = '%{{{}}}'.format(macro)
-            while MacroHelper.expand(m, m) != m:
-                rpm.delMacro(macro)
-            rpm.addMacro(macro, value)
+        # reset all macros and settings
+        rpm.reloadConfig()
         # ensure that %{_sourcedir} macro is set to proper location
-        replace_macro('_sourcedir', self.sources_location)
+        MacroHelper.purge_macro('_sourcedir')
+        rpm.addMacro('_sourcedir', self.sources_location)
         # explicitly discard old instance to prevent rpm from destroying
         # "sources" and "patches" lua tables after new instance is created
         self.spc = None
@@ -981,9 +978,7 @@ class SpecFile:
             macros = {m for m, _ in _find_macros(s)}
             macros.update(m for m, _ in _find_macros(_expand_macros(s)))
             for macro in macros:
-                m = '%{{{}}}'.format(macro)
-                while MacroHelper.expand(m, m) != m:
-                    rpm.delMacro(macro)
+                MacroHelper.purge_macro(macro)
                 value = _get_macro_value(macro)
                 if value and MacroHelper.expand(value):
                     rpm.addMacro(macro, value)
