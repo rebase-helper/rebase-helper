@@ -86,8 +86,9 @@ class Patcher:
         try:
             repo.git.am(patch_name)
             commit = repo.head.commit
-        except git.GitCommandError:
+        except git.GitCommandError as e:
             logger.verbose('Applying patch with git-am failed.')
+            logger.debug(str(e))
             try:
                 repo.git.am(abort=True)
             except git.GitCommandError:
@@ -96,7 +97,12 @@ class Patcher:
             try:
                 repo.git.apply(patch_name, p=patch_strip)
             except git.GitCommandError:
-                repo.git.apply(patch_name, p=patch_strip, reject=True, whitespace='fix')
+                try:
+                    repo.git.apply(patch_name, p=patch_strip, reject=True, whitespace='fix')
+                except git.GitCommandError as e:
+                    logger.verbose('Applying patch with git-apply failed.')
+                    logger.debug(str(e))
+                    raise
             repo.git.add(all=True)
             commit = repo.index.commit(cls.decorate_patch_name(os.path.basename(patch_name)), skip_hooks=True)
         repo.git.commit(amend=True, m=cls.insert_patch_name(commit.message, os.path.basename(patch_name)))
