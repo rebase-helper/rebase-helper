@@ -22,37 +22,45 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
+from typing import List, Type, Union, TYPE_CHECKING
+
 from rebasehelper.plugins.plugin_loader import PluginLoader
+from rebasehelper.plugins.plugin import Plugin
+from rebasehelper.types import Options
+
+if TYPE_CHECKING:
+    # avoid cyclic import at runtime
+    from rebasehelper.plugins.plugin_manager import PluginManager
 
 
 class PluginCollection:
-    def __init__(self, entrypoint, manager):
+    def __init__(self, entrypoint: str, manager: 'PluginManager'):
         self.plugins = PluginLoader.load(entrypoint, manager)
 
-    def get_all_plugins(self):
+    def get_all_plugins(self) -> List[Type[Plugin]]:
         return list(self.plugins)
 
-    def get_supported_plugins(self):
+    def get_supported_plugins(self) -> List[Type[Plugin]]:
         return [k for k, v in self.plugins.items() if v]
 
-    def get_default_plugins(self, return_one=False):
+    def get_default_plugins(self, return_one: bool = False) -> Union[Type[Plugin], List[Type[Plugin]]]:
         default = [k for k, v in self.plugins.items() if v and getattr(v, 'DEFAULT', False)]
         return default if not return_one else default[0] if default else None
 
-    def get_plugin(self, tool):
+    def get_plugin(self, tool: str) -> Type[Plugin]:
         try:
             return self.plugins[tool]
         except KeyError:
             raise NotImplementedError("Unsupported plugin")
 
-    def get_options(self):
+    def get_options(self) -> Options:
         """Gets options of all plugins of one type.
 
         Returns:
             list: List of plugins' options.
 
         """
-        options = []
+        options: List = []
         for plugin in self.plugins.values():
             if plugin:
                 options.extend(plugin.OPTIONS)
