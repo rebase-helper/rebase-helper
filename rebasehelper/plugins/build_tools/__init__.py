@@ -25,9 +25,16 @@
 import os
 import shutil
 
+import pam  # type: ignore
+
 from rebasehelper.helpers.path_helper import PathHelper
 from rebasehelper.temporary_environment import TemporaryEnvironment
 from rebasehelper.logger import logger
+
+
+def check_mock_privileges() -> bool:
+    # try to authenticate as superuser using mock PAM service
+    return pam.pam().authenticate('root', '', service='mock')
 
 
 class BuildTemporaryEnvironment(TemporaryEnvironment):

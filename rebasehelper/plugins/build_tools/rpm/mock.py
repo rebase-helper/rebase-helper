@@ -29,7 +29,7 @@ from typing import List
 from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.logger import logger
 from rebasehelper.helpers.path_helper import PathHelper
-from rebasehelper.plugins.build_tools import MockTemporaryEnvironment
+from rebasehelper.plugins.build_tools import MockTemporaryEnvironment, check_mock_privileges
 from rebasehelper.plugins.build_tools.rpm import BuildToolBase
 from rebasehelper.exceptions import BinaryPackageBuildError
 
@@ -68,6 +68,9 @@ class Mock(BuildToolBase):  # pylint: disable=abstract-method
             cmd.extend(['--arch', arch])
         if builder_options is not None:
             cmd.extend(builder_options)
+
+        if not check_mock_privileges():
+            cmd = ['pkexec'] + cmd
 
         ret = ProcessHelper.run_subprocess(cmd, output_file=output)
 

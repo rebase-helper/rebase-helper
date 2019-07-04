@@ -53,6 +53,7 @@ def get_requirements():
         'marshmallow<3.0.0',
         'copr',
         'pyquery',
+        'python-pam',
         'requests',
         'GitPython',
         # https://github.com/jonathaneunice/colors/pull/1
