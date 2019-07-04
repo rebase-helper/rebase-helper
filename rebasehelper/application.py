@@ -352,7 +352,7 @@ class Application:
             archive = Archive(archive_path)
         except NotImplementedError as e:
             raise RebaseHelperError('{}. Supported archives are {}'.format(str(e),
-                                    Archive.get_supported_archives()))
+                                    ', '.join(Archive.get_supported_archives())))
 
         try:
             archive.extract_archive(destination)
@@ -530,7 +530,7 @@ class Application:
             builder = plugin_manager.srpm_build_tools.get_plugin(self.conf.srpm_buildtool)
         except NotImplementedError as e:
             raise RebaseHelperError('{}. Supported SRPM build tools are {}'.format(
-                str(e), plugin_manager.srpm_build_tools.get_supported_tools()))
+                str(e), ', '.join(plugin_manager.srpm_build_tools.get_supported_plugins())))
 
         for version in ['old', 'new']:
             koji_build_id = None
@@ -589,7 +589,7 @@ class Application:
             builder = plugin_manager.build_tools.get_plugin(self.conf.buildtool)
         except NotImplementedError as e:
             raise RebaseHelperError('{}. Supported build tools are {}'.format(
-                str(e), plugin_manager.build_tools.get_supported_tools()))
+                str(e), ', '.join(plugin_manager.build_tools.get_supported_plugins())))
 
         for version in ['old', 'new']:
             results_dir = '{}-build'.format(os.path.join(self.results_dir, version))
