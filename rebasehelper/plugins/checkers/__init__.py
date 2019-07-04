@@ -25,7 +25,7 @@
 import enum
 import os
 
-from typing import Optional
+from typing import Any, Dict, List, Optional, Type, Union
 
 from rebasehelper.plugins.plugin import Plugin
 from rebasehelper.plugins.plugin_collection import PluginCollection
@@ -98,13 +98,13 @@ class CheckerCollection(PluginCollection):
     Class representing the process of running various checkers on final packages.
     """
 
-    def run(self, results_dir, checker_name, **kwargs):
+    def run(self, results_dir: str, checker_name: str, **kwargs: Any) -> Optional[Dict[str, Any]]:
         """Runs a particular checker and returns the results.
 
         Args:
-            results_dir (str): Path to a directory in which the checker
+            results_dir: Path to a directory in which the checker
                 should store the results.
-            checker_name(str): Name of the checker to be run.
+            checker_name: Name of the checker to be run.
 
         Raises:
             NotImplementedError: If a checker with the given name doesn't
@@ -123,3 +123,10 @@ class CheckerCollection(PluginCollection):
 
         logger.info("Running checks on packages using '%s'", checker_name)
         return checker.run_check(results_dir, **kwargs)
+
+    def get_supported_plugins(self) -> List[Type[Plugin]]:
+        return [k for k, v in self.plugins.items() if v and v.is_available()]
+
+    def get_default_plugins(self, return_one: bool = False) -> Union[List[Type[Plugin]], Type[Plugin]]:
+        default = [k for k, v in self.plugins.items() if v and v.is_available() and getattr(v, 'DEFAULT', False)]
+        return default if not return_one else default[0] if default else None
