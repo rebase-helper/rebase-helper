@@ -90,7 +90,7 @@ class Rpmbuild(BuildToolBase):  # pylint: disable=abstract-method
         if not RpmHelper.all_packages_installed(req_pkgs):
             question = '\nSome build dependencies are missing. Do you want to install them now'
             if conf.non_interactive or InputHelper.get_message(question):
-                if RpmHelper.install_build_dependencies(spec.get_path(), assume_yes=conf.non_interactive) != 0:
+                if RpmHelper.install_build_dependencies(spec.path, assume_yes=conf.non_interactive) != 0:
                     raise RebaseHelperError('Failed to install build dependencies')
 
     @classmethod
@@ -109,7 +109,7 @@ class Rpmbuild(BuildToolBase):  # pylint: disable=abstract-method
         rpm_results_dir = os.path.join(results_dir, "RPM")
         sources = spec.get_sources()
         patches = [p.get_path() for p in spec.get_patches()]
-        with RpmbuildTemporaryEnvironment(sources, patches, spec.get_path(), rpm_results_dir) as tmp_env:
+        with RpmbuildTemporaryEnvironment(sources, patches, spec.path, rpm_results_dir) as tmp_env:
             env = tmp_env.env()
             tmp_dir = tmp_env.path()
             tmp_results_dir = env.get(RpmbuildTemporaryEnvironment.TEMPDIR_RESULTS)

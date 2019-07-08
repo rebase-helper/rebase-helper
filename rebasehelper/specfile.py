@@ -273,12 +273,12 @@ class SpecFile:
         self.patches: Dict[str, List[PatchObject]] = {}
         self.sources: List[str] = []
         self.extra_version: str = ''
+        self.extra_version_separator: str = ''
         self.category: Optional[PackageCategory] = None
         self.spc: rpm.spec = RpmHelper.get_rpm_spec(self.path)
         self.spec_content: SpecContent = self._read_spec_content()
 
         # Load rpm information
-        self.set_extra_version_separator('')
         self._update_data()
 
     def download_remote_sources(self):
@@ -339,7 +339,7 @@ class SpecFile:
         _, self.extra_version, separator = SpecFile.extract_version_from_archive_name(
             self.get_archive(),
             self._get_raw_source_string(0))
-        self.set_extra_version_separator(separator)
+        self.extra_version_separator = separator
 
         self.patches = self._get_initial_patches()
         self.macros = MacroHelper.dump()
@@ -631,16 +631,6 @@ class SpecFile:
         """
         return self.extra_version
 
-    def get_extra_version_separator(self):
-        """
-        Returns the separator between version and extra version as used by upstream. If there is not separator or
-        extra version, it returns an empty string.
-
-        :return: String with the separator between version as extra version as used by upstream.
-        :rtype: str
-        """
-        return self.extra_version_separator
-
     def get_full_version(self):
         """
         Returns the full version string, which is a combination of version, separator and extra version.
@@ -648,7 +638,7 @@ class SpecFile:
         :return: String with full version, including the extra version part.
         :rtype: str
         """
-        return '{0}{1}{2}'.format(self.get_version(), self.get_extra_version_separator(), self.get_extra_version())
+        return '{0}{1}{2}'.format(self.get_version(), self.extra_version_separator, self.get_extra_version())
 
     def set_release_number(self, release):
         """
@@ -785,15 +775,6 @@ class SpecFile:
             self.revert_redefine_release_with_macro(extra_version_macro)
             # TODO: handle empty extra_version as removal of the definitions!
 
-    def set_extra_version_separator(self, separator):
-        """
-        Set the string that separates the version and extra version
-
-        :param separator:
-        :return:
-        """
-        self.extra_version_separator = separator
-
     def set_version_using_archive(self, archive_path):
         """
         Method to update the version in the SPEC file using a archive path. The version
@@ -811,7 +792,7 @@ class SpecFile:
             raise RebaseHelperError('Failed to extract version from archive name')
 
         self.set_version(version)
-        self.set_extra_version_separator(separator)
+        self.extra_version_separator = separator
         self.set_extra_version(extra_version)
 
     @saves
@@ -1278,14 +1259,6 @@ class SpecFile:
     ####################
     # UNSORTED METHODS #
     ####################
-
-    def get_path(self):
-        """
-        Return only spec file path
-
-        :return:
-        """
-        return self.path
 
     def is_test_suite_enabled(self):
         """

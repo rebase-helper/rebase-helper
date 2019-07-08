@@ -204,7 +204,7 @@ class Application:
             logger.verbose("argument passed as a new source is a version")
             version, extra_version, separator = SpecFile.split_version_string(self.conf.sources)
             self.rebase_spec_file.set_version(version)
-            self.rebase_spec_file.set_extra_version_separator(separator)
+            self.rebase_spec_file.extra_version_separator = separator
             self.rebase_spec_file.set_extra_version(extra_version)
 
         if not self.conf.skip_version_check and parse_version(self.rebase_spec_file.get_version()) \
