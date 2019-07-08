@@ -538,12 +538,10 @@ class Application:
             spec = self.spec_file if version == 'old' else self.rebase_spec_file
             package_name = spec.get_package_name()
             package_version = spec.get_version()
-            package_full_version = spec.get_full_version()
-            logger.info('Building source package for %s version %s', package_name, package_full_version)
+            logger.info('Building source package for %s version %s', package_name, package_version)
 
             if version == 'old' and self.conf.get_old_build_from_koji:
-                koji_build_id, package_version, package_full_version = KojiHelper.get_old_build_info(package_name,
-                                                                                                     package_version)
+                koji_build_id, package_version = KojiHelper.get_old_build_info(package_name, package_version)
 
             build_dict = dict(
                 name=package_name,
@@ -602,12 +600,9 @@ class Application:
                 spec = self.spec_file if version == 'old' else self.rebase_spec_file
                 package_name = spec.get_package_name()
                 package_version = spec.get_version()
-                package_full_version = spec.get_full_version()
 
                 if version == 'old' and self.conf.get_old_build_from_koji:
-                    koji_build_id, package_version, package_full_version = KojiHelper.get_old_build_info(
-                                                                               package_name,
-                                                                               package_version)
+                    koji_build_id, package_version = KojiHelper.get_old_build_info(package_name, package_version)
 
                 build_dict = dict(
                     name=package_name,
@@ -621,7 +616,7 @@ class Application:
                 # prepare for building
                 builder.prepare(spec, self.conf)
 
-                logger.info('Building binary packages for %s version %s', package_name, package_full_version)
+                logger.info('Building binary packages for %s version %s', package_name, package_version)
             else:
                 task_id = self.conf.build_tasks[0] if version == 'old' else self.conf.build_tasks[1]
 

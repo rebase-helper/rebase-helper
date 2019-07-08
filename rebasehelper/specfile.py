@@ -597,7 +597,7 @@ class SpecFile:
     ###################################
 
     def get_NVR(self):
-        return '{}-{}-{}'.format(self.get_package_name(), self.get_full_version(), self.get_release())
+        return '{}-{}-{}'.format(self.get_package_name(), self.get_version(), self.get_release())
 
     def get_epoch_number(self) -> str:
         """Returns Epoch of the package."""
@@ -630,15 +630,6 @@ class SpecFile:
         :return: String
         """
         return self.extra_version
-
-    def get_full_version(self):
-        """
-        Returns the full version string, which is a combination of version, separator and extra version.
-
-        :return: String with full version, including the extra version part.
-        :rtype: str
-        """
-        return '{0}{1}{2}'.format(self.get_version(), self.extra_version_separator, self.get_extra_version())
 
     def set_release_number(self, release):
         """
