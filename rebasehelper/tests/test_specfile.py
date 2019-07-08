@@ -133,7 +133,7 @@ class TestSpecFile:
                             3: [os.path.join(workdir, self.PATCH_4), 4]}
         patches = {}
         for index, p in enumerate(spec_object.get_patches()):
-            patches[index] = [p.get_path(), p.get_index()]
+            patches[index] = [p.path, p.index]
         assert patches == expected_patches
 
     def test_get_requires(self, spec_object):

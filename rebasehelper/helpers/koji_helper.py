@@ -379,7 +379,7 @@ class KojiHelper:
             package_version (str): Package version from specfile.
 
         Returns:
-            tuple: Koji build id, package version, package full version.
+            tuple: Koji build id, package version.
 
         """
         if cls.functional:
@@ -393,11 +393,11 @@ class KojiHelper:
                     logger.warning('Version of the latest Koji build (%s) with id (%s) '
                                    'differs from version in SPEC file (%s)!',
                                    koji_version, koji_build_id, package_version)
-                package_version = package_full_version = koji_version
-                return koji_build_id, package_version, package_full_version
+                package_version = koji_version
+                return koji_build_id, package_version
             else:
                 logger.warning('Unable to find old version Koji build!')
-                return None, None, None
+                return None, None
         else:
             logger.warning('Unable to get old version Koji build!')
-            return None, None, None
+            return None, None

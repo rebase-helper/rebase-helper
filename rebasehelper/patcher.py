@@ -81,8 +81,8 @@ class Patcher:
         """
         logger.verbose('Applying patch with git-am')
 
-        patch_name = patch_object.get_path()
-        patch_strip = patch_object.get_strip()
+        patch_name = patch_object.path
+        patch_strip = patch_object.strip
         try:
             repo.git.am(patch_name)
             commit = repo.head.commit
@@ -281,7 +281,7 @@ class Patcher:
         """Function applies a patch to a old/new sources"""
         for patch in cls.patches:
             logger.info("Applying patch '%s' to '%s'",
-                        os.path.basename(patch.get_path()),
+                        patch.get_patch_name(),
                         os.path.basename(cls.source_dir))
             try:
                 cls.apply_patch(cls.old_repo, patch)
