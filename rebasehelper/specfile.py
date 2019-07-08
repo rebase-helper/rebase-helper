@@ -65,7 +65,7 @@ def get_rebase_name(dir_name, name):
 class PatchList(list):
     def _get_index_list(self, item):
         for x in self:
-            if x.get_index() == item.get_index():
+            if x.index == item.index:
                 return x
 
     def __getitem__(self, item):
@@ -76,29 +76,13 @@ class PatchObject:
 
     """Class represents set of information about patches"""
 
-    path: str = ''
-    index: str = ''
-    strip: str = ''
-
     def __init__(self, path, index, strip):
         self.path = path
         self.index = index
         self.strip = strip
 
-    def get_path(self):
-        return self.path
-
-    def get_index(self):
-        return self.index
-
-    def set_path(self, new_path):
-        self.path = new_path
-
     def get_patch_name(self):
         return os.path.basename(self.path)
-
-    def get_strip(self):
-        return self.strip
 
 
 class PackageCategory(enum.Enum):
@@ -420,7 +404,7 @@ class SpecFile:
                 patches_applied.append(PatchObject(patch_path, patch_num, strip_options[patch_num]))
             else:
                 patches_not_used.append(PatchObject(patch_path, patch_num, None))
-        patches_applied = sorted(patches_applied, key=lambda x: x.get_index())
+        patches_applied = sorted(patches_applied, key=lambda x: x.index)
         return {"applied": patches_applied, "not_applied": patches_not_used}
 
     def _get_patch_strip_options(self, patches):

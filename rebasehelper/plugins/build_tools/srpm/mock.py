@@ -101,7 +101,7 @@ class Mock(SRPMBuildToolBase):
         """
         srpm_results_dir = os.path.join(results_dir, "SRPM")
         sources = spec.get_sources()
-        patches = [p.get_path() for p in spec.get_patches()]
+        patches = [p.path for p in spec.get_patches()]
         with MockTemporaryEnvironment(sources, patches, spec.path, srpm_results_dir) as tmp_env:
             srpm_builder_options = cls.get_srpm_builder_options(**kwargs)
 
