@@ -27,7 +27,7 @@ import os
 from typing import List
 
 from rebasehelper.logger import logger
-from rebasehelper.plugins.build_tools import MockTemporaryEnvironment
+from rebasehelper.plugins.build_tools import MockTemporaryEnvironment, check_mock_privileges
 from rebasehelper.plugins.build_tools.srpm import SRPMBuildToolBase
 from rebasehelper.exceptions import SourcePackageBuildError
 from rebasehelper.helpers.path_helper import PathHelper
@@ -64,6 +64,9 @@ class Mock(SRPMBuildToolBase):
         cmd.extend(['--spec', spec])
         cmd.extend(['--sources', path_to_sources])
         cmd.extend(['--resultdir', results_dir])
+
+        if not check_mock_privileges():
+            cmd = ['pkexec'] + cmd
 
         ret = ProcessHelper.run_subprocess_cwd_env(cmd,
                                                    cwd=spec_loc,
