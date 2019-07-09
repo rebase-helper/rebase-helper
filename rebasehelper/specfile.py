@@ -93,6 +93,7 @@ class PackageCategory(enum.Enum):
     php: Pattern[str] = re.compile(r'^php-')
     haskell: Pattern[str] = re.compile(r'^ghc-')
     R: Pattern[str] = re.compile(r'^R-')
+    rust: Pattern[str] = re.compile(r'^rust-')
 
 
 class SpecContent:
