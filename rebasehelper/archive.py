@@ -220,6 +220,25 @@ class GemPseudoArchiveType(ArchiveTypeBase):
         shutil.copy(filename, final_dir)
 
 
+@register_archive_type
+class CratePseudoArchiveType(ArchiveTypeBase):
+    """Class representing .crate pseudoarchive (Rust packages)."""
+
+    EXTENSION: str = '.crate'
+
+    @classmethod
+    def open(cls, filename=None):
+        pass
+
+    @classmethod
+    def extract(cls, archive=None, filename=None, path=None):
+        if archive is not None:
+            raise RuntimeError("In Crate pseudo file type, the archive (pos 1) argument is not used, but passed.")
+        final_dir = os.path.join(path, os.path.basename(filename.rstrip(cls.EXTENSION)))
+        os.makedirs(final_dir)
+        shutil.copy(filename, final_dir)
+
+
 class Archive:
 
     """ Class representing an archive with sources """
