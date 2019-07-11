@@ -67,7 +67,9 @@ class ReplaceOldVersion(BaseSpecHook):
             if sec_name.startswith('%changelog'):
                 continue
             for index, line in enumerate(section):
-                if cls._is_local_source(line):
+                # special case Version tag to avoid mistakes when version format changes
+                # e.g. in a rebase from 2.5 to 2.5.1, version would be changed to 2.5.1.1
+                if cls._is_local_source(line) or line.startswith('Version:'):
                     continue
                 start, end = spec_file.spec_content.get_comment_span(line, sec_name)
                 replacement = r'\g<1>' + ('%{version}' if replace_with_macro else new_version) + r'\g<2>'
