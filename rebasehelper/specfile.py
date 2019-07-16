@@ -395,11 +395,21 @@ class SpecFile:
         patches_list = [p for p in self.spc.sources if p[2] == 2]
         strip_options = self._get_patch_strip_options(patches_list)
 
-        for filename, num, _ in patches_list:
+        for patch, num, _ in patches_list:
+            is_url = bool(urllib.parse.urlparse(patch).scheme)
+            filename = os.path.basename(patch) if is_url else patch
             patch_path = os.path.join(self.sources_location, filename)
             if not os.path.exists(patch_path):
-                logger.error('Patch %s does not exist', filename)
-                continue
+                if is_url:
+                    logger.info('Patch%s is remote, trying to download the patch', num)
+                    try:
+                        DownloadHelper.download_file(patch, filename)
+                    except DownloadError:
+                        logger.error('Could not download remote patch %s', patch)
+                        continue
+                else:
+                    logger.error('Patch %s does not exist', filename)
+                    continue
             patch_num = num
             if patch_num in strip_options:
                 patches_applied.append(PatchObject(patch_path, patch_num, strip_options[patch_num]))
