@@ -5,4 +5,5 @@ API
    :glob:
 
    helpers
+   plugins
    *

@@ -20,3 +20,5 @@ pkgdiff      pkgdiff                  for **pkgdiff** checker, optional
 csmock       csmock                   for **csmock** checker, optional
 licensecheck licensecheck             for **licensecheck** checker, optional
 ============ ======================== =================================================
+
+:program:`rebase-helper` is also published on `PyPI <https://pypi.org/project/rebasehelper/>`_.
