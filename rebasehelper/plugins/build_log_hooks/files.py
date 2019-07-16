@@ -167,7 +167,8 @@ class Files(BaseBuildLogHook):
     def _get_best_matching_files_section(cls, rebase_spec_file, file):
         """Finds a %files section with a file that has the closest match with
         the specified file. If the best match cannot be determined, the main
-        %files section is returned.
+        %files section is returned. If no main section is found, return the
+        first %files section if possible, None otherwise.
 
         Args:
             rebase_spec_file (specfile.SpecFile): Rebased SpecFile object.
@@ -175,12 +176,15 @@ class Files(BaseBuildLogHook):
 
         Returns:
             str: Name of the section containing the closest matching file.
+                None if no %files section can be found.
 
         """
         best_match = ''
         best_match_section = ''
+        files = []
         for sec_name, sec_content in rebase_spec_file.spec_content.sections:
             if sec_name.startswith('%files'):
+                files.append(sec_name)
                 for line in sec_content:
                     new_best_match = difflib.get_close_matches(file, [best_match, MacroHelper.expand(line)])
                     if new_best_match:
@@ -189,7 +193,7 @@ class Files(BaseBuildLogHook):
                             best_match = new_best_match[0]
                             best_match_section = sec_name
 
-        return best_match_section or rebase_spec_file.get_main_files_section()
+        return best_match_section or rebase_spec_file.get_main_files_section() or (files[0] if files else None)
 
     @classmethod
     def _sanitize_path(cls, path):
@@ -216,6 +220,9 @@ class Files(BaseBuildLogHook):
         result = collections.defaultdict(lambda: collections.defaultdict(list))
         for file in files:
             section = cls._get_best_matching_files_section(rebase_spec_file, file)
+            if section is None:
+                logger.error('The specfile does not contain any %files section, cannot add the missing files')
+                break
             substituted_path = cls._sanitize_path(MacroHelper.substitute_path_with_macros(file, macros))
             try:
                 index = [i for i, l in enumerate(rebase_spec_file.spec_content.section(section)) if l][-1] + 1
