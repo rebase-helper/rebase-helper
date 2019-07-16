@@ -541,7 +541,9 @@ class Application:
             logger.info('Building source package for %s version %s', package_name, package_version)
 
             if version == 'old' and self.conf.get_old_build_from_koji:
-                koji_build_id, package_version = KojiHelper.get_old_build_info(package_name, package_version)
+                koji_build_id, ver = KojiHelper.get_old_build_info(package_name, package_version)
+                if ver:
+                    package_version = ver
 
             build_dict = dict(
                 name=package_name,
@@ -602,7 +604,9 @@ class Application:
                 package_version = spec.get_version()
 
                 if version == 'old' and self.conf.get_old_build_from_koji:
-                    koji_build_id, package_version = KojiHelper.get_old_build_info(package_name, package_version)
+                    koji_build_id, ver = KojiHelper.get_old_build_info(package_name, package_version)
+                    if ver:
+                        package_version = ver
 
                 build_dict = dict(
                     name=package_name,
