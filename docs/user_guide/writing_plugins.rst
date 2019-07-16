@@ -3,19 +3,21 @@ Writing plugins
 
 Starting with version 0.10.0, :program:`rebase-helper` is extensible through plugins.
 
-You can implement your own build tool, checker, output tool, SPEC hook or versioneer.
+You can implement your own build tool, checker, output tool, SPEC hook, build log hook or versioneer.
 All you have to do is to derive your plugin from corresponding base class, implement
 all necessary methods and register it using one of the following entry points:
 
-=========== ================================= ===============================================
-Plugin type Entry point                       Base class
-=========== ================================= ===============================================
-build tool  :samp:`rebasehelper.build_tools`  :samp:`rebasehelper.build_helper.BuildToolBase`
-checker     :samp:`rebasehelper.checkers`     :samp:`rebasehelper.checker.BaseChecker`
-output tool :samp:`rebasehelper.output_tools` :samp:`rebasehelper.output_tool.BaseOutputTool`
-SPEC hook   :samp:`rebasehelper.spec_hooks`   :samp:`rebasehelper.specfile.BaseSpecHook`
-versioneer  :samp:`rebasehelper.versioneers`  :samp:`rebasehelper.versioneer.BaseVersioneer`
-=========== ================================= ===============================================
+================= ===================================== ==============================================================
+Plugin type       Entry point                           Base class
+================= ===================================== ==============================================================
+build tool        :samp:`rebasehelper.build_tools`      :samp:`rebasehelper.plugins.build_tools.rpm.BuildToolBase`
+SRPM build tool   :samp:`rebasehelper.srpm_build_tools` :samp:`rebasehelper.plugins.build_tools.srpm.SRPMBuildToolBase`
+checker           :samp:`rebasehelper.checkers`         :samp:`rebasehelper.plugins.checkers.BaseChecker`
+output tool       :samp:`rebasehelper.output_tools`     :samp:`rebasehelper.plugins.output_tools.BaseOutputTool`
+SPEC hook         :samp:`rebasehelper.spec_hooks`       :samp:`rebasehelper.plugins.spec_hooks.BaseSpecHook`
+build log hook    :samp:`rebasehelper.build_log_hooks`  :samp:`rebasehelper.plugins.build_log_hooks.BaseBuildLogHook`
+versioneer        :samp:`rebasehelper.versioneers`      :samp:`rebasehelper.plugins.versioneers.BaseVersioneer`
+================= ===================================== ==============================================================
 
 
 Example
@@ -24,7 +26,7 @@ Example
 .. code-block:: python
    :caption: my_spec_hook/__init__.py
 
-   from rebasehelper.specfile import BaseSpecHook
+   from rebasehelper.plugins.spec_hooks import BaseSpecHook
 
 
    class MySpecHook(BaseSpecHook):
