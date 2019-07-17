@@ -440,7 +440,8 @@ class SpecFile:
             rest = [os.path.basename(a) for a in rest]
             indexes = [p[1] for p in patches if p[0] in rest]
             for idx in indexes:
-                result[idx] = ns.p
+                if idx not in result or result[idx] < ns.p:
+                    result[idx] = ns.p
         return result
 
     def _get_patch_number(self, fields):
