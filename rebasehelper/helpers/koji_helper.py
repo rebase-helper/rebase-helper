@@ -385,16 +385,8 @@ class KojiHelper:
         if cls.functional:
             session = KojiHelper.create_session()
             koji_version, koji_build_id = KojiHelper.get_build(session, package_name, package_version)
-            if not koji_version:
-                # fallback to the latest Koji build
-                koji_version, koji_build_id = KojiHelper.get_latest_build(session, package_name)
             if koji_version:
-                if koji_version != package_version:
-                    logger.warning('Version of the latest Koji build (%s) with id (%s) '
-                                   'differs from version in SPEC file (%s)!',
-                                   koji_version, koji_build_id, package_version)
-                package_version = koji_version
-                return koji_build_id, package_version
+                return koji_build_id, koji_version
             else:
                 logger.warning('Unable to find old version Koji build!')
                 return None, None
