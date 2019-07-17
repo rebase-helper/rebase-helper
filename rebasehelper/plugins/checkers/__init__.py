@@ -128,5 +128,5 @@ class CheckerCollection(PluginCollection):
         return [k for k, v in self.plugins.items() if v and v.is_available()]
 
     def get_default_plugins(self, return_one: bool = False) -> Union[List[Type[Plugin]], Type[Plugin]]:
-        default = [k for k, v in self.plugins.items() if v and v.is_available() and getattr(v, 'DEFAULT', False)]
+        default = [k for k, v in self.plugins.items() if v and getattr(v, 'DEFAULT', False)]
         return default if not return_one else default[0] if default else None
