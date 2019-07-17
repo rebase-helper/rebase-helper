@@ -157,7 +157,9 @@ class Files(BaseBuildLogHook):
                 elif match.group('unpackaged'):
                     error_type = 'missing'
                 elif error_type == 'missing' and match.group('path'):
-                    files.add(match.group('path'))
+                    # Ignore debug information
+                    if not match.group('path').startswith('/usr/lib/debug'):
+                        files.add(match.group('path'))
                 elif error_type and not match.group('path'):
                     break
 
