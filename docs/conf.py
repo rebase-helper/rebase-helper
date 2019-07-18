@@ -51,8 +51,8 @@ source_encoding = 'utf-8-sig'
 master_doc = 'index'
 
 # General information about the project.
-project = u'rebase-helper'
-copyright = u'2014-2019, Red Hat'
+project = 'rebase-helper'
+copyright = '2014-2019, Red Hat'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -126,7 +126,10 @@ html_favicon = None
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = []
+html_static_path = ['_static']
+
+# Custom style sheets
+html_css_files = ['css/custom.css']
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
@@ -179,11 +182,11 @@ htmlhelp_basename = 'rebase-helper-docs'
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('man/rebase-helper', 'rebase-helper',
-     u'helps you rebase your package to the latest version',
-     [u'Petr Hráček <phracek@redhat.com>',
-      u'Tomáš Hozza <thozza@redhat.com>',
-      u'Nikola Forró <nforro@redhat.com>',
-      u'František Nečas <fifinecas@seznam.cz>'], 1),
+     'helps you rebase your package to the latest version',
+     ['Petr Hráček <phracek@redhat.com>',
+      'Tomáš Hozza <thozza@redhat.com>',
+      'Nikola Forró <nforro@redhat.com>',
+      'František Nečas <fifinecas@seznam.cz>'], 1),
 ]
 
 # If true, show URL addresses after external links.
