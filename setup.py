@@ -27,13 +27,9 @@ import os
 
 import pkg_resources
 
+from setuptools import setup, find_packages
+
 from rebasehelper.version import VERSION
-
-
-try:
-    from setuptools import setup
-except ImportError:
-    from distutils.core import setup
 
 
 def get_rpm_distribution():
@@ -82,23 +78,7 @@ setup(
     author_email='phracek@redhat.com',
     url='https://github.com/rebase-helper/rebase-helper',
     license='GPLv2+',
-    packages=[
-        'rebasehelper',
-        'rebasehelper.helpers',
-        'rebasehelper.plugins',
-        'rebasehelper.plugins.build_log_hooks',
-        'rebasehelper.plugins.build_tools',
-        'rebasehelper.plugins.build_tools.rpm',
-        'rebasehelper.plugins.build_tools.srpm',
-        'rebasehelper.plugins.checkers',
-        'rebasehelper.plugins.output_tools',
-        'rebasehelper.plugins.spec_hooks',
-        'rebasehelper.plugins.versioneers',
-        'rebasehelper.tests',
-        'rebasehelper.tests.functional',
-        'rebasehelper.tests.helpers',
-        'rebasehelper.tests.plugins',
-    ],
+    packages=find_packages(),
     include_package_data=True,
     entry_points={
         'console_scripts': [
@@ -155,6 +135,9 @@ setup(
         'License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)',
         'Operating System :: POSIX :: Linux',
         'Programming Language :: Python :: 3 :: Only',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
         'Topic :: Software Development',
         'Topic :: System :: Operating System',
         'Topic :: System :: Software Distribution',
