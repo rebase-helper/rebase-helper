@@ -120,6 +120,8 @@ class CheckerCollection(PluginCollection):
             return None
         if checker.CATEGORY != kwargs.get('category'):
             return None
+        if not checker.is_available():
+            return None
 
         logger.info("Running checks on packages using '%s'", checker_name)
         return checker.run_check(results_dir, **kwargs)
