@@ -385,6 +385,8 @@ class AutoArgsDirective(Directive):
         env.ref_context['std:program'] = self._get_program_name(parser)
         self.synopsis_max_width = self.options.get('synopsis_max_width', 80)
         self.ignore_option_groups = 'ignore_option_groups' in self.options
+        env.autoargs_options = dict(synopsis_max_width=self.synopsis_max_width,
+                                    ignore_option_groups=self.ignore_option_groups)
         return self._construct_main_sections(parser)
 
 

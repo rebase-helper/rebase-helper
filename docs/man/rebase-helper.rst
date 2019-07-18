@@ -7,6 +7,7 @@ rebase-helper man page
    :function: CLI.build_parser
    :module: rebasehelper.cli
    :program_name: rebase-helper
+   :synopsis_max_width: 72
    :ignore_option_groups:
 
    DESCRIPTION : @replace
