@@ -51,8 +51,8 @@ source_encoding = 'utf-8-sig'
 master_doc = 'index'
 
 # General information about the project.
-project = u'rebase-helper'
-copyright = u'2014-2019, Red Hat'
+project = 'rebase-helper'
+copyright = '2014-2019, Red Hat'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -182,11 +182,11 @@ htmlhelp_basename = 'rebase-helper-docs'
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ('man/rebase-helper', 'rebase-helper',
-     u'helps you rebase your package to the latest version',
-     [u'Petr Hráček <phracek@redhat.com>',
-      u'Tomáš Hozza <thozza@redhat.com>',
-      u'Nikola Forró <nforro@redhat.com>',
-      u'František Nečas <fifinecas@seznam.cz>'], 1),
+     'helps you rebase your package to the latest version',
+     ['Petr Hráček <phracek@redhat.com>',
+      'Tomáš Hozza <thozza@redhat.com>',
+      'Nikola Forró <nforro@redhat.com>',
+      'František Nečas <fifinecas@seznam.cz>'], 1),
 ]
 
 # If true, show URL addresses after external links.
