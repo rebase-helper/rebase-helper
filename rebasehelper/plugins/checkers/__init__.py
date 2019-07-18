@@ -120,6 +120,8 @@ class CheckerCollection(PluginCollection):
             return None
         if checker.CATEGORY != kwargs.get('category'):
             return None
+        if not checker.is_available():
+            return None
 
         logger.info("Running checks on packages using '%s'", checker_name)
         return checker.run_check(results_dir, **kwargs)
@@ -128,5 +130,5 @@ class CheckerCollection(PluginCollection):
         return [k for k, v in self.plugins.items() if v and v.is_available()]
 
     def get_default_plugins(self, return_one: bool = False) -> Union[List[Type[Plugin]], Type[Plugin]]:
-        default = [k for k, v in self.plugins.items() if v and v.is_available() and getattr(v, 'DEFAULT', False)]
+        default = [k for k, v in self.plugins.items() if v and getattr(v, 'DEFAULT', False)]
         return default if not return_one else default[0] if default else None
