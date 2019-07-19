@@ -1,4 +1,5 @@
 import re
+import textwrap
 
 from docutils import nodes
 from sphinx.writers.manpage import ManualPageTranslator
@@ -68,8 +69,15 @@ class CustomManPageTranslator(ManualPageTranslator):
 
     def visit_literal(self, node):
         if 'std-option' in node.get('classes', ''):
+            try:
+                max_width = self.settings.env.autoargs_options['synopsis_max_width']
+            except (AttributeError, KeyError):
+                text = node.astext()
+            else:
+                # wrap lines exceeding max width
+                text = '\n'.join(textwrap.wrap(node.astext(), width=max_width))
             # format option text
-            self.body.append(self._format_option(node.astext()))
+            self.body.append(self._format_option(text))
             raise nodes.SkipNode
         else:
             self.visit_emphasis(node)
