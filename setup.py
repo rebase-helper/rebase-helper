@@ -51,7 +51,8 @@ def get_requirements():
         'pyquery',
         'python-pam',
         'requests',
-        'GitPython',
+        # https://github.com/gitpython-developers/GitPython/pull/899
+        'GitPython@git+https://github.com/FrNecas/GitPython.git@frnecas-kwargs',
         # https://github.com/jonathaneunice/colors/pull/1
         'ansicolors@git+https://github.com/FrNecas/colors.git@frnecas-bright-colors',
     ]
