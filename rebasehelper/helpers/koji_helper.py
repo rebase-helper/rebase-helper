@@ -32,7 +32,7 @@ from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.logger import logger
 from rebasehelper.helpers.console_helper import ConsoleHelper
 from rebasehelper.helpers.rpm_helper import RpmHelper
-from rebasehelper.helpers.download_helper import DownloadHelper
+from rebasehelper.helpers.download_helper import DownloadHelper, DownloadError
 
 koji_helper_functional: bool
 try:
@@ -364,9 +364,19 @@ class KojiHelper:
                         build['release'],
                         'data',
                         'logs',
-                        pkg['arch'],
+                        '{}',
                         logname])
-                    DownloadHelper.download_file(url, local_path)
+                    try:
+                        DownloadHelper.download_file(url.format(pkg['arch']), local_path)
+                    except DownloadError:
+                        nvr = '{}-{}-{}'.format(build['package_name'], build['version'], build['release'])
+                        logger.warning('Unable to download %s for %s with architecture %s from Koji, trying to '
+                                       'fallback to x86_64', logname, nvr, pkg['arch'])
+
+                        try:
+                            DownloadHelper.download_file(url.format('x86_64'), local_path)
+                        except DownloadError:
+                            raise RebaseHelperError('Could not download {} for {} from Koji'.format(logname, nvr))
                     logs.append(local_path)
         return rpms, logs
 
