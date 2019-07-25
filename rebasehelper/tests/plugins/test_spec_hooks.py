@@ -61,7 +61,7 @@ class TestSpecHook:
         assert spec_object.spec_content.section('%build')[0] == "autoreconf -vi # Unescaped macros %%name %%{name}"
         # Test that the string after `#` wasn't recognized as a comment.
         source9 = [line for line in spec_object.spec_content.section('%package') if line.startswith('Source9')][0]
-        assert source9 == "Source9: https://test.com/#/%{name}-hardcoded-version-1.0.2.tar.gz"
+        assert source9 == "Source9: https://test.com/#/1.0/%{name}-hardcoded-version-1.0.2.tar.gz"
 
     @pytest.mark.parametrize('replace_with_macro', [
         True,
@@ -72,15 +72,15 @@ class TestSpecHook:
     ])
     def test_replace_old_version_spec_hook(self, spec_object, replace_with_macro):
         new_spec = spec_object.copy('new.spec')
-        new_spec.set_version('1.0.3')
+        new_spec.set_version('1.1.0')
         ReplaceOldVersion.run(spec_object, new_spec, replace_old_version_with_macro=replace_with_macro)
         # Check if the version has been updated
         test_source = [line for line in new_spec.spec_content.section('%package') if line.startswith('Source9')]
         assert test_source
         if replace_with_macro:
-            expected_result = 'https://test.com/#/%{name}-hardcoded-version-%{version}.tar.gz'
+            expected_result = 'https://test.com/#/1.1/%{name}-hardcoded-version-%{version}.tar.gz'
         else:
-            expected_result = 'https://test.com/#/%{name}-hardcoded-version-1.0.3.tar.gz'
+            expected_result = 'https://test.com/#/1.1/%{name}-hardcoded-version-1.1.0.tar.gz'
         assert test_source[0].split()[1] == expected_result
 
         # Check if version in changelog hasn't been changed
