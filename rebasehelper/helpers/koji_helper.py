@@ -330,44 +330,27 @@ class KojiHelper:
 
         """
         build = session.getBuild(build_id)
-        packages = session.listRPMs(buildID=build_id)
+        pathinfo = koji.PathInfo(topdir=session.opts['topurl'])
         rpms = []
         logs = []
         os.makedirs(destination, exist_ok=True)
-        for pkg in packages:
+        for pkg in session.listBuildRPMs(build_id):
             if pkg['arch'] not in arches:
                 continue
-            filename = '.'.join([pkg['nvr'], pkg['arch'], 'rpm'])
-            local_path = os.path.join(destination, filename)
+            rpmpath = pathinfo.rpm(pkg)
+            local_path = os.path.join(destination, os.path.basename(rpmpath))
             if local_path not in rpms:
-                url = '/'.join([
-                    session.opts['topurl'],
-                    'packages',
-                    build['package_name'],
-                    build['version'],
-                    build['release'],
-                    pkg['arch'],
-                    filename])
+                url = pathinfo.build(build) + '/' + rpmpath
                 DownloadHelper.download_file(url, local_path)
                 rpms.append(local_path)
-            if pkg['arch'] == 'src':
-                # No logs for SRPM in koji
+        for logfile in session.getBuildLogs(build_id):
+            if logfile['dir'] not in arches:
                 continue
-            for logname in ['build.log', 'root.log', 'state.log']:
-                local_path = os.path.join(destination, logname)
-                if local_path not in logs:
-                    url = '/'.join([
-                        session.opts['topurl'],
-                        'packages',
-                        build['package_name'],
-                        build['version'],
-                        build['release'],
-                        'data',
-                        'logs',
-                        pkg['arch'],
-                        logname])
-                    DownloadHelper.download_file(url, local_path)
-                    logs.append(local_path)
+            local_path = os.path.join(destination, logfile['name'])
+            if local_path not in logs:
+                url = pathinfo.topdir + '/' + logfile['path']
+                DownloadHelper.download_file(url, local_path)
+                logs.append(local_path)
         return rpms, logs
 
     @classmethod
