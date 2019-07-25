@@ -112,14 +112,14 @@ class LookasideCacheHelper:
             raise LookasideCacheError(str(e))
 
     @classmethod
-    def download(cls, tool, basepath, package):
+    def download(cls, tool, basepath, package, target=None):
         try:
             config = cls._read_config(tool)
             url = config['lookaside']
         except (configparser.Error, KeyError):
             raise LookasideCacheError('Failed to read rpkg configuration')
         for source in cls._read_sources(basepath):
-            cls._download_source(tool, url, package, source['filename'], source['hashtype'], source['hash'])
+            cls._download_source(tool, url, package, source['filename'], source['hashtype'], source['hash'], target)
 
     @classmethod
     def _upload_source(cls, url, package, filename, hashtype, hsh, auth=requests_gssapi.HTTPSPNEGOAuth()):
