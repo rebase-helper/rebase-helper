@@ -274,7 +274,8 @@ class SpecFile:
         """
         try:
             # try to download old sources from Fedora lookaside cache
-            LookasideCacheHelper.download('fedpkg', os.path.dirname(self.path), self.get_package_name())
+            LookasideCacheHelper.download('fedpkg', os.path.dirname(self.path), self.get_package_name(),
+                                          self.sources_location)
         except LookasideCacheError as e:
             logger.verbose("Downloading sources from lookaside cache failed. "
                            "Reason: %s.", str(e))

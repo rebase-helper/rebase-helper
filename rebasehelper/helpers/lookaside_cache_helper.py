@@ -112,17 +112,17 @@ class LookasideCacheHelper:
             raise LookasideCacheError(str(e))
 
     @classmethod
-    def download(cls, tool, basepath, package):
+    def download(cls, tool, basepath, package, target=None):
         try:
             config = cls._read_config(tool)
             url = config['lookaside']
         except (configparser.Error, KeyError):
             raise LookasideCacheError('Failed to read rpkg configuration')
         for source in cls._read_sources(basepath):
-            cls._download_source(tool, url, package, source['filename'], source['hashtype'], source['hash'])
+            cls._download_source(tool, url, package, source['filename'], source['hashtype'], source['hash'], target)
 
     @classmethod
-    def _upload_source(cls, url, package, filename, hashtype, hsh, auth=requests_gssapi.HTTPSPNEGOAuth()):
+    def _upload_source(cls, url, package, source_dir, filename, hashtype, hsh, auth=requests_gssapi.HTTPSPNEGOAuth()):
         class ChunkedData:
             def __init__(self, check_only, chunksize=8192):
                 self.check_only = check_only
@@ -136,7 +136,7 @@ class LookasideCacheHelper:
                 if check_only:
                     fields.append(('filename', filename))
                 else:
-                    with open(filename, 'rb') as f:
+                    with open(path, 'rb') as f:
                         rf = RequestField('file', f.read(), filename)
                         rf.make_multipart()
                         fields.append(rf)
@@ -163,12 +163,13 @@ class LookasideCacheHelper:
                 raise LookasideCacheError(r.reason)
             return r.content
 
+        path = os.path.join(source_dir, filename)
         state = post(check_only=True)
         if state.strip() == b'Available':
             # already uploaded
             return
 
-        logger.info('Uploading %s to lookaside cache', filename)
+        logger.info('Uploading %s to lookaside cache', path)
         try:
             post()
         finally:
@@ -176,7 +177,7 @@ class LookasideCacheHelper:
             sys.stdout.flush()
 
     @classmethod
-    def update_sources(cls, tool, basepath, package, old_sources, new_sources, upload=True):
+    def update_sources(cls, tool, basepath, package, old_sources, new_sources, upload=True, source_dir=''):
         try:
             config = cls._read_config(tool)
             url = config['lookaside_cgi']
@@ -194,7 +195,7 @@ class LookasideCacheHelper:
                     continue
                 hsh = cls._hash(filename, hashtype)
                 if upload:
-                    cls._upload_source(url, package, filename, hashtype, hsh)
+                    cls._upload_source(url, package, source_dir, filename, hashtype, hsh)
                 uploaded.append(filename)
                 sources[indexes[0]] = dict(hash=hsh, filename=filename, hashtype=hashtype)
         cls._write_sources(basepath, sources)

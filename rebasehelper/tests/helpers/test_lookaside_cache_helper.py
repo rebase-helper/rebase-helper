@@ -84,6 +84,7 @@ class TestLookasideCacheHelper:
         # pylint: disable=protected-access
         LookasideCacheHelper._upload_source('https://integration:4430/pkgs',
                                             'test',
+                                            '',
                                             filename,
                                             hashtype,
                                             hsh,
