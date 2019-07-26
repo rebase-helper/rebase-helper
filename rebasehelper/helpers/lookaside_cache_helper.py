@@ -112,13 +112,14 @@ class LookasideCacheHelper:
             raise LookasideCacheError(str(e))
 
     @classmethod
-    def download(cls, tool, basepath, package, target=None):
+    def download(cls, tool, basepath, package, target_dir=None):
         try:
             config = cls._read_config(tool)
             url = config['lookaside']
         except (configparser.Error, KeyError):
             raise LookasideCacheError('Failed to read rpkg configuration')
         for source in cls._read_sources(basepath):
+            target = os.path.join(target_dir, source['filename'])
             cls._download_source(tool, url, package, source['filename'], source['hashtype'], source['hash'], target)
 
     @classmethod
