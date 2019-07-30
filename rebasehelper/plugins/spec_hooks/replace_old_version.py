@@ -109,7 +109,7 @@ class ReplaceOldVersion(BaseSpecHook):
                     continue
                 start, end = spec_file.spec_content.get_comment_span(line, sec_name)
                 # try to replace the whole version first
-                updated_line = subversion_patterns[0][0].sub(subversion_patterns[0][1], line)
+                updated_line = subversion_patterns[0][0].sub(subversion_patterns[0][1], line[:start])
                 if (line.startswith('Patch') or line.startswith('Source')) and urllib.parse.urlparse(line.split()[1]):
                     for sub_pattern, repl in subversion_patterns[1:]:
                         updated_line = sub_pattern.sub(repl, updated_line)
