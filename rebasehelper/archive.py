@@ -25,7 +25,6 @@
 import bz2
 import lzma
 import os
-import shutil
 import tarfile
 import zipfile
 
@@ -199,44 +198,6 @@ class ZipArchiveType(ArchiveTypeBase):
         if archive is None:
             raise TypeError("Expected argument 'archive' (pos 1) is missing")
         archive.extractall(path)
-
-
-@register_archive_type
-class GemPseudoArchiveType(ArchiveTypeBase):
-    """ .gem files are not archives - this is a pseudo type """
-
-    EXTENSION: str = '.gem'
-
-    @classmethod
-    def open(cls, filename=None):
-        pass
-
-    @classmethod
-    def extract(cls, archive=None, filename=None, path=None):
-        if archive is not None:
-            raise RuntimeError("In Gem pseudo file types, the archive (pos 1) argument is not used, but passed.")
-        final_dir = os.path.join(path, os.path.basename(filename.rstrip(cls.EXTENSION)))
-        os.makedirs(final_dir)
-        shutil.copy(filename, final_dir)
-
-
-@register_archive_type
-class CratePseudoArchiveType(ArchiveTypeBase):
-    """Class representing .crate pseudoarchive (Rust packages)."""
-
-    EXTENSION: str = '.crate'
-
-    @classmethod
-    def open(cls, filename=None):
-        pass
-
-    @classmethod
-    def extract(cls, archive=None, filename=None, path=None):
-        if archive is not None:
-            raise RuntimeError("In Crate pseudo file type, the archive (pos 1) argument is not used, but passed.")
-        final_dir = os.path.join(path, os.path.basename(filename.rstrip(cls.EXTENSION)))
-        os.makedirs(final_dir)
-        shutil.copy(filename, final_dir)
 
 
 class Archive:
