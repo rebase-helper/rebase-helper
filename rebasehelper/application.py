@@ -348,11 +348,7 @@ class Application:
         :param destination: path to a destination, where the archive should be extracted to
         :return:
         """
-        try:
-            archive = Archive(archive_path)
-        except NotImplementedError as e:
-            raise RebaseHelperError('{}. Supported archives are {}'.format(str(e),
-                                    ', '.join(Archive.get_supported_archives())))
+        archive = Archive(archive_path)
 
         try:
             archive.extract_archive(destination)
@@ -364,7 +360,12 @@ class Application:
     @staticmethod
     def extract_sources(archive_path, destination):
         """Function extracts a given Archive and returns a full dirname to sources"""
-        Application.extract_archive(archive_path, destination)
+        try:
+            Application.extract_archive(archive_path, destination)
+        except NotImplementedError:
+            # not a standard archive type, can't extract it, fallback to copying
+            os.makedirs(destination)
+            shutil.copy(archive_path, destination)
 
         files = os.listdir(destination)
 
