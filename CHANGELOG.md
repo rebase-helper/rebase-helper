@@ -2,6 +2,41 @@
 
 ## [Unreleased]
 
+## [0.17.0] - 2019-07-31
+### Added
+- Added possibility for plugins to specify their own arguments
+- Added basic type hints and enabled mypy linter
+- Added *rust* package category
+- **replace-old-version** SPEC hook can now replace old version with `%{version}` macro
+- **replace-old-version** SPEC hook can now replace also parts of version in Sources and Patches
+
+### Fixed
+- Fixed broken ansicolors dependency
+- Fixed printing of output of unavaiable checkers
+- Fixed determining unmatched quotation in *%prep* section
+- Made **files** build log hook handle conditions and macros in *%files* section
+- **files** build log hook now adds man pages in a way that follows [Fedora Packaging Guidelines](https://docs.fedoraproject.org/en-US/packaging-guidelines/#_manpages)
+- **files** build log hook now ignores debuginfo files
+- Fixed issues with polluted global macro namespace when parsing multiple different SPEC files
+- Fixed handling of remote downstream patches (URLs)
+- Fixed parsing of patch strip options in *%prep*
+- Fixed wrapping of extra long lines in the usage documentation
+- Sources from lookaside cache are now downloaded to a proper location
+
+### Changed
+- Restructured the code layout of plugins
+- Refactored parts of SpecFile class
+- Disabled removing of "unused" patches
+- `mock` is now automatically run with superuser privileges if necessary
+- Local builder is now used if `--get-old-build-from-koji` is specified and the build can't be downloaded from Koji
+- checkers (even the default ones) are now skipped if they are not available
+- Sources are now copied to destination if they cannot be extracted
+- Reimplemented downloading Koji builds
+- Updated documentation
+
+### Removed
+- Removed Python 2 support
+
 ## [0.16.3] - 2019-05-03
 ### Fixed
 - Fixed handling of SPEC files with conditionalized sections
