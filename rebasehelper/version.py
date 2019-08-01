@@ -22,4 +22,4 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-VERSION: str = '0.17.0'
+VERSION: str = '0.17.1'

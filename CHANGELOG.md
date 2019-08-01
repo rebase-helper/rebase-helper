@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## [0.17.1] - 2019-08-01
+### Fixed
+- Fixed PyPI release webhook endpoint
+
+### Changed
+- Removed direct dependencies preventing PyPI release
+
 ## [0.17.0] - 2019-07-31
 ### Added
 - Added possibility for plugins to specify their own arguments
