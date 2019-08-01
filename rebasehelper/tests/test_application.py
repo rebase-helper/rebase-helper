@@ -31,6 +31,7 @@ from typing import List
 from rebasehelper.cli import CLI
 from rebasehelper.config import Config
 from rebasehelper.application import Application
+from rebasehelper.results_store import results_store
 from rebasehelper import constants
 
 
@@ -67,7 +68,23 @@ class TestApplication:
 
     cmd_line_args: List[str] = ['--not-download-sources', '1.0.3']
 
-    def test_application_sources(self, workdir):
+    @pytest.fixture
+    def make_config(self):
+        def wrapper(args):
+            cli = CLI(args)
+            config = Config()
+            config.merge(cli)
+            return config
+        return wrapper
+
+    @pytest.fixture
+    def app(self, make_config):
+        config = make_config(self.cmd_line_args)
+        execution_dir, results_dir, debug_log_file = Application.setup(config)
+        app = Application(config, execution_dir, results_dir, debug_log_file)
+        return app
+
+    def test_application_sources(self, workdir, app):
         expected_dict = {
             'new': {
                 'sources': [os.path.join(workdir, self.TEST_SOURCE),
@@ -112,15 +129,44 @@ class TestApplication:
                                      False]}},
             'results_dir': os.path.join(workdir, constants.RESULTS_DIR)}
 
-        cli = CLI(self.cmd_line_args)
-        config = Config()
-        config.merge(cli)
-        execution_dir, results_dir, debug_log_file = Application.setup(config)
-        app = Application(config, execution_dir, results_dir, debug_log_file)
         app.prepare_sources()
         for key, val in app.kwargs.items():
             if key in expected_dict:
                 assert val == expected_dict[key]
+
+    def test_setup(self, make_config):
+        config = make_config(self.cmd_line_args)
+        files = Application.setup(config)
+        for file in files:
+            assert os.path.exists(file)
+
+    def test_setup_continue(self, make_config):
+        config = make_config(self.cmd_line_args + ['--continue'])
+        execution_dir, results_dir, debug_log_file = Application.setup(config)
+        for file in (execution_dir, results_dir, debug_log_file):
+            assert os.path.exists(file)
+
+        # check that if rebase-helper-results exists, it does not get removed
+        test_file = os.path.join(results_dir, 'test')
+        open(test_file, 'w').close()
+        Application.setup(config)
+        assert os.path.exists(test_file)
+
+    def test_rpm_packages(self, app):
+        for version in ('old', 'new'):
+            os.makedirs(os.path.join(app.results_dir, version, 'RPM'))
+        assert not app.get_rpm_packages(app.results_dir)
+        for build in (results_store.get_new_build(), results_store.get_old_build()):
+            assert not build['rpm']
+
+        # add RPM files
+        for version in ('old', 'new'):
+            open(os.path.join(app.results_dir, version, 'RPM', 'test.rpm'), 'w').close()
+        res = app.get_rpm_packages(app.results_dir)
+        assert res
+        for build in (results_store.get_new_build(), results_store.get_old_build()):
+            rpm_name = os.path.basename(build['rpm'][0])
+            assert rpm_name == 'test.rpm'
 
     @pytest.mark.parametrize('gitignore, sources, result', [
         (
