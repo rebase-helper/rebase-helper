@@ -45,16 +45,14 @@ def get_rpm_distribution():
 
 def get_requirements():
     result = [
+        'ansicolors',
         # need stable marshmallow for copr
         'marshmallow<3.0.0',
         'copr',
         'pyquery',
         'python-pam',
         'requests',
-        # https://github.com/gitpython-developers/GitPython/pull/899
-        'GitPython@git+https://github.com/FrNecas/GitPython.git@frnecas-kwargs',
-        # https://github.com/jonathaneunice/colors/pull/1
-        'ansicolors@git+https://github.com/FrNecas/colors.git@frnecas-bright-colors',
+        'GitPython',
     ]
     # there is no rpm nor gssapi inside RTD build environment
     if not os.getenv('READTHEDOCS'):
