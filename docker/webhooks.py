@@ -6,6 +6,7 @@ import os
 import sys
 import tempfile
 import threading
+import traceback
 
 import distutils.core
 import git
@@ -38,7 +39,11 @@ class Worker(threading.Thread):
         while True:
             with self.condition:
                 self.condition.wait()
-                PyPI.release(self.url, self.tag)
+                try:
+                    PyPI.release(self.url, self.tag)
+                except Exception as e:
+                    traceback.print_exception(type(e), e, e.__traceback__)
+                    continue
 
 
 class HTTPServer:
