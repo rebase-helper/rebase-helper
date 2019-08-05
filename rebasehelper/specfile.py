@@ -1282,7 +1282,11 @@ class SpecFile:
 
         """
         new_entry = self.get_new_log(changelog_entry)
-        self.spec_content.section('%changelog')[0:0] = new_entry
+        changelog = self.spec_content.section('%changelog')
+        if changelog is None:
+            changelog = []
+            self.spec_content.replace_section('%changelog', changelog)
+        changelog[0:0] = new_entry
 
     def get_new_log(self, changelog_entry):
         """Constructs a new changelog entry.
