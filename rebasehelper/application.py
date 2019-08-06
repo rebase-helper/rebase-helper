@@ -33,6 +33,7 @@ from typing import Any, Dict, List, Optional
 
 from pkg_resources import parse_version
 
+from rebasehelper import VERSION
 from rebasehelper.archive import Archive
 from rebasehelper.specfile import SpecFile, get_rebase_name
 from rebasehelper.logger import logger, log_formatter, debug_log_formatter, LoggerHelper, CustomLogger
@@ -43,7 +44,6 @@ from rebasehelper.plugins.checkers import CheckerCategory
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
 from rebasehelper.exceptions import SourcePackageBuildError, BinaryPackageBuildError
 from rebasehelper.results_store import results_store
-from rebasehelper.version import VERSION
 from rebasehelper.helpers.path_helper import PathHelper
 from rebasehelper.helpers.macro_helper import MacroHelper
 from rebasehelper.helpers.input_helper import InputHelper

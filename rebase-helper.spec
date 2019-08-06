@@ -15,6 +15,8 @@ BuildArch:      noarch
 
 BuildRequires:  python3-devel
 BuildRequires:  python3-setuptools
+BuildRequires:  python3-setuptools_scm
+BuildRequires:  python3-setuptools_scm_git_archive
 BuildRequires:  python3-rpm
 BuildRequires:  python3-six
 BuildRequires:  python3-koji
@@ -93,7 +95,7 @@ PYTHONPATH=$(pwd) py.test-3 -v %{pkgname}
 %doc build/rebase-helper.cfg
 %{_bindir}/%{name}
 %{python3_sitelib}/%{pkgname}/
-%{python3_sitelib}/%{pkgname}-%{version}-py%{python3_version}.egg-info
+%{python3_sitelib}/%{pkgname}-*-py%{python3_version}.egg-info
 %{_mandir}/man1/rebase-helper.1*
 %{_sysconfdir}/bash_completion.d/rebase-helper.bash
 

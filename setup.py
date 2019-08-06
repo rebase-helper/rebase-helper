@@ -29,8 +29,6 @@ import pkg_resources
 
 from setuptools import setup, find_packages
 
-from rebasehelper.version import VERSION
-
 
 def get_rpm_distribution():
     for distribution in ['rpm', 'rpm-python']:
@@ -52,6 +50,8 @@ def get_requirements():
         'pyquery',
         'python-pam',
         'requests',
+        'setuptools_scm',
+        'setuptools_scm_git_archive',
         'GitPython',
     ]
     # there is no rpm nor gssapi inside RTD build environment
@@ -68,7 +68,6 @@ def get_readme():
 
 setup(
     name='rebasehelper',
-    version=VERSION,
     description='This tool helps you rebase your package to the latest version',
     long_description=get_readme(),
     long_description_content_type='text/markdown',
@@ -79,6 +78,7 @@ setup(
     license='GPLv2+',
     packages=find_packages(),
     include_package_data=True,
+    use_scm_version=True,
     entry_points={
         'console_scripts': [
             'rebase-helper = rebasehelper.cli:CliHelper.run',
