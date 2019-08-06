@@ -20,6 +20,7 @@ BuildRequires:  python3-six
 BuildRequires:  python3-koji
 BuildRequires:  python3-pyquery
 BuildRequires:  python3-copr
+BuildRequires:  python3-pam
 BuildRequires:  python3-requests
 BuildRequires:  python3-requests-gssapi
 BuildRequires:  python3-GitPython
