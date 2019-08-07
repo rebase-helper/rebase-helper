@@ -69,7 +69,7 @@ class Application:
     rebased_patches: Dict[str, List[str]] = {}
     rebased_repo: Optional[git.Repo] = None
 
-    def __init__(self, cli_conf, execution_dir, results_dir, debug_log_file):
+    def __init__(self, cli_conf, execution_dir, results_dir):
         """
         Initialize the application
 
@@ -81,8 +81,6 @@ class Application:
         self.conf = cli_conf
         self.execution_dir = execution_dir
         self.rebased_sources_dir = os.path.join(results_dir, 'rebased-sources')
-
-        self.debug_log_file = debug_log_file
 
         self.kwargs.update(self.conf.config)
         # Temporary workspace for Builder, checks, ...
@@ -140,9 +138,9 @@ class Application:
             os.makedirs(results_dir)
             os.makedirs(os.path.join(results_dir, constants.LOGS_DIR))
 
-        debug_log_file = Application.setup_logging(results_dir)
+        Application.setup_logging(results_dir)
 
-        return execution_dir, results_dir, debug_log_file
+        return execution_dir, results_dir
 
     @staticmethod
     def setup_logging(results_dir):
@@ -162,8 +160,6 @@ class Application:
         LoggerHelper.add_file_handler(logger, verbose_log, log_formatter, CustomLogger.VERBOSE)
         info_log = os.path.join(logs_dir, constants.INFO_LOG)
         LoggerHelper.add_file_handler(logger, info_log, log_formatter, logging.INFO)
-
-        return debug_log
 
     def _prepare_spec_objects(self):
         """
@@ -698,54 +694,12 @@ class Application:
         for diff_name, result in results.items():
             results_store.set_checker_output(diff_name, result)
 
-    def get_all_log_files(self):
-        """
-        Function returns all log_files created by rebase-helper
-        First if debug log file and second is report summary log file
-
-        :return:
-        """
-        log_list = []
-        if PathHelper.file_available(self.debug_log_file):
-            log_list.append(self.debug_log_file)
-        if PathHelper.file_available(self.report_log_file):
-            log_list.append(self.report_log_file)
-        return log_list
-
     def get_new_build_logs(self):
         result = {}
         result['build_ref'] = {}
         for version in ['old', 'new']:
             result['build_ref'][version] = results_store.get_build(version)
         return result
-
-    def get_checker_outputs(self):
-        checkers = {}
-        for check, data in results_store.get_checkers().items():
-            if data:
-                for log in data:
-                    if PathHelper.file_available(log):
-                        checkers[check] = log
-            else:
-                checkers[check] = None
-        return checkers
-
-    def get_rebased_patches(self):
-        """
-        Function returns a list of patches either
-        '': [list_of_deleted_patches]
-        :return:
-        """
-        patches = False
-        output_patch_string = []
-        if results_store.get_patches():
-            for key, val in results_store.get_patches().items():
-                if key:
-                    output_patch_string.append('Following patches have been {}:\n{}'.format(key, val))
-                    patches = True
-        if not patches:
-            output_patch_string.append('Patches were not touched. All were applied properly')
-        return output_patch_string
 
     def print_summary(self, exception=None):
         """
@@ -776,14 +730,6 @@ class Application:
         logs = self.get_new_build_logs()['build_ref']
         for version in ['old', 'new']:
             logger.info(builder.get_task_info(logs[version]))
-
-    def get_rebasehelper_data(self):
-        rh_stuff = {}
-        rh_stuff['build_logs'] = self.get_new_build_logs()
-        rh_stuff['patches'] = self.get_rebased_patches()
-        rh_stuff['checkers'] = self.get_checker_outputs()
-        rh_stuff['logs'] = self.get_all_log_files()
-        return rh_stuff
 
     def apply_changes(self):
         try:
@@ -901,13 +847,12 @@ class Application:
         if not self.conf.keep_workspace:
             self._delete_workspace_dir()
 
-        if self.debug_log_file:
-            self.print_summary()
+        self.print_summary()
         if self.conf.apply_changes:
             self.apply_changes()
         return 0
 
 
 if __name__ == '__main__':
-    a = Application(None, None, None, None)
+    a = Application(None, None, None)
     a.run()
