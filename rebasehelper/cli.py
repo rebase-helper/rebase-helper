@@ -113,7 +113,7 @@ class CliHelper:
                 handler.set_terminal_background(config.background)
 
             ConsoleHelper.use_colors = ConsoleHelper.should_use_colors(config)
-            execution_dir, results_dir, debug_log_file = Application.setup(config)
+            execution_dir, results_dir = Application.setup(config)
             traceback_log = os.path.join(results_dir, LOGS_DIR, TRACEBACK_LOG)
             if config.verbose == 0:
                 main_handler.setLevel(logging.INFO)
@@ -121,7 +121,7 @@ class CliHelper:
                 main_handler.setLevel(CustomLogger.VERBOSE)
             else:
                 main_handler.setLevel(logging.DEBUG)
-            app = Application(config, execution_dir, results_dir, debug_log_file)
+            app = Application(config, execution_dir, results_dir)
             app.run()
         except KeyboardInterrupt:
             logger.info('Interrupted by user')

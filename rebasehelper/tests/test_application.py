@@ -80,8 +80,8 @@ class TestApplication:
     @pytest.fixture
     def app(self, make_config):
         config = make_config(self.cmd_line_args)
-        execution_dir, results_dir, debug_log_file = Application.setup(config)
-        app = Application(config, execution_dir, results_dir, debug_log_file)
+        execution_dir, results_dir = Application.setup(config)
+        app = Application(config, execution_dir, results_dir)
         return app
 
     def test_application_sources(self, workdir, app):
@@ -142,8 +142,8 @@ class TestApplication:
 
     def test_setup_continue(self, make_config):
         config = make_config(self.cmd_line_args + ['--continue'])
-        execution_dir, results_dir, debug_log_file = Application.setup(config)
-        for file in (execution_dir, results_dir, debug_log_file):
+        execution_dir, results_dir = Application.setup(config)
+        for file in (execution_dir, results_dir):
             assert os.path.exists(file)
 
         # check that if rebase-helper-results exists, it does not get removed
