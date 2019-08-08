@@ -8,7 +8,7 @@ import sys
 
 sys.path[0:0] = [os.path.abspath('.'), os.path.abspath('..')]
 
-from rebasehelper.version import VERSION
+from rebasehelper import VERSION
 
 # Determine if this script is running inside RTD build environment
 on_rtd = os.environ.get('READTHEDOCS', None) == 'True'

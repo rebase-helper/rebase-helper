@@ -23,13 +23,13 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
+import distutils.command.sdist
 import os
+import types
 
 import pkg_resources
 
 from setuptools import setup, find_packages
-
-from rebasehelper.version import VERSION
 
 
 def get_rpm_distribution():
@@ -52,6 +52,8 @@ def get_requirements():
         'pyquery',
         'python-pam',
         'requests',
+        'setuptools_scm',
+        'setuptools_scm_git_archive',
         'GitPython',
     ]
     # there is no rpm nor gssapi inside RTD build environment
@@ -66,9 +68,31 @@ def get_readme():
         return f.read()
 
 
+class SDistCommand(distutils.command.sdist.sdist):
+
+    user_options = distutils.command.sdist.sdist.user_options + \
+        [('base-name=', 'b', 'override base name of the distribution')]
+
+    def initialize_options(self):
+        super(SDistCommand, self).initialize_options()
+        self.base_name = None
+
+    def make_distribution(self):
+        if not self.base_name:
+            super(SDistCommand, self).make_distribution()
+            return
+        metadata = self.distribution.metadata
+        # temporarily patch get_name() method
+        get_name = metadata.get_name
+        metadata.get_name = types.MethodType(lambda _: self.base_name, metadata)
+        try:
+            super(SDistCommand, self).make_distribution()
+        finally:
+            metadata.get_name = get_name
+
+
 setup(
     name='rebasehelper',
-    version=VERSION,
     description='This tool helps you rebase your package to the latest version',
     long_description=get_readme(),
     long_description_content_type='text/markdown',
@@ -79,6 +103,10 @@ setup(
     license='GPLv2+',
     packages=find_packages(),
     include_package_data=True,
+    use_scm_version=True,
+    cmdclass={
+        'sdist': SDistCommand,
+    },
     entry_points={
         'console_scripts': [
             'rebase-helper = rebasehelper.cli:CliHelper.run',

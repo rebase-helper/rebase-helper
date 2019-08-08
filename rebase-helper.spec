@@ -15,11 +15,14 @@ BuildArch:      noarch
 
 BuildRequires:  python3-devel
 BuildRequires:  python3-setuptools
+BuildRequires:  python3-setuptools_scm
+BuildRequires:  python3-setuptools_scm_git_archive
 BuildRequires:  python3-rpm
 BuildRequires:  python3-six
 BuildRequires:  python3-koji
 BuildRequires:  python3-pyquery
 BuildRequires:  python3-copr
+BuildRequires:  python3-pam
 BuildRequires:  python3-requests
 BuildRequires:  python3-requests-gssapi
 BuildRequires:  python3-GitPython
@@ -78,7 +81,7 @@ install -p -m 0644 build/man/rebase-helper.1 %{buildroot}%{_datadir}/man/man1
 
 # install bash completion
 mkdir -p %{buildroot}%{_sysconfdir}/bash_completion.d/
-install -p build/rebase-helper.bash %{buildroot}%{_sysconfdir}/bash_completion.d/
+install -p -m 0644 build/rebase-helper.bash %{buildroot}%{_sysconfdir}/bash_completion.d/
 
 
 %check
@@ -92,7 +95,7 @@ PYTHONPATH=$(pwd) py.test-3 -v %{pkgname}
 %doc build/rebase-helper.cfg
 %{_bindir}/%{name}
 %{python3_sitelib}/%{pkgname}/
-%{python3_sitelib}/%{pkgname}-%{version}-py%{python3_version}.egg-info
+%{python3_sitelib}/%{pkgname}-*-py%{python3_version}.egg-info
 %{_mandir}/man1/rebase-helper.1*
 %{_sysconfdir}/bash_completion.d/rebase-helper.bash
 

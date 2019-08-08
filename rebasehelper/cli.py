@@ -27,9 +27,9 @@ import logging
 import os
 import sys
 
+from rebasehelper import VERSION
 from rebasehelper.options import OPTIONS, traverse_options
 from rebasehelper.constants import PROGRAM_DESCRIPTION, NEW_ISSUE_LINK, LOGS_DIR, TRACEBACK_LOG
-from rebasehelper.version import VERSION
 from rebasehelper.application import Application
 from rebasehelper.logger import logger, logger_traceback, main_handler, output_tool_handler, CustomLogger, LoggerHelper
 from rebasehelper.exceptions import RebaseHelperError
