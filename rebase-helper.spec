@@ -79,7 +79,7 @@ install -p -m 0644 build/man/rebase-helper.1 %{buildroot}%{_datadir}/man/man1
 
 # install bash completion
 mkdir -p %{buildroot}%{_sysconfdir}/bash_completion.d/
-install -p build/rebase-helper.bash %{buildroot}%{_sysconfdir}/bash_completion.d/
+install -p -m 0644 build/rebase-helper.bash %{buildroot}%{_sysconfdir}/bash_completion.d/
 
 
 %check
