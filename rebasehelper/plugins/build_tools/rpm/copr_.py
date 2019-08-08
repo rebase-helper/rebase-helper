@@ -22,15 +22,19 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
+import logging
 import os
 
-from typing import List, Optional
+from typing import List, Optional, cast
 
 from rebasehelper.helpers.copr_helper import CoprHelper
-from rebasehelper.logger import logger
+from rebasehelper.logger import CustomLogger
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.plugins.build_tools.rpm import BuildToolBase
 from rebasehelper.exceptions import BinaryPackageBuildError
+
+
+logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
 
 
 class Copr(BuildToolBase):

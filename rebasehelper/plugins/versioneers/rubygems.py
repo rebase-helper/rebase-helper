@@ -22,13 +22,19 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
+import logging
 import re
 
+from typing import cast
+
+from rebasehelper.logger import CustomLogger
 from rebasehelper.plugins.versioneers import BaseVersioneer
 from rebasehelper.types import PackageCategories
 from rebasehelper.specfile import PackageCategory
-from rebasehelper.logger import logger
 from rebasehelper.helpers.download_helper import DownloadHelper
+
+
+logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
 
 
 class RubyGems(BaseVersioneer):

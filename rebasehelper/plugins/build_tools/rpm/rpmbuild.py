@@ -22,18 +22,22 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
+import logging
 import os
 
-from typing import List
+from typing import List, cast
 
 from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.helpers.input_helper import InputHelper
-from rebasehelper.logger import logger
 from rebasehelper.helpers.path_helper import PathHelper
 from rebasehelper.helpers.rpm_helper import RpmHelper
+from rebasehelper.logger import CustomLogger
 from rebasehelper.plugins.build_tools import RpmbuildTemporaryEnvironment
 from rebasehelper.plugins.build_tools.rpm import BuildToolBase
 from rebasehelper.exceptions import RebaseHelperError, BinaryPackageBuildError
+
+
+logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
 
 
 class Rpmbuild(BuildToolBase):  # pylint: disable=abstract-method

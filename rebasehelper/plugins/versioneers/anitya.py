@@ -22,12 +22,19 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
+import logging
+
+from typing import cast
+
 from pkg_resources import parse_version
 
+from rebasehelper.logger import CustomLogger
 from rebasehelper.plugins.versioneers import BaseVersioneer
 from rebasehelper.types import PackageCategories
-from rebasehelper.logger import logger
 from rebasehelper.helpers.download_helper import DownloadHelper
+
+
+logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
 
 
 class Anitya(BaseVersioneer):

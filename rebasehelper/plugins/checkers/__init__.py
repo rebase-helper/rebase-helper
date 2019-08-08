@@ -23,14 +23,18 @@
 #          František Nečas <fifinecas@seznam.cz>
 
 import enum
+import logging
 import os
 
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Type, Union, cast
 
+from rebasehelper.logger import CustomLogger
 from rebasehelper.plugins.plugin import Plugin
 from rebasehelper.plugins.plugin_collection import PluginCollection
-from rebasehelper.logger import logger
 from rebasehelper.constants import RESULTS_DIR
+
+
+logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
 
 
 class CheckerCategory(enum.Enum):

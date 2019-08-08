@@ -22,11 +22,19 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
+import logging
 import os
 
+from typing import cast
+
+from rebasehelper.logger import CustomLogger
 from rebasehelper.plugins.output_tools import BaseOutputTool
-from rebasehelper.logger import LoggerHelper, logger, logger_report
+from rebasehelper.logger import LoggerHelper
 from rebasehelper.results_store import results_store
+
+
+logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
+logger_report: CustomLogger = cast(CustomLogger, logging.getLogger('rebasehelper.report'))
 
 
 class Text(BaseOutputTool):

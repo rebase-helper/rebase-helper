@@ -22,17 +22,21 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
+import logging
 import os
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, cast
 from xml.etree import ElementTree
 
-from rebasehelper.logger import logger
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
+from rebasehelper.logger import CustomLogger
 from rebasehelper.results_store import results_store
 from rebasehelper.plugins.checkers import BaseChecker, CheckerCategory
 from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.helpers.rpm_helper import RpmHelper
+
+
+logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
 
 
 class PkgDiff(BaseChecker):

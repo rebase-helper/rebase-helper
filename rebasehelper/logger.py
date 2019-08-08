@@ -23,10 +23,12 @@
 #          František Nečas <fifinecas@seznam.cz>
 
 import logging
+import os
 
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 
 from rebasehelper.helpers.console_helper import ConsoleHelper
+from rebasehelper import constants
 
 
 class CustomLogger(logging.Logger):
@@ -62,74 +64,6 @@ class CustomLogger(logging.Logger):
             return log
 
         raise AttributeError
-
-
-class LoggerHelper:
-    """
-    Helper class for setting up a logger
-    """
-
-    @staticmethod
-    def get_basic_logger(logger_name, level=logging.DEBUG):
-        """Sets up a basic logger without any handler.
-
-        Args:
-            logger_name (str): Logger name.
-            level (int): Severity threshold.
-
-        Returns:
-            logging.Logger: Created logger instance.
-
-        """
-        basic_logger = logging.getLogger(logger_name)
-        basic_logger.setLevel(level)
-        return basic_logger
-
-    @staticmethod
-    def add_stream_handler(logger_object, level=None, formatter_object=None):
-        """Adds stream handler to the given logger.
-
-        Args:
-            logger_object (logging.Logger): Logger object to add the handler to.
-            level (int): Severity threshold.
-            formatter_object (logging.Formatter): Formatter object used to format logged messages.
-
-        Returns:
-            logging.StreamHandler: Created stream handler instance.
-
-        """
-        console_handler = ColorizingStreamHandler()
-        if level:
-            console_handler.setLevel(level)
-        if formatter_object:
-            console_handler.setFormatter(formatter_object)
-        logger_object.addHandler(console_handler)
-        return console_handler
-
-    @staticmethod
-    def add_file_handler(logger_object, path, formatter_object=None, level=None):
-        """Adds file handler to the given logger.
-
-        Args:
-            logger_object (logging.Logger): Logger object to add the handler to.
-            path (str): Path to a log file.
-            formatter_object (logging.Formatter): Formatter object used to format logged messages.
-            level (int): Severity threshold.
-
-        Returns:
-            logging.FileHandler: Created file handler instance.
-
-        """
-        try:
-            file_handler = logging.FileHandler(path, 'w')
-            if level:
-                file_handler.setLevel(level)
-            if formatter_object:
-                file_handler.setFormatter(formatter_object)
-            logger_object.addHandler(file_handler)
-            return file_handler
-        except (IOError, OSError):
-            logger_object.warning('Can not create log in %s', path)
 
 
 class ColorizingStreamHandler(logging.StreamHandler):
@@ -178,19 +112,84 @@ class ColorizingStreamHandler(logging.StreamHandler):
             self.handleError(record)
 
 
-logging.setLoggerClass(CustomLogger)
-#  the main rebase-helper logger
-logger: CustomLogger = LoggerHelper.get_basic_logger('rebase-helper')
-#  logger for output tool
-logger_output: CustomLogger = LoggerHelper.get_basic_logger('output-tool', logging.INFO)
-logger_report: CustomLogger = LoggerHelper.get_basic_logger('rebase-helper-report', logging.INFO)
-logger_traceback: CustomLogger = LoggerHelper.get_basic_logger('traceback', CustomLogger.TRACE)
-logger_upstream: CustomLogger = LoggerHelper.get_basic_logger('rebase-helper-upstream')
+class LoggerHelper:
+    """Helper class for setting up a logger."""
 
-console_formatter: logging.Formatter = logging.Formatter("%(levelname)s: %(message)s")
-log_formatter: logging.Formatter = logging.Formatter("%(message)s")
-debug_log_formatter: logging.Formatter = logging.Formatter(
-    "%(asctime)s %(filename)s:%(lineno)s %(funcName)s: %(message)s")
+    @staticmethod
+    def add_stream_handler(logger: logging.Logger, level: Optional[int] = None,
+                           formatter: Optional[logging.Formatter] = None) -> ColorizingStreamHandler:
+        """Adds stream handler to the given logger.
 
-main_handler: ColorizingStreamHandler = LoggerHelper.add_stream_handler(logger, logging.INFO, console_formatter)
-output_tool_handler: ColorizingStreamHandler = LoggerHelper.add_stream_handler(logger_output)
+        Args:
+            logger: Logger object to add the handler to.
+            level: Severity threshold.
+            formatter: Formatter object used to format logged messages.
+
+        Returns:
+            Created stream handler instance.
+
+        """
+        console_handler = ColorizingStreamHandler()
+        if level:
+            console_handler.setLevel(level)
+        if formatter:
+            console_handler.setFormatter(formatter)
+        logger.addHandler(console_handler)
+        return console_handler
+
+    @staticmethod
+    def add_file_handler(logger: logging.Logger, path: str, formatter: Optional[logging.Formatter] = None,
+                         level: Optional[int] = None) -> None:
+        """Adds file handler to the given logger.
+
+        Args:
+            logger: Logger object to add the handler to.
+            path: Path to a log file.
+            formatter: Formatter object used to format logged messages.
+            level: Severity threshold.
+
+        """
+        try:
+            file_handler = logging.FileHandler(path, 'w')
+            if level:
+                file_handler.setLevel(level)
+            if formatter:
+                file_handler.setFormatter(formatter)
+            logger.addHandler(file_handler)
+        except (IOError, OSError):
+            logger.warning('Can not create log in %s', path)
+
+
+def create_file_handlers(results_dir: str) -> None:
+    """Creates rebase-helper file handlers.
+
+    Args:
+        results_dir: Path to rebase-helper-results directory.
+
+    """
+    logs_dir = os.path.join(results_dir, constants.LOGS_DIR)
+    logger = logging.getLogger('rebasehelper')
+
+    log_formatter = logging.Formatter('%(message)s')
+    debug_log_formatter = logging.Formatter('%(asctime)s %(filename)s:%(lineno)s %(funcName)s: %(message)s')
+
+    debug_log = os.path.join(logs_dir, constants.DEBUG_LOG)
+    LoggerHelper.add_file_handler(logger, debug_log, debug_log_formatter, logging.DEBUG)
+    verbose_log = os.path.join(logs_dir, constants.VERBOSE_LOG)
+    LoggerHelper.add_file_handler(logger, verbose_log, log_formatter, CustomLogger.VERBOSE)
+    info_log = os.path.join(logs_dir, constants.INFO_LOG)
+    LoggerHelper.add_file_handler(logger, info_log, log_formatter, logging.INFO)
+
+
+def create_stream_handlers() -> Tuple[ColorizingStreamHandler, ColorizingStreamHandler]:
+    logger = logging.getLogger('rebasehelper')
+    formatter = logging.Formatter('%(levelname)s: %(message)s')
+    main = LoggerHelper.add_stream_handler(logger, logging.INFO, formatter)
+
+    logger_summary = logging.getLogger('rebasehelper.summary')
+    logger_summary.propagate = False
+    summary = LoggerHelper.add_stream_handler(logger_summary)
+
+    logger_report = logging.getLogger('rebasehelper.report')
+    logger_report.propagate = False
+    return main, summary

@@ -25,29 +25,32 @@
 import argparse
 import enum
 import itertools
+import logging
 import os
 import re
 import shlex
 import shutil
 import urllib.parse
-
-import rpm  # type: ignore
-
 from datetime import date
 from difflib import SequenceMatcher
 from operator import itemgetter
-from typing import List, Optional, Pattern, Tuple, Dict
+from typing import List, Optional, Pattern, Tuple, Dict, cast
+
+import rpm  # type: ignore
 
 from rebasehelper import constants
-from rebasehelper.logger import logger
 from rebasehelper.archive import Archive
 from rebasehelper.exceptions import RebaseHelperError, DownloadError, ParseError, LookasideCacheError
 from rebasehelper.argument_parser import SilentArgumentParser
+from rebasehelper.logger import CustomLogger
 from rebasehelper.helpers.download_helper import DownloadHelper
 from rebasehelper.helpers.macro_helper import MacroHelper
 from rebasehelper.helpers.rpm_helper import RpmHelper
 from rebasehelper.helpers.git_helper import GitHelper
 from rebasehelper.helpers.lookaside_cache_helper import LookasideCacheHelper
+
+
+logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
 
 
 def get_rebase_name(dir_name, name):

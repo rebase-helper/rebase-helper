@@ -22,16 +22,20 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
+import logging
 import os
 
-from typing import List
+from typing import List, cast
 
 from rebasehelper.helpers.process_helper import ProcessHelper
-from rebasehelper.logger import logger
 from rebasehelper.helpers.path_helper import PathHelper
+from rebasehelper.logger import CustomLogger
 from rebasehelper.plugins.build_tools import MockTemporaryEnvironment, check_mock_privileges
 from rebasehelper.plugins.build_tools.rpm import BuildToolBase
 from rebasehelper.exceptions import BinaryPackageBuildError
+
+
+logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
 
 
 class Mock(BuildToolBase):  # pylint: disable=abstract-method

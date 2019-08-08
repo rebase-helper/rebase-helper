@@ -22,14 +22,19 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
+import logging
 import os
 import shutil
+from typing import cast
 
 import pam  # type: ignore
 
 from rebasehelper.helpers.path_helper import PathHelper
+from rebasehelper.logger import CustomLogger
 from rebasehelper.temporary_environment import TemporaryEnvironment
-from rebasehelper.logger import logger
+
+
+logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
 
 
 def check_mock_privileges() -> bool:

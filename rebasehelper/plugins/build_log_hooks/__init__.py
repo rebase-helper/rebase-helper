@@ -22,11 +22,18 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
+import logging
+
+from typing import cast
+
+from rebasehelper.logger import CustomLogger
 from rebasehelper.plugins.plugin import Plugin
 from rebasehelper.plugins.plugin_collection import PluginCollection
 from rebasehelper.types import PackageCategories
-from rebasehelper.logger import logger
 from rebasehelper.results_store import results_store
+
+
+logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
 
 
 class BaseBuildLogHook(Plugin):

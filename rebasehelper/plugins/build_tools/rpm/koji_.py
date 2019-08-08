@@ -22,22 +22,25 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
+import logging
 import os
 import re
+from typing import List, cast
 
 import koji  # type: ignore  # pylint: disable=import-error
 
 # unused import needed to prevent loading koji buildtool with Koji < 1.13
 import koji_cli.lib  # type: ignore  # pylint: disable=import-error,unused-import
 
-from typing import List
-
 from rebasehelper.types import Options
 from rebasehelper.helpers.koji_helper import KojiHelper
-from rebasehelper.logger import logger
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.plugins.build_tools.rpm import BuildToolBase
 from rebasehelper.exceptions import BinaryPackageBuildError
+from rebasehelper.logger import CustomLogger
+
+
+logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
 
 
 class Koji(BuildToolBase):

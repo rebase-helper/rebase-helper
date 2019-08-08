@@ -22,20 +22,23 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
+import logging
 import os
 import re
 import tempfile
+from typing import List, cast
 
 import rpm  # type: ignore
 
-from typing import List
-
 from rebasehelper.constants import SYSTEM_ENCODING
 from rebasehelper.exceptions import RebaseHelperError
-from rebasehelper.logger import logger
+from rebasehelper.logger import CustomLogger
 from rebasehelper.helpers.macro_helper import MacroHelper
 from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.helpers.console_helper import ConsoleHelper
+
+
+logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
 
 
 class RpmHelper:

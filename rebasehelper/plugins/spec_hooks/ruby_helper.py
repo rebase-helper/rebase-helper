@@ -22,17 +22,23 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
+import logging
 import os
 import re
 import urllib.parse
 
+from typing import cast
+
+from rebasehelper.logger import CustomLogger
 from rebasehelper.plugins.spec_hooks import BaseSpecHook
 from rebasehelper.temporary_environment import TemporaryEnvironment
 from rebasehelper.types import PackageCategories
 from rebasehelper.specfile import PackageCategory
-from rebasehelper.logger import logger
 from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.helpers.macro_helper import MacroHelper
+
+
+logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
 
 
 class RubyHelper(BaseSpecHook):

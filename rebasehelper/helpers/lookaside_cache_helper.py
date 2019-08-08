@@ -24,10 +24,13 @@
 
 import configparser
 import hashlib
+import logging
 import os
 import re
 import sys
 import time
+
+from typing import cast
 
 import requests
 import requests_gssapi  # type: ignore
@@ -36,8 +39,11 @@ from urllib3.fields import RequestField  # type: ignore
 from urllib3.filepost import encode_multipart_formdata  # type: ignore
 
 from rebasehelper.exceptions import LookasideCacheError, DownloadError
-from rebasehelper.logger import logger
+from rebasehelper.logger import CustomLogger
 from rebasehelper.helpers.download_helper import DownloadHelper
+
+
+logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
 
 
 class LookasideCacheHelper:

@@ -22,10 +22,22 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
+import logging
 import os
 
 import pkg_resources
 
+
+try:
+    from rebasehelper.logger import CustomLogger
+except ModuleNotFoundError:
+    # bootstrap
+    pass
+else:
+    logging.setLoggerClass(CustomLogger)
+
+# ensure that all messages are caught
+logging.getLogger(__name__).setLevel(logging.DEBUG)
 
 # make entry points accessible in case this package is not installed
 parent_dir: str = os.path.dirname(os.path.dirname(__file__))

@@ -22,16 +22,21 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
+import logging
 import os
 import sys
 import time
 import urllib.error
 import urllib.request
+from typing import cast
 
 import requests
 
 from rebasehelper.exceptions import DownloadError
-from rebasehelper.logger import logger
+from rebasehelper.logger import CustomLogger
+
+
+logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
 
 
 class DownloadHelper:
