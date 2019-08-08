@@ -110,7 +110,7 @@ class CliHelper:
             main_handler, output_tool_handler = create_stream_handlers()
             cli = CLI()
             if hasattr(cli, 'version'):
-                logger.info(VERSION)
+                print(VERSION)
                 sys.exit(0)
 
             config = Config(getattr(cli, 'config-file', None))
