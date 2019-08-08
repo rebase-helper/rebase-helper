@@ -22,13 +22,20 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
+import logging
 import os
 
+from typing import cast
+
+from rebasehelper.logger import CustomLogger
 from rebasehelper.plugins.plugin import Plugin
 from rebasehelper.plugins.plugin_collection import PluginCollection
-from rebasehelper.logger import logger, logger_output
 from rebasehelper.results_store import results_store
-from rebasehelper.constants import RESULTS_DIR, REPORT
+from rebasehelper.constants import RESULTS_DIR, REPORT, LOGS_DIR, DEBUG_LOG
+
+
+logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
+logger_summary: CustomLogger = cast(CustomLogger, logging.getLogger('rebasehelper.summary'))
 
 
 class BaseOutputTool(Plugin):
@@ -61,34 +68,34 @@ class BaseOutputTool(Plugin):
 
         cls.print_important_checkers_output()
 
-        logger_output.heading('\nAvailable logs:')
-        logger_output.info('%s:\n%s', 'Debug log', cls.prepend_results_dir_name(app.debug_log_file))
+        logger_summary.heading('\nAvailable logs:')
+        logger_summary.info('%s:\n%s', 'Debug log', cls.prepend_results_dir_name(os.path.join(LOGS_DIR, DEBUG_LOG)))
         if results_store.get_old_build() is not None:
-            logger_output.info('%s:\n%s', 'Old build logs and (S)RPMs', cls.prepend_results_dir_name('old-build'))
+            logger_summary.info('%s:\n%s', 'Old build logs and (S)RPMs', cls.prepend_results_dir_name('old-build'))
         if results_store.get_new_build() is not None:
-            logger_output.info('%s:\n%s', 'New build logs and (S)RPMs', cls.prepend_results_dir_name('new-build'))
-        logger_output.info('')
+            logger_summary.info('%s:\n%s', 'New build logs and (S)RPMs', cls.prepend_results_dir_name('new-build'))
+        logger_summary.info('')
 
-        logger_output.heading('%s:', 'Rebased sources')
-        logger_output.info("%s", cls.prepend_results_dir_name(os.path.relpath(app.rebased_sources_dir,
-                                                                              app.results_dir)))
+        logger_summary.heading('%s:', 'Rebased sources')
+        logger_summary.info("%s", cls.prepend_results_dir_name(os.path.relpath(app.rebased_sources_dir,
+                                                                               app.results_dir)))
 
         patch = results_store.get_changes_patch()
         if 'changes_patch' in patch:
-            logger_output.heading('%s:', 'Generated patch')
-            logger_output.info("%s\n", cls.prepend_results_dir_name(os.path.basename(patch['changes_patch'])))
+            logger_summary.heading('%s:', 'Generated patch')
+            logger_summary.info("%s\n", cls.prepend_results_dir_name(os.path.basename(patch['changes_patch'])))
 
         cls.print_report_file_path()
 
         if not app.conf.patch_only:
             if 'success' in result:
-                logger_output.success('\n%s', result['success'])
+                logger_summary.success('\n%s', result['success'])
             # Error is printed out through exception caught in CliHelper.run()
         else:
             if results_store.get_patches()['success']:
-                logger_output.success("\nPatching successful")
+                logger_summary.success("\nPatching successful")
             elif results_store.get_patches()['success']:
-                logger_output.error("\nPatching failed")
+                logger_summary.error("\nPatching failed")
 
     @classmethod
     def print_important_checkers_output(cls):
@@ -100,21 +107,21 @@ class BaseOutputTool(Plugin):
                     if check == check_tool.name:
                         out = check_tool.get_important_changes(data)
                         if out:
-                            logger_output.warning('\n'.join(out))
+                            logger_summary.warning('\n'.join(out))
 
     @classmethod
     def print_report_file_path(cls):
         """Print path to the report file"""
-        logger_output.heading('%s report:', cls.name)
-        logger_output.info('%s', cls.prepend_results_dir_name('report.' + cls.EXTENSION))
+        logger_summary.heading('%s report:', cls.name)
+        logger_summary.info('%s', cls.prepend_results_dir_name('report.' + cls.EXTENSION))
 
     @classmethod
     def print_patches_cli(cls):
         """Print info about patches"""
         patch_dict = {
-            'inapplicable': logger_output.error,
-            'modified': logger_output.success,
-            'deleted': logger_output.success,
+            'inapplicable': logger_summary.error,
+            'modified': logger_summary.success,
+            'deleted': logger_summary.success,
         }
 
         for patch_type, logger_method in patch_dict.items():
@@ -133,7 +140,7 @@ class BaseOutputTool(Plugin):
             return
 
         if patch_type in patches:
-            logger_output.info('\n%s patches:', patch_type)
+            logger_summary.info('\n%s patches:', patch_type)
             for patch in sorted(patches[patch_type]):
                 logger_method(patch)
 

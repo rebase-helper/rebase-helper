@@ -23,20 +23,18 @@
 #          František Nečas <fifinecas@seznam.cz>
 
 import fnmatch
+import logging
 import os
 import shutil
-import logging
+from typing import Any, Dict, List, Optional, cast
 
 import git  # type: ignore
-
-from typing import Any, Dict, List, Optional
-
 from pkg_resources import parse_version
 
 from rebasehelper import VERSION
 from rebasehelper.archive import Archive
 from rebasehelper.specfile import SpecFile, get_rebase_name
-from rebasehelper.logger import logger, log_formatter, debug_log_formatter, LoggerHelper, CustomLogger
+from rebasehelper.logger import create_file_handlers, CustomLogger
 from rebasehelper import constants
 from rebasehelper.patcher import Patcher
 from rebasehelper.plugins.plugin_manager import plugin_manager
@@ -50,6 +48,9 @@ from rebasehelper.helpers.input_helper import InputHelper
 from rebasehelper.helpers.git_helper import GitHelper
 from rebasehelper.helpers.koji_helper import KojiHelper
 from rebasehelper.helpers.lookaside_cache_helper import LookasideCacheHelper
+
+
+logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
 
 
 class Application:
@@ -138,28 +139,9 @@ class Application:
             os.makedirs(results_dir)
             os.makedirs(os.path.join(results_dir, constants.LOGS_DIR))
 
-        Application.setup_logging(results_dir)
+        create_file_handlers(results_dir)
 
         return execution_dir, results_dir
-
-    @staticmethod
-    def setup_logging(results_dir):
-        """Adds file handlers of various verbosity to loggers.
-
-        Args:
-            results_dir: Path to directory which results are stored in.
-
-        Returns:
-            string: Path to debug log.
-
-        """
-        logs_dir = os.path.join(results_dir, constants.LOGS_DIR)
-        debug_log = os.path.join(logs_dir, constants.DEBUG_LOG)
-        LoggerHelper.add_file_handler(logger, debug_log, debug_log_formatter, logging.DEBUG)
-        verbose_log = os.path.join(logs_dir, constants.VERBOSE_LOG)
-        LoggerHelper.add_file_handler(logger, verbose_log, log_formatter, CustomLogger.VERBOSE)
-        info_log = os.path.join(logs_dir, constants.INFO_LOG)
-        LoggerHelper.add_file_handler(logger, info_log, log_formatter, logging.INFO)
 
     def _prepare_spec_objects(self):
         """

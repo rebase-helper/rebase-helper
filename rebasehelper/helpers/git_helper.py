@@ -22,12 +22,17 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
+import logging
 import os
+from typing import cast
 
 import git  # type: ignore
 
-from rebasehelper.logger import logger
 from rebasehelper.helpers.process_helper import ProcessHelper
+from rebasehelper.logger import CustomLogger
+
+
+logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
 
 
 class GitHelper:

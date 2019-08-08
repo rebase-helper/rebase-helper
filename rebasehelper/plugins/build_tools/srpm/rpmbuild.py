@@ -22,16 +22,20 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
+import logging
 import os
 
-from typing import List
+from typing import List, cast
 
-from rebasehelper.logger import logger
+from rebasehelper.logger import CustomLogger
 from rebasehelper.plugins.build_tools import RpmbuildTemporaryEnvironment
 from rebasehelper.plugins.build_tools.srpm import SRPMBuildToolBase
 from rebasehelper.helpers.path_helper import PathHelper
 from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.exceptions import SourcePackageBuildError
+
+
+logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
 
 
 class Rpmbuild(SRPMBuildToolBase):

@@ -22,17 +22,20 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
+import logging
 import os
 import random
 import string
 import sys
 import time
 
+from typing import cast
+
 from rebasehelper.exceptions import RebaseHelperError
-from rebasehelper.logger import logger
 from rebasehelper.helpers.console_helper import ConsoleHelper
 from rebasehelper.helpers.rpm_helper import RpmHelper
 from rebasehelper.helpers.download_helper import DownloadHelper
+from rebasehelper.logger import CustomLogger
 
 koji_helper_functional: bool
 try:
@@ -42,6 +45,9 @@ except ImportError:
     koji_helper_functional = False
 else:
     koji_helper_functional = True
+
+
+logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
 
 
 class KojiHelper:

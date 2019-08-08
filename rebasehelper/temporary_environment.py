@@ -22,10 +22,16 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
+import logging
 import shutil
 
-from rebasehelper.logger import logger
+from typing import cast
+
+from rebasehelper.logger import CustomLogger
 from rebasehelper.helpers.path_helper import PathHelper
+
+
+logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
 
 
 class TemporaryEnvironment:

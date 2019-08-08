@@ -23,14 +23,18 @@
 #          František Nečas <fifinecas@seznam.cz>
 
 import bz2
+import logging
 import lzma
 import os
 import tarfile
 import zipfile
 
-from typing import Dict, Type
+from typing import Dict, Type, cast
 
-from rebasehelper.logger import logger
+from rebasehelper.logger import CustomLogger
+
+
+logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
 
 
 # supported archive types

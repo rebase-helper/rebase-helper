@@ -23,17 +23,21 @@
 #          František Nečas <fifinecas@seznam.cz>
 
 import io
+import logging
 import os
 import re
 
-from typing import List, Optional
+from typing import List, Optional, cast
 
-from rebasehelper.logger import logger
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
+from rebasehelper.logger import CustomLogger
 from rebasehelper.results_store import results_store
 from rebasehelper.plugins.checkers import BaseChecker, CheckerCategory
 from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.helpers.rpm_helper import RpmHelper
+
+
+logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
 
 
 class RpmDiff(BaseChecker):

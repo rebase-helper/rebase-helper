@@ -25,15 +25,19 @@
 import collections
 import difflib
 import fnmatch
+import logging
 import os
 import re
 
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, cast
 
+from rebasehelper.logger import CustomLogger
 from rebasehelper.plugins.build_log_hooks import BaseBuildLogHook
 from rebasehelper.types import PackageCategories
 from rebasehelper.helpers.macro_helper import MacroHelper
-from rebasehelper.logger import logger
+
+
+logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
 
 
 class Files(BaseBuildLogHook):

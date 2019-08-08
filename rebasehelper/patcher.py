@@ -23,18 +23,21 @@
 #          František Nečas <fifinecas@seznam.cz>
 
 import io
+import logging
 import os
+from typing import List, Optional, cast
 
 import git  # type: ignore
 
-from typing import List, Optional
-
-from rebasehelper.logger import logger
 from rebasehelper.specfile import PatchObject
 from rebasehelper.helpers.git_helper import GitHelper
 from rebasehelper.helpers.input_helper import InputHelper
 from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.constants import SYSTEM_ENCODING
+from rebasehelper.logger import CustomLogger
+
+
+logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
 
 
 class Patcher:

@@ -23,16 +23,21 @@
 #          František Nečas <fifinecas@seznam.cz>
 
 import gzip
+import logging
 import os
 import time
 import urllib.parse
+from typing import cast
 
 import copr  # type: ignore
 import pyquery  # type: ignore
 
 from rebasehelper.exceptions import RebaseHelperError
-from rebasehelper.logger import logger
 from rebasehelper.helpers.download_helper import DownloadHelper
+from rebasehelper.logger import CustomLogger
+
+
+logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
 
 
 class CoprHelper:

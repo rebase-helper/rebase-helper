@@ -22,9 +22,16 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
+import logging
+
+from typing import cast
+
 from distutils.util import strtobool
 
-from rebasehelper.logger import logger
+from rebasehelper.logger import CustomLogger
+
+
+logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
 
 
 class InputHelper:

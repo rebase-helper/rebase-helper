@@ -27,16 +27,21 @@ import logging
 import os
 import sys
 
+from typing import cast
+
 from rebasehelper import VERSION
 from rebasehelper.options import OPTIONS, traverse_options
-from rebasehelper.constants import PROGRAM_DESCRIPTION, NEW_ISSUE_LINK, LOGS_DIR, TRACEBACK_LOG
+from rebasehelper.constants import PROGRAM_DESCRIPTION, NEW_ISSUE_LINK, LOGS_DIR, TRACEBACK_LOG, DEBUG_LOG
 from rebasehelper.application import Application
-from rebasehelper.logger import logger, logger_traceback, main_handler, output_tool_handler, CustomLogger, LoggerHelper
+from rebasehelper.logger import create_stream_handlers, CustomLogger, LoggerHelper
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.helpers.console_helper import ConsoleHelper
 from rebasehelper.config import Config
 from rebasehelper.argument_parser import CustomArgumentParser, CustomHelpFormatter, CustomAction
 from rebasehelper.plugins.plugin_manager import plugin_manager
+
+
+logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
 
 
 class CLI:
@@ -100,8 +105,9 @@ class CliHelper:
 
     @staticmethod
     def run():
-        debug_log_file = None
+        results_dir = None
         try:
+            main_handler, output_tool_handler = create_stream_handlers()
             cli = CLI()
             if hasattr(cli, 'version'):
                 logger.info(VERSION)
@@ -114,7 +120,6 @@ class CliHelper:
 
             ConsoleHelper.use_colors = ConsoleHelper.should_use_colors(config)
             execution_dir, results_dir = Application.setup(config)
-            traceback_log = os.path.join(results_dir, LOGS_DIR, TRACEBACK_LOG)
             if config.verbose == 0:
                 main_handler.setLevel(logging.INFO)
             elif config.verbose == 1:
@@ -134,7 +139,12 @@ class CliHelper:
         except SystemExit as e:
             sys.exit(e.code)
         except BaseException:
-            if debug_log_file:
+            logger_traceback: CustomLogger = cast(CustomLogger, logging.getLogger('rebasehelper.traceback'))
+            logger_traceback.propagate = False
+            logger_traceback.setLevel(CustomLogger.TRACE)
+            if results_dir:
+                debug_log = os.path.join(results_dir, LOGS_DIR, DEBUG_LOG)
+                traceback_log = os.path.join(results_dir, LOGS_DIR, TRACEBACK_LOG)
                 logger.error('rebase-helper failed due to an unexpected error. Please report this problem'
                              '\nusing the following link: %s'
                              '\nand include the content of'
@@ -142,14 +152,17 @@ class CliHelper:
                              '\n\'%s\''
                              '\nin the report.'
                              '\nThank you!',
-                             NEW_ISSUE_LINK, debug_log_file, traceback_log)
+                             NEW_ISSUE_LINK, debug_log, traceback_log)
                 LoggerHelper.add_file_handler(logger_traceback, traceback_log)
-                logger_traceback.trace('', exc_info=1)
             else:
                 logger.error('rebase-helper failed due to an unexpected error. Please report this problem'
                              '\nusing the following link: %s'
+                             '\nand include the following traceback in the report.'
                              '\nThank you!',
                              NEW_ISSUE_LINK)
+
+                LoggerHelper.add_stream_handler(logger_traceback, CustomLogger.TRACE)
+            logger_traceback.trace('', exc_info=1)
             sys.exit(1)
 
         sys.exit(0)
