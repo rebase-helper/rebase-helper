@@ -2,6 +2,22 @@
 
 ## [Unreleased]
 
+## [0.17.2] - 2019-08-09
+### Added
+- Added tests for `SpecContent` class
+- Enabled and configured [Packit-as-a-Service](https://packit.dev/packit-as-a-service/)
+
+### Fixed
+- Added exception handling to PyPI release webhook endpoint
+- Fixed `TestCLI.test_cli_unit()` test
+- Updated `MANIFEST.in` to include all necessary files
+
+### Changed
+- Improved tests for `Application` class
+- `SpecFile.update_changelog()` now creates *%changelog* section if it doesn't exist
+- **rebase-helper** now uses `setuptools-scm` to determine version from git
+- `setup.py sdist` now supports overriding distribution base name with `--base-name` option
+
 ## [0.17.1] - 2019-08-01
 ### Fixed
 - Fixed PyPI release webhook endpoint
