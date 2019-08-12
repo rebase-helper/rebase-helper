@@ -22,7 +22,6 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-import io
 import logging
 import os
 from typing import List, Optional, cast
@@ -32,7 +31,6 @@ import git  # type: ignore
 from rebasehelper.specfile import PatchObject
 from rebasehelper.helpers.git_helper import GitHelper
 from rebasehelper.helpers.input_helper import InputHelper
-from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.constants import SYSTEM_ENCODING
 from rebasehelper.logger import CustomLogger
 
@@ -138,12 +136,7 @@ class Patcher:
             logger.info('git-rebase operation to %s is ongoing...', os.path.basename(cls.new_sources))
             upstream = 'new_upstream'
             cls.old_repo.create_remote(upstream, url=cls.new_sources).fetch()
-            # workaround until https://github.com/gitpython-developers/GitPython/pull/899 gets into a release
-            # root_commit = cls.old_repo.git.rev_list('HEAD', max_parents=0)
-            output = io.StringIO()
-            ProcessHelper.run_subprocess_cwd(['git', 'rev-list', '--max-parents=0', 'HEAD'],
-                                             cwd=cls.old_sources, output_file=output)
-            root_commit = output.getvalue().strip()
+            root_commit = cls.old_repo.git.rev_list('HEAD', max_parents=0)
             last_commit = cls.old_repo.commit('HEAD')
             if cls.favor_on_conflict == 'upstream':
                 strategy_option = 'ours'
