@@ -26,7 +26,6 @@ import logging
 import os
 import re
 import urllib.parse
-
 from typing import cast
 
 from rebasehelper.logger import CustomLogger

@@ -24,7 +24,6 @@
 
 import logging
 import os
-
 from typing import List, Optional, cast
 
 from rebasehelper.helpers.copr_helper import CoprHelper

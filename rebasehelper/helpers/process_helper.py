@@ -26,7 +26,6 @@ import logging
 import os
 import subprocess
 import tempfile
-
 from typing import cast
 
 from rebasehelper.constants import SYSTEM_ENCODING

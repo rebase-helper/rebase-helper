@@ -23,7 +23,6 @@
 #          František Nečas <fifinecas@seznam.cz>
 
 import logging
-
 from typing import cast
 
 from rebasehelper.logger import CustomLogger

@@ -24,7 +24,6 @@
 
 import io
 import os
-
 from typing import Optional
 
 from rebasehelper.helpers.process_helper import ProcessHelper

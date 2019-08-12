@@ -24,7 +24,6 @@
 
 import os
 import sys
-
 from argparse import SUPPRESS
 from typing import List
 

@@ -28,7 +28,6 @@ import fnmatch
 import logging
 import os
 import re
-
 from typing import Dict, List, Optional, cast
 
 from rebasehelper.logger import CustomLogger

@@ -23,11 +23,9 @@
 #          František Nečas <fifinecas@seznam.cz>
 
 import re
-
-import rpm  # type: ignore
-
 from typing import List
 
+import rpm  # type: ignore
 from pkg_resources import parse_version
 
 from rebasehelper.helpers.console_helper import ConsoleHelper

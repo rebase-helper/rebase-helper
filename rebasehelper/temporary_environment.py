@@ -24,7 +24,6 @@
 
 import logging
 import shutil
-
 from typing import cast
 
 from rebasehelper.logger import CustomLogger

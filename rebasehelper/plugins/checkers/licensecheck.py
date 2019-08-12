@@ -25,7 +25,6 @@
 import io
 import os
 import re
-
 from typing import Dict, Optional
 
 from rebasehelper.helpers.process_helper import ProcessHelper
