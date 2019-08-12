@@ -23,7 +23,6 @@
 #          František Nečas <fifinecas@seznam.cz>
 
 import re
-
 from typing import List, Type
 
 from rebasehelper.plugins.plugin_collection import PluginCollection

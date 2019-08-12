@@ -28,7 +28,6 @@ import lzma
 import os
 import tarfile
 import zipfile
-
 from typing import Dict, Type, cast
 
 from rebasehelper.logger import CustomLogger

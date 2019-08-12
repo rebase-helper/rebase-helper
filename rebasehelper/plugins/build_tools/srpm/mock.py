@@ -24,7 +24,6 @@
 
 import logging
 import os
-
 from typing import List, cast
 
 from rebasehelper.plugins.build_tools import MockTemporaryEnvironment, check_mock_privileges

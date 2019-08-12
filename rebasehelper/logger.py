@@ -24,7 +24,6 @@
 
 import logging
 import os
-
 from typing import Dict, Optional, Tuple
 
 from rebasehelper.helpers.console_helper import ConsoleHelper

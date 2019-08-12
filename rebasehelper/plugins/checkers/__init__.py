@@ -25,7 +25,6 @@
 import enum
 import logging
 import os
-
 from typing import Any, Dict, List, Optional, Type, Union, cast
 
 from rebasehelper.logger import CustomLogger

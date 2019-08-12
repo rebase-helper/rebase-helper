@@ -24,7 +24,6 @@
 
 import logging
 import os
-
 from typing import Dict, List, Optional, cast
 from xml.etree import ElementTree
 

@@ -24,7 +24,6 @@
 
 import logging
 import os
-
 from typing import List, cast
 
 from rebasehelper.helpers.process_helper import ProcessHelper

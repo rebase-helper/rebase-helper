@@ -26,7 +26,6 @@ import argparse
 import logging
 import os
 import sys
-
 from typing import cast
 
 from rebasehelper import VERSION

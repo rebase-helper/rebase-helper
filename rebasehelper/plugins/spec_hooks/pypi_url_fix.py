@@ -23,7 +23,6 @@
 #          František Nečas <fifinecas@seznam.cz>
 
 import re
-
 from typing import List, Tuple
 
 from rebasehelper.plugins.spec_hooks import BaseSpecHook

@@ -26,7 +26,6 @@ import io
 import logging
 import os
 import re
-
 from typing import List, Optional, cast
 
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError

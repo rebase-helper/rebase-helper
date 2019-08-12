@@ -24,7 +24,6 @@
 
 import re
 import urllib.parse
-
 from typing import Any, List, Pattern, Tuple
 
 from rebasehelper.types import Options
