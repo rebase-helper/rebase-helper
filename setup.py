@@ -51,8 +51,6 @@ def get_requirements():
         'pyquery',
         'python-pam',
         'requests',
-        'setuptools_scm',
-        'setuptools_scm_git_archive',
         'GitPython',
     ]
     # there is no rpm nor gssapi inside RTD build environment
@@ -153,7 +151,10 @@ setup(
         ]
     },
     install_requires=get_requirements(),
-    setup_requires=[],
+    setup_requires=[
+        'setuptools_scm',
+        'setuptools_scm_git_archive',
+    ],
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Console',
