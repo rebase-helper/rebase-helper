@@ -6,4 +6,4 @@ RUN pip install --no-cache-dir GitPython twine
 
 EXPOSE 80/TCP
 
-CMD ["python", "/webhooks.py"]
+CMD ["python", "-u", "/webhooks.py"]
