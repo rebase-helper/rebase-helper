@@ -24,7 +24,7 @@
 
 import logging
 import os
-from typing import Dict, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from rebasehelper.helpers.console_helper import ConsoleHelper
 from rebasehelper import constants
@@ -138,7 +138,7 @@ class LoggerHelper:
 
     @staticmethod
     def add_file_handler(logger: logging.Logger, path: str, formatter: Optional[logging.Formatter] = None,
-                         level: Optional[int] = None) -> None:
+                         level: Optional[int] = None) -> Optional[logging.FileHandler]:
         """Adds file handler to the given logger.
 
         Args:
@@ -146,6 +146,9 @@ class LoggerHelper:
             path: Path to a log file.
             formatter: Formatter object used to format logged messages.
             level: Severity threshold.
+
+        Returns:
+            Created file handler instance or None if creation failed.
 
         """
         try:
@@ -157,38 +160,60 @@ class LoggerHelper:
             logger.addHandler(file_handler)
         except (IOError, OSError):
             logger.warning('Can not create log in %s', path)
+            return None
+        else:
+            return file_handler
 
+    @classmethod
+    def create_file_handlers(cls, results_dir: str) -> List[logging.FileHandler]:
+        """Creates rebase-helper file handlers.
 
-def create_file_handlers(results_dir: str) -> None:
-    """Creates rebase-helper file handlers.
+        Args:
+            results_dir: Path to rebase-helper-results directory.
 
-    Args:
-        results_dir: Path to rebase-helper-results directory.
+        Returns:
+            List of created file handler instances.
 
-    """
-    logs_dir = os.path.join(results_dir, constants.LOGS_DIR)
-    logger = logging.getLogger('rebasehelper')
+        """
+        logs_dir = os.path.join(results_dir, constants.LOGS_DIR)
+        os.makedirs(logs_dir)
 
-    log_formatter = logging.Formatter('%(message)s')
-    debug_log_formatter = logging.Formatter('%(asctime)s %(filename)s:%(lineno)s %(funcName)s: %(message)s')
+        logger = logging.getLogger('rebasehelper')
 
-    debug_log = os.path.join(logs_dir, constants.DEBUG_LOG)
-    LoggerHelper.add_file_handler(logger, debug_log, debug_log_formatter, logging.DEBUG)
-    verbose_log = os.path.join(logs_dir, constants.VERBOSE_LOG)
-    LoggerHelper.add_file_handler(logger, verbose_log, log_formatter, CustomLogger.VERBOSE)
-    info_log = os.path.join(logs_dir, constants.INFO_LOG)
-    LoggerHelper.add_file_handler(logger, info_log, log_formatter, logging.INFO)
+        log_formatter = logging.Formatter('%(message)s')
+        debug_log_formatter = logging.Formatter('%(asctime)s %(filename)s:%(lineno)s %(funcName)s: %(message)s')
 
+        debug_log = os.path.join(logs_dir, constants.DEBUG_LOG)
+        debug = cls.add_file_handler(logger, debug_log, debug_log_formatter, logging.DEBUG)
+        verbose_log = os.path.join(logs_dir, constants.VERBOSE_LOG)
+        verbose = cls.add_file_handler(logger, verbose_log, log_formatter, CustomLogger.VERBOSE)
+        info_log = os.path.join(logs_dir, constants.INFO_LOG)
+        info = cls.add_file_handler(logger, info_log, log_formatter, logging.INFO)
 
-def create_stream_handlers() -> Tuple[ColorizingStreamHandler, ColorizingStreamHandler]:
-    logger = logging.getLogger('rebasehelper')
-    formatter = logging.Formatter('%(levelname)s: %(message)s')
-    main = LoggerHelper.add_stream_handler(logger, logging.INFO, formatter)
+        return [h for h in (debug, verbose, info) if h]
 
-    logger_summary = logging.getLogger('rebasehelper.summary')
-    logger_summary.propagate = False
-    summary = LoggerHelper.add_stream_handler(logger_summary)
+    @classmethod
+    def create_stream_handlers(cls) -> Tuple[ColorizingStreamHandler, ColorizingStreamHandler]:
+        logger = logging.getLogger('rebasehelper')
+        formatter = logging.Formatter('%(levelname)s: %(message)s')
+        main = cls.add_stream_handler(logger, logging.INFO, formatter)
 
-    logger_report = logging.getLogger('rebasehelper.report')
-    logger_report.propagate = False
-    return main, summary
+        logger_summary = logging.getLogger('rebasehelper.summary')
+        logger_summary.propagate = False
+        summary = cls.add_stream_handler(logger_summary)
+
+        logger_report = logging.getLogger('rebasehelper.report')
+        logger_report.propagate = False
+        return main, summary
+
+    @classmethod
+    def remove_file_handlers(cls, handlers: List[logging.FileHandler]) -> None:
+        """Removes rebase-helper file handlers.
+
+        Args:
+            handlers: List of file handlers to remove.
+
+        """
+        logger = logging.getLogger('rebasehelper')
+        for handler in handlers:
+            logger.removeHandler(handler)
