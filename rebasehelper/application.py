@@ -34,8 +34,9 @@ from pkg_resources import parse_version
 from rebasehelper import VERSION
 from rebasehelper.archive import Archive
 from rebasehelper.specfile import SpecFile, get_rebase_name
-from rebasehelper.logger import create_file_handlers, CustomLogger
+from rebasehelper.logger import CustomLogger, LoggerHelper
 from rebasehelper import constants
+from rebasehelper.config import Config
 from rebasehelper.patcher import Patcher
 from rebasehelper.plugins.plugin_manager import plugin_manager
 from rebasehelper.plugins.checkers import CheckerCategory
@@ -61,23 +62,26 @@ class Application:
     new_sources: str = ''
     old_rest_sources: List[str] = []
     new_rest_sources: List[str] = []
-    spec_file: Optional[SpecFile] = None
     spec_file_path: Optional[str] = None
-    rebase_spec_file: Optional[SpecFile] = None
     rebase_spec_file_path: Optional[str] = None
     debug_log_file: Optional[str] = None
     report_log_file: Optional[str] = None
     rebased_patches: Dict[str, List[str]] = {}
     rebased_repo: Optional[git.Repo] = None
 
-    def __init__(self, cli_conf, execution_dir, results_dir):
-        """
-        Initialize the application
+    def __init__(self, cli_conf: Config, execution_dir: str, results_dir: str, create_logs: bool = True) -> None:
+        """Initializes the application.
 
-        :param cli_conf: CLI object with configuration gathered from commandline
-        :return:
+        Args:
+            cli_conf: Application configuration.
+            execution_dir: Working directory.
+            results_dir: Location of rebase results.
+            create_logs: Whether to create default logging file handlers.
+
         """
         results_store.clear()
+
+        self.handlers = LoggerHelper.create_file_handlers(results_dir) if create_logs else []
 
         self.conf = cli_conf
         self.execution_dir = execution_dir
@@ -123,6 +127,9 @@ class Application:
         if self.conf.cont or self.conf.build_only:
             self._delete_old_builds()
 
+    def __del__(self):
+        LoggerHelper.remove_file_handlers(self.handlers)
+
     @staticmethod
     def setup(cli_conf):
         execution_dir = os.getcwd()
@@ -137,9 +144,6 @@ class Application:
         # parameter even when directory does not exist
         if not os.path.exists(results_dir):
             os.makedirs(results_dir)
-            os.makedirs(os.path.join(results_dir, constants.LOGS_DIR))
-
-        create_file_handlers(results_dir)
 
         return execution_dir, results_dir
 
@@ -311,7 +315,6 @@ class Application:
             logger.warning("Results directory '%s' exists, removing it", os.path.basename(results_dir))
             shutil.rmtree(results_dir)
         os.makedirs(results_dir)
-        os.makedirs(os.path.join(results_dir, constants.LOGS_DIR))
         os.makedirs(os.path.join(results_dir, constants.OLD_BUILD_DIR))
         os.makedirs(os.path.join(results_dir, constants.NEW_BUILD_DIR))
         os.makedirs(os.path.join(results_dir, constants.CHECKERS_DIR))
@@ -833,8 +836,3 @@ class Application:
         if self.conf.apply_changes:
             self.apply_changes()
         return 0
-
-
-if __name__ == '__main__':
-    a = Application(None, None, None)
-    a.run()

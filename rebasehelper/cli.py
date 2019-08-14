@@ -32,7 +32,7 @@ from rebasehelper import VERSION
 from rebasehelper.options import OPTIONS, traverse_options
 from rebasehelper.constants import PROGRAM_DESCRIPTION, NEW_ISSUE_LINK, LOGS_DIR, TRACEBACK_LOG, DEBUG_LOG
 from rebasehelper.application import Application
-from rebasehelper.logger import create_stream_handlers, CustomLogger, LoggerHelper
+from rebasehelper.logger import CustomLogger, LoggerHelper
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.helpers.console_helper import ConsoleHelper
 from rebasehelper.config import Config
@@ -106,7 +106,7 @@ class CliHelper:
     def run():
         results_dir = None
         try:
-            main_handler, output_tool_handler = create_stream_handlers()
+            main_handler, output_tool_handler = LoggerHelper.create_stream_handlers()
             cli = CLI()
             if hasattr(cli, 'version'):
                 print(VERSION)
@@ -116,15 +116,14 @@ class CliHelper:
             config.merge(cli)
             for handler in [main_handler, output_tool_handler]:
                 handler.set_terminal_background(config.background)
-
-            ConsoleHelper.use_colors = ConsoleHelper.should_use_colors(config)
-            execution_dir, results_dir = Application.setup(config)
             if config.verbose == 0:
                 main_handler.setLevel(logging.INFO)
             elif config.verbose == 1:
                 main_handler.setLevel(CustomLogger.VERBOSE)
             else:
                 main_handler.setLevel(logging.DEBUG)
+            ConsoleHelper.use_colors = ConsoleHelper.should_use_colors(config)
+            execution_dir, results_dir = Application.setup(config)
             app = Application(config, execution_dir, results_dir)
             app.run()
         except KeyboardInterrupt:
