@@ -14,14 +14,20 @@ Logger name                     Purpose
 =============================== =============================================================================
 
 
-:program:`rebase-helper` uses :class:`rebasehelper.logger.CustomLogger` logger class which provides extra
-logging levels.
+:program:`rebase-helper` uses :class:`rebasehelper.logger.CustomLogger` logger class which provides
+extra logging levels.
 
-:mod:`rebasehelper.logger` module provides two utility functions to setup default handlers.
-:meth:`rebasehelper.logger.create_stream_handlers` sets up the default console handlers for
-:samp:`rebasehelper` and :samp:`rebasehelper.summary` loggers.
-:meth:`rebasehelper.logger.create_file_handlers` sets up the default file handlers for :samp:`rebasehelper` logger,
-with INFO, VERBOSE and DEBUG levels. The respective log files are located in :file:`rebase-helper-results/logs/`.
+:class:`rebasehelper.logger.LoggerHelper` class provides 3 utility methods to manage default handlers:
+
+* :meth:`rebasehelper.logger.LoggerHelper.create_stream_handlers` sets up the default console handlers
+  for :samp:`rebasehelper` and :samp:`rebasehelper.summary` loggers.
+
+* :meth:`rebasehelper.logger.LoggerHelper.create_file_handlers` sets up the default file handlers
+  for :samp:`rebasehelper` logger, with INFO, VERBOSE and DEBUG levels.
+  The respective log files are located in :file:`rebase-helper-results/logs/`.
+
+* :meth:`rebasehelper.logger.LoggerHelper.remove_file_handlers` removes specified file handlers
+  from :samp:`rebasehelper` logger.
 
 
 Examples
@@ -45,16 +51,17 @@ Examples
 
     # run a complete rebase with default log handlers
 
-    from rebasehelper.logger import create_stream_handlers
+    from rebasehelper.logger import LoggerHelper
     from rebasehelper.config import Config
     from rebasehelper.cli import CLI
     from rebasehelper.application import Application
 
-    create_stream_handlers()
+    LoggerHelper.create_stream_handlers()
     config = Config()
     cli = CLI()
     config.merge(cli)
-    # create_file_handlers() is called in Application.setup()
     exec_dir, res_dir = Application.setup(config)
+    # default file handlers are automatically created and removed by Application instance,
+    # unless disabled by passing create_logs=False
     app = Application(config, exec_dir, res_dir)
     app.run()
