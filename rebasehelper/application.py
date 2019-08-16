@@ -55,15 +55,6 @@ logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
 
 
 class Application:
-    kwargs: Dict[str, Any] = {}
-    old_sources: str = ''
-    new_sources: str = ''
-    old_rest_sources: List[str] = []
-    new_rest_sources: List[str] = []
-    spec_file_path: Optional[str] = None
-    rebase_spec_file_path: Optional[str] = None
-    rebased_patches: Dict[str, List[str]] = {}
-    rebased_repo: Optional[git.Repo] = None
 
     def __init__(self, cli_conf: Config, execution_dir: str, results_dir: str, create_logs: bool = True) -> None:
         """Initializes the application.
@@ -77,12 +68,21 @@ class Application:
         """
         results_store.clear()
 
+        # Initialize instance attributes
+        self.old_sources = ''
+        self.new_sources = ''
+        self.old_rest_sources: List[str] = []
+        self.new_rest_sources: List[str] = []
+        self.rebased_patches: Dict[str, List[str]] = {}
+        self.rebased_repo: Optional[git.Repo] = None
+
         self.handlers = LoggerHelper.create_file_handlers(results_dir) if create_logs else []
 
         self.conf = cli_conf
         self.execution_dir = execution_dir
         self.rebased_sources_dir = os.path.join(results_dir, 'rebased-sources')
 
+        self.kwargs: Dict[str, Any] = {}
         self.kwargs.update(self.conf.config)
         # Temporary workspace for Builder, checks, ...
         self.kwargs['workspace_dir'] = self.workspace_dir = os.path.join(self.execution_dir, constants.WORKSPACE_DIR)
@@ -98,7 +98,7 @@ class Application:
             if not self.conf.cont:
                 self._check_workspace_dir()
 
-            self._get_spec_file()
+            self.spec_file_path = self._find_spec_file()
             self._prepare_spec_objects()
 
             # verify all sources for the new version are present
@@ -149,14 +149,12 @@ class Application:
 
         :return:
         """
-        self.rebase_spec_file_path = get_rebase_name(self.rebased_sources_dir, self.spec_file_path)
-
         self.spec_file = SpecFile(self.spec_file_path, self.execution_dir)
         # Check whether test suite is enabled at build time
         if not self.spec_file.is_test_suite_enabled():
             results_store.set_info_text('WARNING', 'Test suite is not enabled at build time.')
         # create an object representing the rebased SPEC file
-        self.rebase_spec_file = self.spec_file.copy(self.rebase_spec_file_path)
+        self.rebase_spec_file = self.spec_file.copy(get_rebase_name(self.rebased_sources_dir, self.spec_file_path))
 
         if not self.conf.sources:
             self.conf.sources = plugin_manager.versioneers.run(self.conf.versioneer,
@@ -244,12 +242,21 @@ class Application:
             return False
         return True
 
-    def _get_spec_file(self):
-        """Function gets the spec file from the execution_dir directory"""
-        self.spec_file_path = PathHelper.find_first_file(self.execution_dir, '*.spec', 0)
-        if not self.spec_file_path:
+    def _find_spec_file(self) -> str:
+        """Finds a spec file in the execution_dir directory.
+
+        Returns:
+            Path to the spec file.
+
+        Raises:
+            RebaseHelperError: If no spec file could be found.
+
+        """
+        spec_file_path = PathHelper.find_first_file(self.execution_dir, '*.spec', 0)
+        if not spec_file_path:
             raise RebaseHelperError("Could not find any SPEC file "
                                     "in the current directory '{}'".format(self.execution_dir))
+        return spec_file_path
 
     def _delete_old_builds(self):
         """
