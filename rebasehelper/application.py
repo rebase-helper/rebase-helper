@@ -55,8 +55,6 @@ logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
 
 
 class Application:
-    result_file: str = ''
-    temp_dir: str = ''
     kwargs: Dict[str, Any] = {}
     old_sources: str = ''
     new_sources: str = ''
@@ -64,8 +62,6 @@ class Application:
     new_rest_sources: List[str] = []
     spec_file_path: Optional[str] = None
     rebase_spec_file_path: Optional[str] = None
-    debug_log_file: Optional[str] = None
-    report_log_file: Optional[str] = None
     rebased_patches: Dict[str, List[str]] = {}
     rebased_repo: Optional[git.Repo] = None
 
