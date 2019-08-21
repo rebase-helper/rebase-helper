@@ -3,7 +3,7 @@
 %global pkgname rebasehelper
 
 Name:           rebase-helper
-Version:        0.17.2
+Version:        0.18.0
 Release:        1%{?dist}
 Summary:        The tool that helps you to rebase your package to the latest version
 
@@ -101,6 +101,9 @@ PYTHONPATH=$(pwd) py.test-3 -v %{pkgname}
 
 
 %changelog
+* Wed Aug 21 2019 Nikola Forró <nforro@redhat.com> - 0.18.0-1
+- New release 0.18.0
+
 * Fri Aug 09 2019 Nikola Forró <nforro@redhat.com> - 0.17.2-1
 - New release 0.17.2
 

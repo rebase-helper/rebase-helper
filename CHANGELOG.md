@@ -2,6 +2,21 @@
 
 ## [Unreleased]
 
+## [0.18.0] - 2019-08-21
+### Added
+- Added workaround for missing *mock* group in Fedora Rawhide
+
+### Fixed
+- Moved setup dependencies from `install_requires` to `setup_requires`
+
+### Changed
+- Refactored logging, see [logging documentation](https://rebase-helper.readthedocs.io/en/latest/user_guide/logging.html) for details
+- Reason of build failure is now always logged
+
+### Removed
+- Removed unused `Application` methods and attributes
+- Removed unused testing files
+
 ## [0.17.2] - 2019-08-09
 ### Added
 - Added tests for `SpecContent` class
