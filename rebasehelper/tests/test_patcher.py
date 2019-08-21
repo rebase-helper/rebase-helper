@@ -34,17 +34,17 @@ from rebasehelper.patcher import Patcher
 from rebasehelper.specfile import PatchObject
 
 
-class TestPatchHelper:
+class TestPatcher:
 
     USER: str = 'John Doe'
     EMAIL: str = 'john.doe@example.com'
 
-    LIPSUM_OLD: str = 'patch_helper/lipsum_old.txt'
-    LIPSUM_NEW: str = 'patch_helper/lipsum_new.txt'
-    PATCH1: str = 'patch_helper/1.patch'
-    PATCH2: str = 'patch_helper/2.patch'
-    PATCH3: str = 'patch_helper/3.patch'
-    PATCH4: str = 'patch_helper/4.patch'
+    LIPSUM_OLD: str = 'patcher/lipsum_old.txt'
+    LIPSUM_NEW: str = 'patcher/lipsum_new.txt'
+    PATCH1: str = 'patcher/1.patch'
+    PATCH2: str = 'patcher/2.patch'
+    PATCH3: str = 'patcher/3.patch'
+    PATCH4: str = 'patcher/4.patch'
 
     TEST_FILES: List[str] = [
         LIPSUM_OLD,
