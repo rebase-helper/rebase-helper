@@ -92,8 +92,6 @@ class TestSpecFile:
     PATCH_2: str = 'test-testing2.patch'
     PATCH_3: str = 'test-testing3.patch'
     PATCH_4: str = 'test-testing4.patch'
-    BUILD_MISSING_LOG: str = 'build_missing.log'
-    BUILD_OBSOLETES_LOG: str = 'build_obsoletes.log'
 
     TEST_FILES: List[str] = [
         OLD_ARCHIVE,
@@ -107,8 +105,6 @@ class TestSpecFile:
         PATCH_2,
         PATCH_3,
         PATCH_4,
-        BUILD_MISSING_LOG,
-        BUILD_OBSOLETES_LOG
     ]
 
     def test_get_release(self, spec_object):
