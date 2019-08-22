@@ -1402,6 +1402,8 @@ class SpecFile:
                     macros = [m for m in MacroHelper.filter(self.macros, level=-3) if m['name'] in ('name', 'version')]
                     # add all macros from spec file scope
                     macros.extend(MacroHelper.filter(self.macros, level=0))
+                    # omit short macros
+                    macros = [m for m in macros if len(m['value']) > 1]
                     # ensure maximal greediness
                     macros.sort(key=lambda k: len(k['value']), reverse=True)
 
