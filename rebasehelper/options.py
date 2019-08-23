@@ -80,7 +80,7 @@ OPTIONS: Options = [
             "dest": "comparepkgs",
             "metavar": "COMPAREPKGS_DIR",
             "help": "compare already built packages, %(metavar)s must be a directory "
-                    "with the following structure: <dir_name>/{old,new}/RPM",
+                    "with the following structure: <dir_name>/{old-build,new-build}/RPM",
         },
     ],
     {

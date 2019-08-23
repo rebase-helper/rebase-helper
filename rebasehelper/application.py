@@ -217,12 +217,16 @@ class Application:
         self.old_rest_sources = [os.path.abspath(x) for x in self.spec_file.get_sources()[1:]]
         self.new_rest_sources = [os.path.abspath(x) for x in self.rebase_spec_file.get_sources()[1:]]
 
-    def get_rpm_packages(self, dirname):
-        """
-        Function returns RPM packages stored in dirname/old and dirname/new directories
+    def check_rpm_packages(self, dirname: str) -> bool:
+        """Checks if there are RPM packages in dirname/old-build and
+        dirname/new-build and updates results store accordingly.
 
-        :param dirname: directory where are stored old and new RPMS
-        :return:
+        Args:
+            dirname: Path to the directory to be checked.
+
+        Returns:
+            Whether any packages were found.
+
         """
         found = True
         for version in ['old', 'new']:
@@ -233,9 +237,10 @@ class Application:
             else:
                 spec_version = self.rebase_spec_file.get_version()
             data['version'] = spec_version
-            data['rpm'] = PathHelper.find_all_files(os.path.join(os.path.realpath(dirname), version, 'RPM'), '*.rpm')
+            rpm_directory = os.path.join(os.path.realpath(dirname), version + '-build', 'RPM')
+            data['rpm'] = PathHelper.find_all_files(rpm_directory, '*.rpm')
             if not data['rpm']:
-                logger.error('Your path %s%s/RPM does not contain any RPM packages', dirname, version)
+                logger.error('Your path %s does not contain any RPM packages', rpm_directory)
                 found = False
             results_store.set_build_data(version, data)
         if not found:
@@ -827,7 +832,7 @@ class Application:
                     else:
                         break
             else:
-                if self.get_rpm_packages(self.conf.comparepkgs):
+                if self.check_rpm_packages(self.conf.comparepkgs):
                     self.run_package_checkers(self.results_dir, category=CheckerCategory.SRPM)
                     self.run_package_checkers(self.results_dir, category=CheckerCategory.RPM)
 

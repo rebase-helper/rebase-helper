@@ -176,8 +176,9 @@ class LoggerHelper:
 
         """
         logs_dir = os.path.join(results_dir, constants.LOGS_DIR)
-        os.makedirs(logs_dir)
-
+        # the logs directory can already exist when using some rebase-helper
+        # options (e.g --comparepkgs-only)
+        os.makedirs(logs_dir, exist_ok=True)
         logger = logging.getLogger('rebasehelper')
 
         log_formatter = logging.Formatter('%(message)s')
