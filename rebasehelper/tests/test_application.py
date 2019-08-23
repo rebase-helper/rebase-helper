@@ -153,14 +153,14 @@ class TestApplication:
         assert os.path.exists(test_file)
 
     def test_rpm_packages(self, app):
-        for version in ('old-build', 'new-build'):
+        for version in (constants.OLD_BUILD_DIR, constants.NEW_BUILD_DIR):
             os.makedirs(os.path.join(app.results_dir, version, 'RPM'))
         assert not app.check_rpm_packages(app.results_dir)
         for build in (results_store.get_new_build(), results_store.get_old_build()):
             assert not build['rpm']
 
         # add RPM files
-        for version in ('old-build', 'new-build'):
+        for version in (constants.OLD_BUILD_DIR, constants.NEW_BUILD_DIR):
             open(os.path.join(app.results_dir, version, 'RPM', 'test.rpm'), 'w').close()
         res = app.check_rpm_packages(app.results_dir)
         assert res
