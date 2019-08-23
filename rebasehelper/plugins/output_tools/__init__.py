@@ -30,7 +30,7 @@ from rebasehelper.logger import CustomLogger
 from rebasehelper.plugins.plugin import Plugin
 from rebasehelper.plugins.plugin_collection import PluginCollection
 from rebasehelper.results_store import results_store
-from rebasehelper.constants import RESULTS_DIR, REPORT, LOGS_DIR, DEBUG_LOG
+from rebasehelper.constants import RESULTS_DIR, REPORT, LOGS_DIR, DEBUG_LOG, OLD_BUILD_DIR, NEW_BUILD_DIR
 
 
 logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
@@ -70,9 +70,9 @@ class BaseOutputTool(Plugin):
         logger_summary.heading('\nAvailable logs:')
         logger_summary.info('%s:\n%s', 'Debug log', cls.prepend_results_dir_name(os.path.join(LOGS_DIR, DEBUG_LOG)))
         if results_store.get_old_build() is not None:
-            logger_summary.info('%s:\n%s', 'Old build logs and (S)RPMs', cls.prepend_results_dir_name('old-build'))
+            logger_summary.info('%s:\n%s', 'Old build logs and (S)RPMs', cls.prepend_results_dir_name(OLD_BUILD_DIR))
         if results_store.get_new_build() is not None:
-            logger_summary.info('%s:\n%s', 'New build logs and (S)RPMs', cls.prepend_results_dir_name('new-build'))
+            logger_summary.info('%s:\n%s', 'New build logs and (S)RPMs', cls.prepend_results_dir_name(NEW_BUILD_DIR))
         logger_summary.info('')
 
         logger_summary.heading('%s:', 'Rebased sources')

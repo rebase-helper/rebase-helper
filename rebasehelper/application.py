@@ -278,8 +278,8 @@ class Application:
 
         :return:
         """
-        if os.path.isdir(os.path.join(self.results_dir, 'old')):
-            shutil.rmtree(os.path.join(self.results_dir, 'old'))
+        if os.path.isdir(os.path.join(self.results_dir, constants.OLD_BUILD_DIR)):
+            shutil.rmtree(os.path.join(self.results_dir, constants.OLD_BUILD_DIR))
 
     def _delete_new_results_dir(self):
         """
@@ -287,8 +287,8 @@ class Application:
 
         :return:
         """
-        if os.path.isdir(os.path.join(self.results_dir, 'new')):
-            shutil.rmtree(os.path.join(self.results_dir, 'new'))
+        if os.path.isdir(os.path.join(self.results_dir, constants.NEW_BUILD_DIR)):
+            shutil.rmtree(os.path.join(self.results_dir, constants.NEW_BUILD_DIR))
 
     def _delete_workspace_dir(self):
         """
@@ -741,7 +741,7 @@ class Application:
         # of new RPM packages. The folder results_dir/new-build/RPM
         # doesn't exist unless the build of new RPM packages has been run.
         changes_made = False
-        if os.path.exists(os.path.join(results_dir, 'new-build', 'RPM')):
+        if os.path.exists(os.path.join(results_dir, constants.NEW_BUILD_DIR, 'RPM')):
             changes_made = plugin_manager.build_log_hooks.run(self.spec_file, self.rebase_spec_file, **self.kwargs)
         # Save current rebase spec file content
         self.rebase_spec_file.save()
@@ -758,10 +758,10 @@ class Application:
         # Update rebase spec file content after potential manual modifications
         self.rebase_spec_file.reload()
         # clear current version output directories
-        if os.path.exists(os.path.join(results_dir, 'old-build')):
-            shutil.rmtree(os.path.join(results_dir, 'old-build'))
-        if os.path.exists(os.path.join(results_dir, 'new-build')):
-            shutil.rmtree(os.path.join(results_dir, 'new-build'))
+        if os.path.exists(os.path.join(results_dir, constants.OLD_BUILD_DIR)):
+            shutil.rmtree(os.path.join(results_dir, constants.OLD_BUILD_DIR))
+        if os.path.exists(os.path.join(results_dir, constants.NEW_BUILD_DIR)):
+            shutil.rmtree(os.path.join(results_dir, constants.NEW_BUILD_DIR))
         return True
 
     def run(self):

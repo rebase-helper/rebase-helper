@@ -34,6 +34,7 @@ from rebasehelper.logger import CustomLogger
 from rebasehelper.plugins.build_log_hooks import BaseBuildLogHook
 from rebasehelper.types import PackageCategories
 from rebasehelper.helpers.macro_helper import MacroHelper
+from rebasehelper.constants import NEW_BUILD_DIR
 
 
 logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
@@ -315,7 +316,7 @@ class Files(BaseBuildLogHook):
     def run(cls, spec_file, rebase_spec_file, results_dir, **kwargs):
         if not results_dir:
             return {}, False
-        log = os.path.join(results_dir, 'new-build', 'RPM', 'build.log')
+        log = os.path.join(results_dir, NEW_BUILD_DIR, 'RPM', 'build.log')
 
         nvr = rebase_spec_file.get_NVR()
         error_type, files = cls._parse_build_log(log, nvr)
