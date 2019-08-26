@@ -85,7 +85,9 @@ class Application:
         self.kwargs: Dict[str, Any] = {}
         self.kwargs.update(self.conf.config)
         # Temporary workspace for Builder, checks, ...
-        self.kwargs['workspace_dir'] = self.workspace_dir = os.path.join(self.execution_dir, constants.WORKSPACE_DIR)
+        workspace_location = os.path.abspath(cli_conf.workspace_dir) if cli_conf.workspace_dir else self.execution_dir
+        self.kwargs['workspace_dir'] = self.workspace_dir = os.path.join(workspace_location, constants.WORKSPACE_DIR)
+
         # Directory where results should be put
         self.kwargs['results_dir'] = self.results_dir = results_dir
         # Directory contaning only those files, which are relevant for the new rebased version
@@ -376,8 +378,8 @@ class Application:
         :return:
         """
 
-        old_sources_dir = os.path.join(self.execution_dir, constants.WORKSPACE_DIR, constants.OLD_SOURCES_DIR)
-        new_sources_dir = os.path.join(self.execution_dir, constants.WORKSPACE_DIR, constants.NEW_SOURCES_DIR)
+        old_sources_dir = os.path.join(self.workspace_dir, constants.OLD_SOURCES_DIR)
+        new_sources_dir = os.path.join(self.workspace_dir, constants.NEW_SOURCES_DIR)
 
         old_dir = Application.extract_sources(self.old_sources, old_sources_dir)
         new_dir = Application.extract_sources(self.new_sources, new_sources_dir)
@@ -402,17 +404,14 @@ class Application:
         # extract rest of source archives to correct paths
         rest_sources = [self.old_rest_sources, self.new_rest_sources]
         spec_files = [self.spec_file, self.rebase_spec_file]
-        sources_dirs = [
-            os.path.join(constants.WORKSPACE_DIR, constants.OLD_SOURCES_DIR),
-            os.path.join(constants.WORKSPACE_DIR, constants.NEW_SOURCES_DIR),
-        ]
+        sources_dirs = [old_sources_dir, new_sources_dir]
         for sources, spec_file, sources_dir in zip(rest_sources, spec_files, sources_dirs):
             for rest in sources:
                 archive = [x for x in Archive.get_supported_archives() if rest.endswith(x)]
                 if archive:
                     dest_dir = spec_file.find_archive_target_in_prep(rest)
                     if dest_dir:
-                        Application.extract_sources(rest, os.path.join(self.execution_dir, sources_dir, dest_dir))
+                        Application.extract_sources(rest, os.path.join(sources_dir, dest_dir))
 
         return [old_dir, new_dir]
 

@@ -60,6 +60,10 @@ OPTIONS: Options = [
         "name": ["--results-dir"],
         "help": "directory where rebase-helper output will be stored",
     },
+    {
+        "name": ["--workspace-dir"],
+        "help": "location where the rebase-helper-workspace directory will be created",
+    },
     # action control
     [
         {
