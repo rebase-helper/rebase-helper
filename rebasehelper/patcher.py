@@ -132,7 +132,7 @@ class Patcher:
         # 1) git remote add new_sources <path_to_new_sources>
         # 2) git fetch new_sources
         # 3) git rebase --onto new_sources/master <root_commit_old_sources> <last_commit_old_sources>
-        if not cls.cont:
+        if not os.path.exists(os.path.join(cls.old_sources, '.git', 'rebase-apply')):
             logger.info('git-rebase operation to %s is ongoing...', os.path.basename(cls.new_sources))
             upstream = 'new_upstream'
             cls.old_repo.create_remote(upstream, url=cls.new_sources).fetch()
@@ -311,7 +311,6 @@ class Patcher:
         cls.old_sources = old_dir
         cls.new_sources = new_dir
         cls.output_data = None
-        cls.cont = cls.kwargs['continue']
         cls.rest_sources = rest_sources
         cls.patches = patches
         cls.non_interactive = kwargs.get('non_interactive')
@@ -321,7 +320,6 @@ class Patcher:
             cls.new_repo = cls.init_git(new_dir)
             cls.source_dir = cls.old_sources
             cls.apply_old_patches()
-            cls.cont = False
         else:
             cls.old_repo = git.Repo(old_dir)
             cls.new_repo = git.Repo(new_dir)

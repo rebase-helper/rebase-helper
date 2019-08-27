@@ -31,7 +31,6 @@ from typing import List
 from rebasehelper.cli import CLI
 from rebasehelper.config import Config
 from rebasehelper.application import Application
-from rebasehelper.results_store import results_store
 from rebasehelper import constants
 
 
@@ -139,18 +138,6 @@ class TestApplication:
         files = Application.setup(config)
         for file in files:
             assert os.path.exists(file)
-
-    def test_setup_continue(self, make_config):
-        config = make_config(self.cmd_line_args + ['--continue'])
-        execution_dir, results_dir = Application.setup(config)
-        for file in (execution_dir, results_dir):
-            assert os.path.exists(file)
-
-        # check that if rebase-helper-results exists, it does not get removed
-        test_file = os.path.join(results_dir, 'test')
-        open(test_file, 'w').close()
-        Application.setup(config)
-        assert os.path.exists(test_file)
 
     @pytest.mark.parametrize('gitignore, sources, result', [
         (

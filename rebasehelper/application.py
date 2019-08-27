@@ -97,8 +97,7 @@ class Application:
 
         if self.conf.build_tasks is None:
             # check the workspace dir
-            if not self.conf.cont:
-                self._check_workspace_dir()
+            self._check_workspace_dir()
 
             self.spec_file_path = self._find_spec_file()
             self._prepare_spec_objects()
@@ -118,12 +117,7 @@ class Application:
                                                                upload=not self.conf.skip_upload)
                 self._update_gitignore(uploaded, self.rebased_sources_dir)
 
-            # TODO: Remove the value from kwargs and use only CLI attribute!
-            self.kwargs['continue'] = self.conf.cont
             self._initialize_data()
-
-        if self.conf.cont:
-            self._delete_old_builds()
 
     def __del__(self):
         LoggerHelper.remove_file_handlers(self.handlers)
@@ -135,13 +129,7 @@ class Application:
         results_dir = os.path.join(results_dir, constants.RESULTS_DIR)
 
         # if not continuing, check the results dir
-        if not cli_conf.cont:
-            Application._check_results_dir(results_dir)
-
-        # This is used if user executes rebase-helper with --continue
-        # parameter even when directory does not exist
-        if not os.path.exists(results_dir):
-            os.makedirs(results_dir)
+        Application._check_results_dir(results_dir)
 
         return execution_dir, results_dir
 

@@ -64,13 +64,6 @@ OPTIONS: Options = [
         "name": ["--workspace-dir"],
         "help": "location where the rebase-helper-workspace directory will be created",
     },
-    {
-        "name": ["-c", "--continue"],
-        "default": False,
-        "switch": True,
-        "dest": "cont",
-        "help": "continue previously interrupted rebase",
-    },
     # tool selection
     {
         "name": ["--buildtool"],
