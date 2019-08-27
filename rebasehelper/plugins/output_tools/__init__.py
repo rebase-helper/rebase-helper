@@ -86,15 +86,9 @@ class BaseOutputTool(Plugin):
 
         cls.print_report_file_path()
 
-        if not app.conf.patch_only:
-            if 'success' in result:
-                logger_summary.success('\n%s', result['success'])
-            # Error is printed out through exception caught in CliHelper.run()
-        else:
-            if results_store.get_patches()['success']:
-                logger_summary.success("\nPatching successful")
-            elif results_store.get_patches()['success']:
-                logger_summary.error("\nPatching failed")
+        if 'success' in result:
+            logger_summary.success('\n%s', result['success'])
+        # Error is printed out through exception caught in CliHelper.run()
 
     @classmethod
     def print_important_checkers_output(cls):

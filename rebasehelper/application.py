@@ -122,7 +122,7 @@ class Application:
             self.kwargs['continue'] = self.conf.cont
             self._initialize_data()
 
-        if self.conf.cont or self.conf.build_only:
+        if self.conf.cont:
             self._delete_old_builds()
 
     def __del__(self):
@@ -135,7 +135,7 @@ class Application:
         results_dir = os.path.join(results_dir, constants.RESULTS_DIR)
 
         # if not continuing, check the results dir
-        if not cli_conf.cont and not cli_conf.build_only and not cli_conf.comparepkgs:
+        if not cli_conf.cont:
             Application._check_results_dir(results_dir)
 
         # This is used if user executes rebase-helper with --continue
@@ -218,36 +218,6 @@ class Application:
         # Contains all source except the Source0
         self.old_rest_sources = [os.path.abspath(x) for x in self.spec_file.get_sources()[1:]]
         self.new_rest_sources = [os.path.abspath(x) for x in self.rebase_spec_file.get_sources()[1:]]
-
-    def check_rpm_packages(self, dirname: str) -> bool:
-        """Checks if there are RPM packages in dirname/old-build and
-        dirname/new-build and updates results store accordingly.
-
-        Args:
-            dirname: Path to the directory to be checked.
-
-        Returns:
-            Whether any packages were found.
-
-        """
-        found = True
-        for version in ['old', 'new']:
-            data = {}
-            data['name'] = self.spec_file.get_package_name()
-            if version == 'old':
-                spec_version = self.spec_file.get_version()
-            else:
-                spec_version = self.rebase_spec_file.get_version()
-            data['version'] = spec_version
-            rpm_directory = os.path.join(os.path.realpath(dirname), version + '-build', 'RPM')
-            data['rpm'] = PathHelper.find_all_files(rpm_directory, '*.rpm')
-            if not data['rpm']:
-                logger.error('Your path %s does not contain any RPM packages', rpm_directory)
-                found = False
-            results_store.set_build_data(version, data)
-        if not found:
-            return False
-        return True
 
     def _find_spec_file(self) -> str:
         """Finds a spec file in the execution_dir directory.
@@ -801,39 +771,32 @@ class Application:
                                       category=CheckerCategory.SOURCE,
                                       old_dir=old_sources,
                                       new_dir=new_sources)
-            if not self.conf.build_only and not self.conf.comparepkgs:
-                try:
-                    self.patch_sources([old_sources, new_sources])
-                except RebaseHelperError as e:
-                    # Print summary and return error
-                    self.print_summary(e)
-                    raise
+            try:
+                self.patch_sources([old_sources, new_sources])
+            except RebaseHelperError as e:
+                # Print summary and return error
+                self.print_summary(e)
+                raise
 
-        if not self.conf.patch_only:
-            if not self.conf.comparepkgs:
-                # Build packages
-                while True:
-                    try:
-                        if self.conf.build_tasks is None:
-                            self.build_source_packages()
-                        self.run_package_checkers(self.results_dir, category=CheckerCategory.SRPM)
-                        self.build_binary_packages()
-                        if self.conf.builds_nowait and not self.conf.build_tasks:
-                            return
-                        self.run_package_checkers(self.results_dir, category=CheckerCategory.RPM)
-                    # Print summary and return error
-                    except RebaseHelperError as e:
-                        logger.error(e.msg)
-                        if self.prepare_next_run(self.results_dir):
-                            continue
-                        self.print_summary(e)
-                        raise
-                    else:
-                        break
+        # Build packages
+        while True:
+            try:
+                if self.conf.build_tasks is None:
+                    self.build_source_packages()
+                self.run_package_checkers(self.results_dir, category=CheckerCategory.SRPM)
+                self.build_binary_packages()
+                if self.conf.builds_nowait and not self.conf.build_tasks:
+                    return
+                self.run_package_checkers(self.results_dir, category=CheckerCategory.RPM)
+            # Print summary and return error
+            except RebaseHelperError as e:
+                logger.error(e.msg)
+                if self.prepare_next_run(self.results_dir):
+                    continue
+                self.print_summary(e)
+                raise
             else:
-                if self.check_rpm_packages(self.conf.comparepkgs):
-                    self.run_package_checkers(self.results_dir, category=CheckerCategory.SRPM)
-                    self.run_package_checkers(self.results_dir, category=CheckerCategory.RPM)
+                break
 
         if not self.conf.keep_workspace:
             self._delete_workspace_dir()
