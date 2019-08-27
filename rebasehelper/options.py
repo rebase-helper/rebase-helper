@@ -64,29 +64,6 @@ OPTIONS: Options = [
         "name": ["--workspace-dir"],
         "help": "location where the rebase-helper-workspace directory will be created",
     },
-    # action control
-    [
-        {
-            "name": ["-p", "--patch-only"],
-            "default": False,
-            "switch": True,
-            "help": "only apply patches",
-        },
-        {
-            "name": ["-b", "--build-only"],
-            "default": False,
-            "switch": True,
-            "help": "only build SRPMs and RPMs",
-        },
-        {
-            "name": ["--comparepkgs-only"],
-            "default": False,
-            "dest": "comparepkgs",
-            "metavar": "COMPAREPKGS_DIR",
-            "help": "compare already built packages, %(metavar)s must be a directory "
-                    "with the following structure: <dir_name>/{old-build,new-build}/RPM",
-        },
-    ],
     {
         "name": ["-c", "--continue"],
         "default": False,
