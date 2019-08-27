@@ -51,7 +51,7 @@ class CLI:
         parser = CustomArgumentParser(description=PROGRAM_DESCRIPTION,
                                       formatter_class=CustomHelpFormatter)
 
-        group = parser.add_mutually_exclusive_group()
+        group = None
         current_group = 0
         for option in traverse_options(OPTIONS + plugin_manager.get_options()):
             available_choices = option.pop("available_choices", option.get("choices"))
@@ -64,7 +64,7 @@ class CLI:
                     del option_kwargs[key]
 
             if "group" in option:
-                if current_group != option["group"]:
+                if not group or current_group != option["group"]:
                     current_group = option["group"]
                     group = parser.add_mutually_exclusive_group()
                 actions_container = group
