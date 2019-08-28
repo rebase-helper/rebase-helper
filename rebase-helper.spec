@@ -80,8 +80,8 @@ mkdir -p %{buildroot}%{_datadir}/man/man1/
 install -p -m 0644 build/man/rebase-helper.1 %{buildroot}%{_datadir}/man/man1
 
 # install bash completion
-mkdir -p %{buildroot}%{_sysconfdir}/bash_completion.d/
-install -p -m 0644 build/rebase-helper.bash %{buildroot}%{_sysconfdir}/bash_completion.d/
+mkdir -p %{buildroot}%{_datadir}/bash-completion/completions/
+install -p -m 0644 build/rebase-helper.bash %{buildroot}%{_datadir}/bash-completion/completions/rebase-helper
 
 
 %check
@@ -97,7 +97,7 @@ PYTHONPATH=$(pwd) py.test-3 -v %{pkgname}
 %{python3_sitelib}/%{pkgname}/
 %{python3_sitelib}/%{pkgname}-*-py%{python3_version}.egg-info
 %{_mandir}/man1/rebase-helper.1*
-%{_sysconfdir}/bash_completion.d/rebase-helper.bash
+%{_datadir}/bash-completion/completions/rebase-helper
 
 
 %changelog
