@@ -124,6 +124,7 @@ setup(
             'abipkgdiff = rebasehelper.plugins.checkers.abipkgdiff:AbiPkgDiff',
             'csmock = rebasehelper.plugins.checkers.csmock:CsMock',
             'licensecheck = rebasehelper.plugins.checkers.licensecheck:LicenseCheck',
+            'sonamecheck = rebasehelper.plugins.checkers.sonamecheck:SonameCheck',
         ],
         'rebasehelper.spec_hooks': [
             'typo-fix = rebasehelper.plugins.spec_hooks.typo_fix:TypoFix',
