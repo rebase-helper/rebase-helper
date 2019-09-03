@@ -126,7 +126,10 @@ class CheckerCollection(PluginCollection):
         if not checker.is_available():
             return None
 
-        logger.info("Running checks on packages using '%s'", checker_name)
+        if checker.CATEGORY == CheckerCategory.SOURCE:
+            logger.info("Running checks on source files using '%s'", checker_name)
+        else:
+            logger.info("Running checks on packages using '%s'", checker_name)
         return checker.run_check(results_dir, **kwargs)
 
     def get_supported_plugins(self) -> List[Type[Plugin]]:
