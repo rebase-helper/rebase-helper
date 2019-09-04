@@ -25,9 +25,7 @@
 import logging
 import os
 import re
-from typing import Optional, cast
-
-import rpm  # type: ignore
+from typing import List, Optional, cast
 
 from rebasehelper.logger import CustomLogger
 from rebasehelper.results_store import results_store
@@ -49,10 +47,10 @@ class SonameCheck(BaseChecker):
         return True
 
     @classmethod
-    def _get_soname(cls, header: rpm.hdr) -> Optional[str]:
+    def _get_soname(cls, provides: List[str]) -> Optional[str]:
         soname_re = re.compile(r'(?P<soname>[^()]+\.so[^()]+)\(.*\)(\(64bit\))?')
-        for provides in header.provides:
-            match = soname_re.match(RpmHelper.decode(provides))
+        for p in provides:
+            match = soname_re.match(p)
             if match:
                 return match.group('soname')
         return None
@@ -66,21 +64,22 @@ class SonameCheck(BaseChecker):
         new_headers = [RpmHelper.get_header_from_rpm(x) for x in results_store.get_new_build().get('rpm', [])]
         soname_changes = {}
         for old in old_headers:
-            name = RpmHelper.decode(old.name)
-            new = [x for x in new_headers if RpmHelper.decode(x.name) == name]
+            new = [x for x in new_headers if x.name == old.name]
             if not new:
-                logger.warning('New version of package %s was not found!', name)
+                logger.warning('New version of package %s was not found!', old.name)
                 continue
-            old_soname = cls._get_soname(old)
-            new_soname = cls._get_soname(new[0])
+            else:
+                new = new[0]
+            old_soname = cls._get_soname(old.provides)
+            new_soname = cls._get_soname(new.provides)
             if not old_soname:
                 continue
             if old_soname == new_soname:
                 msg = 'No SONAME changes detected'
             else:
                 msg = 'SONAME changed from {} to {}'.format(old_soname, new_soname)
-                soname_changes[name] = {'from': old_soname, 'to': new_soname}
-            with open(os.path.join(cls.results_dir, name + '.txt'), 'w') as outfile:
+                soname_changes[old.name] = {'from': old_soname, 'to': new_soname}
+            with open(os.path.join(cls.results_dir, old.name + '.txt'), 'w') as outfile:
                 outfile.write(msg)
 
         return dict(soname_changes=soname_changes,

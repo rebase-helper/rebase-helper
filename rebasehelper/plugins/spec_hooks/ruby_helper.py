@@ -103,7 +103,7 @@ class RubyHelper(BaseSpecHook):
             # update data so that RPM macros are populated correctly
             rebase_spec_file._update_data()  # pylint: disable=protected-access
             instructions = cls._get_instructions(comments,
-                                                 spec_file.get_version(),
-                                                 rebase_spec_file.get_version())
+                                                 spec_file.header.version,
+                                                 rebase_spec_file.header.version)
             logfile = os.path.join(kwargs['workspace_dir'], '{}.log'.format(source))
             cls._build_source_from_instructions(instructions, source, logfile)

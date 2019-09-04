@@ -63,7 +63,7 @@ class PkgDiff(BaseChecker):
         if packages is None:
             return None
         basic_package = sorted(packages)[0]
-        return RpmHelper.get_info_from_rpm(basic_package, name)
+        return getattr(RpmHelper.get_header_from_rpm(basic_package), name)
 
     @classmethod
     def _create_xml(cls, name, input_structure):

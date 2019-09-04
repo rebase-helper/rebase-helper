@@ -112,7 +112,7 @@ class Application:
                 sources = [os.path.basename(s) for s in self.spec_file.sources]
                 rebased_sources = [os.path.basename(s) for s in self.rebase_spec_file.sources]
                 uploaded = LookasideCacheHelper.update_sources('fedpkg', self.rebased_sources_dir,
-                                                               self.rebase_spec_file.get_package_name(),
+                                                               self.rebase_spec_file.header.name,
                                                                sources, rebased_sources,
                                                                upload=not self.conf.skip_upload)
                 self._update_gitignore(uploaded, self.rebased_sources_dir)
@@ -148,7 +148,7 @@ class Application:
 
         if not self.conf.sources:
             self.conf.sources = plugin_manager.versioneers.run(self.conf.versioneer,
-                                                               self.spec_file.get_package_name(),
+                                                               self.spec_file.header.name,
                                                                self.spec_file.category,
                                                                self.conf.versioneer_blacklist)
             if self.conf.sources:
@@ -173,8 +173,8 @@ class Application:
             self.rebase_spec_file.extra_version_separator = separator
             self.rebase_spec_file.set_extra_version(extra_version)
 
-        if not self.conf.skip_version_check and parse_version(self.rebase_spec_file.get_version()) \
-                <= parse_version(self.spec_file.get_version()):
+        if not self.conf.skip_version_check and parse_version(self.rebase_spec_file.header.version) \
+                <= parse_version(self.spec_file.header.version):
             raise RebaseHelperError("Current version is equal to or newer than the requested version, nothing to do.")
 
         self.rebase_spec_file.update_changelog(self.conf.changelog_entry)
@@ -483,8 +483,8 @@ class Application:
             koji_build_id = None
             results_dir = '{}-build'.format(os.path.join(self.results_dir, version))
             spec = self.spec_file if version == 'old' else self.rebase_spec_file
-            package_name = spec.get_package_name()
-            package_version = spec.get_version()
+            package_name = spec.header.name
+            package_version = spec.header.version
             logger.info('Building source package for %s version %s', package_name, package_version)
 
             if version == 'old' and self.conf.get_old_build_from_koji:
@@ -546,8 +546,8 @@ class Application:
 
             if self.conf.build_tasks is None:
                 spec = self.spec_file if version == 'old' else self.rebase_spec_file
-                package_name = spec.get_package_name()
-                package_version = spec.get_version()
+                package_name = spec.header.name
+                package_version = spec.header.version
 
                 if version == 'old' and self.conf.get_old_build_from_koji:
                     koji_build_id, ver = KojiHelper.get_old_build_info(package_name, package_version)
@@ -664,8 +664,8 @@ class Application:
             results_store.set_result_message('fail', exception.msg)
         else:
             result = "Rebase from {}-{} to {}-{} completed without an error".format(
-                self.spec_file.get_package_name(), self.spec_file.get_version(),
-                self.rebase_spec_file.get_package_name(), self.rebase_spec_file.get_version())
+                self.spec_file.header.name, self.spec_file.header.version,
+                self.rebase_spec_file.header.name, self.rebase_spec_file.header.version)
             results_store.set_result_message('success', result)
 
         if self.rebase_spec_file:

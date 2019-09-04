@@ -59,7 +59,7 @@ class RpmDiff(BaseChecker):
     def _get_rpms(cls, rpm_list):
         rpm_dict = {}
         for rpm_name in rpm_list:
-            rpm_dict[RpmHelper.get_info_from_rpm(rpm_name, 'name')] = rpm_name
+            rpm_dict[RpmHelper.get_header_from_rpm(rpm_name).name] = rpm_name
         return rpm_dict
 
     @classmethod

@@ -27,8 +27,6 @@ import os
 import re
 from typing import Optional, cast
 
-import rpm  # type: ignore
-
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
 from rebasehelper.logger import CustomLogger
 from rebasehelper.results_store import results_store
@@ -85,7 +83,7 @@ class AbiPkgDiff(BaseChecker):
         find = [x for x in debug if RpmHelper.split_nevra(os.path.basename(x))['name'] == debuginfo]
         if find:
             return find[0]
-        srpm = RpmHelper.get_info_from_rpm(pkg, rpm.RPMTAG_SOURCERPM)
+        srpm = RpmHelper.get_header_from_rpm(pkg).sourcerpm
         debuginfo = '{}-debuginfo'.format(RpmHelper.split_nevra(srpm)['name'])
         find = [x for x in debug if RpmHelper.split_nevra(os.path.basename(x))['name'] == debuginfo]
         if find:

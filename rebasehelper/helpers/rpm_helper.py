@@ -26,7 +26,7 @@ import logging
 import os
 import re
 import tempfile
-from typing import List, cast
+from typing import Any, List, cast
 
 import rpm  # type: ignore
 
@@ -39,6 +39,21 @@ from rebasehelper.helpers.console_helper import ConsoleHelper
 
 
 logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
+
+
+class RpmHeader:
+    def __init__(self, hdr: rpm.hdr) -> None:
+        self.hdr = hdr
+
+    def __getattr__(self, item: str) -> Any:
+        def decode(s):
+            if isinstance(s, bytes):
+                return s.decode(SYSTEM_ENCODING)
+            return s
+        result = getattr(self.hdr, item)
+        if isinstance(result, list):
+            return [decode(x) for x in result]
+        return decode(result)
 
 
 class RpmHelper:
@@ -106,31 +121,15 @@ class RpmHelper:
             rpm_name (str): Path to the package.
 
         Returns:
-            rpm.hdr: Header object obtained from the package.
+            RpmHeader: Header object obtained from the package.
 
-        :return:
         """
         ts = rpm.TransactionSet()
         # disable signature checking
         ts.setVSFlags(rpm._RPMVSF_NOSIGNATURES)  # pylint: disable=protected-access
         with open(rpm_name, "r") as f:
-            return ts.hdrFromFdno(f)
-
-    @classmethod
-    def get_info_from_rpm(cls, rpm_name, info):
-        """Gets package name from an RPM file.
-
-        Args:
-            rpm_name (str): Path to the file.
-            info (bool): Which part of the RPM header to return.
-
-        Returns:
-            str: Package name obtained from the RPM file.
-
-        :return:
-        """
-        h = cls.get_header_from_rpm(rpm_name)
-        return cls.decode(h[info])
+            hdr = ts.hdrFromFdno(f)
+        return RpmHeader(hdr)
 
     @staticmethod
     def get_arches():
@@ -196,9 +195,3 @@ class RpmHelper:
             # try again with RPMSPEC_FORCE flag (the default)
             spec = cls.parse_spec(path)
         return spec
-
-    @classmethod
-    def decode(cls, data):
-        if isinstance(data, bytes):
-            return data.decode(SYSTEM_ENCODING)
-        return data
