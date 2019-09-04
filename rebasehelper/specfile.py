@@ -325,11 +325,12 @@ class SpecFile:
         self.category = guess_category()
         self.sources = self._get_spec_sources_list(self.spc)
         self.prep_section = self.spc.prep
+        self.main_source_index = self._identify_main_source(self.spc)
         # determine the extra_version
         logger.debug("Updating the extra version")
         _, self.extra_version, separator = SpecFile.extract_version_from_archive_name(
             self.get_archive(),
-            self._get_raw_source_string(0))
+            self._get_raw_source_string(self.main_source_index))
         self.extra_version_separator = separator
 
         self.patches = self._get_initial_patches()
@@ -338,6 +339,11 @@ class SpecFile:
     ###########################
     # SOURCES RELATED METHODS #
     ###########################
+
+    @staticmethod
+    def _identify_main_source(spec: rpm.spec) -> int:
+        # lowest index is the main source
+        return min([s[1] for s in spec.sources if s[2] == 1])
 
     @staticmethod
     def _get_spec_sources_list(spec_object):
@@ -673,7 +679,7 @@ class SpecFile:
     @saves
     def set_extra_version(self, extra_version):
         """
-        Method to update the extra version in the SPEC file. Redefined Source0 if needed and also changes
+        Method to update the extra version in the SPEC file. Redefines main source if needed and also changes
         Release accordingly.
 
         :param extra_version: the extra version string, if any (e.g. 'b1', 'rc2', ...)
@@ -717,31 +723,32 @@ class SpecFile:
 
                 preamble = self.spec_content.section('%package')
 
-                # change the Source0 definition
-                source0_re = re.compile(r'^Source0?\s*:.+')
+                # change the main source definition
+                main_source_re = re.compile(r'^Source0?\s*:.*$' if self.main_source_index == 0 else
+                                            r'^Source{0}\s*:.*$'.format(self.main_source_index))
                 for index, line in enumerate(preamble):
-                    if source0_re.search(line):
-                        # comment out the original Source0 line
-                        logger.verbose("Commenting out original Source0 line '%s'", line.strip())
+                    if main_source_re.match(line):
+                        # comment out the original main source line
+                        logger.verbose("Commenting out original main source line '%s'", line.strip())
                         preamble[index] = '#{0}'.format(line)
-                        # construct new Source0 line. The idea is that we use the expanded archive name to create
-                        # new Source0. We used raw original Source0 before, but it didn't work reliably.
-                        source0_raw = line
+                        # construct new main source line. The idea is that we use the expanded archive name to create
+                        # new main source. We used raw original main source before, but it didn't work reliably.
+                        main_source_raw = line
                         basename_expanded = self.get_archive()
                         # construct the original version in archive name so that we can replace it
                         original_version = '{0}{2}{1}'.format(*self.extract_version_from_archive_name(
                             basename_expanded,
-                            source0_raw)
+                            main_source_raw)
                                                               )
                         # replace the version with macro
                         new_basename_with_macro = basename_expanded.replace(original_version, '%{REBASE_VER}')
                         # replace the name with macro to be cool :)
                         new_basename_with_macro = new_basename_with_macro.replace(self.header.name, '%{name}')
-                        # replace the archive name in old Source0 with new one
-                        new_source0_line = source0_raw.replace(os.path.basename(source0_raw),
-                                                               new_basename_with_macro)
-                        logger.verbose("Inserting new Source0 line '%s'", new_source0_line)
-                        preamble.insert(index + 1, new_source0_line)
+                        # replace the archive name in old main source with new one
+                        new_main_source_line = main_source_raw.replace(os.path.basename(main_source_raw),
+                                                                       new_basename_with_macro)
+                        logger.verbose("Inserting new main source line '%s'", new_main_source_line)
+                        preamble.insert(index + 1, new_main_source_line)
                         break
         else:
             # set the Release to 1 and revert the redefined Release with macro if needed

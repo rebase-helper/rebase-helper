@@ -116,7 +116,7 @@ class CommitHashUpdater(BaseSpecHook):
                 # multiple different hashes (or none), cannot continue
                 return
             source = source.replace(hashes[0], new_commit)
-        tag = 'Source0'
+        tag = 'Source{0}'.format(rebase_spec_file.main_source_index)
         if [l for l in rebase_spec_file.spec_content.section('%package') if re.match(r'^Source\s*:.*', l)]:
             tag = 'Source'
         rebase_spec_file.set_tag(tag, source, preserve_macros=True)

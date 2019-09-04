@@ -203,7 +203,7 @@ class Application:
             raise RebaseHelperError('You have to define new sources.')
         else:
             self.new_sources = os.path.abspath(self.conf.sources)
-        # Contains all source except the Source0
+        # Contains all sources except the main source
         self.old_rest_sources = [os.path.abspath(x) for x in self.spec_file.get_sources()[1:]]
         self.new_rest_sources = [os.path.abspath(x) for x in self.rebase_spec_file.get_sources()[1:]]
 
