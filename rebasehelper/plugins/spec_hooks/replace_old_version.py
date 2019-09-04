@@ -93,8 +93,8 @@ class ReplaceOldVersion(BaseSpecHook):
 
     @classmethod
     def run(cls, spec_file: SpecFile, rebase_spec_file: SpecFile, **kwargs: Any):
-        old_version = spec_file.get_version()
-        new_version = rebase_spec_file.get_version()
+        old_version = spec_file.header.version
+        new_version = rebase_spec_file.header.version
         replace_with_macro = bool(kwargs.get('replace_old_version_with_macro'))
 
         subversion_patterns = cls._create_possible_replacements(old_version, new_version, replace_with_macro)

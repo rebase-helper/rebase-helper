@@ -45,7 +45,7 @@ from rebasehelper.argument_parser import SilentArgumentParser
 from rebasehelper.logger import CustomLogger
 from rebasehelper.helpers.download_helper import DownloadHelper
 from rebasehelper.helpers.macro_helper import MacroHelper
-from rebasehelper.helpers.rpm_helper import RpmHelper
+from rebasehelper.helpers.rpm_helper import RpmHelper, RpmHeader
 from rebasehelper.helpers.git_helper import GitHelper
 from rebasehelper.helpers.lookaside_cache_helper import LookasideCacheHelper
 
@@ -264,6 +264,7 @@ class SpecFile:
         self.extra_version_separator: str = ''
         self.category: Optional[PackageCategory] = None
         self.spc: rpm.spec = RpmHelper.get_rpm_spec(self.path)
+        self.header: RpmHeader = RpmHeader(self.spc.sourceHeader)
         self.spec_content: SpecContent = self._read_spec_content()
 
         # Load rpm information
@@ -277,8 +278,7 @@ class SpecFile:
         """
         try:
             # try to download old sources from Fedora lookaside cache
-            LookasideCacheHelper.download('fedpkg', os.path.dirname(self.path), self.get_package_name(),
-                                          self.sources_location)
+            LookasideCacheHelper.download('fedpkg', os.path.dirname(self.path), self.header.name, self.sources_location)
         except LookasideCacheError as e:
             logger.verbose("Downloading sources from lookaside cache failed. "
                            "Reason: %s.", str(e))
@@ -304,11 +304,12 @@ class SpecFile:
         """
         def guess_category():
             for pkg in self.spc.packages:
+                header = RpmHeader(pkg.header)
                 for category in PackageCategory:
-                    if category.value.match(RpmHelper.decode(pkg.header[rpm.RPMTAG_NAME])):
+                    if category.value.match(header.name):
                         return category
-                    for provide in pkg.header[rpm.RPMTAG_PROVIDENAME]:
-                        if category.value.match(RpmHelper.decode(provide)):
+                    for provide in header.providename:
+                        if category.value.match(provide):
                             return category
             return None
         # reset all macros and settings
@@ -320,6 +321,7 @@ class SpecFile:
         # "sources" and "patches" lua tables after new instance is created
         self.spc = None
         self.spc = RpmHelper.get_rpm_spec(self.path)
+        self.header = RpmHeader(self.spc.sourceHeader)
         self.category = guess_category()
         self.sources = self._get_spec_sources_list(self.spc)
         self.prep_section = self.spc.prep
@@ -596,39 +598,21 @@ class SpecFile:
     # PACKAGE VERSION RELATED METHODS #
     ###################################
 
-    def get_NVR(self):
-        return '{}-{}-{}'.format(self.get_package_name(), self.get_version(), self.get_release())
+    def get_NVR(self) -> str:
+        return '{0.name}-{0.version}-{0.release}'.format(self.header)
 
-    def get_epoch_number(self) -> str:
-        """Returns Epoch of the package."""
-        return self.spc.sourceHeader[rpm.RPMTAG_EPOCHNUM]
-
-    def get_release(self) -> str:
-        """Returns the whole release string of the package."""
-        return RpmHelper.decode(self.spc.sourceHeader[rpm.RPMTAG_RELEASE])
-
-    def get_release_number(self):
-        """
-        Method for getting the release of the package
-
-        :return:
-        """
-        release = self.get_release()
+    def get_release_number(self) -> str:
+        release = self.header.release
         dist = MacroHelper.expand('%{dist}')
         if dist:
             release = release.replace(dist, '')
         return re.sub(r'([0-9.]*[0-9]+).*', r'\1', release)
 
     def get_version(self) -> str:
-        """Returns the package version."""
-        return RpmHelper.decode(self.spc.sourceHeader[rpm.RPMTAG_VERSION])
+        # deprecated, kept for backward compatibility
+        return self.header.version
 
-    def get_extra_version(self):
-        """
-        Returns an extra version of the package - like b1, rc2, ...
-
-        :return: String
-        """
+    def get_extra_version(self) -> str:
         return self.extra_version
 
     def set_release_number(self, release):
@@ -752,8 +736,7 @@ class SpecFile:
                         # replace the version with macro
                         new_basename_with_macro = basename_expanded.replace(original_version, '%{REBASE_VER}')
                         # replace the name with macro to be cool :)
-                        new_basename_with_macro = new_basename_with_macro.replace(self.get_package_name(),
-                                                                                  '%{name}')
+                        new_basename_with_macro = new_basename_with_macro.replace(self.header.name, '%{name}')
                         # replace the archive name in old Source0 with new one
                         new_source0_line = source0_raw.replace(os.path.basename(source0_raw),
                                                                new_basename_with_macro)
@@ -1058,7 +1041,7 @@ class SpecFile:
         :param version: string with new version
         :return: None
         """
-        logger.verbose("Updating version in SPEC from '%s' with '%s'", self.get_version(), version)
+        logger.verbose("Updating version in SPEC from '%s' with '%s'", self.header.version, version)
         self.set_tag('Version', version, preserve_macros=True)
 
     @staticmethod
@@ -1268,14 +1251,6 @@ class SpecFile:
         else:
             return False
 
-    def get_package_name(self) -> str:
-        """Returns name of the package."""
-        return RpmHelper.decode(self.spc.sourceHeader[rpm.RPMTAG_NAME])
-
-    def get_requires(self) -> List[str]:
-        """Returns package requirements."""
-        return [RpmHelper.decode(r) for r in self.spc.sourceHeader[rpm.RPMTAG_REQUIRES]]
-
     @saves
     def update_changelog(self, changelog_entry):
         """Inserts a new entry into the changelog and saves the SpecFile.
@@ -1303,8 +1278,8 @@ class SpecFile:
         """
         new_record = []
         today = date.today()
-        evr = '{epoch}:{ver}-{rel}'.format(epoch=self.get_epoch_number(),
-                                           ver=self.get_version(),
+        evr = '{epoch}:{ver}-{rel}'.format(epoch=self.header.epochnum,
+                                           ver=self.header.version,
                                            rel=self.get_release_number())
         evr = evr[2:] if evr.startswith('0:') else evr
         new_record.append('* {day} {name} <{email}> - {evr}'.format(day=today.strftime('%a %b %d %Y'),

@@ -59,7 +59,7 @@ class CommitHashUpdater(BaseSpecHook):
                 logger.warning("Rate limit exceeded on Github API! Try again later.")
             return None
         data = r.json()
-        version = spec_file.get_version()
+        version = spec_file.header.version
         tag_name = None
         for release in data:
             if version in release.get('name'):

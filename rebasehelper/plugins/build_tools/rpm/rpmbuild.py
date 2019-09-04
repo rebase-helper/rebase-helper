@@ -89,8 +89,7 @@ class Rpmbuild(BuildToolBase):  # pylint: disable=abstract-method
 
         :param spec: SpecFile object
         """
-        req_pkgs = spec.get_requires()
-        if not RpmHelper.all_packages_installed(req_pkgs):
+        if not RpmHelper.all_packages_installed(spec.header.requires):
             question = '\nSome build dependencies are missing. Do you want to install them now'
             if conf.non_interactive or InputHelper.get_message(question):
                 if RpmHelper.install_build_dependencies(spec.path, assume_yes=conf.non_interactive) != 0:

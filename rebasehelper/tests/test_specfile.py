@@ -107,11 +107,6 @@ class TestSpecFile:
         PATCH_4,
     ]
 
-    def test_get_release(self, spec_object):
-        match = re.search(r'([0-9.]*[0-9]+)\w*', spec_object.get_release())
-        assert match is not None
-        assert match.group(1) == spec_object.get_release_number()
-
     def test_get_release_number(self, spec_object):
         assert spec_object.get_release_number() == '34'
 
@@ -121,24 +116,18 @@ class TestSpecFile:
         spec_object.set_release_number(22)
         assert spec_object.get_release_number() == '22'
 
-    def test_get_version(self, spec_object):
-        assert spec_object.get_version() == self.VERSION
-
     def test_set_version(self, spec_object):
         NEW_VERSION = '1.2.3.4.5'
         spec_object.set_version(NEW_VERSION)
         spec_object.save()
-        assert spec_object.get_version() == NEW_VERSION
+        assert spec_object.header.version == NEW_VERSION
 
     def test_set_version_using_archive(self, spec_object):
         NEW_VERSION = '1.2.3.4.5'
         ARCHIVE_NAME = 'test-{0}.tar.xz'.format(NEW_VERSION)
         spec_object.set_version_using_archive(ARCHIVE_NAME)
         spec_object.save()
-        assert spec_object.get_version() == NEW_VERSION
-
-    def test_get_package_name(self, spec_object):
-        assert spec_object.get_package_name() == self.NAME
+        assert spec_object.header.version == NEW_VERSION
 
     def test__write_spec_content(self, spec_object):
         # pylint: disable=protected-access
@@ -178,7 +167,7 @@ class TestSpecFile:
 
     def test_get_requires(self, spec_object):
         expected = {'openssl-devel', 'pkgconfig', 'texinfo', 'gettext', 'autoconf'}
-        req = spec_object.get_requires()
+        req = spec_object.header.requires
         assert len(expected.intersection(req)) == len(expected)
 
     def test_split_version_string(self):
@@ -240,7 +229,7 @@ class TestSpecFile:
         # the release number was changed
         assert spec_object.get_release_number() == '0.1'
         # the release string now contains the extra version
-        match = re.search(r'([0-9.]*[0-9]+)\.b1\w*', spec_object.get_release())
+        match = re.search(r'([0-9.]*[0-9]+)\.b1\w*', spec_object.header.release)
         assert match is not None
         assert match.group(1) == spec_object.get_release_number()
 
