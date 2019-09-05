@@ -239,3 +239,4 @@ class AbiPkgDiff(BaseChecker):
     def get_important_changes(cls, checker_output):
         if checker_output['abi_changes']:
             return ['ABI changes occured. Check abipkgdiff output.']
+        return []
