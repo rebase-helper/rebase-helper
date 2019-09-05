@@ -98,16 +98,16 @@ class TestRebase:
         else:
             backported_patch, spec_file = patch
             # Non interactive mode - inapplicable patches are only commented out.
-            assert '+#Patch1: conflicting.patch\n' in spec_file[0].target
-            assert '+#%%patch1 -p1\n' in spec_file[1].target
+            assert [h for h in spec_file if '+#Patch1:         conflicting.patch\n' in h.target]
+            assert [h for h in spec_file if '+#%%patch1 -p1\n' in h.target]
         assert backported_patch.is_removed_file   # backported.patch
         assert spec_file.is_modified_file  # test.spec
         if favor_on_conflict != 'downstream':
-            assert '-Patch1:         conflicting.patch\n' in spec_file[0].source
-            assert '-%patch1 -p1\n' in spec_file[1].source
-        assert '-Patch2:         backported.patch\n' in spec_file[0].source
-        assert '-%patch2 -p1\n' in spec_file[1].source
-        assert '+- New upstream release {}\n'.format(self.NEW_VERSION) in spec_file[2].target
+            assert [h for h in spec_file if '-Patch1:         conflicting.patch\n' in h.source]
+            assert [h for h in spec_file if '-%patch1 -p1\n' in h.source]
+        assert [h for h in spec_file if '-Patch2:         backported.patch\n' in h.source]
+        assert [h for h in spec_file if '-%patch2 -p1\n' in h.source]
+        assert [h for h in spec_file if '+- New upstream release {}\n'.format(self.NEW_VERSION) in h.target]
         with open(os.path.join(RESULTS_DIR, 'report.json')) as f:
             report = json.load(f)
             assert 'success' in report['result']
@@ -174,16 +174,16 @@ class TestBuildLogHooks:
 
         assert spec_file.is_modified_file
         # removed files
-        assert '-%license LICENSE README\n' in spec_file[1].source
-        assert '+%license LICENSE\n' in spec_file[1].target
-        assert '-%license /licensedir/test_license\n' in spec_file[1].source
-        assert '-/dirA/fileB\n' in spec_file[1].source
-        assert '-/dirB/fileY\n' in spec_file[1].source
-        assert '-%doc docs_dir/AUTHORS\n' in spec_file[1].source
+        assert [h for h in spec_file if '-%license LICENSE README\n' in h.source]
+        assert [h for h in spec_file if '+%license LICENSE\n' in h.target]
+        assert [h for h in spec_file if '-%license /licensedir/test_license\n' in h.source]
+        assert [h for h in spec_file if '-/dirA/fileB\n' in h.source]
+        assert [h for h in spec_file if '-/dirB/fileY\n' in h.source]
+        assert [h for h in spec_file if '-%doc docs_dir/AUTHORS\n' in h.source]
 
         # added files
-        assert '+/dirA/fileC\n' in spec_file[1].target
-        assert '+/dirB/fileW\n' in spec_file[1].target
+        assert [h for h in spec_file if '+/dirA/fileC\n' in h.target]
+        assert [h for h in spec_file if '+/dirB/fileW\n' in h.target]
 
         with open(os.path.join(RESULTS_DIR, 'report.json')) as f:
             report = json.load(f)
