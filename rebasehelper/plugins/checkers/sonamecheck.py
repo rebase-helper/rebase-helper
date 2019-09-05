@@ -108,3 +108,4 @@ class SonameCheck(BaseChecker):
     def get_important_changes(cls, checker_output):
         if checker_output['soname_changes']:
             return ['SONAME changes occurred. Check sonamecheck output in the report.']
+        return []

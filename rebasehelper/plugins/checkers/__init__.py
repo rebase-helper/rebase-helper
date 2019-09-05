@@ -83,7 +83,7 @@ class BaseChecker(Plugin):
         return "\n{}\n{}".format(text, separator * len(text))
 
     @classmethod
-    def get_important_changes(cls, checker_output):
+    def get_important_changes(cls, checker_output):  # pylint: disable=unused-argument
         """
         Each checker has an opportunity to highlight some of its output.
         This function is optional, as not all checkers provide output with critical information.
@@ -94,6 +94,7 @@ class BaseChecker(Plugin):
         Returns:
             list: List of strings to be output to CLI as warning messages.
         """
+        return []
 
 
 class CheckerCollection(PluginCollection):
