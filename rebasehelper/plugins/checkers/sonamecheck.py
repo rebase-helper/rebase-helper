@@ -22,10 +22,11 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
+import collections
 import logging
 import os
 import re
-from typing import List, Optional, cast
+from typing import List, Optional, Set, cast
 
 from rebasehelper.logger import CustomLogger
 from rebasehelper.results_store import results_store
@@ -40,29 +41,26 @@ class SonameCheck(BaseChecker):
 
     DEFAULT: bool = True
     CATEGORY: Optional[CheckerCategory] = CheckerCategory.RPM
-    results_dir: Optional[str] = ''
 
     @classmethod
     def is_available(cls):
         return True
 
     @classmethod
-    def _get_soname(cls, provides: List[str]) -> Optional[str]:
+    def _get_sonames(cls, provides: List[str]) -> Set[str]:
         soname_re = re.compile(r'(?P<soname>[^()]+\.so[^()]+)\(.*\)(\(64bit\))?')
+        sonames = set()
         for p in provides:
             match = soname_re.match(p)
             if match:
-                return match.group('soname')
-        return None
+                sonames.add(match.group('soname'))
+        return sonames
 
     @classmethod
     def run_check(cls, results_dir, **kwargs):
-        cls.results_dir = os.path.join(results_dir, cls.name)
-        os.makedirs(cls.results_dir)
-
         old_headers = [RpmHelper.get_header_from_rpm(x) for x in results_store.get_old_build().get('rpm', [])]
         new_headers = [RpmHelper.get_header_from_rpm(x) for x in results_store.get_new_build().get('rpm', [])]
-        soname_changes = {}
+        soname_changes = collections.defaultdict(lambda: collections.defaultdict(list))
         for old in old_headers:
             new = [x for x in new_headers if x.name == old.name]
             if not new:
@@ -70,20 +68,23 @@ class SonameCheck(BaseChecker):
                 continue
             else:
                 new = new[0]
-            old_soname = cls._get_soname(old.provides)
-            new_soname = cls._get_soname(new.provides)
-            if not old_soname:
-                continue
-            if old_soname == new_soname:
-                msg = 'No SONAME changes detected'
-            else:
-                msg = 'SONAME changed from {} to {}'.format(old_soname, new_soname)
-                soname_changes[old.name] = {'from': old_soname, 'to': new_soname}
-            with open(os.path.join(cls.results_dir, old.name + '.txt'), 'w') as outfile:
-                outfile.write(msg)
+            old_sonames = cls._get_sonames(old.provides)
+            new_sonames = cls._get_sonames(new.provides)
+            for old_soname in old_sonames:
+                if old_soname in new_sonames:
+                    new_sonames.remove(old_soname)
+                    continue
+                soname = [x for x in new_sonames if os.path.splitext(x)[0] == os.path.splitext(old_soname)[0]]
+                if not soname:
+                    soname_changes[old.name]['removed'].append(old_soname)
+                else:
+                    soname_changes[old.name]['changed'].append({'from': old_soname, 'to': soname[0]})
+                    new_sonames.remove(soname[0])
 
-        return dict(soname_changes=soname_changes,
-                    path=cls.get_checker_output_dir_short())
+            if new_sonames:
+                soname_changes[old.name]['added'] = list(new_sonames)
+
+        return dict(soname_changes=soname_changes)
 
     @classmethod
     def format(cls, data):
@@ -91,11 +92,19 @@ class SonameCheck(BaseChecker):
         if not data['soname_changes']:
             output_lines.append('No SONAME changes occurred.')
             return output_lines
-        for pkg, changes in data['soname_changes'].items():
-            output_lines.append('{}: SONAME changed from {} to {}'.format(pkg, changes['from'], changes['to']))
+        for package, package_changes in data['soname_changes'].items():
+            output_lines.append(package)
+            for change_type, changes in package_changes.items():
+                output_lines.append(' - {}'.format(change_type))
+                for change in changes:
+                    if change_type == 'changed':
+                        output_lines.append('\t- from {} to {}'.format(change['from'], change['to']))
+                    else:
+                        output_lines.append('\t - {}'.format(change))
+
         return output_lines
 
     @classmethod
     def get_important_changes(cls, checker_output):
         if checker_output['soname_changes']:
-            return ['SONAME changes occurred. Check sonamecheck output.']
+            return ['SONAME changes occurred. Check sonamecheck output in the report.']
