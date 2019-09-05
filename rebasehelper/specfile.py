@@ -456,16 +456,6 @@ class SpecFile:
                     result[idx] = ns.p
         return result
 
-    def _get_patch_number(self, fields):
-        """
-        Function returns patch number
-
-        :param line:
-        :return: patch_num
-        """
-        patch_num = fields[0].replace('Patch', '')[:-1]
-        return patch_num
-
     def get_patches(self):
         """
         Method returns list of all applied and not applied patches
@@ -551,15 +541,18 @@ class SpecFile:
         inapplicable_patches = []
         modified_patches = []
 
+        patch_re = re.compile(r'^Patch(?P<num>\d+):(?P<ws>\s*)(?P<name>.+)$')
+
         preamble = self.spec_content.section('%package')
 
         i = 0
         while i < len(preamble):
             line = preamble[i]
-            if line.startswith('Patch'):
-                fields = line.strip().split()
-                patch_name = fields[1]
-                patch_num = self._get_patch_number(fields)
+            match = patch_re.match(line)
+            if match:
+                patch_num = match.group('num')
+                patch_name = match.group('name')
+                whitespace = match.group('ws')
 
                 if 'deleted' in patches:
                     patch_removed = [x for x in patches['deleted'] if patch_name in x]
@@ -585,7 +578,7 @@ class SpecFile:
                 if patch_inapplicable:
                     if disable_inapplicable:
                         # comment out line if the patch was not applied
-                        preamble[i] = '#{0} {1}'.format(' '.join(fields[:-1]), os.path.basename(patch_name))
+                        preamble[i] = '#Patch{0}:{1}{2}'.format(patch_num, whitespace, os.path.basename(patch_name))
                     inapplicable_patches.append(patch_num)
 
                 if 'modified' in patches:
@@ -593,8 +586,8 @@ class SpecFile:
                 else:
                     patch = None
                 if patch:
-                    fields[1] = os.path.join(constants.RESULTS_DIR, constants.REBASED_SOURCES_DIR, patch_name)
-                    preamble[i] = ' '.join(fields)
+                    name = os.path.join(constants.RESULTS_DIR, constants.REBASED_SOURCES_DIR, patch_name)
+                    preamble[i] = 'Patch{0}:{1}{2}'.format(patch_num, whitespace, name)
                     modified_patches.append(patch_num)
             i += 1
 
