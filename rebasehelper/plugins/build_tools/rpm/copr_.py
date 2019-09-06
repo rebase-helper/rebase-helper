@@ -63,7 +63,7 @@ class Copr(BuildToolBase):
         if kwargs['builds_nowait']:
             return None, None, build_id
         build_url = cls.copr_helper.get_build_url(client, build_id)
-        logger.info('Copr build is here: %s\n', build_url)
+        logger.info('Copr build is here: %s', build_url)
         failed = not cls.copr_helper.watch_build(client, build_id)
         destination = os.path.dirname(srpm).replace('SRPM', 'RPM')
         rpms, logs = cls.copr_helper.download_build(client,

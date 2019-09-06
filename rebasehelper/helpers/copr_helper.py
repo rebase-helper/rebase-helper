@@ -107,6 +107,7 @@ class CoprHelper:
     @classmethod
     def watch_build(cls, client, build_id):
         try:
+            logger.info('Waiting for copr build to finish')
             while True:
                 status = cls.get_build_status(client, build_id)
                 if not status:
