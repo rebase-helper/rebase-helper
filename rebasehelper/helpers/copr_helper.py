@@ -22,7 +22,6 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-import gzip
 import logging
 import os
 import time
@@ -145,13 +144,7 @@ class CoprHelper:
                 if fn.endswith('.rpm'):
                     rpms.append(dest)
                 elif fn.endswith('.log.gz'):
-                    extracted = dest.replace('.log.gz', '.log')
-                    try:
-                        with gzip.open(dest, 'rb') as archive:
-                            with open(extracted, 'wb') as f:
-                                f.write(archive.read())
-                    except (IOError, EOFError):
-                        raise RebaseHelperError(
-                            'Failed to extract {}'.format(dest))
-                    logs.append(extracted)
+                    local_path = dest.replace('.log.gz', '.log')
+                    os.rename(dest, local_path)
+                    logs.append(local_path)
         return rpms, logs
