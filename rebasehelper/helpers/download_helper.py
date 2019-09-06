@@ -152,6 +152,10 @@ class DownloadHelper:
             raise DownloadError(r.reason)
 
         file_size = int(r.headers.get('content-length', -1))
+        if r.headers.get('content-encoding', 'identity') != 'identity':
+            # use infinite progress bar in case of compressed content, there is no
+            # way to determine the uncompressed size in advance
+            file_size = -1
 
         # file exists, check the size
         if os.path.exists(destination_path):
