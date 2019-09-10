@@ -58,8 +58,6 @@ class TestRebase:
         'rebase/backported.patch',
     ]
 
-    NEW_VERSION: str = '0.2'
-
     @pytest.mark.parametrize('buildtool', [
         pytest.param('rpmbuild', marks=pytest.mark.skipif(
             os.geteuid() != 0,
@@ -70,16 +68,18 @@ class TestRebase:
     @pytest.mark.integration
     @pytest.mark.usefixtures('initialized_git_repo')
     def test_rebase(self, buildtool, favor_on_conflict):
+        new_version = '0.2'
+
         cli = CLI([
             '--non-interactive',
             '--disable-inapplicable-patches',
             '--buildtool', buildtool,
             '--favor-on-conflict', favor_on_conflict,
             '--outputtool', 'json',
-            '--pkgcomparetool', 'rpmdiff,pkgdiff,abipkgdiff,licensecheck',
+            '--pkgcomparetool', 'rpmdiff,pkgdiff,abipkgdiff,licensecheck,sonamecheck',
             '--color=always',
             '--apply-changes',
-            self.NEW_VERSION,
+            new_version,
         ])
         config = Config()
         config.merge(cli)
@@ -107,7 +107,7 @@ class TestRebase:
             assert [h for h in spec_file if '-%patch1 -p1\n' in h.source]
         assert [h for h in spec_file if '-Patch2:         backported.patch\n' in h.source]
         assert [h for h in spec_file if '-%patch2 -p1\n' in h.source]
-        assert [h for h in spec_file if '+- New upstream release {}\n'.format(self.NEW_VERSION) in h.target]
+        assert [h for h in spec_file if '+- New upstream release {}\n'.format(new_version) in h.target]
         with open(os.path.join(RESULTS_DIR, 'report.json')) as f:
             report = json.load(f)
             assert 'success' in report['result']
@@ -127,23 +127,22 @@ class TestRebase:
             assert len(report['checkers']['licensecheck']['disappeared_licenses']) == 1
             assert len(report['checkers']['licensecheck']['new_licenses']) == 1
             # rpmdiff
-            assert report['checkers']['rpmdiff']['files_changes']['changed'] == 2
+            assert report['checkers']['rpmdiff']['files_changes']['added'] == 1
+            assert report['checkers']['rpmdiff']['files_changes']['changed'] == 3
+            assert report['checkers']['rpmdiff']['files_changes']['removed'] == 1
             # abipkgdiff
             assert report['checkers']['abipkgdiff']['abi_changes']
-            lib = report['checkers']['abipkgdiff']['packages']['test']['libtest.so']
+            lib = report['checkers']['abipkgdiff']['packages']['test']['libtest1.so']
             assert lib['Functions changes summary']['Added']['count'] == 1
             if favor_on_conflict != 'downstream':
                 assert lib['Variables changes summary']['Removed']['count'] == 1
+            # sonamecheck
+            change = report['checkers']['sonamecheck']['soname_changes']['test']['changed'][0]
+            assert change['from'] == 'libtest2.so.0.1'
+            assert change['to'] == 'libtest2.so.0.2'
+
         repo = git.Repo(execution_dir)
-        assert '- New upstream release {}'.format(self.NEW_VERSION) in repo.commit().summary
-
-
-class TestBuildLogHooks:
-    TEST_FILES: List[str] = [
-        'build-log-hooks/test-build-log-hooks.spec'
-    ]
-
-    NEW_VERSION: str = '0.2'
+        assert '- New upstream release {}'.format(new_version) in repo.commit().summary
 
     @pytest.mark.parametrize('buildtool', [
         pytest.param('rpmbuild', marks=pytest.mark.skipif(
@@ -154,46 +153,50 @@ class TestBuildLogHooks:
     @pytest.mark.integration
     @pytest.mark.usefixtures('initialized_git_repo')
     def test_files_build_log_hook(self, buildtool):
+        new_version = '0.3'
+
         cli = CLI([
             '--non-interactive',
+            '--disable-inapplicable-patches',
             '--force-build-log-hooks',
             '--buildtool', buildtool,
             '--outputtool', 'json',
+            '--pkgcomparetool', 'rpmdiff',  # FIXME: no checkers are actually needed here
             '--color=always',
-            self.NEW_VERSION,
+            new_version,
         ])
         config = Config()
         config.merge(cli)
         execution_dir, results_dir = Application.setup(config)
         app = Application(config, execution_dir, results_dir)
         app.run()
-
         changes = os.path.join(RESULTS_DIR, 'changes.patch')
         patch = unidiff.PatchSet.from_filename(changes, encoding='UTF-8')
-        spec_file = patch[0]
+
+        _, spec_file = patch
 
         assert spec_file.is_modified_file
         # removed files
-        assert [h for h in spec_file if '-%license LICENSE README\n' in h.source]
-        assert [h for h in spec_file if '+%license LICENSE\n' in h.target]
-        assert [h for h in spec_file if '-%license /licensedir/test_license\n' in h.source]
-        assert [h for h in spec_file if '-/dirA/fileB\n' in h.source]
-        assert [h for h in spec_file if '-/dirB/fileY\n' in h.source]
-        assert [h for h in spec_file if '-%doc docs_dir/AUTHORS\n' in h.source]
-
+        assert [h for h in spec_file if '-%doc README.md CHANGELOG.md\n' in h.source]
+        assert [h for h in spec_file if '+%doc README.md\n' in h.target]
+        assert [h for h in spec_file if '-%doc %{_docdir}/%{name}/notes.txt\n' in h.source]
+        assert [h for h in spec_file if '-%{_datadir}/%{name}/1.dat\n' in h.source]
+        assert [h for h in spec_file if '-%{_datadir}/%{name}/extra/C.dat\n' in h.source]
+        assert [h for h in spec_file if '-%doc data/extra/README.extra\n' in h.source]
         # added files
-        assert [h for h in spec_file if '+/dirA/fileC\n' in h.target]
-        assert [h for h in spec_file if '+/dirB/fileW\n' in h.target]
+        assert [h for h in spec_file if '+%{_datadir}/%{name}/2.dat\n' in h.target]
+        assert [h for h in spec_file if '+%{_datadir}/%{name}/extra/D.dat\n' in h.target]
 
         with open(os.path.join(RESULTS_DIR, 'report.json')) as f:
             report = json.load(f)
             assert 'success' in report['result']
+            # files build log hook
             added = report['build_log_hooks']['files']['added']
-            assert '/dirA/fileC' in added['%files']
-            assert '/dirB/fileW' in added['%files devel']
+            assert '%{_datadir}/%{name}/2.dat' in added['%files']
+            assert '%{_datadir}/%{name}/extra/D.dat' in added['%files extra']
             removed = report['build_log_hooks']['files']['removed']
-            assert 'README' in removed['%files']
-            assert '/licensedir/test_license' in removed['%files']
-            assert '/dirA/fileB' in removed['%files']
-            assert '/dirB/fileY' in removed['%files devel']
-            assert 'docs_dir/AUTHORS' in removed['%files devel']
+            assert 'CHANGELOG.md' in removed['%files']
+            assert '%{_docdir}/%{name}/notes.txt' in removed['%files']
+            assert '%{_datadir}/%{name}/1.dat' in removed['%files']
+            assert '%{_datadir}/%{name}/extra/C.dat' in removed['%files extra']
+            assert 'data/extra/README.extra' in removed['%files extra']

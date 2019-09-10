@@ -16,6 +16,14 @@ BuildRequires:  gcc
 Test package
 
 
+%package extra
+Summary:        Test subpackage
+
+
+%description extra
+Test subpackage
+
+
 %prep
 %setup -q
 %patch0 -p1
@@ -34,7 +42,18 @@ Test package
 
 %files
 %license LICENSE
-%{_libdir}/*.so
+%doc README.md CHANGELOG.md
+%doc %{_docdir}/%{name}/notes.txt
+%{_libdir}/*.so*
+%{_datadir}/%{name}/0.dat
+%{_datadir}/%{name}/1.dat
+
+
+%files extra
+%doc data/extra/README.extra
+%{_datadir}/%{name}/extra/A.dat
+%{_datadir}/%{name}/extra/B.dat
+%{_datadir}/%{name}/extra/C.dat
 
 
 %changelog

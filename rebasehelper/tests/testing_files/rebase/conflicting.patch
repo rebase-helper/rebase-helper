@@ -1,7 +1,7 @@
-diff --git a/test.c b/test.c
+diff --git a/libtest1.c b/libtest1.c
 index a460359..5276a2c 100644
---- a/test.c
-+++ b/test.c
+--- a/libtest1.c
++++ b/libtest1.c
 @@ -13,7 +13,7 @@ int variableB = 0;
  /*
   * this is variable C
