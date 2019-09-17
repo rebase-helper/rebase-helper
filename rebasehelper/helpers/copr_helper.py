@@ -28,8 +28,8 @@ import time
 import urllib.parse
 from typing import cast
 
-import copr  # type: ignore
 import pyquery  # type: ignore
+from copr.v3 import Client, CoprConfigException, CoprNoConfigException, CoprRequestException  # type: ignore
 
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.helpers.download_helper import DownloadHelper
@@ -44,9 +44,8 @@ class CoprHelper:
     @classmethod
     def get_client(cls):
         try:
-            client = copr.CoprClient.create_from_file_config()
-        except (copr.client.exceptions.CoprNoConfException,
-                copr.client.exceptions.CoprConfigException):
+            client = Client.create_from_config_file()
+        except (CoprNoConfigException, CoprConfigException):
             raise RebaseHelperError(
                 'Missing or invalid copr configuration file')
         else:
@@ -55,53 +54,46 @@ class CoprHelper:
     @classmethod
     def create_project(cls, client, project, chroot, description, instructions):
         try:
-            try:
-                client.create_project(projectname=project,
-                                      chroots=[chroot],
-                                      description=description,
-                                      instructions=instructions)
-            except TypeError:
-                # username argument is required since python-copr-1.67-1
-                client.create_project(username=None,
-                                      projectname=project,
-                                      chroots=[chroot],
-                                      description=description,
-                                      instructions=instructions)
-        except copr.client.exceptions.CoprRequestException:
+            client.project_proxy.add(ownername=client.config.get('username'),
+                                     projectname=project,
+                                     chroots=[chroot],
+                                     description=description,
+                                     instructions=instructions)
+        except CoprRequestException:
             # reuse existing project
             pass
 
     @classmethod
     def build(cls, client, project, srpm):
         try:
-            result = client.create_new_build(projectname=project, pkgs=[srpm])
-        except copr.client.exceptions.CoprRequestException as e:
+            result = client.build_proxy.create_from_file(client.config.get('username'), project, srpm)
+        except CoprRequestException as e:
             raise RebaseHelperError('Failed to start copr build: {}'.format(str(e)))
         else:
-            return result.builds_list[0].build_id
+            return result.id
 
     @classmethod
     def get_build_url(cls, client, build_id):
         try:
-            result = client.get_build_details(build_id)
-        except copr.client.exceptions.CoprRequestException as e:
+            result = client.build_proxy.get(build_id)
+        except CoprRequestException as e:
             raise RebaseHelperError(
                 'Failed to get copr build details for id {}: {}'.format(build_id, str(e)))
         else:
-            return '{}/coprs/{}/{}/build/{}/'.format(client.copr_url,
-                                                     client.username,
-                                                     result.project,
+            return '{}/coprs/{}/{}/build/{}/'.format(client.config.get('copr_url'),
+                                                     result.ownername,
+                                                     result.projectname,
                                                      build_id)
 
     @classmethod
     def get_build_status(cls, client, build_id):
         try:
-            result = client.get_build_details(build_id)
-        except copr.client.exceptions.CoprRequestException as e:
+            result = client.build_proxy.get(build_id)
+        except CoprRequestException as e:
             raise RebaseHelperError(
                 'Failed to get copr build details for id {}: {}'.format(build_id, str(e)))
         else:
-            return result.status
+            return result.state
 
     @classmethod
     def watch_build(cls, client, build_id):
@@ -123,20 +115,18 @@ class CoprHelper:
     @classmethod
     def download_build(cls, client, build_id, destination):
         logger.info('Downloading packages and logs for build %d', build_id)
-        try:
-            result = client.get_build_details(build_id)
-        except copr.client.exceptions.CoprRequestException as e:
-            raise RebaseHelperError(
-                'Failed to get copr build details for {}: {}'.format(build_id, str(e)))
         rpms = []
         logs = []
-        for _, url in result.data['results_by_chroot'].items():
+        for chroot in client.build_chroot_proxy.get_list(build_id):
+            url = chroot.result_url
             url = url if url.endswith('/') else url + '/'
             d = pyquery.PyQuery(url)
             d.make_links_absolute()
             for a in d('a[href$=\'.rpm\'], a[href$=\'.log.gz\']'):
                 fn = os.path.basename(urllib.parse.urlsplit(a.attrib['href']).path)
-                dest = os.path.join(destination, fn)
+                dest = os.path.join(destination, chroot.name)
+                os.makedirs(dest, exist_ok=True)
+                dest = os.path.join(dest, fn)
                 if fn.endswith('.src.rpm'):
                     # skip source RPM
                     continue
