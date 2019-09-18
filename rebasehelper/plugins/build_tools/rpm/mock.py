@@ -24,7 +24,7 @@
 
 import logging
 import os
-from typing import List, cast
+from typing import cast
 
 from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.helpers.path_helper import PathHelper
@@ -46,20 +46,23 @@ class Mock(BuildToolBase):  # pylint: disable=abstract-method
     ACCEPTS_OPTIONS: bool = True
 
     CMD: str = 'mock'
-    logs: List[str] = []
 
     @classmethod
     def _build_rpm(cls, srpm, results_dir, rpm_results_dir, root=None, arch=None, builder_options=None):
-        """
-        Build RPM using mock.
+        """Builds RPMs using mock.
 
-        :param srpm: full path to the srpm.
-        :param results_dir: abs path to dir where the log should be placed.
-        :param rpm_results_dir: directory where rpms will be placed.
-        :param root: path to where chroot should be built.
-        :param arch: target architectures for the build.
-        :param builder_options: builder_options for mock.
-        :return abs paths to RPMs.
+        Args:
+            srpm: Path to SRPM.
+            results_dir: Path to directory where logs will be placed.
+            rpm_results_dir: Path to directory where rpms will be placed.
+            root: Path to where chroot will be built
+            arch: Target architectures for the build.
+            builder_options: Additional options for mock.
+
+        Returns:
+            Tuple where first element is list of paths to built RPMs and
+            the second element is list of paths to logs.
+
         """
         logger.info("Building RPMs")
         output = os.path.join(results_dir, "mock_output.log")
@@ -76,14 +79,15 @@ class Mock(BuildToolBase):  # pylint: disable=abstract-method
             cmd = ['pkexec'] + cmd
 
         ret = ProcessHelper.run_subprocess(cmd, output_file=output)
+        logs = []
+        for log in PathHelper.find_all_files(results_dir, '*.log'):
+            logs.append(os.path.join(rpm_results_dir, os.path.basename(log)))
 
         if ret == 0:
-            return [f for f in PathHelper.find_all_files(results_dir, '*.rpm') if not f.endswith('.src.rpm')]
+            return [f for f in PathHelper.find_all_files(results_dir, '*.rpm') if not f.endswith('.src.rpm')], logs
         else:
             logfile = Mock.get_mock_logfile_path(ret, rpm_results_dir, tmp_path=results_dir)
-        logs = [l for l in PathHelper.find_all_files(results_dir, '*.log')]
-        cls.logs.extend(os.path.join(rpm_results_dir, os.path.basename(l)) for l in logs)
-        raise BinaryPackageBuildError("Building RPMs failed!", rpm_results_dir, logfile=logfile)
+        raise BinaryPackageBuildError("Building RPMs failed!", rpm_results_dir, logfile=logfile, logs=logs)
 
     @staticmethod
     def get_mock_logfile_path(ret, results_dir, tmp_path=None):
@@ -131,15 +135,14 @@ class Mock(BuildToolBase):  # pylint: disable=abstract-method
                  'rpm' -> list with absolute paths to RPMs
                  'logs' -> list with absolute paths to logs
         """
-        cls.logs = []
         rpm_results_dir = os.path.join(results_dir, "RPM")
         sources = spec.get_sources()
         patches = [p.path for p in spec.get_patches()]
         with MockTemporaryEnvironment(sources, patches, spec.path, rpm_results_dir) as tmp_env:
             env = tmp_env.env()
             tmp_results_dir = env.get(MockTemporaryEnvironment.TEMPDIR_RESULTS)
-            rpms = cls._build_rpm(srpm, tmp_results_dir, rpm_results_dir,
-                                  builder_options=cls.get_builder_options(**kwargs))
+            rpms, logs = cls._build_rpm(srpm, tmp_results_dir, rpm_results_dir,
+                                        builder_options=cls.get_builder_options(**kwargs))
             # remove SRPM - side product of building RPM
             tmp_srpm = PathHelper.find_first_file(tmp_results_dir, "*.src.rpm")
             if tmp_srpm is not None:
@@ -149,9 +152,6 @@ class Mock(BuildToolBase):  # pylint: disable=abstract-method
 
         rpms = [os.path.join(rpm_results_dir, os.path.basename(f)) for f in rpms]
         logger.verbose("Successfully built RPMs: '%s'", str(rpms))
+        logger.verbose("logs: '%s'", str(logs))
 
-        # gather logs
-        cls.logs.extend(l for l in PathHelper.find_all_files(rpm_results_dir, '*.log'))
-        logger.verbose("logs: '%s'", str(cls.logs))
-
-        return dict(rpm=rpms, logs=cls.logs)
+        return dict(rpm=rpms, logs=logs)

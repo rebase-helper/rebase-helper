@@ -24,7 +24,7 @@
 
 import logging
 import os
-from typing import List, cast
+from typing import cast
 
 from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.helpers.input_helper import InputHelper
@@ -47,19 +47,22 @@ class Rpmbuild(BuildToolBase):  # pylint: disable=abstract-method
     ACCEPTS_OPTIONS: bool = True
 
     CMD: str = 'rpmbuild'
-    logs: List[str] = []
 
     @classmethod
     def _build_rpm(cls, srpm, workdir, results_dir, rpm_results_dir, builder_options=None):
-        """
-        Build RPM using rpmbuild.
+        """Builds RPMs using rpmbuild
 
-        :param srpm: abs path to SRPM
-        :param workdir: abs path to working directory with rpmbuild directory
-                        structure, which will be used as HOME dir.
-        :param results_dir: abs path to dir where the log should be placed.
-        :param rpm_results_dir: path directory to where RPMs will be placed.
-        :return: abs paths to built RPMs.
+        Args:
+            srpm: Path to SRPM.
+            workdir: Path to working directory with rpmbuild directory structure.
+            results_dir: Path to directory where logs will be placed.
+            rpm_results_dir: Path to directory where RPMs will be placed.
+            builder_options: Additional options for rpmbuild.
+
+        Returns:
+            Tuple, the first element is a list of paths to built RPMs,
+            the second is a list of paths to logs.
+
         """
         logger.info("Building RPMs")
         output = os.path.join(results_dir, "build.log")
@@ -72,14 +75,14 @@ class Rpmbuild(BuildToolBase):  # pylint: disable=abstract-method
                                                    output_file=output)
 
         build_log_path = os.path.join(rpm_results_dir, 'build.log')
+        logs = []
+        for log in PathHelper.find_all_files(results_dir, '*.log'):
+            logs.append(os.path.join(rpm_results_dir, os.path.basename(log)))
 
         if ret == 0:
-            return [f for f in PathHelper.find_all_files(workdir, '*.rpm') if not f.endswith('.src.rpm')]
+            return [f for f in PathHelper.find_all_files(workdir, '*.rpm') if not f.endswith('.src.rpm')], logs
         # An error occurred, raise an exception
-        logfile = build_log_path
-        logs = [l for l in PathHelper.find_all_files(results_dir, '*.log')]
-        cls.logs.extend(os.path.join(rpm_results_dir, os.path.basename(l)) for l in logs)
-        raise BinaryPackageBuildError("Building RPMs failed!", results_dir, logfile=logfile)
+        raise BinaryPackageBuildError("Building RPMs failed!", results_dir, logfile=build_log_path, logs=logs)
 
     @classmethod
     def prepare(cls, spec, conf):
@@ -107,7 +110,6 @@ class Rpmbuild(BuildToolBase):  # pylint: disable=abstract-method
                  'rpm' -> list with absolute paths to RPMs
                  'logs' -> list with absolute paths to build_logs
         """
-        cls.logs = []
         rpm_results_dir = os.path.join(results_dir, "RPM")
         sources = spec.get_sources()
         patches = [p.path for p in spec.get_patches()]
@@ -115,17 +117,14 @@ class Rpmbuild(BuildToolBase):  # pylint: disable=abstract-method
             env = tmp_env.env()
             tmp_dir = tmp_env.path()
             tmp_results_dir = env.get(RpmbuildTemporaryEnvironment.TEMPDIR_RESULTS)
-            rpms = cls._build_rpm(srpm, tmp_dir, tmp_results_dir, rpm_results_dir,
-                                  builder_options=cls.get_builder_options(**kwargs))
+            rpms, logs = cls._build_rpm(srpm, tmp_dir, tmp_results_dir, rpm_results_dir,
+                                        builder_options=cls.get_builder_options(**kwargs))
 
         logger.info("Building RPMs finished successfully")
 
         # RPMs paths in results_dir
         rpms = [os.path.join(rpm_results_dir, os.path.basename(f)) for f in rpms]
         logger.verbose("Successfully built RPMs: '%s'", str(rpms))
+        logger.verbose("logs: '%s'", str(logs))
 
-        # gather logs
-        cls.logs.extend(l for l in PathHelper.find_all_files(rpm_results_dir, '*.log'))
-        logger.verbose("logs: '%s'", str(cls.logs))
-
-        return dict(rpm=rpms, logs=cls.logs)
+        return dict(rpm=rpms, logs=logs)

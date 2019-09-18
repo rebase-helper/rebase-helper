@@ -25,7 +25,7 @@
 import logging
 import os
 import re
-from typing import List, cast
+from typing import cast
 
 import koji  # type: ignore  # pylint: disable=import-error
 
@@ -60,7 +60,6 @@ class Koji(BuildToolBase):
     CREATES_TASKS: bool = True
 
     CMD: str = 'koji'
-    logs: List[str] = []
 
     target_tag: str = 'rawhide'
 
@@ -106,7 +105,7 @@ class Koji(BuildToolBase):
         rpms, logs = KojiHelper.download_task_results(session, list(task_dict), path)
         exit_code = cls._verify_tasks(session, task_dict)
         if exit_code:
-            raise BinaryPackageBuildError(exit_code=exit_code)
+            raise BinaryPackageBuildError(exit_code=exit_code, logs=logs)
         return rpms, logs, task_id
 
     @classmethod
@@ -116,7 +115,7 @@ class Koji(BuildToolBase):
         rpms, logs = KojiHelper.download_task_results(session, list(task_dict), results_dir)
         exit_code = cls._verify_tasks(session, task_dict)
         if exit_code:
-            raise BinaryPackageBuildError(exit_code=exit_code)
+            raise BinaryPackageBuildError(exit_code=exit_code, logs=logs)
         return rpms, logs
 
     @classmethod
@@ -132,7 +131,7 @@ class Koji(BuildToolBase):
         task = session.getTaskInfo(task_id)
         exit_code = cls._verify_tasks(session, {task_id: task['state']})
         if exit_code:
-            raise BinaryPackageBuildError(exit_code=exit_code)
+            raise BinaryPackageBuildError(exit_code=exit_code, logs=logs)
         if not rpms:
             raise RebaseHelperError('Koji tasks are not finished yet. Try again later.')
         return rpms, logs
@@ -151,10 +150,7 @@ class Koji(BuildToolBase):
                  'logs' -> list with absolute paths to build_logs
                  'koji_task_id' -> ID of koji task
         """
-        cls.logs = []
         rpm_results_dir = os.path.join(results_dir, "RPM")
         os.makedirs(rpm_results_dir)
-        rpms, rpm_logs, koji_task_id = cls._scratch_build(srpm, **kwargs)
-        if rpm_logs:
-            cls.logs.extend(rpm_logs)
-        return dict(rpm=rpms, logs=cls.logs, koji_task_id=koji_task_id)
+        rpms, logs, koji_task_id = cls._scratch_build(srpm, **kwargs)
+        return dict(rpm=rpms, logs=logs, koji_task_id=koji_task_id)

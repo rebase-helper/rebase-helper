@@ -24,7 +24,7 @@
 
 import logging
 import os
-from typing import List, cast
+from typing import cast
 
 from rebasehelper.logger import CustomLogger
 from rebasehelper.plugins.build_tools import RpmbuildTemporaryEnvironment
@@ -42,20 +42,22 @@ class Rpmbuild(SRPMBuildToolBase):
     DEFAULT: bool = True
 
     CMD: str = 'rpmbuild'
-    logs: List[str] = []
 
     @classmethod
     def _build_srpm(cls, spec, workdir, results_dir, srpm_results_dir, srpm_builder_options):
-        """
-        Build SRPM using rpmbuild.
+        """Builds SRPM using rpmbuild.
 
-        :param spec: abs path to SPEC file inside the rpmbuild/SPECS in workdir.
-        :param workdir: abs path to working directory with rpmbuild directory
-                        structure, which will be used as HOME dir.
-        :param results_dir: abs path to dir where the log should be placed.
-        :param srpm_results_dir: path to directory where SRPM will be placed.
-        :param srpm_builder_options: list of additional options to rpmbuild.
-        :return: abs path to built SRPM.
+        Args:
+            spec: Path to SPEC file to build the SRPM from.
+            workdir: Path to working directory with rpmbuild directory structure.
+            results_dir: Path to directory where logs will be placed.
+            srpm_results_dir: Path to directory where SRPM will be placed.
+            srpm_builder_options: Additional rpmbuild options.
+
+        Returns:
+            Tuple, the first element is path to SRPM, the second is a list of paths
+            to logs.
+
         """
         logger.info("Building SRPM")
         spec_loc, spec_name = os.path.split(spec)
@@ -72,14 +74,14 @@ class Rpmbuild(SRPMBuildToolBase):
                                                    output_file=output)
 
         build_log_path = os.path.join(srpm_results_dir, 'build.log')
+        logs = []
+        for l in PathHelper.find_all_files(results_dir, '*.log'):
+            logs.append(os.path.join(srpm_results_dir, os.path.basename(l)))
 
         if ret == 0:
-            return PathHelper.find_first_file(workdir, '*.src.rpm')
+            return PathHelper.find_first_file(workdir, '*.src.rpm'), logs
         # An error occurred, raise an exception
-        logfile = build_log_path
-        logs = [l for l in PathHelper.find_all_files(results_dir, '*.log')]
-        cls.logs = [os.path.join(srpm_results_dir, os.path.basename(l)) for l in logs]
-        raise SourcePackageBuildError("Building SRPM failed!", logfile=logfile)
+        raise SourcePackageBuildError("Building SRPM failed!", logfile=build_log_path, logs=logs)
 
     @classmethod
     def build(cls, spec, results_dir, **kwargs):
@@ -102,16 +104,14 @@ class Rpmbuild(SRPMBuildToolBase):
             tmp_results_dir = env.get(
                 RpmbuildTemporaryEnvironment.TEMPDIR_RESULTS)
 
-            srpm = cls._build_srpm(tmp_spec, tmp_dir, tmp_results_dir, srpm_results_dir,
-                                   srpm_builder_options=srpm_builder_options)
+            srpm, logs = cls._build_srpm(tmp_spec, tmp_dir, tmp_results_dir, srpm_results_dir,
+                                         srpm_builder_options=srpm_builder_options)
 
         logger.info("Building SRPM finished successfully")
 
         # srpm path in results_dir
         srpm = os.path.join(srpm_results_dir, os.path.basename(srpm))
         logger.verbose("Successfully built SRPM: '%s'", str(srpm))
-        # gather logs
-        logs = [l for l in PathHelper.find_all_files(srpm_results_dir, '*.log')]
         logger.verbose("logs: '%s'", str(logs))
 
         return dict(srpm=srpm, logs=logs)

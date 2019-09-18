@@ -515,7 +515,7 @@ class Application:
             except RebaseHelperError:  # pylint: disable=try-except-raise
                 raise
             except SourcePackageBuildError as e:
-                build_dict.update(builder.get_logs())
+                build_dict['logs'] = e.logs
                 build_dict['source_package_build_error'] = str(e)
                 build_dict = self._sanitize_build_dict(build_dict)
                 results_store.set_build_data(version, build_dict)
@@ -524,7 +524,7 @@ class Application:
                 else:
                     msg = 'Building {} SRPM packages failed; see logs in {} for more information'.format(
                         version, os.path.join(results_dir, 'SRPM'))
-                raise RebaseHelperError(msg, logfiles=builder.get_logs().get('logs'))
+                raise RebaseHelperError(msg, logfiles=e.logs)
             except Exception:
                 raise RebaseHelperError('Building package failed with unknown reason. '
                                         'Check all available log files.')
@@ -596,7 +596,7 @@ class Application:
                 # Proper RebaseHelperError instance was created already. Re-raise it.
                 raise
             except BinaryPackageBuildError as e:
-                build_dict.update(builder.get_logs())
+                build_dict['logs'] = e.logs
                 build_dict['binary_package_build_error'] = str(e)
                 build_dict = self._sanitize_build_dict(build_dict)
                 results_store.set_build_data(version, build_dict)
@@ -608,7 +608,7 @@ class Application:
                 else:
                     msg = 'Building {} RPM packages failed; see {} for more information'.format(version, e.logfile)
 
-                raise RebaseHelperError(msg, logfiles=builder.get_logs().get('logs'))
+                raise RebaseHelperError(msg, logfiles=e.logs)
             except Exception:
                 raise RebaseHelperError('Building package failed with unknown reason. '
                                         'Check all available log files.')

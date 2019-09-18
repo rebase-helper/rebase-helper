@@ -46,16 +46,6 @@ class SRPMBuildToolBase(Plugin):
         return None
 
     @classmethod
-    def get_logs(cls):
-        """
-        Get logs from previously failed build
-        Returns:
-        dict with
-        'logs' -> list of absolute paths to logs
-        """
-        return dict(logs=getattr(cls, 'logs', None))
-
-    @classmethod
     def build(cls, spec, results_dir, **kwargs):
         """
         Build SRPM with chosen SRPM Build Tool

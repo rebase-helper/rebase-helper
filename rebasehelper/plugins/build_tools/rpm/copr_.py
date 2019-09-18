@@ -24,7 +24,7 @@
 
 import logging
 import os
-from typing import List, cast
+from typing import cast
 
 from rebasehelper.helpers.copr_helper import CoprHelper
 from rebasehelper.logger import CustomLogger
@@ -44,7 +44,6 @@ class Copr(BuildToolBase):
     CREATES_TASKS: bool = True
 
     CMD: str = 'copr'
-    logs: List[str] = []
 
     prefix: str = 'rebase-helper-'
     chroot: str = 'fedora-rawhide-x86_64'
@@ -65,12 +64,10 @@ class Copr(BuildToolBase):
         failed = not CoprHelper.watch_build(client, build_id)
         destination = os.path.dirname(srpm).replace('SRPM', 'RPM')
         rpms, logs = CoprHelper.download_build(client, build_id, destination)
-        if failed:
-            logger.info('Copr build failed %s', build_url)
-            logs.append(build_url)
-            cls.logs.append(build_url)
-            raise BinaryPackageBuildError
         logs.append(build_url)
+        if failed:
+            logger.error('Copr build failed %s', build_url)
+            raise BinaryPackageBuildError(logs=logs)
         return rpms, logs, build_id
 
     @classmethod
@@ -86,13 +83,10 @@ class Copr(BuildToolBase):
                  'logs' -> list with absolute paths to build_logs
                  'copr_build_id' -> ID of copr build
         """
-        cls.logs = []
         rpm_results_dir = os.path.join(results_dir, "RPM")
         os.makedirs(rpm_results_dir)
-        rpms, rpm_logs, build_id = cls._build_rpms(srpm, **kwargs)
-        if rpm_logs:
-            cls.logs.extend(rpm_logs)
-        return dict(rpm=rpms, logs=cls.logs, copr_build_id=build_id)
+        rpms, logs, build_id = cls._build_rpms(srpm, **kwargs)
+        return dict(rpm=rpms, logs=logs, copr_build_id=build_id)
 
     @classmethod
     def get_task_info(cls, build_dict):
@@ -112,5 +106,5 @@ class Copr(BuildToolBase):
             rpm, logs = CoprHelper.download_build(client, build_id, results_dir)
             if status not in ['succeeded', 'skipped']:
                 logger.info('Copr build %d did not complete successfully', build_id)
-                raise BinaryPackageBuildError
+                raise BinaryPackageBuildError(logs=logs)
             return rpm, logs
