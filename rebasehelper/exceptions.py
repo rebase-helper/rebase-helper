@@ -74,6 +74,7 @@ class SourcePackageBuildError(RuntimeError):
         super(SourcePackageBuildError, self).__init__()
         self.args = args
         self.logfile = kwargs.get('logfile')
+        self.logs = kwargs.get('logs')
 
 
 class BinaryPackageBuildError(RuntimeError):
@@ -92,3 +93,4 @@ class BinaryPackageBuildError(RuntimeError):
         # Return code obtained from koji only at this time
         self.return_code = kwargs.get('return_code')
         self.logfile = kwargs.get('logfile')
+        self.logs = kwargs.get('logs')

@@ -72,16 +72,6 @@ class BuildToolBase(Plugin):
         raise NotImplementedError()
 
     @classmethod
-    def get_logs(cls):
-        """
-        Get logs from previously failed build
-        Returns:
-        dict with
-        'logs' -> list of absolute paths to logs
-        """
-        return dict(logs=getattr(cls, 'logs', None))
-
-    @classmethod
     def wait_for_task(cls, build_dict, task_id, results_dir):  # pylint: disable=unused-argument
         """
         Waits until specified task is finished
