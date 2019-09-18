@@ -263,7 +263,7 @@ class SpecFile:
         self.extra_version: str = ''
         self.extra_version_separator: str = ''
         self.category: Optional[PackageCategory] = None
-        self.spc: rpm.spec = RpmHelper.get_rpm_spec(self.path)
+        self.spc: rpm.spec = RpmHelper.get_rpm_spec(self.path, self.sources_location)
         self.header: RpmHeader = RpmHeader(self.spc.sourceHeader)
         self.spec_content: SpecContent = self._read_spec_content()
 
@@ -296,6 +296,14 @@ class SpecFile:
                     raise RebaseHelperError("Failed to download file from URL {}. "
                                             "Reason: '{}'. ".format(remote_file, str(e)))
 
+    def update(self) -> None:
+        # explicitly discard old instance to prevent rpm from destroying
+        # "sources" and "patches" lua tables after new instance is created
+        self.spc = None
+        self.spc = RpmHelper.get_rpm_spec(self.path, self.sources_location)
+        self.header = RpmHeader(self.spc.sourceHeader)
+        self._update_data()
+
     def _update_data(self):
         """
         Function updates data from given SPEC file
@@ -312,16 +320,6 @@ class SpecFile:
                         if category.value.match(provide):
                             return category
             return None
-        # reset all macros and settings
-        rpm.reloadConfig()
-        # ensure that %{_sourcedir} macro is set to proper location
-        MacroHelper.purge_macro('_sourcedir')
-        rpm.addMacro('_sourcedir', self.sources_location)
-        # explicitly discard old instance to prevent rpm from destroying
-        # "sources" and "patches" lua tables after new instance is created
-        self.spc = None
-        self.spc = RpmHelper.get_rpm_spec(self.path)
-        self.header = RpmHeader(self.spc.sourceHeader)
         self.category = guess_category()
         self.sources = self._get_spec_sources_list(self.spc)
         self.prep_section = self.spc.prep
@@ -1222,13 +1220,13 @@ class SpecFile:
     def reload(self):
         """Reloads the whole Spec file."""
         self._read_spec_content()
-        self._update_data()
+        self.update()
 
     def save(self):
         """Saves changes made to SpecContent and updates the internal state."""
         self._write_spec_content()
         #  Update internal variables
-        self._update_data()
+        self.update()
 
     ####################
     # UNSORTED METHODS #
@@ -1286,7 +1284,7 @@ class SpecFile:
                                                                     name=GitHelper.get_user(),
                                                                     email=GitHelper.get_email(),
                                                                     evr=evr))
-        self._update_data()
+        self.update()
         new_record.append(MacroHelper.expand(changelog_entry, changelog_entry))
         new_record.append('')
         return new_record

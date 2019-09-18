@@ -188,7 +188,12 @@ class RpmHelper:
                 return result
 
     @classmethod
-    def get_rpm_spec(cls, path) -> rpm.spec:
+    def get_rpm_spec(cls, path: str, sourcedir: str) -> rpm.spec:
+        # reset all macros and settings
+        rpm.reloadConfig()
+        # ensure that %{_sourcedir} macro is set to proper location
+        MacroHelper.purge_macro('_sourcedir')
+        rpm.addMacro('_sourcedir', sourcedir)
         try:
             spec = cls.parse_spec(path, flags=rpm.RPMSPEC_ANYARCH)
         except RebaseHelperError:
