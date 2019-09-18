@@ -263,12 +263,14 @@ class SpecFile:
         self.extra_version: str = ''
         self.extra_version_separator: str = ''
         self.category: Optional[PackageCategory] = None
-        self.spc: rpm.spec = RpmHelper.get_rpm_spec(self.path)
-        self.header: RpmHeader = RpmHeader(self.spc.sourceHeader)
+        # initialize self.spc in self._update_data because some specs may require
+        # files from %sources when RPM parses the spec
+        self.spc: Optional[rpm.spec] = None
         self.spec_content: SpecContent = self._read_spec_content()
 
         # Load rpm information
         self._update_data()
+        self.header: RpmHeader = RpmHeader(self.spc.sourceHeader)
 
     def download_remote_sources(self):
         """
