@@ -24,7 +24,7 @@
 
 import logging
 import os
-from typing import List, Optional, cast
+from typing import List, cast
 
 from rebasehelper.helpers.copr_helper import CoprHelper
 from rebasehelper.logger import CustomLogger
@@ -45,7 +45,6 @@ class Copr(BuildToolBase):
 
     CMD: str = 'copr'
     logs: List[str] = []
-    copr_helper: Optional[CoprHelper] = None
 
     prefix: str = 'rebase-helper-'
     chroot: str = 'fedora-rawhide-x86_64'
@@ -56,19 +55,16 @@ class Copr(BuildToolBase):
     @classmethod
     def _build_rpms(cls, srpm, name, **kwargs):
         project = cls.prefix + name
-        client = cls.copr_helper.get_client()
-        cls.copr_helper.create_project(client, project, cls.chroot,
-                                       cls.description, cls.instructions)
-        build_id = cls.copr_helper.build(client, project, srpm)
+        client = CoprHelper.get_client()
+        CoprHelper.create_project(client, project, cls.chroot, cls.description, cls.instructions)
+        build_id = CoprHelper.build(client, project, srpm)
         if kwargs['builds_nowait']:
             return None, None, build_id
-        build_url = cls.copr_helper.get_build_url(client, build_id)
+        build_url = CoprHelper.get_build_url(client, build_id)
         logger.info('Copr build is here: %s', build_url)
-        failed = not cls.copr_helper.watch_build(client, build_id)
+        failed = not CoprHelper.watch_build(client, build_id)
         destination = os.path.dirname(srpm).replace('SRPM', 'RPM')
-        rpms, logs = cls.copr_helper.download_build(client,
-                                                    build_id,
-                                                    destination)
+        rpms, logs = CoprHelper.download_build(client, build_id, destination)
         if failed:
             logger.info('Copr build failed %s', build_url)
             logs.append(build_url)
@@ -93,8 +89,6 @@ class Copr(BuildToolBase):
         cls.logs = []
         rpm_results_dir = os.path.join(results_dir, "RPM")
         os.makedirs(rpm_results_dir)
-        if not cls.copr_helper:
-            cls.copr_helper = CoprHelper()
         rpms, rpm_logs, build_id = cls._build_rpms(srpm, **kwargs)
         if rpm_logs:
             cls.logs.extend(rpm_logs)
@@ -102,24 +96,20 @@ class Copr(BuildToolBase):
 
     @classmethod
     def get_task_info(cls, build_dict):
-        if not cls.copr_helper:
-            cls.copr_helper = CoprHelper()
-        client = cls.copr_helper.get_client()
-        build_url = cls.copr_helper.get_build_url(client, build_dict['copr_build_id'])
+        client = CoprHelper.get_client()
+        build_url = CoprHelper.get_build_url(client, build_dict['copr_build_id'])
         message = "Copr build for '%s' version is: %s"
         return message % (build_dict['version'], build_url)
 
     @classmethod
     def get_detached_task(cls, task_id, results_dir):
-        if not cls.copr_helper:
-            cls.copr_helper = CoprHelper()
-        client = cls.copr_helper.get_client()
+        client = CoprHelper.get_client()
         build_id = int(task_id)
-        status = cls.copr_helper.get_build_status(client, build_id)
+        status = CoprHelper.get_build_status(client, build_id)
         if status in ['importing', 'pending', 'starting', 'running']:
             raise RebaseHelperError('Copr build is not finished yet. Try again later')
         else:
-            rpm, logs = cls.copr_helper.download_build(client, build_id, results_dir)
+            rpm, logs = CoprHelper.download_build(client, build_id, results_dir)
             if status not in ['succeeded', 'skipped']:
                 logger.info('Copr build %d did not complete successfully', build_id)
                 raise BinaryPackageBuildError
