@@ -187,7 +187,7 @@ class Application:
             for spec_file in [self.spec_file, self.rebase_spec_file]:
                 spec_file.download_remote_sources()
                 # parse spec again with sources downloaded to properly expand %prep section
-                spec_file._update_data()  # pylint: disable=protected-access
+                spec_file.update()
 
     def _initialize_data(self):
         """Function fill dictionary with default data"""
@@ -401,7 +401,7 @@ class Application:
 
         # Generate patch
         self.rebased_repo.git.add(all=True)
-        self.rebase_spec_file._update_data()  # pylint: disable=protected-access
+        self.rebase_spec_file.update()
         self.rebased_repo.index.commit(MacroHelper.expand(self.conf.changelog_entry, self.conf.changelog_entry))
         patch = self.rebased_repo.git.format_patch('-1', stdout=True, stdout_as_string=False)
         with open(os.path.join(self.results_dir, 'changes.patch'), 'wb') as f:
