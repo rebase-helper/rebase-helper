@@ -58,10 +58,7 @@ class Koji(BuildToolBase):
     ]
 
     CREATES_TASKS: bool = True
-
-    CMD: str = 'koji'
-
-    target_tag: str = 'rawhide'
+    TARGET_TAG: str = 'rawhide'
 
     @classmethod
     def _verify_tasks(cls, session, task_dict):
@@ -94,7 +91,7 @@ class Koji(BuildToolBase):
     def _scratch_build(cls, srpm, **kwargs):
         session = KojiHelper.create_session(login=True)
         remote = KojiHelper.upload_srpm(session, srpm)
-        task_id = session.build(remote, cls.target_tag, dict(scratch=True))
+        task_id = session.build(remote, cls.TARGET_TAG, dict(scratch=True))
         if kwargs['builds_nowait']:
             return None, None, task_id
         url = KojiHelper.get_task_url(session, task_id)

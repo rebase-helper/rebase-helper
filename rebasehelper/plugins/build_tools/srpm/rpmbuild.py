@@ -63,7 +63,7 @@ class Rpmbuild(SRPMBuildToolBase):
         spec_loc, spec_name = os.path.split(spec)
         output = os.path.join(results_dir, "build.log")
 
-        cmd = ['rpmbuild', '-bs', spec_name]
+        cmd = [cls.CMD, '-bs', spec_name]
 
         if srpm_builder_options is not None:
             cmd.extend(srpm_builder_options)

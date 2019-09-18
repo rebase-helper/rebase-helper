@@ -63,7 +63,7 @@ class Mock(SRPMBuildToolBase):
 
         path_to_sources = os.path.join(workdir, 'SOURCES')
 
-        cmd = ['mock', '--old-chroot', '--buildsrpm']
+        cmd = [cls.CMD, '--old-chroot', '--buildsrpm']
         if srpm_builder_options is not None:
             cmd.extend(srpm_builder_options)
         cmd.extend(['--spec', spec])
