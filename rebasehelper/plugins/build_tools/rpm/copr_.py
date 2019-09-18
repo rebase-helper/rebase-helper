@@ -43,19 +43,17 @@ class Copr(BuildToolBase):
 
     CREATES_TASKS: bool = True
 
-    CMD: str = 'copr'
-
-    prefix: str = 'rebase-helper-'
-    chroot: str = 'fedora-rawhide-x86_64'
-    description: str = 'Repository containing rebase-helper builds.'
-    instructions: str = '''You can use this repository to test functionality
+    PREFIX: str = 'rebase-helper-'
+    CHROOT: str = 'fedora-rawhide-x86_64'
+    DESCRIPTION: str = 'Repository containing rebase-helper builds.'
+    INSTRUCTIONS: str = '''You can use this repository to test functionality
                          of rebased packages.'''
 
     @classmethod
     def _build_rpms(cls, srpm, name, **kwargs):
-        project = cls.prefix + name
+        project = cls.PREFIX + name
         client = CoprHelper.get_client()
-        CoprHelper.create_project(client, project, cls.chroot, cls.description, cls.instructions)
+        CoprHelper.create_project(client, project, cls.CHROOT, cls.DESCRIPTION, cls.INSTRUCTIONS)
         build_id = CoprHelper.build(client, project, srpm)
         if kwargs['builds_nowait']:
             return None, None, build_id
