@@ -469,6 +469,7 @@ class Application:
             'build_tasks',
             'builder_options',
             'srpm_builder_options',
+            'app_kwargs',
         ]
         return {k: v for k, v in build_dict.items() if k not in blacklist}
 
@@ -496,7 +497,8 @@ class Application:
                 name=package_name,
                 version=package_version,
                 srpm_buildtool=self.conf.srpm_buildtool,
-                srpm_builder_options=self.conf.srpm_builder_options)
+                srpm_builder_options=self.conf.srpm_builder_options,
+                app_kwargs=self.kwargs)
             try:
                 if koji_build_id:
                     session = KojiHelper.create_session()
@@ -561,7 +563,8 @@ class Application:
                     build_tasks=self.conf.build_tasks,
                     builder_options=self.conf.builder_options,
                     srpm=results_store.get_build(version).get('srpm'),
-                    srpm_logs=results_store.get_build(version).get('logs'))
+                    srpm_logs=results_store.get_build(version).get('logs'),
+                    app_kwargs=self.kwargs)
 
                 # prepare for building
                 builder.prepare(spec, self.conf)
