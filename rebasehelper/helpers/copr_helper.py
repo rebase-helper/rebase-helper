@@ -41,6 +41,8 @@ logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
 
 class CoprHelper:
 
+    DELETE_PROJECT_AFTER = 60
+
     @classmethod
     def get_client(cls):
         try:
@@ -52,11 +54,13 @@ class CoprHelper:
             return client
 
     @classmethod
-    def create_project(cls, client, project, chroot, description, instructions):
+    def create_project(cls, client, project, chroot, description, instructions, permanent=False, hide=True):
         try:
             client.project_proxy.add(ownername=client.config.get('username'),
                                      projectname=project,
                                      chroots=[chroot],
+                                     delete_after_days=None if permanent else cls.DELETE_PROJECT_AFTER,
+                                     unlisted_on_hp=hide,
                                      description=description,
                                      instructions=instructions)
         except CoprRequestException:

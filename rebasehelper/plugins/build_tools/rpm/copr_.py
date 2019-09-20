@@ -41,6 +41,21 @@ class Copr(BuildToolBase):
     Class representing Copr build tool.
     """
 
+    OPTIONS = [
+        {
+            'name': ['--copr-project-permanent'],
+            'switch': True,
+            'default': False,
+            'help': 'make the created copr project permanent'
+        },
+        {
+            'name': ['--copr-project-frontpage'],
+            'switch': True,
+            'default': False,
+            'help': 'make the created copr project visible on the frontpage',
+        },
+    ]
+
     CREATES_TASKS: bool = True
 
     PREFIX: str = 'rebase-helper-'
@@ -53,7 +68,10 @@ class Copr(BuildToolBase):
     def _build_rpms(cls, srpm, name, **kwargs):
         project = cls.PREFIX + name
         client = CoprHelper.get_client()
-        CoprHelper.create_project(client, project, cls.CHROOT, cls.DESCRIPTION, cls.INSTRUCTIONS)
+        options = kwargs.get('app_kwargs')
+        hide = not options.get('copr_project_frontpage')
+        permanent = options.get('copr_project_permanent')
+        CoprHelper.create_project(client, project, cls.CHROOT, cls.DESCRIPTION, cls.INSTRUCTIONS, permanent, hide)
         build_id = CoprHelper.build(client, project, srpm)
         if kwargs['builds_nowait']:
             return None, None, build_id
