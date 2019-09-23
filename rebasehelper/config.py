@@ -27,6 +27,7 @@ import os
 
 from rebasehelper.options import OPTIONS, traverse_options
 from rebasehelper.constants import CONFIG_PATH, CONFIG_FILENAME
+from rebasehelper.plugins.plugin_manager import plugin_manager
 
 
 class Config:
@@ -59,7 +60,7 @@ class Config:
     def merge(self, cli):
         self.config.update(vars(cli.args))
 
-        for option in traverse_options(OPTIONS):
+        for option in traverse_options(OPTIONS + plugin_manager.get_options()):
             args = [n.lstrip('-').replace('-', '_') for n in option['name'] if n.startswith('--')]
             if args:
                 dest = args[0]
