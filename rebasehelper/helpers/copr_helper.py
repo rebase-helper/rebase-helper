@@ -54,18 +54,27 @@ class CoprHelper:
             return client
 
     @classmethod
-    def create_project(cls, client, project, chroot, description, instructions, permanent=False, hide=True):
+    def create_project(cls, client, project, chroots, description, instructions, permanent=False, hide=True):
         try:
             client.project_proxy.add(ownername=client.config.get('username'),
                                      projectname=project,
-                                     chroots=[chroot],
+                                     chroots=chroots,
                                      delete_after_days=None if permanent else cls.DELETE_PROJECT_AFTER,
                                      unlisted_on_hp=hide,
                                      description=description,
                                      instructions=instructions)
-        except CoprRequestException:
-            # reuse existing project
-            pass
+        except CoprRequestException as e:
+            error = e.result.error
+            try:
+                [[error]] = error.values()
+            except AttributeError:
+                pass
+
+            if error.startswith('You already have project named'):
+                # reuse existing project
+                pass
+            else:
+                raise RebaseHelperError('Failed to create copr project. Reason: {}'.format(error))
 
     @classmethod
     def build(cls, client, project, srpm):

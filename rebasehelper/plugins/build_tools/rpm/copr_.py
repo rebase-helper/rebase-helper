@@ -27,6 +27,7 @@ import os
 from typing import cast
 
 from rebasehelper.helpers.copr_helper import CoprHelper
+from rebasehelper.types import Options
 from rebasehelper.logger import CustomLogger
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.plugins.build_tools.rpm import BuildToolBase
@@ -41,7 +42,7 @@ class Copr(BuildToolBase):
     Class representing Copr build tool.
     """
 
-    OPTIONS = [
+    OPTIONS: Options = [
         {
             'name': ['--copr-project-permanent'],
             'switch': True,
@@ -54,12 +55,17 @@ class Copr(BuildToolBase):
             'default': False,
             'help': 'make the created copr project visible on the frontpage',
         },
+        {
+            'name': ['--copr-chroots'],
+            'type': lambda s: s.split(','),
+            'default': ['fedora-rawhide-x86_64'],
+            'help': 'comma-separated list of chroots to create copr project with',
+        },
     ]
 
     CREATES_TASKS: bool = True
 
     PREFIX: str = 'rebase-helper-'
-    CHROOT: str = 'fedora-rawhide-x86_64'
     DESCRIPTION: str = 'Repository containing rebase-helper builds.'
     INSTRUCTIONS: str = '''You can use this repository to test functionality
                          of rebased packages.'''
@@ -71,7 +77,9 @@ class Copr(BuildToolBase):
         options = kwargs.get('app_kwargs')
         hide = not options.get('copr_project_frontpage')
         permanent = options.get('copr_project_permanent')
-        CoprHelper.create_project(client, project, cls.CHROOT, cls.DESCRIPTION, cls.INSTRUCTIONS, permanent, hide)
+        chroots = options.get('copr_chroots')
+
+        CoprHelper.create_project(client, project, chroots, cls.DESCRIPTION, cls.INSTRUCTIONS, permanent, hide)
         build_id = CoprHelper.build(client, project, srpm)
         if kwargs['builds_nowait']:
             return None, None, build_id
