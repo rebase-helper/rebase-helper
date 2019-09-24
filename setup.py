@@ -45,8 +45,6 @@ def get_rpm_distribution():
 def get_requirements():
     result = [
         'ansicolors',
-        # need stable marshmallow for copr
-        'marshmallow<3.0.0',
         'copr',
         'pyquery',
         'python-pam',
