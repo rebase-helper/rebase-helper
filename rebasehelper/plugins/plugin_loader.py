@@ -35,7 +35,7 @@ class PluginLoader:
             result[ep.name] = None
             try:
                 plugin = ep.load()
-            except ImportError:
+            except BaseException:
                 # skip broken plugin
                 continue
             try:
