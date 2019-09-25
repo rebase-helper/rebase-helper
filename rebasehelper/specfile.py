@@ -958,6 +958,8 @@ class SpecFile:
                         values[index] = newval[m.a:m.a+m.size]
                         if not values[index - 1]:
                             values[index - 1] = newval[i:m.a]
+                        else:
+                            values[index - 1] += newval[i:m.a]
                     else:
                         values[index] = newval[i:m.a+m.size]
                     i = m.a + m.size
