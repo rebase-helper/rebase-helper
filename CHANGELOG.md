@@ -2,6 +2,29 @@
 
 ## [Unreleased]
 
+## [0.19.0] - 2019-09-26
+### Added
+- Added `--workspace-dir` option to allow specifying custom workspace directory
+- Added **sonamecheck** checker for detecting *SONAME* changes
+- Added `--copr-project-permanent`, `--copr-project-frontpage` and `--copr-chroots` options
+
+### Fixed
+- Strings like "1" are no longer replaced with macros in *%prep*
+- SPEC files without *Source0* tag are now handled correctly
+- Fixed **copr** build tool, switched to V3 API
+- Avoided parsing SPEC without properly setting `%{_sourcedir}` macro first
+
+### Changed
+- Introduced `RpmHeader` class for more convenient access to package header attributes
+- Modification of *Patch* tags now preserves whitespace to minimize differences in SPEC
+- Moved Bash completion script from `/etc/bash_completion.d` to `/usr/share/bash-completion/completions`
+
+### Removed
+- Removed non-working `--patch-only`, `--build-only` and `--comparepkgs-only` options
+- Temporarily removed `--continue` option
+- Removed no longer used `python3-six` build dependency
+- Removed `copr` workaround in favor of making **copr** build tool unavailable in case it's not working
+
 ## [0.18.0] - 2019-08-21
 ### Added
 - Added workaround for missing *mock* group in Fedora Rawhide
