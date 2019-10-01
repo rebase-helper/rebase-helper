@@ -111,7 +111,7 @@ class CoprHelper:
     @classmethod
     def watch_build(cls, client, build_id):
         try:
-            logger.info('Waiting for copr build to finish')
+            logged = False
             while True:
                 status = cls.get_build_status(client, build_id)
                 if not status:
@@ -121,6 +121,9 @@ class CoprHelper:
                 elif status in ['failed', 'canceled', 'unknown']:
                     return False
                 else:
+                    if not logged:
+                        logger.info('Waiting for copr build to finish')
+                        logged = True
                     time.sleep(10)
         except KeyboardInterrupt:
             return False
