@@ -94,13 +94,12 @@ class Application:
         self.kwargs['rebased_sources_dir'] = self.rebased_sources_dir
 
         logger.verbose("Rebase-helper version: %s", VERSION)
+        self.spec_file_path = self._find_spec_file()
+        self._prepare_spec_objects()
 
         if self.conf.build_tasks is None:
             # check the workspace dir
             self._check_workspace_dir()
-
-            self.spec_file_path = self._find_spec_file()
-            self._prepare_spec_objects()
 
             # verify all sources for the new version are present
             missing_sources = [os.path.basename(s) for s in self.rebase_spec_file.sources
@@ -777,7 +776,7 @@ class Application:
             # Print summary and return error
             except RebaseHelperError as e:
                 logger.error(e.msg)
-                if self.prepare_next_run(self.results_dir):
+                if self.conf.build_tasks is None and self.prepare_next_run(self.results_dir):
                     continue
                 self.print_summary(e)
                 raise

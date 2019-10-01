@@ -130,3 +130,16 @@ class Copr(BuildToolBase):
                 logger.info('Copr build %d did not complete successfully', build_id)
                 raise BinaryPackageBuildError(logs=logs)
             return rpm, logs
+
+    @classmethod
+    def wait_for_task(cls, build_dict, task_id, results_dir):
+        client = CoprHelper.get_client()
+        build_id = int(task_id)
+        failed = not CoprHelper.watch_build(client, build_id)
+        rpms, logs = CoprHelper.download_build(client, build_id, results_dir)
+        build_url = CoprHelper.get_build_url(client, build_id)
+        logs.append(build_url)
+        if failed:
+            logger.error('Copr build failed %s', build_url)
+            raise BinaryPackageBuildError(logs=logs)
+        return rpms, logs
