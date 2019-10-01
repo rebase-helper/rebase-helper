@@ -482,7 +482,7 @@ class Application:
 
         for version in ['old', 'new']:
             koji_build_id = None
-            results_dir = '{}-build'.format(os.path.join(self.results_dir, version))
+            results_dir = os.path.join(self.results_dir, '{}-build'.format(version), 'SRPM')
             spec = self.spec_file if version == 'old' else self.rebase_spec_file
             package_name = spec.header.name
             package_version = spec.header.version
@@ -500,14 +500,12 @@ class Application:
                 srpm_builder_options=self.conf.srpm_builder_options,
                 app_kwargs=self.kwargs)
             try:
+                os.makedirs(results_dir)
                 if koji_build_id:
                     session = KojiHelper.create_session()
                     build_dict['srpm'], build_dict['logs'] = KojiHelper.download_build(session,
                                                                                        koji_build_id,
-                                                                                       os.path.join(
-                                                                                           results_dir,
-                                                                                           'SRPM'
-                                                                                       ),
+                                                                                       results_dir,
                                                                                        arches=['src'])
 
                 else:
@@ -524,8 +522,8 @@ class Application:
                 if e.logfile:
                     msg = 'Building {} SRPM packages failed; see {} for more information'.format(version, e.logfile)
                 else:
-                    msg = 'Building {} SRPM packages failed; see logs in {} for more information'.format(
-                        version, os.path.join(results_dir, 'SRPM'))
+                    msg = 'Building {} SRPM packages failed; see logs in {} for more information'.format(version,
+                                                                                                         results_dir)
                 raise RebaseHelperError(msg, logfiles=e.logs)
             except Exception:
                 raise RebaseHelperError('Building package failed with unknown reason. '
@@ -540,7 +538,7 @@ class Application:
                 str(e), ', '.join(plugin_manager.build_tools.get_supported_plugins())))
 
         for version in ['old', 'new']:
-            results_dir = '{}-build'.format(os.path.join(self.results_dir, version))
+            results_dir = os.path.join(self.results_dir, '{}-build'.format(version), 'RPM')
             spec = None
             task_id = None
             koji_build_id = None
@@ -574,15 +572,13 @@ class Application:
                 task_id = self.conf.build_tasks[0] if version == 'old' else self.conf.build_tasks[1]
 
             try:
+                os.makedirs(results_dir)
                 if self.conf.build_tasks is None:
                     if koji_build_id:
                         session = KojiHelper.create_session()
                         build_dict['rpm'], build_dict['logs'] = KojiHelper.download_build(session,
                                                                                           koji_build_id,
-                                                                                          os.path.join(
-                                                                                              results_dir,
-                                                                                              'RPM',
-                                                                                          ),
+                                                                                          results_dir,
                                                                                           arches=['noarch', 'x86_64'])
                     else:
                         build_dict.update(builder.build(spec, results_dir, **build_dict))
@@ -605,9 +601,8 @@ class Application:
                 results_store.set_build_data(version, build_dict)
 
                 if e.logfile is None:
-                    msg = 'Building {} RPM packages failed; see logs in {} for more information'.format(
-                        version, os.path.join(results_dir, 'RPM')
-                    )
+                    msg = 'Building {} RPM packages failed; see logs in {} for more information'.format(version,
+                                                                                                        results_dir)
                 else:
                     msg = 'Building {} RPM packages failed; see {} for more information'.format(version, e.logfile)
 

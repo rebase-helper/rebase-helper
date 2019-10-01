@@ -90,7 +90,6 @@ class BuildTemporaryEnvironment(TemporaryEnvironment):
         :param results_dir: absolute path to results directory
         :return:
         """
-        os.makedirs(results_dir)
         log_message = "Copying '%s' '%s' to '%s'"
         # copy logs
         for log in PathHelper.find_all_files(kwargs[self.TEMPDIR_RESULTS], '*.log'):
