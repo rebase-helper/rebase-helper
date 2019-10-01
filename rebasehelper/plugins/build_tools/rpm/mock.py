@@ -135,13 +135,12 @@ class Mock(BuildToolBase):  # pylint: disable=abstract-method
                  'rpm' -> list with absolute paths to RPMs
                  'logs' -> list with absolute paths to logs
         """
-        rpm_results_dir = os.path.join(results_dir, "RPM")
         sources = spec.get_sources()
         patches = [p.path for p in spec.get_patches()]
-        with MockTemporaryEnvironment(sources, patches, spec.path, rpm_results_dir) as tmp_env:
+        with MockTemporaryEnvironment(sources, patches, spec.path, results_dir) as tmp_env:
             env = tmp_env.env()
             tmp_results_dir = env.get(MockTemporaryEnvironment.TEMPDIR_RESULTS)
-            rpms, logs = cls._build_rpm(srpm, tmp_results_dir, rpm_results_dir,
+            rpms, logs = cls._build_rpm(srpm, tmp_results_dir, results_dir,
                                         builder_options=cls.get_builder_options(**kwargs))
             # remove SRPM - side product of building RPM
             tmp_srpm = PathHelper.find_first_file(tmp_results_dir, "*.src.rpm")
@@ -150,7 +149,7 @@ class Mock(BuildToolBase):  # pylint: disable=abstract-method
 
         logger.info("Building RPMs finished successfully")
 
-        rpms = [os.path.join(rpm_results_dir, os.path.basename(f)) for f in rpms]
+        rpms = [os.path.join(results_dir, os.path.basename(f)) for f in rpms]
         logger.verbose("Successfully built RPMs: '%s'", str(rpms))
         logger.verbose("logs: '%s'", str(logs))
 

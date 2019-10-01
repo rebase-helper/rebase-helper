@@ -92,10 +92,9 @@ class Rpmbuild(SRPMBuildToolBase):
         :param results_dir: absolute path to DIR where results should be stored
         :return: absolute path to SRPM, list with absolute paths to logs
         """
-        srpm_results_dir = os.path.join(results_dir, "SRPM")
         sources = spec.get_sources()
         patches = [p.path for p in spec.get_patches()]
-        with RpmbuildTemporaryEnvironment(sources, patches, spec.path, srpm_results_dir) as tmp_env:
+        with RpmbuildTemporaryEnvironment(sources, patches, spec.path, results_dir) as tmp_env:
             srpm_builder_options = cls.get_srpm_builder_options(**kwargs)
 
             env = tmp_env.env()
@@ -104,13 +103,13 @@ class Rpmbuild(SRPMBuildToolBase):
             tmp_results_dir = env.get(
                 RpmbuildTemporaryEnvironment.TEMPDIR_RESULTS)
 
-            srpm, logs = cls._build_srpm(tmp_spec, tmp_dir, tmp_results_dir, srpm_results_dir,
+            srpm, logs = cls._build_srpm(tmp_spec, tmp_dir, tmp_results_dir, results_dir,
                                          srpm_builder_options=srpm_builder_options)
 
         logger.info("Building SRPM finished successfully")
 
         # srpm path in results_dir
-        srpm = os.path.join(srpm_results_dir, os.path.basename(srpm))
+        srpm = os.path.join(results_dir, os.path.basename(srpm))
         logger.verbose("Successfully built SRPM: '%s'", str(srpm))
         logger.verbose("logs: '%s'", str(logs))
 

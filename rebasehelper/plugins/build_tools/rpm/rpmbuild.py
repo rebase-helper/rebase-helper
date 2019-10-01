@@ -110,20 +110,19 @@ class Rpmbuild(BuildToolBase):  # pylint: disable=abstract-method
                  'rpm' -> list with absolute paths to RPMs
                  'logs' -> list with absolute paths to build_logs
         """
-        rpm_results_dir = os.path.join(results_dir, "RPM")
         sources = spec.get_sources()
         patches = [p.path for p in spec.get_patches()]
-        with RpmbuildTemporaryEnvironment(sources, patches, spec.path, rpm_results_dir) as tmp_env:
+        with RpmbuildTemporaryEnvironment(sources, patches, spec.path, results_dir) as tmp_env:
             env = tmp_env.env()
             tmp_dir = tmp_env.path()
             tmp_results_dir = env.get(RpmbuildTemporaryEnvironment.TEMPDIR_RESULTS)
-            rpms, logs = cls._build_rpm(srpm, tmp_dir, tmp_results_dir, rpm_results_dir,
+            rpms, logs = cls._build_rpm(srpm, tmp_dir, tmp_results_dir, results_dir,
                                         builder_options=cls.get_builder_options(**kwargs))
 
         logger.info("Building RPMs finished successfully")
 
         # RPMs paths in results_dir
-        rpms = [os.path.join(rpm_results_dir, os.path.basename(f)) for f in rpms]
+        rpms = [os.path.join(results_dir, os.path.basename(f)) for f in rpms]
         logger.verbose("Successfully built RPMs: '%s'", str(rpms))
         logger.verbose("logs: '%s'", str(logs))
 

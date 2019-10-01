@@ -107,8 +107,6 @@ class Copr(BuildToolBase):
                  'logs' -> list with absolute paths to build_logs
                  'copr_build_id' -> ID of copr build
         """
-        rpm_results_dir = os.path.join(results_dir, "RPM")
-        os.makedirs(rpm_results_dir)
         rpms, logs, build_id = cls._build_rpms(srpm, **kwargs)
         return dict(rpm=rpms, logs=logs, copr_build_id=build_id)
 
