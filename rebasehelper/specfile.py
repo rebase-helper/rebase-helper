@@ -909,7 +909,8 @@ class SpecFile:
                 result = []
                 for node in tree:
                     if node[0] == 't':
-                        result.append(node[1])
+                        # split text nodes on usual separators
+                        result.extend([t for t in re.split(r'(\.|-|_)', node[1]) if t])
                     elif node[0] == 'm':
                         m = '%{{{}}}'.format(node[1])
                         if MacroHelper.expand(m):
