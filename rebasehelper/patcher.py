@@ -203,8 +203,8 @@ class Patcher:
                     # check for unresolved conflicts
                     unresolved = []
                     for file in unmerged:
-                        with open(os.path.join(cls.old_sources, file)) as f:
-                            if [l for l in f.readlines() if '<<<<<<<' in l]:
+                        with open(os.path.join(cls.old_sources, file), 'rb') as f:
+                            if [l for l in f if b'<<<<<<<' in l]:
                                 unresolved.append(file)
                     if unresolved:
                         if InputHelper.get_message('There are still unresolved conflicts. '
