@@ -9,7 +9,7 @@ Patch0:         applicable.patch
 Patch1:         conflicting.patch
 Patch2:         backported.patch
 
-BuildRequires:  gcc
+BuildRequires:  gcc make
 
 
 %description
