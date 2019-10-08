@@ -589,174 +589,60 @@ class SpecFile:
     def get_NVR(self) -> str:
         return '{0.name}-{0.version}-{0.release}'.format(self.header)
 
-    def get_release_number(self) -> str:
-        release = self.header.release
-        dist = MacroHelper.expand('%{dist}')
-        if dist:
-            release = release.replace(dist, '')
-        return re.sub(r'([0-9.]*[0-9]+).*', r'\1', release)
-
     def get_version(self) -> str:
         # deprecated, kept for backward compatibility
         return self.header.version
 
-    def get_extra_version(self) -> str:
-        return self.extra_version
+    def get_release(self) -> str:
+        """Returns release string without %dist"""
+        release = self.header.release
+        dist = MacroHelper.expand('%{dist}')
+        if dist and release.endswith(dist):
+            release = release[:-len(dist)]
+        return release
 
-    def set_release_number(self, release):
-        """
-        Method to set release number
+    def parse_release(self) -> Tuple[bool, int, Optional[str]]:
+        """Parses release string.
 
-        :param release:
-        :return:
+        Returns:
+            Tuple of is_prerelease, release_number and extra_version.
+
+        Raises:
+            RebaseHelperError in case release string is not valid.
+
         """
-        logger.verbose("Changing release number to '%s'", release)
+        release = self.get_release()
+        m = re.match(r'^(0\.)?(\d+)(?:\.(.+))?$', release)
+        if not m:
+            raise RebaseHelperError('Invalid release string: {}'.format(release))
+        return bool(m.group(1)), int(m.group(2)), m.group(3)
+
+    def set_version(self, version: str) -> None:
+        logger.verbose('Updating version in SPEC from %s to %s', self.header.version, version)
+        self.set_tag('Version', version, preserve_macros=True)
+
+    def set_release(self, release: str) -> None:
+        logger.verbose('Changing release to %s', release)
         self.set_tag('Release', '{}%{{?dist}}'.format(release), preserve_macros=True)
 
-    @saves
-    def redefine_release_with_macro(self, macro):
+    def set_extra_version(self, extra_version: Optional[str], version_changed: bool) -> None:
+        """Updates SPEC file with the specified extra version.
+
+        Args:
+            extra_version: Extra version string or None.
+            version_changed: Whether version (the value of Version tag) changed.
+
         """
-        Method redefines the Release: line to include passed macro and comments out the old line
-
-        :param macro:
-        :return:
-        """
-        release = '{}.{}%{{?dist}}'.format(self.get_release_number(), macro)
-        preamble = self.spec_content.section('%package')
-        for index, line in enumerate(preamble):
-            if line.startswith('Release:'):
-                logger.verbose("Commenting out original Release line '%s'", line.strip())
-                preamble[index] = '#{0}'.format(line)
-                line = 'Release: {}'.format(release)
-                logger.verbose("Inserting new Release line '%s'", line)
-                preamble.insert(index + 1, line)
-                break
-
-    @saves
-    def revert_redefine_release_with_macro(self, macro):
-        """
-        Method removes the redefined the Release: line with given macro and uncomments the old Release line.
-
-        :param macro:
-        :return:
-        """
-        search_re = re.compile(r'^Release\s*:\s*[0-9.]*[0-9]+\.{0}%{{\?dist}}\s*'.format(macro))
-
-        preamble = self.spec_content.section('%package')
-
-        for index, line in enumerate(preamble):
-            match = search_re.search(line)
-            if match:
-                # We will uncomment old line, so sanity check first
-                if not preamble[index - 1].startswith('#Release:'):
-                    raise RebaseHelperError("Redefined Release line in SPEC is not 'commented out' "
-                                            "old line: '{0}'"
-                                            .format(preamble[index - 1].strip()))
-                logger.verbose("Uncommenting original Release line '%s'", preamble[index - 1].strip())
-                preamble[index - 1] = preamble[index - 1].lstrip('#')
-                logger.verbose("Removing redefined Release line '%s'", line.strip())
-                preamble.pop(index)
-                break
-
-    @saves
-    def set_extra_version(self, extra_version):
-        """
-        Method to update the extra version in the SPEC file. Redefines main source if needed and also changes
-        Release accordingly.
-
-        :param extra_version: the extra version string, if any (e.g. 'b1', 'rc2', ...)
-        :return: None
-        """
-        extra_version_def = '%global REBASE_EXTRA_VER'
-        extra_version_macro = '%{?REBASE_EXTRA_VER}'
-        extra_version_re = re.compile('^{0}.*$'.format(extra_version_def))
-        extra_version_line_index = None
-        rebase_extra_version_def = '%global REBASE_VER %{version}' + \
-                                   self.extra_version_separator + \
-                                   '%{REBASE_EXTRA_VER}'
-        new_extra_version_line = '%global REBASE_EXTRA_VER {0}'.format(extra_version)
-
-        logger.verbose("Updating extra version in SPEC to '%s'", extra_version)
-
-        preamble = self.spec_content.section('%package')
-
-        #  try to find existing extra version definition
-        for index, line in enumerate(preamble):
-            match = extra_version_re.search(line)
-            if match:
-                extra_version_line_index = index
-                break
-
+        logger.verbose('Setting extra version in SPEC to %s', extra_version)
+        relnum = self.parse_release()[1]
+        relnum = 1 if version_changed else relnum + 1
+        release = str(relnum)
         if extra_version:
-            #  just update the existing extra version
-            if extra_version_line_index is not None:
-                preamble[extra_version_line_index] = new_extra_version_line
-            # we need to create the extra version definition
-            else:
-                # insert the REBASE_VER and REBASE_EXTRA_VER definitions
-                logger.verbose("Adding new line to spec: %s", rebase_extra_version_def.strip())
-                preamble.insert(0, rebase_extra_version_def)
-                logger.verbose("Adding new line to spec: %s", new_extra_version_line.strip())
-                preamble.insert(0, new_extra_version_line)
-
-                # change Release to 0.1 and append the extra version macro
-                self.set_release_number('0.1')
-                self.redefine_release_with_macro(extra_version_macro)
-
-                preamble = self.spec_content.section('%package')
-
-                # change the main source definition
-                main_source_re = re.compile(r'^Source0?\s*:.*$' if self.main_source_index == 0 else
-                                            r'^Source{0}\s*:.*$'.format(self.main_source_index))
-                for index, line in enumerate(preamble):
-                    if main_source_re.match(line):
-                        # comment out the original main source line
-                        logger.verbose("Commenting out original main source line '%s'", line.strip())
-                        preamble[index] = '#{0}'.format(line)
-                        # construct new main source line. The idea is that we use the expanded archive name to create
-                        # new main source. We used raw original main source before, but it didn't work reliably.
-                        main_source_raw = line
-                        basename_expanded = self.get_archive()
-                        # construct the original version in archive name so that we can replace it
-                        original_version = '{0}{2}{1}'.format(*self.extract_version_from_archive_name(
-                            basename_expanded,
-                            main_source_raw)
-                                                              )
-                        # replace the version with macro
-                        new_basename_with_macro = basename_expanded.replace(original_version, '%{REBASE_VER}')
-                        # replace the name with macro to be cool :)
-                        new_basename_with_macro = new_basename_with_macro.replace(self.header.name, '%{name}')
-                        # replace the archive name in old main source with new one
-                        new_main_source_line = main_source_raw.replace(os.path.basename(main_source_raw),
-                                                                       new_basename_with_macro)
-                        logger.verbose("Inserting new main source line '%s'", new_main_source_line)
-                        preamble.insert(index + 1, new_main_source_line)
-                        break
-        else:
-            # set the Release to 1 and revert the redefined Release with macro if needed
-            self.set_release_number('1')
-            self.revert_redefine_release_with_macro(extra_version_macro)
-            # TODO: handle empty extra_version as removal of the definitions!
-
-    def set_version_using_archive(self, archive_path):
-        """
-        Method to update the version in the SPEC file using a archive path. The version
-        is extracted from the archive name.
-
-        :param archive_path:
-        :return:
-        """
-        version, extra_version, separator = SpecFile.extract_version_from_archive_name(archive_path,
-                                                                                       self._get_raw_source_string(
-                                                                                           0))
-
-        if not version:
-            # can't continue without version
-            raise RebaseHelperError('Failed to extract version from archive name')
-
-        self.set_version(version)
-        self.extra_version_separator = separator
-        self.set_extra_version(extra_version)
+            release += '.' + extra_version
+            if re.match(r'^(a(lpha)?|b(eta)?|cr|rc)\d*$', extra_version, re.IGNORECASE):
+                release = '0.' + release
+        self.set_release(release)
+        # TODO: in some cases it might be necessary to modify Source0
 
     @saves
     def set_tag(self, tag, value, preserve_macros=False):
@@ -1026,15 +912,7 @@ class SpecFile:
             self.spec_content.section('%package')[index] = new_line
             break
 
-    def set_version(self, version):
-        """
-        Method to update the version in the SPEC file
 
-        :param version: string with new version
-        :return: None
-        """
-        logger.verbose("Updating version in SPEC from '%s' with '%s'", self.header.version, version)
-        self.set_tag('Version', version, preserve_macros=True)
 
     @staticmethod
     def split_version_string(version_string=''):
@@ -1272,7 +1150,7 @@ class SpecFile:
         today = date.today()
         evr = '{epoch}:{ver}-{rel}'.format(epoch=self.header.epochnum,
                                            ver=self.header.version,
-                                           rel=self.get_release_number())
+                                           rel=self.get_release())
         evr = evr[2:] if evr.startswith('0:') else evr
         new_record.append('* {day} {name} <{email}> - {evr}'.format(day=today.strftime('%a %b %d %Y'),
                                                                     name=GitHelper.get_user(),
