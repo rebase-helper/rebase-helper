@@ -665,9 +665,8 @@ class Application:
 
             results_store.set_result_message('fail', exception.msg)
         else:
-            result = "Rebase from {}-{} to {}-{} completed without an error".format(
-                self.spec_file.header.name, self.spec_file.header.version,
-                self.rebase_spec_file.header.name, self.rebase_spec_file.header.version)
+            result = "Rebase from {} to {} completed without an error".format(self.spec_file.get_NVR(),
+                                                                              self.rebase_spec_file.get_NVR())
             results_store.set_result_message('success', result)
 
         if self.rebase_spec_file:
