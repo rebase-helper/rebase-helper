@@ -912,84 +912,75 @@ class SpecFile:
             self.spec_content.section('%package')[index] = new_line
             break
 
+    @staticmethod
+    def extract_version_from_archive_name(archive_path: str, main_source: str) -> str:
+        """Extracts version string from source archive name.
 
+        Args:
+            archive_path: Path to the main sources archive.
+            main_source: Value of Source0 tag.
+
+        Returns:
+            Extracted version string.
+
+        Raises:
+            RebaseHelperError in case version can't be determined.
+
+        """
+        fallback_regex = r'\w*[-_]?v?([.\d]+.*)({0})'.format(
+            '|'.join([re.escape(a) for a in Archive.get_supported_archives()]))
+        source = os.path.basename(main_source)
+        regex = re.sub(r'%({)?version(?(1)})(.*%(\w+|{.+}))?', 'PLACEHOLDER', source, flags=re.IGNORECASE)
+        regex = MacroHelper.expand(regex, regex)
+        regex = re.escape(regex).replace('PLACEHOLDER', r'(.+)')
+        if regex == re.escape(MacroHelper.expand(source, source)):
+            # no substitution was made, use the fallback regex
+            regex = fallback_regex
+        logger.debug('Extracting version from archive name using %s', regex)
+        archive_name = os.path.basename(archive_path)
+        m = re.match(regex, archive_name)
+        if m:
+            logger.debug('Extracted version %s', m.group(1))
+            return m.group(1)
+        if regex != fallback_regex:
+            m = re.match(fallback_regex, archive_name)
+            if m:
+                logger.debug('Extracted version %s', m.group(1))
+                return m.group(1)
+        raise RebaseHelperError('Unable to extract version from archive name')
 
     @staticmethod
-    def split_version_string(version_string=''):
+    def split_version_string(version_string: str, current_version: str) -> Tuple[str, Optional[str]]:
+        """Splits version string into version and extra version.
+
+        Args:
+            version_string: Complete version string.
+            current_version: Current version (the value of Version tag).
+
+        Returns:
+            Tuple of version and extra_version.
+
+        Raises:
+            RebaseHelperError in case passed version string is not valid.
+
         """
-        Method splits version string into version and possibly extra string as 'rc1' or 'b1', ...
-
-        :param version_string: version string such as '1.1.1' or '1.2.3b1', ...
-        :return: tuple of strings with (extracted version, extra version, separator) or (None, None, None)
-                 if extraction failed
-        """
-        version_split_regex_str = r'([0-9]+[.0-9]*)([_-]?)(\w*)'
-        version_split_regex = re.compile(version_split_regex_str)
-        logger.debug("Splitting string '%s'", version_string)
-        match = version_split_regex.search(version_string)
-        if match:
-            version = match.group(1)
-            separator = match.group(2)
-            extra_version = match.group(3)
-            logger.debug("Divided version '%s' and extra string '%s' separated by '%s'",
-                         version,
-                         extra_version,
-                         separator)
-            return version, extra_version, separator
-        else:
-            return None, None, None
-
-    @staticmethod
-    def extract_version_from_archive_name(archive_path, source_string=''):
-        """
-        Method extracts the version from archive name based on the source string from SPEC file.
-        It extracts also an extra version such as 'b1', 'rc1', ...
-
-        :param archive_path: archive name or path with archive name from which to extract the version
-        :param source_string: Source string from SPEC file used to construct version extraction regex
-        :return: tuple of strings with (extracted version, extra version) or (None, None) if extraction failed
-        """
-        # https://regexper.com/#(%5B.0-9%5D%2B%5B-_%5D%3F%5Cw*)
-        version_regex_str = r'([.0-9]+[-_]?\w*)'
-        fallback_regex_str = r'^\w+[-_]?v?{0}({1})'.format(version_regex_str,
-                                                           '|'.join(Archive.get_supported_archives()))
-        # match = re.search(regex, tarball_name)
-        name = os.path.basename(archive_path)
-        url_base = os.path.basename(source_string).strip()
-
-        logger.debug("Extracting version from '%s' using '%s'", name, url_base)
-        # expect that the version macro can be followed by another macros
-        regex_str = re.sub(r'%{version}(%{.+})?', 'PLACEHOLDER', url_base, flags=re.IGNORECASE)
-        regex_str = MacroHelper.expand(regex_str, regex_str)
-        regex_str = re.escape(regex_str).replace('PLACEHOLDER', version_regex_str)
-
-        # if no substitution was made, use the fallback regex
-        if regex_str == re.escape(MacroHelper.expand(url_base, url_base)):
-            logger.debug('Using fallback regex to extract version from archive name.')
-            regex_str = fallback_regex_str
-
-        logger.debug("Extracting version using regex '%s'", regex_str)
-        regex = re.compile(regex_str)
-        match = regex.search(name)
-        if match:
-            version = match.group(1)
-            logger.debug("Extracted version '%s'", version)
-            return SpecFile.split_version_string(version)
-        else:
-            logger.debug('Failed to extract version from archive name!')
-            #  TODO: look at this if it could be rewritten in a better way!
-            #  try fallback regex if not used this time
-            if regex_str != fallback_regex_str:
-                logger.debug("Trying to extracting version using fallback regex '%s'", fallback_regex_str)
-                regex = re.compile(fallback_regex_str)
-                match = regex.search(name)
-                if match:
-                    version = match.group(1)
-                    logger.debug("Extracted version '%s'", version)
-                    return SpecFile.split_version_string(version)
-                else:
-                    logger.debug('Failed to extract version from archive name using fallback regex!')
-            return SpecFile.split_version_string('')
+        version_re = re.compile(r'^(\d+[.\d]*\d+|\d+)(\.|-|_|\+)?(\w+)?$')
+        m = version_re.match(version_string)
+        if not m:
+            raise RebaseHelperError('Invalid version string: {}'.format(version_string))
+        version, separator, extra = m.groups()
+        m = version_re.match(current_version)
+        if not m:
+            raise RebaseHelperError('Invalid version string: {}'.format(current_version))
+        if m.group(3):
+            # if current version contains non-numeric characters, the new version should too
+            if separator:
+                version += separator
+            if extra:
+                version += extra
+            extra = None  # type: ignore  # the type is actually Optional[str], but is defined as str in typeshed
+        logger.debug('Split version string %s into %s and %s', version_string, version, extra)
+        return version, extra
 
     #################################
     # SPEC SECTIONS RELATED METHODS #
