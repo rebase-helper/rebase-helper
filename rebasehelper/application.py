@@ -173,8 +173,12 @@ class Application:
         self.rebase_spec_file.set_version(version)
         self.rebase_spec_file.set_extra_version(extra_version, version != self.spec_file.header.version)
 
-        if not self.conf.skip_version_check and parse_version(self.rebase_spec_file.header.version) \
-                <= parse_version(self.spec_file.header.version):
+        oldver = parse_version(self.spec_file.header.version)
+        newver = parse_version(self.rebase_spec_file.header.version)
+        oldex = self.spec_file.parse_release()[2]
+        newex = extra_version
+
+        if not self.conf.skip_version_check and (newver < oldver or (newver == oldver and newex == oldex)):
             raise RebaseHelperError("Current version is equal to or newer than the requested version, nothing to do.")
 
         self.rebase_spec_file.update_changelog(self.conf.changelog_entry)
