@@ -385,6 +385,9 @@ class SpecFile:
             if match:
                 return match.group(1)
 
+    def get_main_source(self):
+        return self._get_raw_source_string(self.main_source_index)
+
     ###########################
     # PATCHES RELATED METHODS #
     ###########################
