@@ -260,8 +260,6 @@ class SpecFile:
         self.prep_section: str = ''
         self.patches: Dict[str, List[PatchObject]] = {}
         self.sources: List[str] = []
-        self.extra_version: str = ''
-        self.extra_version_separator: str = ''
         self.category: Optional[PackageCategory] = None
         self.spc: rpm.spec = RpmHelper.get_rpm_spec(self.path, self.sources_location)
         self.header: RpmHeader = RpmHeader(self.spc.sourceHeader)
@@ -324,13 +322,6 @@ class SpecFile:
         self.sources = self._get_spec_sources_list(self.spc)
         self.prep_section = self.spc.prep
         self.main_source_index = self._identify_main_source(self.spc)
-        # determine the extra_version
-        logger.debug("Updating the extra version")
-        _, self.extra_version, separator = SpecFile.extract_version_from_archive_name(
-            self.get_archive(),
-            self._get_raw_source_string(self.main_source_index))
-        self.extra_version_separator = separator
-
         self.patches = self._get_initial_patches()
         self.macros = MacroHelper.dump()
 
