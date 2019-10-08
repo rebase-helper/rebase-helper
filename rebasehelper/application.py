@@ -164,13 +164,14 @@ class Application:
         # check if argument passed as new source is a file or just a version
         if [True for ext in Archive.get_supported_archives() if self.conf.sources.endswith(ext)]:
             logger.verbose("argument passed as a new source is a file")
-            self.rebase_spec_file.set_version_using_archive(self.conf.sources)
+            version_string = self.spec_file.extract_version_from_archive_name(self.conf.sources,
+                                                                              self.spec_file.get_main_source())
         else:
             logger.verbose("argument passed as a new source is a version")
-            version, extra_version, separator = SpecFile.split_version_string(self.conf.sources)
-            self.rebase_spec_file.set_version(version)
-            self.rebase_spec_file.extra_version_separator = separator
-            self.rebase_spec_file.set_extra_version(extra_version)
+            version_string = self.conf.sources
+        version, extra_version = SpecFile.split_version_string(version_string, self.spec_file.header.version)
+        self.rebase_spec_file.set_version(version)
+        self.rebase_spec_file.set_extra_version(extra_version, version != self.spec_file.header.version)
 
         if not self.conf.skip_version_check and parse_version(self.rebase_spec_file.header.version) \
                 <= parse_version(self.spec_file.header.version):
