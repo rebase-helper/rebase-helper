@@ -23,7 +23,6 @@
 #          František Nečas <fifinecas@seznam.cz>
 
 import os
-import re
 
 import pytest  # type: ignore
 
@@ -107,25 +106,18 @@ class TestSpecFile:
         PATCH_4,
     ]
 
-    def test_get_release_number(self, spec_object):
-        assert spec_object.get_release_number() == '34'
+    def test_get_release(self, spec_object):
+        assert spec_object.get_release() == '34'
 
-    def test_set_release_number(self, spec_object):
-        spec_object.set_release_number(0.1)
-        assert spec_object.get_release_number() == '0.1'
-        spec_object.set_release_number(22)
-        assert spec_object.get_release_number() == '22'
+    def test_set_release(self, spec_object):
+        spec_object.set_release(0.1)
+        assert spec_object.get_release() == '0.1'
+        spec_object.set_release(22)
+        assert spec_object.get_release() == '22'
 
     def test_set_version(self, spec_object):
         NEW_VERSION = '1.2.3.4.5'
         spec_object.set_version(NEW_VERSION)
-        spec_object.save()
-        assert spec_object.header.version == NEW_VERSION
-
-    def test_set_version_using_archive(self, spec_object):
-        NEW_VERSION = '1.2.3.4.5'
-        ARCHIVE_NAME = 'test-{0}.tar.xz'.format(NEW_VERSION)
-        spec_object.set_version_using_archive(ARCHIVE_NAME)
         spec_object.save()
         assert spec_object.header.version == NEW_VERSION
 
@@ -171,46 +163,40 @@ class TestSpecFile:
         assert len(expected.intersection(req)) == len(expected)
 
     def test_split_version_string(self):
-        assert SpecFile.split_version_string() == (None, None, None)
-        assert SpecFile.split_version_string('1.0.1') == ('1.0.1', '', '')
-        assert SpecFile.split_version_string('1.0.1b1') == ('1.0.1', 'b1', '')
-        assert SpecFile.split_version_string('1.0.1rc1') == ('1.0.1', 'rc1', '')
-        assert SpecFile.split_version_string('1.1.3-rc6') == ('1.1.3', 'rc6', '-')
-        assert SpecFile.split_version_string('1.1.3_rc6') == ('1.1.3', 'rc6', '_')
-        assert SpecFile.split_version_string('.1.1.1') == ('1.1.1', '', '')
+        assert SpecFile.split_version_string('1.0.1', '1.0.1') == ('1.0.1', None)
+        assert SpecFile.split_version_string('1.0.1b1', '1.0.1') == ('1.0.1', 'b1')
+        assert SpecFile.split_version_string('1.0.1rc1', '1.0.1') == ('1.0.1', 'rc1')
+        assert SpecFile.split_version_string('1.1.3-rc6', '1.1.3') == ('1.1.3', 'rc6')
+        assert SpecFile.split_version_string('1.1.3_rc6', '1.1.3') == ('1.1.3', 'rc6')
+        assert SpecFile.split_version_string('1.1.1d', '1.1.1c') == ('1.1.1d', None)
 
     def test_extract_version_from_archive_name(self):
         # Basic tests
-        assert SpecFile.extract_version_from_archive_name('test-1.0.1.tar.gz') == ('1.0.1', '', '')
-        assert SpecFile.extract_version_from_archive_name('/home/user/test-1.0.1.tar.gz') == ('1.0.1', '', '')
+        assert SpecFile.extract_version_from_archive_name('test-1.0.1.tar.gz', '') == '1.0.1'
+        assert SpecFile.extract_version_from_archive_name('/home/user/test-1.0.1.tar.gz', '') == '1.0.1'
         assert SpecFile.extract_version_from_archive_name('test-1.0.1.tar.gz',
-                                                          'ftp://ftp.test.org/test-%{version}.tar.gz') == ('1.0.1',
-                                                                                                           '',
-                                                                                                           '')
+                                                          'ftp://ftp.test.org/test-%{version}.tar.gz') == '1.0.1'
         assert SpecFile.extract_version_from_archive_name('/home/user/test-1.0.1.tar.gz',
-                                                          'ftp://ftp.test.org/test-%{version}.tar.gz') == ('1.0.1',
-                                                                                                           '',
-                                                                                                           '')
+                                                          'ftp://ftp.test.org/test-%{version}.tar.gz') == '1.0.1'
         # Real world tests
         name = 'http://www.cups.org/software/%{version}/cups-%{version}-source.tar.bz2'
         assert SpecFile.extract_version_from_archive_name('cups-1.7.5-source.tar.bz2',
-                                                          name) == ('1.7.5', '', '')
-        # the 'rc1' can't be in the version number
+                                                          name) == '1.7.5'
         name = 'ftp://ftp.isc.org/isc/bind9/%{VERSION}/bind-%{VERSION}.tar.gz'
         assert SpecFile.extract_version_from_archive_name('bind-9.9.5rc2.tar.gz',
-                                                          name) == ('9.9.5', 'rc2', '')
+                                                          name) == '9.9.5rc2'
         name = 'http://www.thekelleys.org.uk/dnsmasq/%{?extrapath}%{name}-%{version}%{?extraversion}.tar.xz'
         assert SpecFile.extract_version_from_archive_name('dnsmasq-2.69rc1.tar.xz',
-                                                          name) == ('2.69', 'rc1', '')
+                                                          name) == '2.69rc1'
         name = 'http://downloads.sourceforge.net/%{name}/%{name}-%{version}%{?prever:-%{prever}}.tar.xz'
         assert SpecFile.extract_version_from_archive_name('log4cplus-1.1.3-rc3.tar.xz',
-                                                          name) == ('1.1.3', 'rc3', '-')
+                                                          name) == '1.1.3-rc3'
         name = 'http://downloads.sourceforge.net/%{name}/%{name}-%{version}%{?prever:_%{prever}}.tar.xz'
         assert SpecFile.extract_version_from_archive_name('log4cplus-1.1.3_rc3.tar.xz',
-                                                          name) == ('1.1.3', 'rc3', '_')
+                                                          name) == '1.1.3_rc3'
         name = 'http://download.gnome.org/sources/libsigc++/%{release_version}/libsigc++-%{version}.tar.xz'
         assert SpecFile.extract_version_from_archive_name('libsigc++-2.10.0.tar.xz',
-                                                          name) == ('2.10.0', '', '')
+                                                          name) == '2.10.0'
 
     def test_get_main_files_section(self, spec_object):
         assert spec_object.get_main_files_section() == '%files'
@@ -219,48 +205,22 @@ class TestSpecFile:
         found = spec_object.is_test_suite_enabled()
         assert found is True
 
-    def test_set_extra_version_some_extra_version(self, spec_object):
-        spec_object.set_extra_version('b1')
-        preamble = spec_object.spec_content.section('%package')
-        assert preamble[0] == '%global REBASE_EXTRA_VER b1'
-        assert preamble[1] == '%global REBASE_VER %{version}%{REBASE_EXTRA_VER}'
-        old_source_index = preamble.index('#Source: ftp://ftp.test.org/%{name}-%{version}.tar.xz')
-        assert preamble[old_source_index + 1] == 'Source: ftp://ftp.test.org/%{name}-%{REBASE_VER}.tar.xz'
-        # the release number was changed
-        assert spec_object.get_release_number() == '0.1'
-        # the release string now contains the extra version
-        match = re.search(r'([0-9.]*[0-9]+)\.b1\w*', spec_object.header.release)
-        assert match is not None
-        assert match.group(1) == spec_object.get_release_number()
-
-    def test_set_extra_version_no_extra_version(self, spec_object):
-        spec_object.set_extra_version('')
-        assert spec_object.spec_content.section('%package')[0] != '%global REBASE_EXTRA_VER b1'
-        assert spec_object.spec_content.section('%package')[1] != '%global REBASE_VER %{version}%{REBASE_EXTRA_VER}'
-        assert spec_object.get_release_number() == '1'
-
-    def test_redefine_release_with_macro(self, spec_object):
-        macro = '%{REBASE_VER}'
-        spec_object.redefine_release_with_macro(macro)
-        preamble = spec_object.spec_content.section('%package')
-        old_release_index = preamble.index('#Release: %{release_str}')
-        assert preamble[old_release_index + 1] == 'Release: 34' + '.' + macro + '%{?dist}'
-
-    def test_revert_redefine_release_with_macro(self, spec_object):
-        macro = '%{REBASE_VER}'
-        spec_object.redefine_release_with_macro(macro)
-        spec_object.revert_redefine_release_with_macro(macro)
-        assert 'Release: %{release_str}' in spec_object.spec_content.section('%package')
-
-    def test_get_extra_version_not_set(self, spec_object):
-        assert spec_object.get_extra_version() == ''
-
-    def test_get_extra_version_set(self, spec_object):
-        spec_object.set_extra_version('rc1')
-        assert spec_object.get_extra_version() == 'rc1'
+    def test_set_extra_version(self, spec_object):
+        spec_object.set_version('1.0.3')
+        spec_object.set_extra_version('beta1', True)
+        assert spec_object.get_release() == '0.1.beta1'
+        spec_object.set_extra_version('beta2', False)
+        assert spec_object.get_release() == '0.2.beta2'
+        spec_object.set_extra_version('rc', False)
+        assert spec_object.get_release() == '0.3.rc'
+        spec_object.set_version('1.0.4')
+        spec_object.set_extra_version(None, True)
+        assert spec_object.get_release() == '1'
+        spec_object.set_extra_version('g1234567', False)
+        assert spec_object.get_release() == '2.g1234567'
 
     def test_update_setup_dirname(self, spec_object):
-        spec_object.set_extra_version('rc1')
+        spec_object.set_extra_version('rc1', False)
 
         prep = spec_object.spec_content.section('%prep')
         spec_object.update_setup_dirname('test-1.0.2')
@@ -269,12 +229,12 @@ class TestSpecFile:
         spec_object.update_setup_dirname('test-1.0.2rc1')
         prep = spec_object.spec_content.section('%prep')
         setup = [l for l in prep if l.startswith('%setup')][0]
-        assert '-n %{name}-%{REBASE_VER}' in setup
+        assert '-n %{name}-%{version}rc1' in setup
 
         spec_object.update_setup_dirname('test-1.0.2-rc1')
         prep = spec_object.spec_content.section('%prep')
         setup = [l for l in prep if l.startswith('%setup')][0]
-        assert '-n %{name}-%{version}-%{REBASE_EXTRA_VER}' in setup
+        assert '-n %{name}-%{version}-rc1' in setup
 
     def test_find_archive_target_in_prep(self, spec_object):
         target = spec_object.find_archive_target_in_prep('documentation.tar.xz')
