@@ -1275,8 +1275,7 @@ class SpecFile:
                         args.extend(['-S', ns.S])
                     args.extend(unknown)
 
-                    prep[index] = '#{0}'.format(line)
-                    prep.insert(index + 1, ' '.join(args))
+                    prep[index] = ' '.join(args)
 
     def find_archive_target_in_prep(self, archive):
         """
