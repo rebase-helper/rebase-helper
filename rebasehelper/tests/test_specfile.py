@@ -329,11 +329,37 @@ class TestSpecFile:
                 'Source8: https://github.com/%{project}/%{project}/archive/%{commit}/%{project}-%{commit}.tar.gz',
             ],
         ),
+        (
+                'Patch1000',
+                '0.8.b5%{?dist}',
+                [
+                    '%global prever b4',
+                    'Patch1000: 0.8.b5%{?dist}',
+                ],
+                [
+                    '%global prever b5',
+                    'Patch1000: 0.8.%{?prever}%{?dist}',
+                ],
+        ),
+        (
+                'Patch1001',
+                '1.22.2',
+                [
+                    '%global branch 1.22',
+                    'Patch1001: 1.22.2',
+                ],
+                [
+                    '%global branch 1.22',
+                    'Patch1001: %{branch}.2',
+                ],
+        ),
     ], ids=[
         'Summary=>"A testing SPEC file..."',
         'Version=>"1.1.8"',
         'Release=>"42%{?dist}"',
         'Source8=>"https://github.com/rebase-helper/rebase-helper/archive/..."',
+        'Patch1000=>"0.8.b5%{?dist}"',
+        'Patch1001=>"1.22.2"',
     ])
     def test_set_tag(self, spec_object, preserve_macros, tag, value, lines, lines_preserve):
         spec_object.set_tag(tag, value, preserve_macros=preserve_macros)

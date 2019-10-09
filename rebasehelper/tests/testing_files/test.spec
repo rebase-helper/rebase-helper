@@ -39,6 +39,11 @@ Patch3: test-testing3.patch
 Patch4: test-testing4.patch
 Patch5: rebase-helper-results/rebased-sources/test-testing5.patch
 
+%global prever b4
+Patch1000: 0.7.%{?prever}%{?dist}
+%global branch 1.22
+Patch1001: %{branch}.1
+
 BuildRequires: openssl-devel, pkgconfig, texinfo, gettext, autoconf
 
 %description
