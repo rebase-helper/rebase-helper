@@ -830,20 +830,31 @@ class SpecFile:
             i = 0
             # split newval to match tokens
             for index, token in enumerate(tokens):
-                sm.set_seq2(token)
-                m = sm.find_longest_match(i, len(newval), 0, len(token))
-                # only full match in case of macro
-                if m.size and token[0] != '%' or m.size == len(token):
+                if token[0] == '%':
+                    # for macros, try both literal and expanded value
+                    for v in [token, MacroHelper.expand(token, token)]:
+                        sm.set_seq2(v)
+                        m = sm.find_longest_match(i, len(newval), 0, len(v))
+                        valid = m.size == len(v)  # only full match is valid
+                        if valid:
+                            break
+                else:
+                    sm.set_seq2(token)
+                    m = sm.find_longest_match(i, len(newval), 0, len(token))
+                    valid = m.size > 0
+                if not valid:
+                    continue
+                if token == sm.b:
                     tokens[index] = token[m.b:m.b+m.size]
-                    if index > 0:
-                        values[index] = newval[m.a:m.a+m.size]
-                        if not values[index - 1]:
-                            values[index - 1] = newval[i:m.a]
-                        else:
-                            values[index - 1] += newval[i:m.a]
+                if index > 0:
+                    values[index] = newval[m.a:m.a+m.size]
+                    if not values[index - 1]:
+                        values[index - 1] = newval[i:m.a]
                     else:
-                        values[index] = newval[i:m.a+m.size]
-                    i = m.a + m.size
+                        values[index - 1] += newval[i:m.a]
+                else:
+                    values[index] = newval[i:m.a+m.size]
+                i = m.a + m.size
             if newval[i:]:
                 if not values[-1]:
                     values[-1] = newval[i:]
