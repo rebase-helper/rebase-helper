@@ -22,12 +22,16 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union, TYPE_CHECKING
 
-from rebasehelper.specfile import PackageCategory
+if TYPE_CHECKING:
+    # avoid cyclic import at runtime
+    from rebasehelper.specfile import PackageCategory
 
 
 Option = Dict[str, Any]
 Options = List[Union[Option, List[Option]]]
 
-PackageCategories = List[Optional[PackageCategory]]
+PackageCategories = List[Optional['PackageCategory']]
+
+Tags = Dict[str, Tuple[int, Tuple[int, int]]]
