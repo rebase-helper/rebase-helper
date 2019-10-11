@@ -988,10 +988,7 @@ class SpecFile:
             raise RebaseHelperError('Invalid version string: {}'.format(current_version))
         if m.group(3):
             # if current version contains non-numeric characters, the new version should too
-            if separator:
-                version += separator
-            if extra:
-                version += extra
+            version += (separator or '') + (extra or '')
             extra = None  # type: ignore  # the type is actually Optional[str], but is defined as str in typeshed
         logger.debug('Split version string %s into %s and %s', version_string, version, extra)
         return version, extra
