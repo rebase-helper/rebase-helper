@@ -39,6 +39,15 @@ Patch3: test-testing3.patch
 Patch4: test-testing4.patch
 Patch5: rebase-helper-results/rebased-sources/test-testing5.patch
 
+%{?use_workaround:Patch100: workaround_base.patch}
+
+%if 0%{?use_workaround:1}
+Patch101: workaround_1.patch
+Patch102: workaround_2.patch
+%else
+Patch101: no_workaround.patch
+%endif
+
 %global prever b4
 Patch1000: 0.7.%{?prever}%{?dist}
 %global branch 1.22
