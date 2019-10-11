@@ -424,23 +424,16 @@ class SpecFile:
         """
         return os.path.basename(self.get_sources()[0])
 
-    def _get_raw_source_string(self, source_num):
-        """
-        Method returns raw string, possibly with RPM macros, of a Source with passed number.
+    def _get_raw_source_string(self, source_num: int) -> Optional[str]:
+        tag = 'Source{0}'.format(source_num)
+        if tag in self.tags:
+            return self.get_raw_tag_value(tag)
+        if source_num == 0:
+            return self.get_raw_tag_value('Source')
+        return None
 
-        :param source_num: number of the source of which to get the raw string
-        :return: string of the source or None if there is no such source
-        """
-        source_re_str = r'^Source0?\s*:\s*(.*?)$' if source_num == 0 else r'^Source{0}\s*:\s*(.*?)$'.format(source_num)
-        source_re = re.compile(source_re_str)
-
-        for line in self.spec_content.section('%package'):
-            match = source_re.search(line)
-            if match:
-                return match.group(1)
-
-    def get_main_source(self):
-        return self._get_raw_source_string(self.main_source_index)
+    def get_main_source(self) -> str:
+        return self._get_raw_source_string(self.main_source_index) or ''
 
     ###########################
     # PATCHES RELATED METHODS #
@@ -564,79 +557,74 @@ class SpecFile:
             i += 1
 
     @saves
-    def update_paths_to_patches(self):
-        # Fix paths in rebase_spec_file to patches to current directory
+    def update_paths_to_patches(self) -> None:
+        """Fixes paths of patches to make them usable in SPEC file location"""
         rebased_sources_path = os.path.join(constants.RESULTS_DIR, constants.REBASED_SOURCES_DIR)
-        for index, line in enumerate(self.spec_content.section('%package')):
-            if line.startswith('Patch'):
-                mod_line = re.sub(rebased_sources_path + os.path.sep, '', line)
-                self.spec_content.section('%package')[index] = mod_line
+        for tag in self.tags:
+            if not tag.startswith('Patch'):
+                continue
+            value = self.get_raw_tag_value(tag)
+            if value:
+                self.set_raw_tag_value(tag, value.replace(rebased_sources_path + os.path.sep, ''))
 
     @saves
-    def write_updated_patches(self, patches, disable_inapplicable):
-        """Function writes the patches to -rebase.spec file"""
+    def write_updated_patches(self, patches: Dict[str, List[str]], disable_inapplicable: bool) -> None:
+        """Updates SPEC file according to rebased patches.
+
+        Args:
+            patches: Dict of lists of modified, deleted or inapplicable patches.
+            disable_inapplicable: Whether to comment out inapplicable patches.
+        """
         def is_comment(line):
-            if re.match(r'^#\s*[A-Za-z][A-Za-z0-9]+:', line):
+            if re.match(r'^#\s*[A-Za-z][A-Za-z0-9]+\s*:', line):
                 # ignore commented-out tag
                 return False
             return line.startswith('#')
         if not patches:
             return None
-        # If some patches are not applied then comment out or remove
         removed_patches = []
         inapplicable_patches = []
         modified_patches = []
-
-        patch_re = re.compile(r'^Patch(?P<num>\d+):(?P<ws>\s*)(?P<name>.+)$')
-
         preamble = self.spec_content.section('%package')
-
-        i = 0
-        while i < len(preamble):
-            line = preamble[i]
-            match = patch_re.match(line)
-            if match:
-                patch_num = match.group('num')
-                patch_name = match.group('name')
-                whitespace = match.group('ws')
-
-                if 'deleted' in patches:
-                    patch_removed = [x for x in patches['deleted'] if patch_name in x]
-                else:
-                    patch_removed = None
-                if 'inapplicable' in patches:
-                    patch_inapplicable = [x for x in patches['inapplicable'] if patch_name in x]
-                else:
-                    patch_inapplicable = None
-
-                if patch_removed:
-                    # remove the line of the patch that was removed
-                    self.removed_patches.append(patch_name)
-                    removed_patches.append(patch_num)
-                    # find associated comments
-                    j = i
-                    while j > 0 and is_comment(preamble[j - 1]):
-                        j -= 1
-                    del preamble[j: i+1]
-                    i = j
-                    continue
-
-                if patch_inapplicable:
-                    if disable_inapplicable:
-                        # comment out line if the patch was not applied
-                        preamble[i] = '#Patch{0}:{1}{2}'.format(patch_num, whitespace, os.path.basename(patch_name))
-                    inapplicable_patches.append(patch_num)
-
-                if 'modified' in patches:
-                    patch = [x for x in patches['modified'] if patch_name in x]
-                else:
-                    patch = None
-                if patch:
-                    name = os.path.join(constants.RESULTS_DIR, constants.REBASED_SOURCES_DIR, patch_name)
-                    preamble[i] = 'Patch{0}:{1}{2}'.format(patch_num, whitespace, name)
-                    modified_patches.append(patch_num)
-            i += 1
-
+        remove_lines = []
+        for tag, (index, _) in self.tags.items():
+            if not tag.startswith('Patch'):
+                continue
+            patch_num = int(tag.split('Patch')[1])
+            patch_name = self.get_raw_tag_value(tag) or ''
+            if 'deleted' in patches:
+                patch_removed = [x for x in patches['deleted'] if patch_name in x]
+            else:
+                patch_removed = []
+            if 'inapplicable' in patches:
+                patch_inapplicable = [x for x in patches['inapplicable'] if patch_name in x]
+            else:
+                patch_inapplicable = []
+            if patch_removed:
+                # remove the line of the patch that was removed
+                self.removed_patches.append(patch_name)
+                removed_patches.append(patch_num)
+                # find associated comments
+                i = index
+                while i > 0 and is_comment(preamble[i - 1]):
+                    i -= 1
+                remove_lines.append((i, index + 1))
+                continue
+            if patch_inapplicable:
+                if disable_inapplicable:
+                    # comment out line if the patch was not applied
+                    preamble[index] = '#' + preamble[index]
+                inapplicable_patches.append(patch_num)
+            if 'modified' in patches:
+                patch = [x for x in patches['modified'] if patch_name in x]
+            else:
+                patch = []
+            if patch:
+                name = os.path.join(constants.RESULTS_DIR, constants.REBASED_SOURCES_DIR, patch_name)
+                self.set_raw_tag_value(tag, name)
+                modified_patches.append(patch_num)
+        for span in sorted(remove_lines, key=lambda s: s[0], reverse=True):
+            del preamble[slice(*span)]
         self._process_patches(inapplicable_patches, removed_patches, disable_inapplicable)
 
     ###################################
@@ -967,18 +955,9 @@ class SpecFile:
                 return curval
             return result
 
-        tag_re = re.compile(r'^(?P<name>\w+)\s*:\s*(?P<value>.+)$')
-        for index, line in enumerate(self.spec_content.section('%package')):
-            match = tag_re.match(line)
-            if not match:
-                continue
-            if match.group('name') != tag:
-                continue
-            if preserve_macros:
-                value = _process_value(match.group('value'), value)
-            new_line = line[:match.start('value')] + value + line[match.end('value'):]
-            self.spec_content.section('%package')[index] = new_line
-            break
+        if preserve_macros:
+            value = _process_value(self.get_raw_tag_value(tag) or '', value)
+        self.set_raw_tag_value(tag, value)
 
     @staticmethod
     def extract_version_from_archive_name(archive_path: str, main_source: str) -> str:
