@@ -256,14 +256,15 @@ class SpecFile:
     def __init__(self, path: str, sources_location: str = ''):
         # Initialize attributes
         self.path: str = path
-        self.removed_patches: List[str] = []
         self.sources_location: str = sources_location
+        self.predefined_macros: Dict[str, str] = {}
         self.prep_section: str = ''
-        self.patches: Dict[str, List[PatchObject]] = {}
         self.sources: List[str] = []
+        self.patches: Dict[str, List[PatchObject]] = {}
+        self.removed_patches: List[str] = []
         self.tags: Tags = {}
         self.category: Optional[PackageCategory] = None
-        self.spc: rpm.spec = RpmHelper.get_rpm_spec(self.path, self.sources_location)
+        self.spc: rpm.spec = RpmHelper.get_rpm_spec(self.path, self.sources_location, self.predefined_macros)
         self.header: RpmHeader = RpmHeader(self.spc.sourceHeader)
         self.spec_content: SpecContent = self._read_spec_content()
 
@@ -300,7 +301,7 @@ class SpecFile:
         # explicitly discard old instance to prevent rpm from destroying
         # "sources" and "patches" lua tables after new instance is created
         self.spc = None
-        self.spc = RpmHelper.get_rpm_spec(self.path, self.sources_location)
+        self.spc = RpmHelper.get_rpm_spec(self.path, self.sources_location, self.predefined_macros)
         self.header = RpmHeader(self.spc.sourceHeader)
         self._update_data()
 

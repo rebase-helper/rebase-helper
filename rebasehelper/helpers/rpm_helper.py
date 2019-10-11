@@ -26,7 +26,7 @@ import logging
 import os
 import re
 import tempfile
-from typing import Any, List, cast
+from typing import Any, Dict, List, cast
 
 import rpm  # type: ignore
 
@@ -188,12 +188,15 @@ class RpmHelper:
                 return result
 
     @classmethod
-    def get_rpm_spec(cls, path: str, sourcedir: str) -> rpm.spec:
+    def get_rpm_spec(cls, path: str, sourcedir: str, predefined_macros: Dict[str, str]) -> rpm.spec:
         # reset all macros and settings
         rpm.reloadConfig()
         # ensure that %{_sourcedir} macro is set to proper location
         MacroHelper.purge_macro('_sourcedir')
         rpm.addMacro('_sourcedir', sourcedir)
+        # add predefined macros
+        for macro, value in predefined_macros.items():
+            rpm.addMacro(macro, value)
         try:
             spec = cls.parse_spec(path, flags=rpm.RPMSPEC_ANYARCH)
         except RebaseHelperError:
