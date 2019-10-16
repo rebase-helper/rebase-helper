@@ -26,11 +26,13 @@ import bz2
 import logging
 import lzma
 import os
+import shutil
 import tarfile
 import zipfile
 from typing import Dict, Type, cast
 
 from rebasehelper.logger import CustomLogger
+from rebasehelper.helpers.path_helper import PathHelper
 
 
 logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
@@ -162,6 +164,33 @@ class ZipArchiveType(ArchiveTypeBase):
     def extract(cls, archive, filename, path):
         archive.extractall(path)
 
+
+@register_archive_type
+class GemArchiveType(ArchiveTypeBase):
+    EXTENSION: str = '.gem'
+
+    class GemArchive:
+        def __init__(self, filename):
+            self.tmp = PathHelper.get_temp_dir()
+            TarArchiveType.extract(TarArchiveType.open(filename), '', self.tmp)
+            self.data = TarGzArchiveType.open(os.path.join(self.tmp, 'data.tar.gz'))
+
+        def extract(self, path):
+            TarGzArchiveType.extract(self.data, '', path)
+
+        def close(self):
+            self.data.close()
+            shutil.rmtree(self.tmp, onerror=lambda func, path, excinfo: shutil.rmtree(path))
+
+    @classmethod
+    def open(cls, filename):
+        return cls.GemArchive(filename)
+
+    @classmethod
+    def extract(cls, archive, filename, path):
+        tld = os.path.join(path, os.path.basename(filename[:-len(cls.EXTENSION)]))
+        os.makedirs(tld)
+        archive.extract(tld)
 
 
 class Archive:
