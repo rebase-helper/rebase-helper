@@ -671,6 +671,10 @@ class SpecFile:
         logger.verbose('Changing release to %s', release)
         self.set_tag('Release', '{}%{{?dist}}'.format(release), preserve_macros=True)
 
+    def set_release_number(self, release: str) -> None:
+        # deprecated, kept for backward compatibility
+        self.set_release(release)
+
     def set_extra_version(self, extra_version: Optional[str], version_changed: bool) -> None:
         """Updates SPEC file with the specified extra version.
 
