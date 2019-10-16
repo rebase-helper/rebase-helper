@@ -46,23 +46,20 @@ def register_archive_type(archive):
 
 
 class ArchiveTypeBase:
-    """ Base class for various archive types """
+    """Base class for various archive types"""
 
     EXTENSION: str = ''
 
     @classmethod
-    def match(cls, filename=None):
+    def match(cls, filename):
         """
         Checks if the filename matches the archive type. If yes, returns
         True, otherwise returns False.
         """
-        if filename is not None and filename.endswith(cls.EXTENSION):
-            return True
-        else:
-            return False
+        return filename.endswith(cls.EXTENSION)
 
     @classmethod
-    def open(cls, filename=None):
+    def open(cls, filename):
         """
         Opens archive with the given filename and returns the proper
         archive type object.
@@ -70,7 +67,7 @@ class ArchiveTypeBase:
         raise NotImplementedError()
 
     @classmethod
-    def extract(cls, archive=None, filename=None, path=None):
+    def extract(cls, archive, filename, path):
         """
         Extracts the archive into the given path
 
@@ -82,134 +79,90 @@ class ArchiveTypeBase:
 
 @register_archive_type
 class TarXzArchiveType(ArchiveTypeBase):
-
-    """ .tar.xz archive type """
-
     EXTENSION: str = '.tar.xz'
 
     @classmethod
-    def open(cls, filename=None):
-        if filename is None:
-            raise TypeError("Expected argument 'filename' (pos 1) is missing")
-        xz_file = lzma.LZMAFile(filename, "r")
-
-        return tarfile.open(mode='r', fileobj=xz_file)
+    def open(cls, filename):
+        return tarfile.open(mode='r', fileobj=lzma.LZMAFile(filename, 'r'))
 
     @classmethod
-    def extract(cls, archive=None, filename=None, path=None):
-        if archive is None:
-            raise TypeError("Expected argument 'archive' (pos 1) is missing")
+    def extract(cls, archive, filename, path):
         archive.extractall(path)
 
 
 @register_archive_type
-class Bz2ArchiveType(ArchiveTypeBase):
-
-    """ .bz2 archive type """
-
-    EXTENSION: str = '.bz2'
+class TarBz2ArchiveType(ArchiveTypeBase):
+    EXTENSION: str = '.tar.bz2'
 
     @classmethod
-    def open(cls, filename=None):
-        if filename is None:
-            raise TypeError("Expected argument 'filename' (pos 1) is missing")
-
-        if filename.endswith('.tar.bz2'):
+    def open(cls, filename):
+        if filename.endswith(TarBz2ArchiveType.EXTENSION):
             return tarfile.TarFile.open(filename)
         else:
             return bz2.BZ2File(filename)
 
     @classmethod
-    def extract(cls, archive=None, filename=None, path=None):
-        if archive is None:
-            raise TypeError("Expected argument 'archive' (pos 1) is missing")
-        if filename.endswith('tar.bz2'):
+    def extract(cls, archive, filename, path):
+        if filename.endswith(TarBz2ArchiveType.EXTENSION):
             archive.extractall(path)
         else:
             data = archive.read()
             if not os.path.exists(path):
                 os.mkdir(path)
-            with open(os.path.join(path, filename[:-4]), 'wb') as f:
+            with open(os.path.join(path, os.path.basename(filename[:-len(cls.EXTENSION)])), 'wb') as f:
                 f.write(data)
 
 
 @register_archive_type
-class TarBz2ArchiveType(Bz2ArchiveType):
-
-    """ .tar.bz2 archive type """
-
-    EXTENSION: str = '.tar.bz2'
+class Bz2ArchiveType(TarBz2ArchiveType):
+    EXTENSION: str = '.bz2'
 
 
 @register_archive_type
 class TarGzArchiveType(TarBz2ArchiveType):
-
-    """ .tar.gz archive type """
-
     EXTENSION: str = '.tar.gz'
 
     @classmethod
-    def open(cls, filename=None):
-        if filename is None:
-            raise TypeError("Expected argument 'filename' (pos 1) is missing")
-
+    def open(cls, filename):
         return tarfile.TarFile.open(filename)
 
     @classmethod
-    def extract(cls, archive=None, filename=None, path=None):
-        if archive is None:
-            raise TypeError("Expected argument 'archive' (pos 1) is missing")
+    def extract(cls, archive, filename, path):
         archive.extractall(path)
 
 
 @register_archive_type
 class TgzArchiveType(TarGzArchiveType):
-    """ .tgz archive type """
-
     EXTENSION: str = '.tgz'
 
 
 @register_archive_type
 class TarArchiveType(TarGzArchiveType):
-    """ .tar archive type """
-
     EXTENSION: str = '.tar'
 
 
 @register_archive_type
 class ZipArchiveType(ArchiveTypeBase):
-    """ .zip archive type """
-
     EXTENSION: str = '.zip'
 
     @classmethod
-    def match(cls, filename=None):
-        if filename is not None and zipfile.is_zipfile(filename):
-            return True
-        else:
-            return False
+    def match(cls, filename):
+        return zipfile.is_zipfile(filename)
 
     @classmethod
-    def open(cls, filename=None):
-        if filename is None:
-            raise TypeError("Expected argument 'filename' (pos 1) is missing")
-
-        return zipfile.ZipFile(filename, "r")
+    def open(cls, filename):
+        return zipfile.ZipFile(filename, 'r')
 
     @classmethod
-    def extract(cls, archive=None, filename=None, path=None):
-        if archive is None:
-            raise TypeError("Expected argument 'archive' (pos 1) is missing")
+    def extract(cls, archive, filename, path):
         archive.extractall(path)
 
 
+
 class Archive:
+    """Class representing an archive with sources"""
 
-    """ Class representing an archive with sources """
-
-    def __init__(self, filename=None):
-        if filename is None:
-            raise TypeError("Expected argument 'filename' (pos 1) is missing")
+    def __init__(self, filename):
         self._filename = filename
         self._archive_type = None
 
@@ -218,33 +171,26 @@ class Archive:
                 self._archive_type = archive_type
 
         if self._archive_type is None:
-            raise NotImplementedError("Unsupported archive type")
+            raise NotImplementedError('Unsupported archive type')
 
-    def extract_archive(self, path=None):
+    def extract_archive(self, path):
         """
         Extracts the archive into the given path
 
         :param path: Path where to extract the archive to.
-        :return:
         """
-        if path is None:
-            TypeError("Expected argument 'path' (pos 1) is missing")
-
-        logger.verbose("Extracting '%s' into '%s'", self._filename, path)
+        logger.verbose('Extracting %s to %s', self._filename, path)
 
         try:
             archive = self._archive_type.open(self._filename)
         except (EOFError, tarfile.ReadError, lzma.LZMAError) as e:
             raise IOError(str(e))
 
-        self._archive_type.extract(archive, self._filename, path)
         try:
+            self._archive_type.extract(archive, self._filename, path)
+        finally:
             archive.close()
-        except AttributeError:
-            # pseudo archive types don't return real file-like object
-            pass
 
     @classmethod
     def get_supported_archives(cls):
-        """Return list of supported archive types"""
         return archive_types.keys()
