@@ -142,6 +142,11 @@ class TarArchiveType(TarGzArchiveType):
 
 
 @register_archive_type
+class CrateArchiveType(TarGzArchiveType):
+    EXTENSION: str = '.crate'
+
+
+@register_archive_type
 class ZipArchiveType(ArchiveTypeBase):
     EXTENSION: str = '.zip'
 
