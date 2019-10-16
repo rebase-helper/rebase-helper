@@ -43,6 +43,22 @@ class ReplaceOldVersion(BaseSpecHook):
         },
     ]
 
+    # taken from lib/rpmte.c in RPM source
+    IGNORED_TAGS = [
+        # dependency tags could be specified with a version equal to the old version
+        # which could break the functionality, ignore them
+        'Conflicts',
+        'Enhances',
+        'Obsoletes',
+        'Provides',
+        'Recommends',
+        'Requires',
+        'Suggests',
+        # ignore Version tag to avoid mistakes when version format changes
+        # e.g. in a rebase from 2.5 to 2.5.1, version would be changed to 2.5.1.1
+        'Version',
+    ]
+
     @classmethod
     def _is_local_source(cls, line: str) -> bool:
         """Checks if a line contains a local source.
@@ -102,9 +118,7 @@ class ReplaceOldVersion(BaseSpecHook):
             if sec_name.startswith('%changelog'):
                 continue
             for index, line in enumerate(section):
-                # special case Version tag to avoid mistakes when version format changes
-                # e.g. in a rebase from 2.5 to 2.5.1, version would be changed to 2.5.1.1
-                if cls._is_local_source(line) or line.startswith('Version'):
+                if cls._is_local_source(line) or any(line.startswith(tag) for tag in cls.IGNORED_TAGS):
                     continue
                 start, end = spec_file.spec_content.get_comment_span(line, sec_name)
                 # try to replace the whole version first

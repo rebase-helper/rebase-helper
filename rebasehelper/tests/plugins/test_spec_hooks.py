@@ -83,6 +83,9 @@ class TestSpecHook:
             expected_result = 'https://test.com/#/1.1/%{name}-hardcoded-version-1.1.0.tar.gz'
         assert test_source[0].split()[1] == expected_result
 
+        # Check if dependency tags are ignored
+        assert new_spec.get_raw_tag_value('Recommends') == 'test > 1.0.2'
+
         # Check if version in changelog hasn't been changed
         changelog = new_spec.spec_content.section('%changelog')
         assert '1.0.2' in changelog[0]

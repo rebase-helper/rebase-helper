@@ -54,6 +54,7 @@ Patch1000: 0.7.%{?prever}%{?dist}
 Patch1001: %{branch}.1
 
 BuildRequires: openssl-devel, pkgconfig, texinfo, gettext, autoconf
+Recommends: test > 1.0.2
 
 %description
 Testing spec file
