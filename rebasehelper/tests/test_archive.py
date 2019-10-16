@@ -38,6 +38,8 @@ class TestArchive:
     TAR_BZ2: str = 'archive.tar.bz2'
     ZIP: str = 'archive.zip'
     BZ2: str = 'file.txt.bz2'
+    CRATE: str = 'archive.crate'
+    GEM: str = 'archive.gem'
     INVALID_TAR_BZ2: str = 'archive-invalid.tar.bz2'
     INVALID_TAR_XZ: str = 'archive-invalid.tar.xz'
 
@@ -50,8 +52,10 @@ class TestArchive:
         TGZ,
         TAR_XZ,
         TAR_BZ2,
-        BZ2,
         ZIP,
+        BZ2,
+        CRATE,
+        GEM,
         INVALID_TAR_BZ2,
         INVALID_TAR_XZ,
     ]
@@ -61,6 +65,9 @@ class TestArchive:
         a = Archive(archive)
         d = os.path.join(workdir, 'dir')
         a.extract_archive(d)
+        if archive == self.GEM:
+            # append top level dir
+            d = os.path.join(d, 'archive')
         return d
 
     @pytest.mark.parametrize('archive', [
@@ -70,6 +77,8 @@ class TestArchive:
         TAR_BZ2,
         BZ2,
         ZIP,
+        CRATE,
+        GEM,
     ], ids=[
         'tar.gz',
         'tgz',
@@ -77,6 +86,8 @@ class TestArchive:
         'tar.bz2',
         'bz2',
         'zip',
+        'crate',
+        'gem',
     ])
     def test_archive(self, extracted_archive):
         extracted_file = os.path.join(extracted_archive, self.ARCHIVED_FILE)
