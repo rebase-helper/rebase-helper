@@ -129,6 +129,12 @@ OPTIONS: Options = [
     },
     # behavior control
     {
+        "name": ["--bugzilla-id"],
+        "metavar": "BUG_ID",
+        "default": None,
+        "help": "do a rebase based on Upstream Release Monitoring bugzilla"
+    },
+    {
         "name": ["--non-interactive"],
         "default": False,
         "switch": True,
