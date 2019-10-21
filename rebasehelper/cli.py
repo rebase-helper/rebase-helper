@@ -35,6 +35,7 @@ from rebasehelper.application import Application
 from rebasehelper.logger import CustomLogger, LoggerHelper
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.helpers.console_helper import ConsoleHelper
+from rebasehelper.helpers.bugzilla_helper import BugzillaHelper
 from rebasehelper.config import Config
 from rebasehelper.argument_parser import CustomArgumentParser, CustomHelpFormatter, CustomAction
 from rebasehelper.plugins.plugin_manager import plugin_manager
@@ -123,6 +124,12 @@ class CliHelper:
             else:
                 main_handler.setLevel(logging.DEBUG)
             ConsoleHelper.use_colors = ConsoleHelper.should_use_colors(config)
+            if config.bugzilla_id:
+                repo_path, config.sources = BugzillaHelper.prepare_rebase_repository(config.bugzilla_id)
+                try:
+                    os.chdir(repo_path)
+                except OSError:
+                    raise RebaseHelperError('Could not change directory to the cloned repository')
             execution_dir, results_dir = Application.setup(config)
             app = Application(config, execution_dir, results_dir)
             app.run()
