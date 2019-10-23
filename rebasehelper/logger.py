@@ -23,6 +23,7 @@
 #          František Nečas <fifinecas@seznam.cz>
 
 import logging
+import logging.handlers
 import os
 from typing import Dict, List, Optional, Tuple
 
@@ -111,8 +112,47 @@ class ColorizingStreamHandler(logging.StreamHandler):
             self.handleError(record)
 
 
+class MemoryHandler(logging.handlers.BufferingHandler):
+    """BufferingHandler with infinite capacity"""
+
+    buffer: List[logging.LogRecord]  # until this is added to typeshed: https://github.com/python/typeshed/pull/3402
+
+    def __init__(self) -> None:
+        super(MemoryHandler, self).__init__(0)
+
+    def shouldFlush(self, record: logging.LogRecord) -> bool:
+        return False
+
+    def replay_into(self, target: logging.Handler) -> None:
+        self.acquire()
+        try:
+            for record in self.buffer:
+                if record.levelno >= target.level:
+                    target.handle(record)
+        finally:
+            self.release()
+
+
 class LoggerHelper:
     """Helper class for setting up a logger."""
+
+    memory_handler: Optional[MemoryHandler] = None
+
+    @classmethod
+    def setup_memory_handler(cls) -> None:
+        if cls.memory_handler:
+            # only one memory handler is allowed
+            return
+        cls.memory_handler = MemoryHandler()
+        logger = logging.getLogger('rebasehelper')
+        logger.addHandler(cls.memory_handler)
+
+    @classmethod
+    def remove_memory_handler(cls) -> None:
+        if cls.memory_handler:
+            logger = logging.getLogger('rebasehelper')
+            logger.removeHandler(cls.memory_handler)
+        cls.memory_handler = None
 
     @staticmethod
     def add_stream_handler(logger: logging.Logger, level: Optional[int] = None,
@@ -189,6 +229,13 @@ class LoggerHelper:
         verbose = cls.add_file_handler(logger, verbose_log, log_formatter, CustomLogger.VERBOSE)
         info_log = os.path.join(logs_dir, constants.INFO_LOG)
         info = cls.add_file_handler(logger, info_log, log_formatter, logging.INFO)
+
+        if cls.memory_handler:
+            # initialize the log files with what has been recorded in memory until now
+            for handler in (debug, verbose, info):
+                if handler:
+                    cls.memory_handler.replay_into(handler)
+            cls.remove_memory_handler()
 
         return [h for h in (debug, verbose, info) if h]
 

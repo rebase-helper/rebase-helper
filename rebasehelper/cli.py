@@ -107,6 +107,7 @@ class CliHelper:
     def run():
         results_dir = None
         try:
+            LoggerHelper.setup_memory_handler()
             main_handler, output_tool_handler = LoggerHelper.create_stream_handlers()
             cli = CLI()
             if hasattr(cli, 'version'):
