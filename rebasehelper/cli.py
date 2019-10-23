@@ -114,6 +114,8 @@ class CliHelper:
                 print(VERSION)
                 sys.exit(0)
 
+            logger.info('rebase-helper version %s', VERSION)
+
             config = Config(getattr(cli, 'config-file', None))
             config.merge(cli)
             for handler in [main_handler, output_tool_handler]:
