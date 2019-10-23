@@ -31,7 +31,6 @@ from typing import Any, Dict, List, Optional, cast
 import git  # type: ignore
 from pkg_resources import parse_version
 
-from rebasehelper import VERSION
 from rebasehelper.archive import Archive
 from rebasehelper.specfile import SpecFile, get_rebase_name
 from rebasehelper.logger import CustomLogger, LoggerHelper
@@ -93,7 +92,6 @@ class Application:
         # Directory contaning only those files, which are relevant for the new rebased version
         self.kwargs['rebased_sources_dir'] = self.rebased_sources_dir
 
-        logger.verbose("Rebase-helper version: %s", VERSION)
         self.spec_file_path = self._find_spec_file()
         self._prepare_spec_objects()
 
