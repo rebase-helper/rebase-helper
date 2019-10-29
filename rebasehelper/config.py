@@ -61,9 +61,12 @@ class Config:
         self.config.update(vars(cli.args))
 
         for option in traverse_options(OPTIONS + plugin_manager.get_options()):
-            args = [n.lstrip('-').replace('-', '_') for n in option['name'] if n.startswith('--')]
-            if args:
-                dest = args[0]
+            if 'dest' in option:
+                dest = option['dest']
+            else:
+                args = [n.lstrip('-').replace('-', '_') for n in option['name'] if n.startswith('--')]
+                if args:
+                    dest = args[0]
 
             if dest and dest not in self.config:
                 self.config[dest] = option.get('default')
