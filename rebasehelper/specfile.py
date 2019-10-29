@@ -253,11 +253,11 @@ class SpecFile:
 
     """Class representing a SPEC file"""
 
-    def __init__(self, path: str, sources_location: str = ''):
+    def __init__(self, path: str, sources_location: str = '', predefined_macros: Optional[Dict[str, str]] = None):
         # Initialize attributes
         self.path: str = path
         self.sources_location: str = sources_location
-        self.predefined_macros: Dict[str, str] = {}
+        self.predefined_macros: Dict[str, str] = predefined_macros or {}
         self.prep_section: str = ''
         self.sources: List[str] = []
         self.patches: Dict[str, List[PatchObject]] = {}
@@ -1126,7 +1126,7 @@ class SpecFile:
 
         """
         shutil.copy(self.path, new_path)
-        new_object = SpecFile(new_path, self.sources_location)
+        new_object = SpecFile(new_path, self.sources_location, self.predefined_macros)
         return new_object
 
     def reload(self):

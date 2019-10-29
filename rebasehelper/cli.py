@@ -25,8 +25,9 @@
 import argparse
 import logging
 import os
+import re
 import sys
-from typing import cast
+from typing import cast, Dict, List
 
 from rebasehelper import VERSION
 from rebasehelper.options import OPTIONS, traverse_options
@@ -103,8 +104,32 @@ class CLI:
 
 class CliHelper:
 
-    @staticmethod
-    def run():
+    @classmethod
+    def convert_macros_to_dict(cls, macros_list: List[str]) -> Dict[str, str]:
+        """Converts macros from CLI to a dictionary.
+
+        Args:
+            macros_list: List of macros in the format 'MACRO EXPRESSION'.
+
+        Returns:
+            The converted macros, MACRO are keys, EXPRESSION are values.
+
+        Raises:
+            RebaseHelperError if the macros don't follow the correct format.
+
+        """
+        macros = {}
+        for macro in macros_list:
+            match = re.match(r"\s*%?(?P<macro>\S+)\s+(?P<expr>\S.*)\s*", macro)
+            if not match:
+                raise RebaseHelperError('Wrong macro format used ({}). Use \'MACRO EXPR\' instead'.format(macro))
+
+            macros[match.group('macro')] = match.group('expr')
+
+        return macros
+
+    @classmethod
+    def run(cls):
         results_dir = None
         try:
             LoggerHelper.setup_memory_handler()
@@ -133,6 +158,8 @@ class CliHelper:
                     os.chdir(repo_path)
                 except OSError:
                     raise RebaseHelperError('Could not change directory to the cloned repository')
+
+            config.config['rpmmacros'] = cls.convert_macros_to_dict(config.rpmmacros)
             execution_dir, results_dir = Application.setup(config)
             app = Application(config, execution_dir, results_dir)
             app.run()
