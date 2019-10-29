@@ -48,6 +48,7 @@ class CustomAction(argparse.Action):
     def __init__(self, option_strings,
                  switch=False,
                  counter=False,
+                 append=False,
                  actual_default=None,
                  dest=None,
                  default=None,
@@ -70,12 +71,16 @@ class CustomAction(argparse.Action):
 
         self.switch = switch
         self.counter = counter
-        self.nargs = 0 if self.switch or self.counter else nargs
+        self.append = append
+        self.nargs = 0 if self.switch or self.counter else 1 if self.append else nargs
         self.actual_default = actual_default
 
     def __call__(self, parser, namespace, values, option_string=None):
         if self.counter:
             value = getattr(namespace, self.dest, 0) + 1
+        elif self.append:
+            value = getattr(namespace, self.dest, [])
+            value.extend(values)
         elif self.switch:
             value = True
         else:

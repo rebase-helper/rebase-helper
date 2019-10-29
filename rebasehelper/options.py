@@ -237,6 +237,14 @@ OPTIONS: Options = [
         "default": os.path.join(CONFIG_PATH, CONFIG_FILENAME),
         "help": "path to a configuration file, defaults to %(default)s",
     },
+    {
+        "name": ["-D", "--define"],
+        "default": [],
+        "append": True,
+        "dest": "rpmmacros",
+        "metavar": "'MACRO EXPR'",
+        "help": "define an rpm macro, can be used multiple times",
+    },
     # sources
     {
         "name": ["sources"],
