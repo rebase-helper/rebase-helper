@@ -350,7 +350,7 @@ class SpecFile:
                 continue
             m = tag_re.match(line)
             if m:
-                if [p for p in parsed if p == expanded]:
+                if [p for p in parsed if p == expanded.rstrip()]:
                     result[m.group('name')] = (index, m.span('value'))
                 continue
             m = tag_re.match(expanded)
@@ -361,7 +361,7 @@ class SpecFile:
                 m = tag_re.match(line)
                 if m:
                     span = cast(Tuple[int, int], tuple(x + start for x in m.span('value')))
-                    if [p for p in parsed if p == expanded]:
+                    if [p for p in parsed if p == expanded.rstrip()]:
                         result[m.group('name')] = (index, span)
         return result
 
