@@ -65,10 +65,18 @@ class Files(BaseBuildLogHook):
         '%verify': None,
     }
 
+    # taken from build/rpmbuild_internal.h in rpm source code
     PROHIBITED_KEYWORDS: List[str] = [
         '%if',
+        '%ifarch',
+        '%ifnarch',
+        '%ifos',
+        '%ifnos',
         '%else',
         '%endif',
+        '%elif',
+        '%elifarch',
+        '%elifos',
     ]
 
     @classmethod
