@@ -355,8 +355,11 @@ class SpecFile:
                 continue
             m = tag_re.match(expanded)
             if m:
+                start = line.find(m.group('prefix'))
+                if start < 0:
+                    # tag is probably defined by a macro, just ignore it
+                    continue
                 # conditionalized tag
-                start = line.index(m.group('prefix'))
                 line = line[start:].rstrip('}')  # FIXME: removing trailing braces is not very robust
                 m = tag_re.match(line)
                 if m:
