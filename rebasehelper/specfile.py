@@ -905,7 +905,7 @@ class SpecFile:
                 else:
                     values[index] = newval[i:m.a+m.size]
                 i = m.a + m.size
-            if newval[i:]:
+            if newval[i:] and values:
                 if not values[-1]:
                     values[-1] = newval[i:]
                 else:
