@@ -484,7 +484,10 @@ class SpecFile:
         parser.add_argument('-p', type=int, default=0)
         result = {}
         for line in self.get_prep_section():
-            tokens = shlex.split(line, comments=True)
+            try:
+                tokens = shlex.split(line, comments=True)
+            except ValueError:
+                continue
             if not tokens:
                 continue
             args = tokens[1:]
