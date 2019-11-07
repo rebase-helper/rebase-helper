@@ -109,9 +109,9 @@ class TestSpecFile:
         assert spec_object.get_release() == '34'
 
     def test_set_release(self, spec_object):
-        spec_object.set_release(0.1)
+        spec_object.set_release('0.1')
         assert spec_object.get_release() == '0.1'
-        spec_object.set_release(22)
+        spec_object.set_release('22')
         assert spec_object.get_release() == '22'
 
     def test_set_version(self, spec_object):
