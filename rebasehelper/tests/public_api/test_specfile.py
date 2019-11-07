@@ -73,3 +73,23 @@ class TestSpecFile:
 
     def test_udpate(self, spec_object):
         assert spec_object.update() is None
+
+
+@pytest.mark.public_api
+class TestSpecContent:
+    def test_section(self, spec_object):
+        assert isinstance(spec_object.spec_content.section('%install'), list)
+        assert spec_object.spec_content.section(name='%nonexistent') is None
+
+    def test_sections(self, spec_object):
+        assert isinstance(spec_object.spec_content.sections, list)
+        for section in spec_object.spec_content.sections:
+            assert isinstance(section, tuple)
+            assert isinstance(section[1], list)
+
+    def test_replace_section(self, spec_object):
+        section = '%install'
+        replacement = ['test', '']
+        assert spec_object.spec_content.replace_section(section, replacement) is True
+        assert spec_object.spec_content.replace_section(name=section, content=replacement) is True
+        assert spec_object.spec_content.replace_section(name='%notasection', content=[]) is False
