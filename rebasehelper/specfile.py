@@ -481,7 +481,7 @@ class SpecFile:
         is read from a file (netcf, libvirt).
         """
         parser = SilentArgumentParser()
-        parser.add_argument('-p', type=int, default=0)
+        parser.add_argument('-p', type=int, default=1)
         result = {}
         for line in self.get_prep_section():
             try:
