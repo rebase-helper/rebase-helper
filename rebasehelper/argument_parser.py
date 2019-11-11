@@ -29,6 +29,8 @@ from rebasehelper.exceptions import RebaseHelperError, ParseError
 
 
 class SilentArgumentParser(argparse.ArgumentParser):
+    def __init__(self):
+        super(SilentArgumentParser, self).__init__(add_help=False)
 
     def error(self, message):
         raise ParseError(message)
