@@ -220,6 +220,9 @@ class LoggerHelper:
         os.makedirs(logs_dir, exist_ok=True)
         logger = logging.getLogger('rebasehelper')
 
+        # first remove any existing file handlers
+        logger.handlers = [h for h in logger.handlers if not isinstance(h, logging.FileHandler)]
+
         log_formatter = logging.Formatter('%(message)s')
         debug_log_formatter = logging.Formatter('%(asctime)s %(filename)s:%(lineno)s %(funcName)s: %(message)s')
 
