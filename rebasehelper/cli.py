@@ -159,6 +159,14 @@ class CliHelper:
                 except OSError:
                     raise RebaseHelperError('Could not change directory to the cloned repository')
 
+            if config.config['rpmmacros']:
+                macros = ' -D ' + ' -D '.join('"{}"'.format(s) for s in config.config['rpmmacros'])
+                for option in ('builder_options', 'srpm_builder_options'):
+                    if config.config[option]:
+                        config.config[option] += macros
+                    else:
+                        config.config[option] = macros
+
             config.config['rpmmacros'] = cls.convert_macros_to_dict(config.rpmmacros)
             execution_dir, results_dir = Application.setup(config)
             app = Application(config, execution_dir, results_dir)
