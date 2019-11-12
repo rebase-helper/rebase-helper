@@ -142,9 +142,14 @@ class Text(BaseOutputTool):
     @classmethod
     def print_summary(cls, path, results):
         """Function is used for printing summary information"""
-        if results.get_summary_info():
-            for key, value in results.get_summary_info().items():
-                logger.info("%s %s\n", key, value)
+        info = results.get_summary_info()
+        if info:
+            for key, value in info.items():
+                level = logging.getLevelName(key)
+                if isinstance(level, int):
+                    logger.log(level, value)
+                else:
+                    logger.info('%s: %s', key, value)
 
         LoggerHelper.add_file_handler(logger_report, path)
 
