@@ -441,11 +441,7 @@ class SpecFile:
 
     def _get_raw_source_string(self, source_num: int) -> Optional[str]:
         tag = 'Source{0}'.format(source_num)
-        if tag in self.tags:
-            return self.get_raw_tag_value(tag)
-        if source_num == 0:
-            return self.get_raw_tag_value('Source')
-        return None
+        return self.get_raw_tag_value(tag)
 
     def get_main_source(self) -> str:
         return self._get_raw_source_string(self.main_source_index) or ''

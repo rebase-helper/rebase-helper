@@ -84,11 +84,7 @@ class RubyHelper(BaseSpecHook):
                 continue
             tag = 'Source{0}'.format(idx)
             if tag not in rebase_spec_file.tags:
-                if idx != 0:
-                    continue
-                tag = 'Source'
-                if tag not in rebase_spec_file.tags:
-                    continue
+                continue
             source = rebase_spec_file.sources[idx]
             logger.info("Found non-existent source '%s'", source)
             comments = None

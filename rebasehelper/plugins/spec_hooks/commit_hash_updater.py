@@ -117,6 +117,4 @@ class CommitHashUpdater(BaseSpecHook):
                 return
             source = source.replace(hashes[0], new_commit)
         tag = 'Source{0}'.format(rebase_spec_file.main_source_index)
-        if tag not in rebase_spec_file.tags:
-            tag = 'Source'
         rebase_spec_file.set_tag(tag, source, preserve_macros=True)
