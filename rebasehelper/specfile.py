@@ -388,20 +388,42 @@ class SpecFile:
                             result[section].append((sanitize(m.group('name')), index, span))
         return result
 
-    def get_raw_tag_value(self, tag: str) -> Optional[str]:
-        if tag not in self.tags:
-            return None
-        index, span = self.tags[tag]
-        return self.spec_content.section('%package')[index][slice(*span)]
+    def _get_matching_section(self, subpackage: Optional[str] = None) -> str:
+        default = '%package'
+        if not subpackage:
+            return default
+        for section in self.section_tags:
+            if subpackage in section:
+                return section
+        return default
 
-    def set_raw_tag_value(self, tag: str, value: str) -> None:
-        if tag not in self.tags:
+    def tags(self, subpackage: Optional[str] = None) -> List[Tag]:
+        return self.section_tags[self._get_matching_section(subpackage)]
+
+    def tag(self, tag_name: str, subpackage: Optional[str] = None) -> Optional[Tag]:
+        tags = [t for t in self.tags(subpackage) if t[0] == tag_name]
+        if tags:
+            return tags[0]  # only care about the first non-unique tag
+        return None
+
+    def get_raw_tag_value(self, tag_name: str, subpackage: Optional[str] = None) -> Optional[str]:
+        tag = self.tag(tag_name, subpackage)
+        if not tag:
+            return None
+        section = self._get_matching_section(subpackage)
+        _, lineno, span = tag
+        return self.spec_content.section(section)[lineno][slice(*span)]
+
+    def set_raw_tag_value(self, tag_name: str, value: str, subpackage: Optional[str] = None) -> None:
+        tags = [(i, t) for i, t in enumerate(self.tags(subpackage)) if t[0] == tag_name]
+        if not tags:
             return
-        index, span = self.tags[tag]
-        line = self.spec_content.section('%package')[index]
-        self.spec_content.section('%package')[index] = line[:span[0]] + value + line[span[1]:]
+        section = self._get_matching_section(subpackage)
+        index, (_, lineno, span) = tags[0]
+        line = self.spec_content.section(section)[lineno]
+        self.spec_content.section(section)[lineno] = line[:span[0]] + value + line[span[1]:]
         # update span
-        self.tags[tag] = (index, (span[0], span[0] + len(value)))
+        self.tags(subpackage)[index] = (tag_name, lineno, (span[0], span[0] + len(value)))
 
     ###########################
     # SOURCES RELATED METHODS #
