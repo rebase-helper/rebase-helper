@@ -609,12 +609,12 @@ class SpecFile:
     def update_paths_to_patches(self) -> None:
         """Fixes paths of patches to make them usable in SPEC file location"""
         rebased_sources_path = os.path.join(constants.RESULTS_DIR, constants.REBASED_SOURCES_DIR)
-        for tag in self.tags:
-            if not tag.startswith('Patch'):
+        for tag_name, *_ in self.tags():
+            if not tag_name.startswith('Patch'):
                 continue
-            value = self.get_raw_tag_value(tag)
+            value = self.get_raw_tag_value(tag_name)
             if value:
-                self.set_raw_tag_value(tag, value.replace(rebased_sources_path + os.path.sep, ''))
+                self.set_raw_tag_value(tag_name, value.replace(rebased_sources_path + os.path.sep, ''))
 
     @saves
     def write_updated_patches(self, patches: Dict[str, List[str]], disable_inapplicable: bool) -> None:
@@ -636,11 +636,11 @@ class SpecFile:
         modified_patches = []
         preamble = self.spec_content.section('%package')
         remove_lines = []
-        for tag, (index, _) in self.tags.items():
-            if not tag.startswith('Patch'):
+        for tag_name, lineno, _ in self.tags():
+            if not tag_name.startswith('Patch'):
                 continue
-            patch_num = int(tag.split('Patch')[1])
-            patch_name = self.get_raw_tag_value(tag) or ''
+            patch_num = int(tag_name.split('Patch')[1])
+            patch_name = self.get_raw_tag_value(tag_name) or ''
             if 'deleted' in patches:
                 patch_removed = [x for x in patches['deleted'] if patch_name in x]
             else:
@@ -654,15 +654,15 @@ class SpecFile:
                 self.removed_patches.append(patch_name)
                 removed_patches.append(patch_num)
                 # find associated comments
-                i = index
+                i = lineno
                 while i > 0 and is_comment(preamble[i - 1]):
                     i -= 1
-                remove_lines.append((i, index + 1))
+                remove_lines.append((i, lineno + 1))
                 continue
             if patch_inapplicable:
                 if disable_inapplicable:
                     # comment out line if the patch was not applied
-                    preamble[index] = '#' + preamble[index]
+                    preamble[lineno] = '#' + preamble[lineno]
                 inapplicable_patches.append(patch_num)
             if 'modified' in patches:
                 patch = [x for x in patches['modified'] if patch_name in x]
@@ -670,7 +670,7 @@ class SpecFile:
                 patch = []
             if patch:
                 name = os.path.join(constants.RESULTS_DIR, constants.REBASED_SOURCES_DIR, patch_name)
-                self.set_raw_tag_value(tag, name)
+                self.set_raw_tag_value(tag_name, name)
                 modified_patches.append(patch_num)
         for span in sorted(remove_lines, key=lambda s: s[0], reverse=True):
             del preamble[slice(*span)]
@@ -743,8 +743,18 @@ class SpecFile:
         # TODO: in some cases it might be necessary to modify Source0
 
     @saves
-    def set_tag(self, tag, value, preserve_macros=False):
-        """Sets value of a tag while trying to preserve macros if requested"""
+    def set_tag(self, tag: str, value: str, preserve_macros: bool = False, subpackage: Optional[str] = None) -> None:
+        """Sets value of a tag while trying to preserve macros if requested.
+
+        Note that this method is not intended to be used with non-unique tags, it will only affect the first instance.
+
+        Args:
+            tag: Tag name.
+            value: Tag value.
+            preserve_macros: Whether to attempt to preserve macros in the current tag value.
+            subpackage: Optional lower-case subpackage name, specify e.g. 'abc' to set tag in '%package abc' section.
+
+        """
         macro_def_re = re.compile(
             r'''
             ^
@@ -1009,8 +1019,8 @@ class SpecFile:
             return result
 
         if preserve_macros:
-            value = _process_value(self.get_raw_tag_value(tag) or '', value)
-        self.set_raw_tag_value(tag, value)
+            value = _process_value(self.get_raw_tag_value(tag, subpackage) or '', value)
+        self.set_raw_tag_value(tag, value, subpackage)
 
     @staticmethod
     def extract_version_from_archive_name(archive_path: str, main_source: str) -> str:
