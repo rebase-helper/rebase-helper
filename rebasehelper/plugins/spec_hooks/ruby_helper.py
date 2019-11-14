@@ -82,14 +82,14 @@ class RubyHelper(BaseSpecHook):
             if spec_file.sources[idx] == rebase_spec_file.sources[idx]:
                 # skip sources that stayed unchanged
                 continue
-            tag = 'Source{0}'.format(idx)
-            if tag not in rebase_spec_file.tags:
+            tag = rebase_spec_file.tag('Source{0}'.format(idx))
+            if not tag:
                 continue
             source = rebase_spec_file.sources[idx]
             logger.info("Found non-existent source '%s'", source)
             comments = None
             preamble = rebase_spec_file.spec_content.section('%package')
-            for i in range(rebase_spec_file.tags[tag][0] - 1, 0, -1):
+            for i in range(tag[1] - 1, 0, -1):
                 if not preamble[i].startswith('#'):
                     comments = preamble[i+1:i]
                     break
