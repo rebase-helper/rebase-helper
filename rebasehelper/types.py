@@ -34,4 +34,4 @@ Options = List[Union[Option, List[Option]]]
 
 PackageCategories = List[Optional['PackageCategory']]
 
-Tags = Dict[str, Tuple[int, Tuple[int, int]]]
+Tag = Tuple[str, int, Tuple[int, int]]

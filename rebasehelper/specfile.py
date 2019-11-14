@@ -39,7 +39,7 @@ from typing import List, Optional, Pattern, Tuple, Dict, cast
 import rpm  # type: ignore
 
 from rebasehelper import constants
-from rebasehelper.types import Tags
+from rebasehelper.types import Tag
 from rebasehelper.archive import Archive
 from rebasehelper.exceptions import RebaseHelperError, DownloadError, ParseError, LookasideCacheError
 from rebasehelper.argument_parser import SilentArgumentParser
@@ -262,7 +262,7 @@ class SpecFile:
         self.sources: List[str] = []
         self.patches: Dict[str, List[PatchObject]] = {}
         self.removed_patches: List[str] = []
-        self.tags: Tags = {}
+        self.section_tags: Dict[str, List[Tag]] = {}
         self.category: Optional[PackageCategory] = None
         self.spc: rpm.spec = RpmHelper.get_rpm_spec(self.path, self.sources_location, self.predefined_macros)
         self.header: RpmHeader = RpmHeader(self.spc.sourceHeader)
@@ -326,10 +326,10 @@ class SpecFile:
         self.prep_section = self.spc.prep
         self.main_source_index = self._identify_main_source(self.spc)
         self.patches = self._get_initial_patches()
-        self.tags = self._find_tags()
+        self.section_tags = self._find_tags()
         self.macros = MacroHelper.dump()
 
-    def _find_tags(self) -> Tags:
+    def _find_tags(self) -> Dict[str, List[Tag]]:
         """Finds all valid tags in the SPEC file.
 
         A tag is considered valid if it is still present after evaluating all conditions.
@@ -339,7 +339,7 @@ class SpecFile:
         is considered valid, disregarding the actual condition.
 
         Returns:
-              A dict where keys are tag names and values are tuples of (line_number, tag_value_span).
+              A dict of all %package sections mapped to lists of tuples of (tag_name, line_number, tag_value_span).
 
               Indexed tag names are sanitized, for example 'Source' is replaced with 'Source0'
               and 'Patch007' with 'Patch7'.
@@ -352,31 +352,40 @@ class SpecFile:
                     return '{0}0'.format(tokens[0])
                 return '{0}{1}'.format(tokens[0], int(tokens[1]))
             return tag.capitalize()
-        result = {}
-        parsed = self.spc.parsed.split('\n')
+        result: Dict[str, List[Tag]] = {}
+        parsed_content = SpecContent(self.spc.parsed)
         tag_re = re.compile(r'^(?P<prefix>(?P<name>\w+)\s*:\s*)(?P<value>.+)$')
-        for index, line in enumerate(self.spec_content.section('%package')):
-            expanded = MacroHelper.expand(line)
-            if not line or not expanded:
+        for section, _ in self.spec_content.sections:
+            section = section.lower()
+            if not section.startswith('%package'):
                 continue
-            m = tag_re.match(line)
-            if m:
-                if [p for p in parsed if p == expanded.rstrip()]:
-                    result[sanitize(m.group('name'))] = (index, m.span('value'))
+            parsed = parsed_content.section(section)
+            if not parsed:
+                # invalid section
                 continue
-            m = tag_re.match(expanded)
-            if m:
-                start = line.find(m.group('prefix'))
-                if start < 0:
-                    # tag is probably defined by a macro, just ignore it
+            result[section] = []
+            for index, line in enumerate(self.spec_content.section(section)):
+                expanded = MacroHelper.expand(line)
+                if not line or not expanded:
                     continue
-                # conditionalized tag
-                line = line[start:].rstrip('}')  # FIXME: removing trailing braces is not very robust
                 m = tag_re.match(line)
                 if m:
-                    span = cast(Tuple[int, int], tuple(x + start for x in m.span('value')))
                     if [p for p in parsed if p == expanded.rstrip()]:
-                        result[sanitize(m.group('name'))] = (index, span)
+                        result[section].append((sanitize(m.group('name')), index, m.span('value')))
+                    continue
+                m = tag_re.match(expanded)
+                if m:
+                    start = line.find(m.group('prefix'))
+                    if start < 0:
+                        # tag is probably defined by a macro, just ignore it
+                        continue
+                    # conditionalized tag
+                    line = line[start:].rstrip('}')  # FIXME: removing trailing braces is not very robust
+                    m = tag_re.match(line)
+                    if m:
+                        span = cast(Tuple[int, int], tuple(x + start for x in m.span('value')))
+                        if [p for p in parsed if p == expanded.rstrip()]:
+                            result[section].append((sanitize(m.group('name')), index, span))
         return result
 
     def get_raw_tag_value(self, tag: str) -> Optional[str]:
