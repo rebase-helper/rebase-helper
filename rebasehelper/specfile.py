@@ -340,7 +340,18 @@ class SpecFile:
 
         Returns:
               A dict where keys are tag names and values are tuples of (line_number, tag_value_span).
+
+              Indexed tag names are sanitized, for example 'Source' is replaced with 'Source0'
+              and 'Patch007' with 'Patch7'.
         """
+        def sanitize(tag):
+            if tag.startswith('Source') or tag.startswith('Patch'):
+                # strip padding zeroes from indexes
+                tokens = re.split(r'(\d+)', tag, 1)
+                if len(tokens) == 1:
+                    return '{0}0'.format(tokens[0])
+                return '{0}{1}'.format(tokens[0], int(tokens[1]))
+            return tag.capitalize()
         result = {}
         parsed = self.spc.parsed.split('\n')
         tag_re = re.compile(r'^(?P<prefix>(?P<name>\w+)\s*:\s*)(?P<value>.+)$')
@@ -351,7 +362,7 @@ class SpecFile:
             m = tag_re.match(line)
             if m:
                 if [p for p in parsed if p == expanded.rstrip()]:
-                    result[m.group('name')] = (index, m.span('value'))
+                    result[sanitize(m.group('name'))] = (index, m.span('value'))
                 continue
             m = tag_re.match(expanded)
             if m:
@@ -365,7 +376,7 @@ class SpecFile:
                 if m:
                     span = cast(Tuple[int, int], tuple(x + start for x in m.span('value')))
                     if [p for p in parsed if p == expanded.rstrip()]:
-                        result[m.group('name')] = (index, span)
+                        result[sanitize(m.group('name'))] = (index, span)
         return result
 
     def get_raw_tag_value(self, tag: str) -> Optional[str]:
