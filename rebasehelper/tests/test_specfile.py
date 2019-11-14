@@ -256,18 +256,18 @@ class TestSpecFile:
 
     def test__find_tags(self, spec_object):
         # sanity check
-        assert spec_object.tags['Name'] == (16, (6, 10))
+        assert spec_object.tag('Name') == ('Name', 16, (6, 10))
         # no workaround
-        assert 'Patch100' not in spec_object.tags
-        assert 'Patch101' in spec_object.tags
-        assert 'Patch102' not in spec_object.tags
+        assert spec_object.tag('Patch100') is None
+        assert spec_object.tag('Patch101') is not None
+        assert spec_object.tag('Patch102') is None
         assert spec_object.get_raw_tag_value('Patch101') == 'no_workaround.patch'
         # workaround
         spec_object.predefined_macros = {'use_workaround': '1'}
         spec_object.update()
-        assert 'Patch100' in spec_object.tags
-        assert 'Patch101' in spec_object.tags
-        assert 'Patch102' in spec_object.tags
+        assert spec_object.tag('Patch100') is not None
+        assert spec_object.tag('Patch101') is not None
+        assert spec_object.tag('Patch102') is not None
         assert spec_object.get_raw_tag_value('Patch100') == 'workaround_base.patch'
         assert spec_object.get_raw_tag_value('Patch101') == 'workaround_1.patch'
         assert spec_object.get_raw_tag_value('Patch102') == 'workaround_2.patch'
