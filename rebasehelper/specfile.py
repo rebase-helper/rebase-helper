@@ -550,12 +550,16 @@ class SpecFile:
         if not prep:
             return
 
+        patch_re = re.compile(r'^%patch(?P<index>\d+).*')
+
         i = 0
         while i < len(prep):
             line = prep[i]
-            if line.startswith('%patch'):
+            match = patch_re.match(line)
+            if match:
+                index = int(match.group('index'))
                 for num in reversed(comment_out):
-                    if line.startswith('%patch{}'.format(num)):
+                    if num == index:
                         if disable_inapplicable_patches:
                             prep[i] = '#%{}'.format(line)
                         prep.insert(i, '# The following patch contains conflicts')
@@ -563,7 +567,7 @@ class SpecFile:
                         i += 1
                         break
                 for num in reversed(remove_patches):
-                    if line.startswith('%patch{}'.format(num)):
+                    if num == index:
                         del prep[i]
                         remove_patches.remove(num)
                         i -= 1
