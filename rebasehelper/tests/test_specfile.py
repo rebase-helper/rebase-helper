@@ -27,6 +27,7 @@ from typing import List
 
 import pytest  # type: ignore
 
+from rebasehelper.tags import Tag
 from rebasehelper.specfile import SpecFile
 from rebasehelper.spec_content import SpecContent
 from rebasehelper.tests.conftest import SPEC_FILE
@@ -211,9 +212,9 @@ class TestSpecFile:
         line = [l for l in spec_object.spec_content.section('%package') if l.startswith('Patch5')][0]
         assert 'rebased-sources' not in line
 
-    def test__find_tags(self, spec_object):
+    def test_tags(self, spec_object):
         # sanity check
-        assert spec_object.tag('Name') == ('Name', 16, (6, 10))
+        assert spec_object.tag('Name') == Tag('%package', 16, 'Name', (6, 10), True)
         # no workaround
         assert spec_object.tag('Patch100') is None
         assert spec_object.tag('Patch101') is not None
