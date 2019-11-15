@@ -41,6 +41,7 @@ import rpm  # type: ignore
 from rebasehelper import constants
 from rebasehelper.types import Tag
 from rebasehelper.archive import Archive
+from rebasehelper.spec_content import SpecContent
 from rebasehelper.exceptions import RebaseHelperError, DownloadError, ParseError, LookasideCacheError
 from rebasehelper.argument_parser import SilentArgumentParser
 from rebasehelper.logger import CustomLogger
@@ -98,146 +99,6 @@ class PackageCategory(enum.Enum):
     haskell: Pattern[str] = re.compile(r'^ghc-')
     R: Pattern[str] = re.compile(r'^R-')
     rust: Pattern[str] = re.compile(r'^rust-')
-
-
-class SpecContent:
-    """Class representing content of a SPEC file."""
-
-    SECTION_HEADERS: List[str] = [
-        '%package',
-        '%prep',
-        '%build',
-        '%install',
-        '%check',
-        '%clean',
-        '%prerun',
-        '%postrun',
-        '%pretrans',
-        '%posttrans',
-        '%pre',
-        '%post',
-        '%files',
-        '%changelog',
-        '%description',
-        '%triggerpostun',
-        '%triggerprein',
-        '%triggerun',
-        '%triggerin',
-        '%trigger',
-        '%verifyscript',
-        '%sepolicy',
-        '%filetriggerin',
-        '%filetrigger',
-        '%filetriggerun',
-        '%filetriggerpostun',
-        '%transfiletriggerin',
-        '%transfiletrigger',
-        '%transfiletriggerun',
-        '%transfiletriggerpostun',
-    ]
-
-    # Comments in these sections can only be on a separate line.
-    DISALLOW_INLINE_COMMENTS: List[str] = [
-        '%package',
-        '%patchlist',
-        '%sourcelist',
-        '%description',
-        '%files',
-        '%changelog',
-    ]
-
-    def __init__(self, content):
-        self.sections = self._split_sections(content)
-
-    def __str__(self):
-        """Join SPEC file sections back together."""
-        content = []
-        for header, section in self.sections:
-            if header != '%package':
-                content.append(header + '\n')
-            for line in section:
-                content.append(line + '\n')
-        return ''.join(content)
-
-    @classmethod
-    def get_comment_span(cls, line: str, section: str) -> Tuple[int, int]:
-        """Gets span of a comment depending on the section.
-
-        Args:
-            line: Line to find the comment in.
-            section: Section the line is in.
-
-        Returns:
-            Span of the comment. If no comment is found, both tuple elements
-            are equal to the length of the line for convenient use in a slice.
-
-        """
-        inline_comment_allowed = not any(section.startswith(s) for s in cls.DISALLOW_INLINE_COMMENTS)
-        comment = re.search(r" #.*" if inline_comment_allowed else r"^\s*#.*", line)
-        return comment.span() if comment else (len(line), len(line))
-
-    def section(self, name):
-        """Gets content of a section.
-
-        In case there are multiple sections with the same name, the first one is returned.
-
-        Args:
-            name (str): Section name.
-
-        Returns:
-            list: Section content as a list of lines.
-
-        """
-        for header, section in self.sections:
-            if header.lower() == name.lower():
-                return section
-        return None
-
-    def replace_section(self, name, content):
-        """Replaces content of a section.
-
-        In case there are multiple sections with the same name, the first one is replaced.
-
-        Args:
-            name (str): Section name.
-            content (list): Section content as a list of lines.
-
-        Returns:
-            bool: False if section was not found else True.
-
-        """
-        for i, (header, _) in enumerate(self.sections):
-            if header.lower() == name.lower():
-                self.sections[i] = (header, content)
-                return True
-        return False
-
-    @classmethod
-    def _split_sections(cls, content):
-        """Splits content of a SPEC file into sections.
-
-        Args:
-            content (str): Content of the SPEC file
-
-        """
-        lines = content.splitlines()
-        section_headers_re = [re.compile(r'^{0}\b.*'.format(re.escape(x)), re.IGNORECASE) for x in cls.SECTION_HEADERS]
-
-        section_beginnings = []
-        for i, line in enumerate(lines):
-            if line.startswith('%'):
-                for header in section_headers_re:
-                    if header.match(line):
-                        section_beginnings.append(i)
-        section_beginnings.append(None)
-
-        sections = [('%package', lines[:section_beginnings[0]])]
-
-        for i in range(len(section_beginnings) - 1):
-            start = section_beginnings[i] + 1
-            end = section_beginnings[i + 1]
-            sections.append((lines[start - 1], lines[start:end]))
-        return sections
 
 
 def saves(func):
@@ -303,6 +164,7 @@ class SpecFile:
         self.spc = None
         self.spc = RpmHelper.get_rpm_spec(self.path, self.sources_location, self.predefined_macros)
         self.header = RpmHeader(self.spc.sourceHeader)
+        self.spec_content = self._read_spec_content()
         self._update_data()
 
     def _update_data(self):
