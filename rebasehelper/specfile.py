@@ -39,9 +39,9 @@ from typing import List, Optional, Pattern, Tuple, Dict, cast
 import rpm  # type: ignore
 
 from rebasehelper import constants
-from rebasehelper.types import Tag
 from rebasehelper.archive import Archive
 from rebasehelper.spec_content import SpecContent
+from rebasehelper.tags import Tag, Tags
 from rebasehelper.exceptions import RebaseHelperError, DownloadError, ParseError, LookasideCacheError
 from rebasehelper.argument_parser import SilentArgumentParser
 from rebasehelper.logger import CustomLogger
@@ -123,11 +123,11 @@ class SpecFile:
         self.sources: List[str] = []
         self.patches: Dict[str, List[PatchObject]] = {}
         self.removed_patches: List[str] = []
-        self.section_tags: Dict[str, List[Tag]] = {}
         self.category: Optional[PackageCategory] = None
         self.spc: rpm.spec = RpmHelper.get_rpm_spec(self.path, self.sources_location, self.predefined_macros)
         self.header: RpmHeader = RpmHeader(self.spc.sourceHeader)
         self.spec_content: SpecContent = self._read_spec_content()
+        self.tags: Tags = Tags(self.spec_content, SpecContent(self.spc.parsed))
 
         # Load rpm information
         self._update_data()
@@ -165,6 +165,7 @@ class SpecFile:
         self.spc = RpmHelper.get_rpm_spec(self.path, self.sources_location, self.predefined_macros)
         self.header = RpmHeader(self.spc.sourceHeader)
         self.spec_content = self._read_spec_content()
+        self.tags = Tags(self.spec_content, SpecContent(self.spc.parsed))
         self._update_data()
 
     def _update_data(self):
@@ -188,104 +189,31 @@ class SpecFile:
         self.prep_section = self.spc.prep
         self.main_source_index = self._identify_main_source(self.spc)
         self.patches = self._get_initial_patches()
-        self.section_tags = self._find_tags()
         self.macros = MacroHelper.dump()
 
-    def _find_tags(self) -> Dict[str, List[Tag]]:
-        """Finds all valid tags in the SPEC file.
+    ######################
+    # TAG HELPER METHODS #
+    ######################
 
-        A tag is considered valid if it is still present after evaluating all conditions.
+    def tag(self, name: str, section: str = '%package') -> Optional[Tag]:
+        """Returns the first non-unique tag."""
+        tags = self.tags.filter(section=section, name=name)
+        return next(tags, None)
 
-        Note that this is not perfect - if the same tag appears in both %if and %else blocks,
-        and has the same value in both, it's impossible to tell them apart, so only the latter
-        is considered valid, disregarding the actual condition.
-
-        Returns:
-              A dict of all %package sections mapped to lists of tuples of (tag_name, line_number, tag_value_span).
-
-              Indexed tag names are sanitized, for example 'Source' is replaced with 'Source0'
-              and 'Patch007' with 'Patch7'.
-        """
-        def sanitize(tag):
-            if tag.startswith('Source') or tag.startswith('Patch'):
-                # strip padding zeroes from indexes
-                tokens = re.split(r'(\d+)', tag, 1)
-                if len(tokens) == 1:
-                    return '{0}0'.format(tokens[0])
-                return '{0}{1}'.format(tokens[0], int(tokens[1]))
-            return tag.capitalize()
-        result: Dict[str, List[Tag]] = {}
-        parsed_content = SpecContent(self.spc.parsed)
-        tag_re = re.compile(r'^(?P<prefix>(?P<name>\w+)\s*:\s*)(?P<value>.+)$')
-        for section, _ in self.spec_content.sections:
-            section = section.lower()
-            if not section.startswith('%package'):
-                continue
-            parsed = parsed_content.section(section)
-            if not parsed:
-                # invalid section
-                continue
-            result[section] = []
-            for index, line in enumerate(self.spec_content.section(section)):
-                expanded = MacroHelper.expand(line)
-                if not line or not expanded:
-                    continue
-                m = tag_re.match(line)
-                if m:
-                    if [p for p in parsed if p == expanded.rstrip()]:
-                        result[section].append((sanitize(m.group('name')), index, m.span('value')))
-                    continue
-                m = tag_re.match(expanded)
-                if m:
-                    start = line.find(m.group('prefix'))
-                    if start < 0:
-                        # tag is probably defined by a macro, just ignore it
-                        continue
-                    # conditionalized tag
-                    line = line[start:].rstrip('}')  # FIXME: removing trailing braces is not very robust
-                    m = tag_re.match(line)
-                    if m:
-                        span = cast(Tuple[int, int], tuple(x + start for x in m.span('value')))
-                        if [p for p in parsed if p == expanded.rstrip()]:
-                            result[section].append((sanitize(m.group('name')), index, span))
-        return result
-
-    def _get_matching_section(self, subpackage: Optional[str] = None) -> str:
-        default = '%package'
-        if not subpackage:
-            return default
-        for section in self.section_tags:
-            if subpackage in section:
-                return section
-        return default
-
-    def tags(self, subpackage: Optional[str] = None) -> List[Tag]:
-        return self.section_tags[self._get_matching_section(subpackage)]
-
-    def tag(self, tag_name: str, subpackage: Optional[str] = None) -> Optional[Tag]:
-        tags = [t for t in self.tags(subpackage) if t[0] == tag_name]
-        if tags:
-            return tags[0]  # only care about the first non-unique tag
-        return None
-
-    def get_raw_tag_value(self, tag_name: str, subpackage: Optional[str] = None) -> Optional[str]:
-        tag = self.tag(tag_name, subpackage)
+    def get_raw_tag_value(self, tag_name: str, section: str = '%package') -> Optional[str]:
+        tag = self.tag(tag_name, section)
         if not tag:
             return None
-        section = self._get_matching_section(subpackage)
-        _, lineno, span = tag
-        return self.spec_content.section(section)[lineno][slice(*span)]
+        return self.spec_content.section(section)[tag.line][slice(*tag.value_span)]
 
-    def set_raw_tag_value(self, tag_name: str, value: str, subpackage: Optional[str] = None) -> None:
-        tags = [(i, t) for i, t in enumerate(self.tags(subpackage)) if t[0] == tag_name]
-        if not tags:
+    def set_raw_tag_value(self, tag_name: str, value: str, section: str = '%package') -> None:
+        tag = self.tag(tag_name, section)
+        if not tag:
             return
-        section = self._get_matching_section(subpackage)
-        index, (_, lineno, span) = tags[0]
-        line = self.spec_content.section(section)[lineno]
-        self.spec_content.section(section)[lineno] = line[:span[0]] + value + line[span[1]:]
+        line = self.spec_content.section(section)[tag.line]
+        self.spec_content.section(section)[tag.line] = line[:tag.value_span[0]] + value + line[tag.value_span[1]:]
         # update span
-        self.tags(subpackage)[index] = (tag_name, lineno, (span[0], span[0] + len(value)))
+        tag.value_span = (tag.value_span[0], tag.value_span[0] + len(value))
 
     ###########################
     # SOURCES RELATED METHODS #
@@ -471,12 +399,10 @@ class SpecFile:
     def update_paths_to_patches(self) -> None:
         """Fixes paths of patches to make them usable in SPEC file location"""
         rebased_sources_path = os.path.join(constants.RESULTS_DIR, constants.REBASED_SOURCES_DIR)
-        for tag_name, *_ in self.tags():
-            if not tag_name.startswith('Patch'):
-                continue
-            value = self.get_raw_tag_value(tag_name)
+        for tag in self.tags.filter(name='Patch*'):
+            value = self.get_raw_tag_value(tag.name)
             if value:
-                self.set_raw_tag_value(tag_name, value.replace(rebased_sources_path + os.path.sep, ''))
+                self.set_raw_tag_value(tag.name, value.replace(rebased_sources_path + os.path.sep, ''))
 
     @saves
     def write_updated_patches(self, patches: Dict[str, List[str]], disable_inapplicable: bool) -> None:
@@ -498,11 +424,9 @@ class SpecFile:
         modified_patches = []
         preamble = self.spec_content.section('%package')
         remove_lines = []
-        for tag_name, lineno, _ in self.tags():
-            if not tag_name.startswith('Patch'):
-                continue
-            patch_num = int(tag_name.split('Patch')[1])
-            patch_name = self.get_raw_tag_value(tag_name) or ''
+        for tag in self.tags.filter(name='Patch*'):
+            patch_num = int(tag.name.split('Patch')[1])
+            patch_name = self.get_raw_tag_value(tag.name) or ''
             if 'deleted' in patches:
                 patch_removed = [x for x in patches['deleted'] if patch_name in x]
             else:
@@ -516,15 +440,15 @@ class SpecFile:
                 self.removed_patches.append(patch_name)
                 removed_patches.append(patch_num)
                 # find associated comments
-                i = lineno
+                i = tag.line
                 while i > 0 and is_comment(preamble[i - 1]):
                     i -= 1
-                remove_lines.append((i, lineno + 1))
+                remove_lines.append((i, tag.line + 1))
                 continue
             if patch_inapplicable:
                 if disable_inapplicable:
                     # comment out line if the patch was not applied
-                    preamble[lineno] = '#' + preamble[lineno]
+                    preamble[tag.line] = '#' + preamble[tag.line]
                 inapplicable_patches.append(patch_num)
             if 'modified' in patches:
                 patch = [x for x in patches['modified'] if patch_name in x]
@@ -532,7 +456,7 @@ class SpecFile:
                 patch = []
             if patch:
                 name = os.path.join(constants.RESULTS_DIR, constants.REBASED_SOURCES_DIR, patch_name)
-                self.set_raw_tag_value(tag_name, name)
+                self.set_raw_tag_value(tag.name, name)
                 modified_patches.append(patch_num)
         for span in sorted(remove_lines, key=lambda s: s[0], reverse=True):
             del preamble[slice(*span)]
@@ -605,7 +529,7 @@ class SpecFile:
         # TODO: in some cases it might be necessary to modify Source0
 
     @saves
-    def set_tag(self, tag: str, value: str, preserve_macros: bool = False, subpackage: Optional[str] = None) -> None:
+    def set_tag(self, tag: str, value: str, preserve_macros: bool = False) -> None:
         """Sets value of a tag while trying to preserve macros if requested.
 
         Note that this method is not intended to be used with non-unique tags, it will only affect the first instance.
@@ -614,7 +538,6 @@ class SpecFile:
             tag: Tag name.
             value: Tag value.
             preserve_macros: Whether to attempt to preserve macros in the current tag value.
-            subpackage: Optional lower-case subpackage name, specify e.g. 'abc' to set tag in '%package abc' section.
 
         """
         macro_def_re = re.compile(
@@ -881,8 +804,8 @@ class SpecFile:
             return result
 
         if preserve_macros:
-            value = _process_value(self.get_raw_tag_value(tag, subpackage) or '', value)
-        self.set_raw_tag_value(tag, value, subpackage)
+            value = _process_value(self.get_raw_tag_value(tag) or '', value)
+        self.set_raw_tag_value(tag, value)
 
     @staticmethod
     def extract_version_from_archive_name(archive_path: str, main_source: str) -> str:
