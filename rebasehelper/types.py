@@ -22,7 +22,7 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-from typing import Any, Dict, List, Optional, Tuple, Union, TYPE_CHECKING
+from typing import Any, Dict, List, Optional, Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
     # avoid cyclic import at runtime
@@ -33,5 +33,3 @@ Option = Dict[str, Any]
 Options = List[Union[Option, List[Option]]]
 
 PackageCategories = List[Optional['PackageCategory']]
-
-Tag = Tuple[str, int, Tuple[int, int]]
