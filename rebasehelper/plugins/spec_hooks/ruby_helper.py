@@ -89,7 +89,7 @@ class RubyHelper(BaseSpecHook):
             logger.info("Found non-existent source '%s'", source)
             comments = None
             preamble = rebase_spec_file.spec_content.section('%package')
-            for i in range(tag[1] - 1, 0, -1):
+            for i in range(tag.line - 1, 0, -1):
                 if not preamble[i].startswith('#'):
                     comments = preamble[i+1:i]
                     break
