@@ -27,52 +27,9 @@ from typing import List
 
 import pytest  # type: ignore
 
-from rebasehelper.specfile import SpecFile, SpecContent
+from rebasehelper.specfile import SpecFile
+from rebasehelper.spec_content import SpecContent
 from rebasehelper.tests.conftest import SPEC_FILE
-
-
-class TestSpecContent:
-    TEST_FILES = [
-        SPEC_FILE
-    ]
-
-    @pytest.fixture
-    def spec_content(self):
-        with open(SPEC_FILE, 'r') as infile:
-            return SpecContent(infile.read())
-
-    def test_string_representation(self, spec_content):
-        with open(SPEC_FILE, 'r') as infile:
-            assert str(spec_content) == infile.read()
-
-    @pytest.mark.parametrize('line, section, expected', [
-        ('#test comment', '%package', (0, 13)),
-        ('make install', '%install', (12, 12)),
-        ('make install # install', '%install', (12, 22)),
-        ('Name: test #invalid comment', '%package', (27, 27)),
-    ], ids=[
-        'whole_line',
-        'no_comment',
-        'inline_allowed',
-        'inline_prohibited',
-    ])
-    def test_get_comment_span(self, line, section, expected):
-        assert SpecContent.get_comment_span(line, section) == expected
-
-    @pytest.mark.parametrize('section, expected', [
-        ('%install', ['make DESTDIR=$RPM_BUILD_ROOT install', '']),
-        ('%package test', None),
-
-    ], ids=[
-        'existent',
-        'nonexistent',
-    ])
-    def test_section(self, spec_content, section, expected):
-        assert spec_content.section(section) == expected
-
-    def test_replace_section(self, spec_content):
-        spec_content.replace_section('%install', ['#removed'])
-        assert spec_content.section('%install') == ['#removed']
 
 
 class TestSpecFile:
