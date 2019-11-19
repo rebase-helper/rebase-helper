@@ -30,6 +30,7 @@ from typing import Any, Dict, List, Pattern, Tuple, Set
 from rebasehelper.types import Options
 from rebasehelper.plugins.spec_hooks import BaseSpecHook
 from rebasehelper.specfile import SpecFile
+from rebasehelper.helpers.macro_helper import MacroHelper
 
 
 class ReplaceOldVersion(BaseSpecHook):
@@ -122,7 +123,8 @@ class ReplaceOldVersion(BaseSpecHook):
             if sec_name.startswith('%changelog'):
                 continue
             for index, line in enumerate(section):
-                if index in examined_lines[sec_name] or any(line.startswith(tag) for tag in cls.IGNORED_TAGS):
+                tag_ignored = any(MacroHelper.expand(line, line).startswith(tag) for tag in cls.IGNORED_TAGS)
+                if index in examined_lines[sec_name] or tag_ignored:
                     continue
                 start, end = spec_file.spec_content.get_comment_span(line, sec_name)
                 updated_line = subversion_patterns[0][0].sub(subversion_patterns[0][1], line[:start])
