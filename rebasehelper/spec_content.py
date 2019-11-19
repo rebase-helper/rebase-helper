@@ -29,9 +29,11 @@ from typing import List, Tuple
 class SpecContent:
     """Class representing content of a SPEC file."""
 
+    # taken from build/parseSpec.c in rpm source code
     SECTION_HEADERS: List[str] = [
         '%package',
         '%prep',
+        '%generate_build_requires',
         '%build',
         '%install',
         '%check',
