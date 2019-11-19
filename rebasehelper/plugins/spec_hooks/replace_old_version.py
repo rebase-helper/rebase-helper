@@ -22,9 +22,10 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
+import collections
 import re
 import urllib.parse
-from typing import Any, List, Pattern, Tuple
+from typing import Any, Dict, List, Pattern, Tuple, Set
 
 from rebasehelper.types import Options
 from rebasehelper.plugins.spec_hooks import BaseSpecHook
@@ -58,22 +59,6 @@ class ReplaceOldVersion(BaseSpecHook):
         # e.g. in a rebase from 2.5 to 2.5.1, version would be changed to 2.5.1.1
         'Version',
     ]
-
-    @classmethod
-    def _is_local_source(cls, line: str) -> bool:
-        """Checks if a line contains a local source.
-
-        Args:
-            line: Line to be checked.
-
-        Returns:
-            Whether the line contains a local source
-
-        """
-        if not (line.startswith('Patch') or line.startswith('Source')):
-            return False
-        source = line.split()[1]
-        return not urllib.parse.urlparse(source).scheme
 
     @classmethod
     def _create_possible_replacements(cls, old: str, new: str, use_macro: bool) -> List[Tuple[Pattern[str], str]]:
@@ -114,18 +99,33 @@ class ReplaceOldVersion(BaseSpecHook):
         replace_with_macro = bool(kwargs.get('replace_old_version_with_macro'))
 
         subversion_patterns = cls._create_possible_replacements(old_version, new_version, replace_with_macro)
+        examined_lines: Dict[str, Set[int]] = collections.defaultdict(set)
+        for tag in rebase_spec_file.tags.filter(section=None):
+            examined_lines[tag.section].add(tag.line)
+            value = rebase_spec_file.get_raw_tag_value(tag.name, tag.section)
+            if not value or tag.name in cls.IGNORED_TAGS:
+                continue
+            scheme = urllib.parse.urlparse(value).scheme
+            if (tag.name.startswith('Patch') or tag.name.startswith('Source')) and not scheme:
+                # skip local sources
+                continue
+
+            # replace the whole version first
+            updated_value = subversion_patterns[0][0].sub(subversion_patterns[0][1], value)
+            # replace subversions only for remote sources/patches
+            if tag.name.startswith('Patch') or tag.name.startswith('Source'):
+                for sub_pattern, repl in subversion_patterns[1:]:
+                    updated_value = sub_pattern.sub(repl, updated_value)
+            rebase_spec_file.set_raw_tag_value(tag.name, updated_value, tag.section)
+
         for sec_name, section in rebase_spec_file.spec_content.sections:
             if sec_name.startswith('%changelog'):
                 continue
             for index, line in enumerate(section):
-                if cls._is_local_source(line) or any(line.startswith(tag) for tag in cls.IGNORED_TAGS):
+                if index in examined_lines[sec_name] or any(line.startswith(tag) for tag in cls.IGNORED_TAGS):
                     continue
                 start, end = spec_file.spec_content.get_comment_span(line, sec_name)
-                # try to replace the whole version first
                 updated_line = subversion_patterns[0][0].sub(subversion_patterns[0][1], line[:start])
-                if (line.startswith('Patch') or line.startswith('Source')) and urllib.parse.urlparse(line.split()[1]):
-                    for sub_pattern, repl in subversion_patterns[1:]:
-                        updated_line = sub_pattern.sub(repl, updated_line)
                 section[index] = updated_line + line[start:end]
 
         rebase_spec_file.save()
