@@ -22,6 +22,8 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
+from typing import Dict, Optional, Type
+
 import pkg_resources
 
 from rebasehelper.plugins.plugin import Plugin
@@ -30,7 +32,7 @@ from rebasehelper.plugins.plugin import Plugin
 class PluginLoader:
     @classmethod
     def load(cls, entrypoint, manager):
-        result = {}
+        result: Dict[str, Optional[Type[Plugin]]] = {}
         for ep in pkg_resources.iter_entry_points(entrypoint):
             result[ep.name] = None
             try:

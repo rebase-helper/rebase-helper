@@ -22,7 +22,7 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-from typing import List, Type, Union, TYPE_CHECKING
+from typing import Dict, List, Optional, Type, Union, TYPE_CHECKING
 
 from rebasehelper.plugins.plugin_loader import PluginLoader
 from rebasehelper.plugins.plugin import Plugin
@@ -35,19 +35,19 @@ if TYPE_CHECKING:
 
 class PluginCollection:
     def __init__(self, entrypoint: str, manager: 'PluginManager'):
-        self.plugins = PluginLoader.load(entrypoint, manager)
+        self.plugins: Dict[str, Optional[Type[Plugin]]] = PluginLoader.load(entrypoint, manager)
 
-    def get_all_plugins(self) -> List[Type[Plugin]]:
+    def get_all_plugins(self) -> List[str]:
         return list(self.plugins)
 
-    def get_supported_plugins(self) -> List[Type[Plugin]]:
+    def get_supported_plugins(self) -> List[str]:
         return [k for k, v in self.plugins.items() if v]
 
-    def get_default_plugins(self, return_one: bool = False) -> Union[Type[Plugin], List[Type[Plugin]]]:
+    def get_default_plugins(self, return_one: bool = False) -> Union[str, List[str], None]:
         default = [k for k, v in self.plugins.items() if v and getattr(v, 'DEFAULT', False)]
         return default if not return_one else default[0] if default else None
 
-    def get_plugin(self, tool: str) -> Type[Plugin]:
+    def get_plugin(self, tool: str) -> Optional[Type[Plugin]]:
         try:
             return self.plugins[tool]
         except KeyError:
