@@ -114,9 +114,9 @@ class Tags(collections.abc.Sequence):
                         result.append(Tag(section, index, sanitize(m.group('name')), span, valid))
         return cast(Tuple[Tag], tuple(result))
 
-    def filter(self, section: Optional[str] = '%package', name: Optional[str] = None,
+    def filter(self, section: Optional[str] = None, name: Optional[str] = None,
                valid: Optional[bool] = True) -> Iterator[Tag]:
-        """Filters tags based on section, name or validity. Defaults to all valid tags in the preamble.
+        """Filters tags based on section, name or validity. Defaults to all valid tags in all sections.
 
         Args:
             section: If specified, includes tags only from this section.

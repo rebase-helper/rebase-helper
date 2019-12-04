@@ -195,23 +195,23 @@ class SpecFile:
     # TAG HELPER METHODS #
     ######################
 
-    def tag(self, name: str, section: str = '%package') -> Optional[Tag]:
+    def tag(self, name: str, section: Optional[str] = None) -> Optional[Tag]:
         """Returns the first non-unique tag."""
         tags = self.tags.filter(section=section, name=name)
         return next(tags, None)
 
-    def get_raw_tag_value(self, tag_name: str, section: str = '%package') -> Optional[str]:
+    def get_raw_tag_value(self, tag_name: str, section: Optional[str] = None) -> Optional[str]:
         tag = self.tag(tag_name, section)
         if not tag:
             return None
-        return self.spec_content.section(section)[tag.line][slice(*tag.value_span)]
+        return self.spec_content.section(tag.section)[tag.line][slice(*tag.value_span)]
 
-    def set_raw_tag_value(self, tag_name: str, value: str, section: str = '%package') -> None:
+    def set_raw_tag_value(self, tag_name: str, value: str, section: Optional[str] = None) -> None:
         tag = self.tag(tag_name, section)
         if not tag:
             return
-        line = self.spec_content.section(section)[tag.line]
-        self.spec_content.section(section)[tag.line] = line[:tag.value_span[0]] + value + line[tag.value_span[1]:]
+        line = self.spec_content.section(tag.section)[tag.line]
+        self.spec_content.section(tag.section)[tag.line] = line[:tag.value_span[0]] + value + line[tag.value_span[1]:]
         # update span
         tag.value_span = (tag.value_span[0], tag.value_span[0] + len(value))
 

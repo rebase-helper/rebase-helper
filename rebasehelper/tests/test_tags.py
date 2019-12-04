@@ -93,8 +93,8 @@ Requires: extradep
         assert tags[9] == Tag('%package utils', 0, 'Requires', (10, 28), False)
 
     def test_filter(self, tags):
-        assert len(list(tags.filter())) == 7
-        assert len(list(tags.filter(name='Patch*'))) == 3
-        assert len(list(tags.filter(valid=False))) == 0
-        assert len(list(tags.filter(section=None, valid=False))) == 1
-        assert len(list(tags.filter(section=None, name='Requires', valid=None))) == 3
+        assert len(list(tags.filter(section='%package'))) == 7
+        assert len(list(tags.filter(section='%package', name='Patch*'))) == 3
+        assert len(list(tags.filter(section='%package', valid=False))) == 0
+        assert len(list(tags.filter(valid=False))) == 1
+        assert len(list(tags.filter(name='Requires', valid=None))) == 3
