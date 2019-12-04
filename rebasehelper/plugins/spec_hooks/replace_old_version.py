@@ -101,7 +101,7 @@ class ReplaceOldVersion(BaseSpecHook):
 
         subversion_patterns = cls._create_possible_replacements(old_version, new_version, replace_with_macro)
         examined_lines: Dict[str, Set[int]] = collections.defaultdict(set)
-        for tag in rebase_spec_file.tags.filter(section=None):
+        for tag in rebase_spec_file.tags.filter():
             examined_lines[tag.section].add(tag.line)
             value = rebase_spec_file.get_raw_tag_value(tag.name, tag.section)
             if not value or tag.name in cls.IGNORED_TAGS:
