@@ -119,7 +119,7 @@ class CheckerCollection(PluginCollection):
 
         """
         try:
-            checker = self.plugins[checker_name]
+            checker = cast(Type[BaseChecker], self.plugins[checker_name])
         except KeyError:
             return None
         if checker.CATEGORY != kwargs.get('category'):
@@ -133,9 +133,9 @@ class CheckerCollection(PluginCollection):
             logger.info("Running checks on packages using '%s'", checker_name)
         return checker.run_check(results_dir, **kwargs)
 
-    def get_supported_plugins(self) -> List[Type[Plugin]]:
-        return [k for k, v in self.plugins.items() if v and v.is_available()]
+    def get_supported_plugins(self) -> List[str]:
+        return [k for k, v in self.plugins.items() if v and cast(Type[BaseChecker], v).is_available()]
 
-    def get_default_plugins(self, return_one: bool = False) -> Union[List[Type[Plugin]], Type[Plugin]]:
+    def get_default_plugins(self, return_one: bool = False) -> Union[str, List[str], None]:
         default = [k for k, v in self.plugins.items() if v and getattr(v, 'DEFAULT', False)]
         return default if not return_one else default[0] if default else None
