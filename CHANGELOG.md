@@ -2,6 +2,26 @@
 
 ## [Unreleased]
 
+## [0.20.0] - 2019-12-06
+### Added
+- Introduced `Tags` class unifying and simplifying access to SPEC tags
+- Added proper support for *crate* and *gem* archives
+- Added `--bugzilla-id` option to perform a rebase based on *Upstream Release Monitoring* bugzilla
+- Added `-D`/`--define` option to define macros
+- Added tests for public API
+
+### Fixed
+- Fixed `--build-tasks` option
+- Fixed detecting unresolved conflicts in non-UTF-8 files
+- Prevented loss of messages logged before logging file handlers are created
+- **rebase-helper** now skips unparseable lines in *%prep* instead of tracebacking on them
+- Fixed parsing SPEC files with `-h` in *%prep*
+- Fixed processing SPEC files with zero-padded indexed tags and `%patch` macros
+
+### Changed
+- Completely reworked dealing with extraversions
+- Improved `SpecFile.set_tag()` to minimize changes made to the SPEC file
+
 ## [0.19.0] - 2019-09-26
 ### Added
 - Added `--workspace-dir` option to allow specifying custom workspace directory
