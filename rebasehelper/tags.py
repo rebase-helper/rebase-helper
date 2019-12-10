@@ -114,6 +114,18 @@ class Tags(collections.abc.Sequence):
                         result.append(Tag(section, index, sanitize(m.group('name')), span, valid))
         return cast(Tuple[Tag], tuple(result))
 
+    @classmethod
+    def _filter(cls, tags: Tuple[Tag], section: Optional[str] = None, name: Optional[str] = None,
+                valid: Optional[bool] = True) -> Iterator[Tag]:
+        result = iter(tags)
+        if section is not None:
+            result = filter(lambda t: t.section == section.lower(), result)  # type: ignore
+        if name is not None:
+            result = filter(lambda t: fnmatch.fnmatchcase(t.name, name.capitalize()), result)  # type: ignore
+        if valid is not None:
+            result = filter(lambda t: t.valid == valid, result)
+        return result
+
     def filter(self, section: Optional[str] = None, name: Optional[str] = None,
                valid: Optional[bool] = True) -> Iterator[Tag]:
         """Filters tags based on section, name or validity. Defaults to all valid tags in all sections.
@@ -127,11 +139,4 @@ class Tags(collections.abc.Sequence):
             Iterator of matching Tag objects.
 
         """
-        result = iter(self.items)
-        if section is not None:
-            result = filter(lambda t: t.section == section.lower(), result)  # type: ignore
-        if name is not None:
-            result = filter(lambda t: fnmatch.fnmatchcase(t.name, name.capitalize()), result)  # type: ignore
-        if valid is not None:
-            result = filter(lambda t: t.valid == valid, result)
-        return result
+        return self._filter(self.items, section, name, valid)
