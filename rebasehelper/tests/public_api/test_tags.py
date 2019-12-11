@@ -41,6 +41,6 @@ class TestTags:
         result = spec_object.tags.filter()
         assert isinstance(result, collections.Iterator)
         assert isinstance(next(result), Tag)
-        result = spec_object.tags.filter(section='%package', name='Source*', valid=True)
+        result = spec_object.tags.filter(section_index=0, section_name='%package', name='Source*', valid=True)
         assert isinstance(result, collections.Iterator)
         assert isinstance(next(result), Tag)
