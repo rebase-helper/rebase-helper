@@ -100,10 +100,10 @@ class ReplaceOldVersion(BaseSpecHook):
         replace_with_macro = bool(kwargs.get('replace_old_version_with_macro'))
 
         subversion_patterns = cls._create_possible_replacements(old_version, new_version, replace_with_macro)
-        examined_lines: Dict[str, Set[int]] = collections.defaultdict(set)
+        examined_lines: Dict[int, Set[int]] = collections.defaultdict(set)
         for tag in rebase_spec_file.tags.filter():
-            examined_lines[tag.section].add(tag.line)
-            value = rebase_spec_file.get_raw_tag_value(tag.name, tag.section)
+            examined_lines[tag.section_index].add(tag.line)
+            value = rebase_spec_file.get_raw_tag_value(tag.name, tag.section_index)
             if not value or tag.name in cls.IGNORED_TAGS:
                 continue
             scheme = urllib.parse.urlparse(value).scheme
@@ -117,14 +117,14 @@ class ReplaceOldVersion(BaseSpecHook):
             if tag.name.startswith('Patch') or tag.name.startswith('Source'):
                 for sub_pattern, repl in subversion_patterns[1:]:
                     updated_value = sub_pattern.sub(repl, updated_value)
-            rebase_spec_file.set_raw_tag_value(tag.name, updated_value, tag.section)
+            rebase_spec_file.set_raw_tag_value(tag.name, updated_value, tag.section_index)
 
-        for sec_name, section in rebase_spec_file.spec_content.sections:
+        for sec_index, (sec_name, section) in enumerate(rebase_spec_file.spec_content.sections):
             if sec_name.startswith('%changelog'):
                 continue
             for index, line in enumerate(section):
                 tag_ignored = any(MacroHelper.expand(line, line).startswith(tag) for tag in cls.IGNORED_TAGS)
-                if index in examined_lines[sec_name] or tag_ignored:
+                if index in examined_lines[sec_index] or tag_ignored:
                     continue
                 start, end = spec_file.spec_content.get_comment_span(line, sec_name)
                 updated_line = subversion_patterns[0][0].sub(subversion_patterns[0][1], line[:start])

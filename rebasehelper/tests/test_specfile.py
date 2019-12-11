@@ -214,7 +214,7 @@ class TestSpecFile:
 
     def test_tags(self, spec_object):
         # sanity check
-        assert spec_object.tag('Name') == Tag('%package', 16, 'Name', (6, 10), True)
+        assert spec_object.tag('Name') == Tag(0, '%package', 16, 'Name', (6, 10), True)
         # no workaround
         assert spec_object.tag('Patch100') is None
         assert spec_object.tag('Patch101') is not None

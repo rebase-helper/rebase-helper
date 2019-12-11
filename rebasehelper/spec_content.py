@@ -87,6 +87,9 @@ class SpecContent:
                 content.append(line + '\n')
         return ''.join(content)
 
+    def __getitem__(self, index):
+        return self.sections[index][1]
+
     @classmethod
     def get_comment_span(cls, line: str, section: str) -> Tuple[int, int]:
         """Gets span of a comment depending on the section.

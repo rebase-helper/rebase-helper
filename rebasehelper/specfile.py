@@ -34,7 +34,7 @@ import urllib.parse
 from datetime import date
 from difflib import SequenceMatcher
 from operator import itemgetter
-from typing import List, Optional, Pattern, Tuple, Dict, cast
+from typing import List, Optional, Pattern, Tuple, Dict, Union, cast
 
 import rpm  # type: ignore
 
@@ -195,23 +195,27 @@ class SpecFile:
     # TAG HELPER METHODS #
     ######################
 
-    def tag(self, name: str, section: Optional[str] = None) -> Optional[Tag]:
+    def tag(self, name: str, section: Optional[Union[str, int]] = None) -> Optional[Tag]:
         """Returns the first non-unique tag."""
-        tags = self.tags.filter(section=section, name=name)
+        if isinstance(section, str):
+            tags = self.tags.filter(section_name=section, name=name)
+        else:
+            tags = self.tags.filter(section_index=section, name=name)
         return next(tags, None)
 
-    def get_raw_tag_value(self, tag_name: str, section: Optional[str] = None) -> Optional[str]:
+    def get_raw_tag_value(self, tag_name: str, section: Optional[Union[str, int]] = None) -> Optional[str]:
         tag = self.tag(tag_name, section)
         if not tag:
             return None
-        return self.spec_content.section(tag.section)[tag.line][slice(*tag.value_span)]
+        return self.spec_content[tag.section_index][tag.line][slice(*tag.value_span)]
 
-    def set_raw_tag_value(self, tag_name: str, value: str, section: Optional[str] = None) -> None:
+    def set_raw_tag_value(self, tag_name: str, value: str, section: Optional[Union[str, int]] = None) -> None:
         tag = self.tag(tag_name, section)
         if not tag:
             return
-        line = self.spec_content.section(tag.section)[tag.line]
-        self.spec_content.section(tag.section)[tag.line] = line[:tag.value_span[0]] + value + line[tag.value_span[1]:]
+        sec = self.spec_content[tag.section_index]
+        line = sec[tag.line]
+        sec[tag.line] = line[:tag.value_span[0]] + value + line[tag.value_span[1]:]
         # update span
         tag.value_span = (tag.value_span[0], tag.value_span[0] + len(value))
 

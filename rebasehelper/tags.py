@@ -25,22 +25,25 @@
 import collections.abc
 import fnmatch
 import re
-from typing import Iterator, Optional, Tuple, cast
+from typing import Dict, Iterator, List, Optional, Tuple, cast
 
 from rebasehelper.spec_content import SpecContent
 from rebasehelper.helpers.macro_helper import MacroHelper
 
 
 class Tag:
-    def __init__(self, section: str, line: int, name: str, value_span: Tuple[int, int], valid: bool) -> None:
-        self.section: str = section
+    def __init__(self, section_index: int, section_name: str, line: int, name: str, value_span: Tuple[int, int],
+                 valid: bool) -> None:
+        self.section_index: int = section_index
+        self.section_name: str = section_name
         self.line: int = line
         self.name: str = name
         self.value_span: Tuple[int, int] = value_span
         self.valid: bool = valid
 
     def __eq__(self, other):
-        return (self.section == other.section and
+        return (self.section_index == other.section_index and
+                self.section_name == other.section_name and
                 self.line == other.line and
                 self.name == other.name and
                 self.value_span == other.value_span and
@@ -56,6 +59,26 @@ class Tags(collections.abc.Sequence):
 
     def __len__(self):
         return len(self.items)
+
+    @classmethod
+    def _map_sections_to_parsed(cls, raw_content: SpecContent, parsed_content: SpecContent) -> Dict[int, int]:
+        """Creates a mapping of raw sections to parsed sections.
+
+        Returns:
+            A dict where the keys are indexes of sections in raw content and values are their
+            counterparts in parsed content. Value is set to -1 if the section is not in
+            parsed SpecContent.
+        """
+        result: Dict[int, int] = {}
+        parsed = 0
+        for index, (section, _) in enumerate(raw_content.sections):
+            if parsed < len(parsed_content.sections) and parsed_content.sections[parsed][0].lower() == section.lower():
+                result[index] = parsed
+                parsed += 1
+            else:
+                result[index] = -1
+
+        return result
 
     @classmethod
     def _parse(cls, raw_content: SpecContent, parsed_content: SpecContent) -> Tuple[Tag]:
@@ -85,20 +108,23 @@ class Tags(collections.abc.Sequence):
                 return '{0}{1}'.format(tokens[0], int(tokens[1]))
             return name.capitalize()
         result = []
+        parsed_mapping = cls._map_sections_to_parsed(raw_content, parsed_content)
         tag_re = re.compile(r'^(?P<prefix>(?P<name>\w+)\s*:\s*)(?P<value>.+)$')
-        for section, _ in raw_content.sections:
+        for section_index, (section, section_content) in enumerate(raw_content.sections):
             section = section.lower()
             if not section.startswith('%package'):
                 continue
-            parsed = parsed_content.section(section)
-            for index, line in enumerate(raw_content.section(section)):
+            parsed_section_index = parsed_mapping[section_index]
+            parsed: List[str] = [] if parsed_section_index == -1 else parsed_content.sections[parsed_section_index][1]
+            for line_index, line in enumerate(section_content):
                 expanded = MacroHelper.expand(line)
                 if not line or not expanded:
                     continue
                 valid = bool(parsed and [p for p in parsed if p == expanded.rstrip()])
                 m = tag_re.match(line)
                 if m:
-                    result.append(Tag(section, index, sanitize(m.group('name')), m.span('value'), valid))
+                    result.append(Tag(section_index, section, line_index, sanitize(m.group('name')), m.span('value'),
+                                      valid))
                     continue
                 m = tag_re.match(expanded)
                 if m:
@@ -111,27 +137,30 @@ class Tags(collections.abc.Sequence):
                     m = tag_re.match(line)
                     if m:
                         span = cast(Tuple[int, int], tuple(x + start for x in m.span('value')))
-                        result.append(Tag(section, index, sanitize(m.group('name')), span, valid))
+                        result.append(Tag(section_index, section, line_index, sanitize(m.group('name')), span, valid))
         return cast(Tuple[Tag], tuple(result))
 
     @classmethod
-    def _filter(cls, tags: Tuple[Tag], section: Optional[str] = None, name: Optional[str] = None,
-                valid: Optional[bool] = True) -> Iterator[Tag]:
+    def _filter(cls, tags: Tuple[Tag], section_index: Optional[int] = None, section_name: Optional[str] = None,
+                name: Optional[str] = None, valid: Optional[bool] = True) -> Iterator[Tag]:
         result = iter(tags)
-        if section is not None:
-            result = filter(lambda t: t.section == section.lower(), result)  # type: ignore
+        if section_index is not None:
+            result = filter(lambda t: t.section_index == section_index, result)
+        if section_name is not None:
+            result = filter(lambda t: t.section_name == section_name.lower(), result)  # type: ignore
         if name is not None:
             result = filter(lambda t: fnmatch.fnmatchcase(t.name, name.capitalize()), result)  # type: ignore
         if valid is not None:
             result = filter(lambda t: t.valid == valid, result)
         return result
 
-    def filter(self, section: Optional[str] = None, name: Optional[str] = None,
-               valid: Optional[bool] = True) -> Iterator[Tag]:
+    def filter(self, section_index: Optional[int] = None, section_name: Optional[str] = None,
+               name: Optional[str] = None, valid: Optional[bool] = True) -> Iterator[Tag]:
         """Filters tags based on section, name or validity. Defaults to all valid tags in all sections.
 
         Args:
-            section: If specified, includes tags only from this section.
+            section_index: If specified, includes tags only from section of this index.
+            section_name: If specified, includes tags only from sections of this name.
             name: If specified, includes tags matching this name. Wildcards are supported.
             valid: If specified, includes tags of this validity.
 
@@ -139,4 +168,4 @@ class Tags(collections.abc.Sequence):
             Iterator of matching Tag objects.
 
         """
-        return self._filter(self.items, section, name, valid)
+        return self._filter(self.items, section_index, section_name, name, valid)

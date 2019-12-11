@@ -81,20 +81,20 @@ Requires: extradep
 
     def test_tags(self, tags):
         assert len(tags) == 10
-        assert tags[0] == Tag('%package', 1, 'Name', (6, 10), True)
-        assert tags[1] == Tag('%package', 2, 'Version', (9, 12), True)
-        assert tags[2] == Tag('%package', 3, 'Source0', (8, 19), True)
-        assert tags[3] == Tag('%package', 4, 'Source1', (9, 29), True)
-        assert tags[4] == Tag('%package', 5, 'Patch0', (9, 23), True)
-        assert tags[5] == Tag('%package', 6, 'Patch1', (9, 23), True)
-        assert tags[6] == Tag('%package', 8, 'Patch999', (22, 44), True)
-        assert tags[7] == Tag('%package libs', 0, 'Requires', (10, 28), True)
-        assert tags[8] == Tag('%package libs', 1, 'Requires', (10, 18), True)
-        assert tags[9] == Tag('%package utils', 0, 'Requires', (10, 28), False)
+        assert tags[0] == Tag(0, '%package', 1, 'Name', (6, 10), True)
+        assert tags[1] == Tag(0, '%package', 2, 'Version', (9, 12), True)
+        assert tags[2] == Tag(0, '%package', 3, 'Source0', (8, 19), True)
+        assert tags[3] == Tag(0, '%package', 4, 'Source1', (9, 29), True)
+        assert tags[4] == Tag(0, '%package', 5, 'Patch0', (9, 23), True,)
+        assert tags[5] == Tag(0, '%package', 6, 'Patch1', (9, 23), True)
+        assert tags[6] == Tag(0, '%package', 8, 'Patch999', (22, 44), True)
+        assert tags[7] == Tag(1, '%package libs', 0, 'Requires', (10, 28), True)
+        assert tags[8] == Tag(1, '%package libs', 1, 'Requires', (10, 18), True)
+        assert tags[9] == Tag(2, '%package utils', 0, 'Requires', (10, 28), False)
 
     def test_filter(self, tags):
-        assert len(list(tags.filter(section='%package'))) == 7
-        assert len(list(tags.filter(section='%package', name='Patch*'))) == 3
-        assert len(list(tags.filter(section='%package', valid=False))) == 0
+        assert len(list(tags.filter(section_name='%package'))) == 7
+        assert len(list(tags.filter(section_name='%package', name='Patch*'))) == 3
+        assert len(list(tags.filter(section_name='%package', valid=False))) == 0
         assert len(list(tags.filter(valid=False))) == 1
         assert len(list(tags.filter(name='Requires', valid=None))) == 3
