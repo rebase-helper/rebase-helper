@@ -28,6 +28,7 @@ import shutil
 import pytest  # type: ignore
 
 from rebasehelper.specfile import SpecFile
+from rebasehelper.tags import Tag
 from rebasehelper.tests.conftest import SPEC_FILE, TEST_FILES_DIR
 
 
@@ -63,6 +64,10 @@ class TestSpecFile:
 
     def test_get_sources(self, spec_object):
         assert isinstance(spec_object.get_sources(), list)
+
+    def test_tag(self, spec_object):
+        assert isinstance(spec_object.tag(name='Source*', section='%package'), Tag)
+        assert spec_object.tag(name='NotATag') is None
 
     def test_set_tag(self, spec_object):
         assert spec_object.set_tag('Version', '1.3.5') is None
