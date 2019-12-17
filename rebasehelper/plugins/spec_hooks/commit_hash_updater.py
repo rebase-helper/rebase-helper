@@ -62,7 +62,7 @@ class CommitHashUpdater(BaseSpecHook):
         version = spec_file.header.version
         tag_name = None
         for release in data:
-            if version in release.get('name'):
+            if version in release.get('name', ''):
                 tag_name = release.get('tag_name')
                 break
 
