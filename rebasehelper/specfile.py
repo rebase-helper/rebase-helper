@@ -23,6 +23,7 @@
 #          František Nečas <fifinecas@seznam.cz>
 
 import argparse
+import collections
 import enum
 import itertools
 import logging
@@ -426,9 +427,11 @@ class SpecFile:
         removed_patches = []
         inapplicable_patches = []
         modified_patches = []
-        preamble = self.spec_content.section('%package')
-        remove_lines = []
+        remove_lines: Dict[int, List[Tuple[int, int]]] = collections.defaultdict(list)
         for tag in self.tags.filter(name='Patch*'):
+            section = self.spec_content[tag.section_index]
+            if section is None:
+                continue
             patch_num = int(tag.name.split('Patch')[1])
             patch_name = self.get_raw_tag_value(tag.name) or ''
             if 'deleted' in patches:
@@ -445,14 +448,14 @@ class SpecFile:
                 removed_patches.append(patch_num)
                 # find associated comments
                 i = tag.line
-                while i > 0 and is_comment(preamble[i - 1]):
+                while i > 0 and is_comment(section[i - 1]):
                     i -= 1
-                remove_lines.append((i, tag.line + 1))
+                remove_lines[tag.section_index].append((i, tag.line + 1))
                 continue
             if patch_inapplicable:
                 if disable_inapplicable:
                     # comment out line if the patch was not applied
-                    preamble[tag.line] = '#' + preamble[tag.line]
+                    section[tag.line] = '#' + section[tag.line]
                 inapplicable_patches.append(patch_num)
             if 'modified' in patches:
                 patch = [x for x in patches['modified'] if patch_name in x]
@@ -462,8 +465,10 @@ class SpecFile:
                 name = os.path.join(constants.RESULTS_DIR, constants.REBASED_SOURCES_DIR, patch_name)
                 self.set_raw_tag_value(tag.name, name)
                 modified_patches.append(patch_num)
-        for span in sorted(remove_lines, key=lambda s: s[0], reverse=True):
-            del preamble[slice(*span)]
+        for section_index, remove in remove_lines.items():
+            content = self.spec_content[section_index]
+            for span in sorted(remove, key=lambda s: s[0], reverse=True):
+                del content[slice(*span)]
         self._process_patches(inapplicable_patches, removed_patches, disable_inapplicable)
 
     ###################################
