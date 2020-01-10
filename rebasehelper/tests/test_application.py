@@ -80,7 +80,7 @@ class TestApplication:
     def app(self, make_config):
         config = make_config(self.cmd_line_args)
         execution_dir, results_dir = Application.setup(config)
-        app = Application(config, execution_dir, results_dir)
+        app = Application(config, os.getcwd(), execution_dir, results_dir)
         return app
 
     def test_application_sources(self, workdir, app):

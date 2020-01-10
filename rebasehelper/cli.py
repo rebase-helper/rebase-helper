@@ -131,6 +131,7 @@ class CliHelper:
     @classmethod
     def run(cls):
         results_dir = None
+        start_dir = os.getcwd()
         try:
             LoggerHelper.setup_memory_handler()
             main_handler, output_tool_handler = LoggerHelper.create_stream_handlers()
@@ -158,6 +159,11 @@ class CliHelper:
                     os.chdir(repo_path)
                 except OSError:
                     raise RebaseHelperError('Could not change directory to the cloned repository')
+                # update relative paths in config
+                for option in ('results_dir', 'workspace_dir'):
+                    path = getattr(config, option)
+                    if path and not os.path.isabs(path):
+                        config.config[option] = os.path.join(os.path.relpath(start_dir, os.getcwd()), path)
 
             if config.config['rpmmacros']:
                 macros = ' -D ' + ' -D '.join('"{}"'.format(s) for s in config.config['rpmmacros'])
@@ -169,7 +175,7 @@ class CliHelper:
 
             config.config['rpmmacros'] = cls.convert_macros_to_dict(config.rpmmacros)
             execution_dir, results_dir = Application.setup(config)
-            app = Application(config, execution_dir, results_dir)
+            app = Application(config, start_dir, execution_dir, results_dir)
             app.run()
         except KeyboardInterrupt:
             logger.info('Interrupted by user')

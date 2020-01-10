@@ -55,11 +55,13 @@ logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
 
 class Application:
 
-    def __init__(self, cli_conf: Config, execution_dir: str, results_dir: str, create_logs: bool = True) -> None:
+    def __init__(self, cli_conf: Config, start_dir: str, execution_dir: str, results_dir: str,
+                 create_logs: bool = True) -> None:
         """Initializes the application.
 
         Args:
             cli_conf: Application configuration.
+            start_dir: Directory where rebase-helper was started.
             execution_dir: Working directory.
             results_dir: Location of rebase results.
             create_logs: Whether to create default logging file handlers.
@@ -78,6 +80,7 @@ class Application:
         self.handlers = LoggerHelper.create_file_handlers(results_dir) if create_logs else []
 
         self.conf = cli_conf
+        self.start_dir = start_dir
         self.execution_dir = execution_dir
         self.rebased_sources_dir = os.path.join(results_dir, 'rebased-sources')
 
