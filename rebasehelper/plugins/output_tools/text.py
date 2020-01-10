@@ -30,6 +30,7 @@ from rebasehelper.logger import CustomLogger
 from rebasehelper.plugins.output_tools import BaseOutputTool
 from rebasehelper.logger import LoggerHelper
 from rebasehelper.results_store import results_store
+from rebasehelper.constants import RESULTS_DIR
 
 
 logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
@@ -44,21 +45,31 @@ class Text(BaseOutputTool):
     EXTENSION: str = 'txt'
 
     @classmethod
-    def print_success_message(cls):
-        """Print result message"""
-        results = cls.results_store.get_result_message()
+    def print_success_message(cls, results):
+        """Outputs a success/failure message depending on the result of a rebase.
+
+        Args:
+            results: ResultsStore instance to get data from.
+
+        """
+        results = results.get_result_message()
         if 'success' in results:
             logger_report.info(results['success'])
         else:
             logger_report.info(results['fail'])
 
     @classmethod
-    def print_changes_patch(cls):
-        """Print info about the location of changes.patch"""
-        patch = cls.results_store.get_changes_patch()
+    def print_changes_patch(cls, results):
+        """Outputs the location of changes.patch.
+
+        Args:
+            results: ResultsStore instance to get data from.
+
+        """
+        patch = results.get_changes_patch()
         if patch is not None:
             logger_report.info('\nPatch with differences between old and new version source files:')
-            logger_report.info(cls.prepend_results_dir_name(os.path.basename(patch['changes_patch'])))
+            logger_report.info(os.path.join(RESULTS_DIR, os.path.basename(patch['changes_patch'])))
 
     @classmethod
     def print_message_and_separator(cls, message="", separator='='):
@@ -72,7 +83,7 @@ class Text(BaseOutputTool):
             logger_report.info("Patches were neither modified nor deleted.")
             return
 
-        logger_report.info("Rebased patches are located in %s", cls.prepend_results_dir_name('rebased-sources'))
+        logger_report.info("Rebased patches are located in %s", os.path.join(RESULTS_DIR, 'rebased-sources'))
         logger_report.info("Legend:")
         logger_report.info("[-] = already applied, patch removed")
         logger_report.info("[*] = merged, patch modified")
@@ -90,11 +101,12 @@ class Text(BaseOutputTool):
 
     @classmethod
     def print_rpms_and_logs(cls, rpms, version):
-        """
-        Prints information about location of RPMs and logs created during rebase
-        :param rpms: dictionary of (S)RPM paths
-        :param version: new/old version string
-        :return:
+        """Outputs information about location of RPMs and logs created during rebase.
+
+        Args:
+            rpms: Dictionary of (S)RPM paths.
+            version: "new" or "old" string.
+
         """
         pkgs = ['srpm', 'rpm']
         if not rpms.get('rpm', None):
@@ -114,7 +126,7 @@ class Text(BaseOutputTool):
             if isinstance(srpm, str):
                 # Print SRPM path
                 dirname = os.path.dirname(srpm)
-                logger_report.info(message, cls.prepend_results_dir_name(version.lower() + '-build', 'SRPM'))
+                logger_report.info(message, os.path.join(RESULTS_DIR, version.lower() + '-build', 'SRPM'))
                 logger_report.info(" - %s", os.path.basename(srpm))
                 # Print SRPM logs
                 cls.print_build_logs(rpms, dirname)
@@ -122,7 +134,7 @@ class Text(BaseOutputTool):
             else:
                 # Print RPMs paths
                 dirname = os.path.dirname(srpm[0])
-                logger_report.info(message, cls.prepend_results_dir_name(version.lower() + '-build', 'RPM'))
+                logger_report.info(message, os.path.join(RESULTS_DIR, version.lower() + '-build', 'RPM'))
                 for pkg in sorted(srpm):
                     logger_report.info(" - %s", os.path.basename(pkg))
                 # Print RPMs logs
@@ -130,7 +142,13 @@ class Text(BaseOutputTool):
 
     @classmethod
     def print_build_logs(cls, rpms, dirpath):
-        """Function is used for printing rpm build logs"""
+        """Outputs paths to rpm build logs.
+
+        Args:
+            rpms: Dictionary of (S)RPM paths.
+            dirpath: Directory of the currently processed (S)RPM.
+
+        """
         if rpms.get('logs', None) is None:
             return
         for logs in sorted(rpms.get('logs', []) + rpms.get('srpm_logs', [])):
@@ -140,8 +158,14 @@ class Text(BaseOutputTool):
             logger_report.info(' - %s', os.path.basename(logs))
 
     @classmethod
-    def print_summary(cls, path, results):
-        """Function is used for printing summary information"""
+    def print_summary(cls, report_path, results):
+        """Outputs a summary of a rebase.
+
+        Args:
+            report_path: Where the report file should be created
+            results: ResultsStore instance to get data from.
+
+        """
         info = results.get_summary_info()
         if info:
             for key, value in info.items():
@@ -151,14 +175,12 @@ class Text(BaseOutputTool):
                 else:
                     logger.info('%s: %s', key, value)
 
-        LoggerHelper.add_file_handler(logger_report, path)
+        LoggerHelper.add_file_handler(logger_report, report_path)
 
-        cls.results_store = results
+        cls.print_success_message(results)
+        logger_report.info("All result files are stored in %s", os.path.dirname(report_path))
 
-        cls.print_success_message()
-        logger_report.info("All result files are stored in %s", os.path.dirname(path))
-
-        cls.print_changes_patch()
+        cls.print_changes_patch(results)
 
         cls.print_checkers_text_output(results.get_checkers())
 
@@ -175,7 +197,7 @@ class Text(BaseOutputTool):
 
     @classmethod
     def print_checkers_text_output(cls, checkers_results):
-        """Function prints text output for every checker"""
+        """Outputs text output of every checker."""
         for check_tool in cls.manager.checkers.plugins.values():
             if check_tool:
                 for check, data in sorted(checkers_results.items()):

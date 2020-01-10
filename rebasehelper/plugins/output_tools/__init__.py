@@ -38,10 +38,7 @@ logger_summary: CustomLogger = cast(CustomLogger, logging.getLogger('rebasehelpe
 
 
 class BaseOutputTool(Plugin):
-    """
-    Base class for OutputTools.
-    print_cli_summary must be overridden in order to produce different CLI output
-    """
+    """Base class for an output tool"""
 
     DEFAULT: bool = False
     EXTENSION: str = ''
@@ -51,40 +48,62 @@ class BaseOutputTool(Plugin):
         return os.path.join(app.results_dir, REPORT + '.' + cls.EXTENSION)
 
     @classmethod
-    def prepend_results_dir_name(cls, *path_members):
-        return os.path.join(RESULTS_DIR, *path_members)
+    def prepend_results_dir_name(cls, app, *path_members):
+        """Prepends a path with path to rebase-helper-results.
+
+        Takes directory changes (such as cd into cloned repo with --bugzilla-id)
+        into account.
+
+        Args:
+            app: Application instance.
+            path_members: Path members to prepend the results dir to.
+
+        Returns:
+            Prepended path.
+
+        """
+        if app.conf.results_dir:
+            if os.path.isabs(app.conf.results_dir):
+                prepend = app.conf.results_dir
+            else:
+                # make the path relative to start_dir
+                prepend = os.path.relpath(os.path.join(app.execution_dir, app.conf.results_dir), app.start_dir)
+            return os.path.join(prepend, RESULTS_DIR, *path_members)
+        return os.path.join(os.path.relpath(os.getcwd(), app.start_dir), RESULTS_DIR, *path_members)
 
     @classmethod
     def print_cli_summary(cls, app):
-        """
-        Print report of the rebase
+        """Outputs a summary of a rebase-helper run.
 
-        :param app: Application instance
+        Args:
+            app: Application instance.
         """
-        cls.app = app
         cls.print_patches_cli()
         result = results_store.get_result_message()
 
         cls.print_important_checkers_output()
 
         logger_summary.heading('\nAvailable logs:')
-        logger_summary.info('%s:\n%s', 'Debug log', cls.prepend_results_dir_name(os.path.join(LOGS_DIR, DEBUG_LOG)))
+        logger_summary.info('%s:\n%s', 'Debug log', cls.prepend_results_dir_name(app,
+                                                                                 os.path.join(LOGS_DIR, DEBUG_LOG)))
         if results_store.get_old_build() is not None:
-            logger_summary.info('%s:\n%s', 'Old build logs and (S)RPMs', cls.prepend_results_dir_name(OLD_BUILD_DIR))
+            logger_summary.info('%s:\n%s', 'Old build logs and (S)RPMs',
+                                cls.prepend_results_dir_name(app, OLD_BUILD_DIR))
         if results_store.get_new_build() is not None:
-            logger_summary.info('%s:\n%s', 'New build logs and (S)RPMs', cls.prepend_results_dir_name(NEW_BUILD_DIR))
+            logger_summary.info('%s:\n%s', 'New build logs and (S)RPMs',
+                                cls.prepend_results_dir_name(app, NEW_BUILD_DIR))
         logger_summary.info('')
 
         logger_summary.heading('%s:', 'Rebased sources')
-        logger_summary.info("%s", cls.prepend_results_dir_name(os.path.relpath(app.rebased_sources_dir,
-                                                                               app.results_dir)))
+        logger_summary.info("%s", cls.prepend_results_dir_name(app, os.path.relpath(app.rebased_sources_dir,
+                                                                                    app.results_dir)))
 
         patch = results_store.get_changes_patch()
         if 'changes_patch' in patch:
             logger_summary.heading('%s:', 'Generated patch')
-            logger_summary.info("%s\n", cls.prepend_results_dir_name(os.path.basename(patch['changes_patch'])))
+            logger_summary.info("%s\n", cls.prepend_results_dir_name(app, os.path.basename(patch['changes_patch'])))
 
-        cls.print_report_file_path()
+        cls.print_report_file_path(app)
 
         if 'success' in result:
             logger_summary.success('\n%s', result['success'])
@@ -103,14 +122,14 @@ class BaseOutputTool(Plugin):
                             logger_summary.warning('\n'.join(out))
 
     @classmethod
-    def print_report_file_path(cls):
-        """Print path to the report file"""
+    def print_report_file_path(cls, app):
+        """Outputs path to the report file"""
         logger_summary.heading('%s report:', cls.name)
-        logger_summary.info('%s', cls.prepend_results_dir_name('report.' + cls.EXTENSION))
+        logger_summary.info('%s', cls.prepend_results_dir_name(app, 'report.' + cls.EXTENSION))
 
     @classmethod
     def print_patches_cli(cls):
-        """Print info about patches"""
+        """Outputs info about patches"""
         patch_dict = {
             'inapplicable': logger_summary.error,
             'modified': logger_summary.success,
@@ -122,11 +141,12 @@ class BaseOutputTool(Plugin):
 
     @classmethod
     def print_patches_section_cli(cls, logger_method, patch_type):
-        """
-        Print info about one of the patches key section
+        """Outputs information about one of the patch types.
 
-        :param logger_method: method to be used for logging
-        :param patch_type: string containing key for the patch_dict
+        Args:
+            logger_method: Method to use for logging
+            patch_type: A key to use for filtering patch dictionary obtained
+                        from results_store.
         """
         patches = results_store.get_patches()
         if not patches:

@@ -34,22 +34,18 @@ class JSON(BaseOutputTool):
     EXTENSION: str = 'json'
 
     @classmethod
-    def print_summary(cls, path, results):
-        """
-        Print JSON summary
+    def print_summary(cls, report_path, results):
+        """Writes the report as JSON data.
 
-        :param path: to the report file
-        :param results: dictionary containing info about rebase
+        Args:
+            report_path: Path to the report.
+            results: Results store instance to get the data from.
+
         """
-        with open(path, 'w') as outputfile:
+        with open(report_path, 'w') as outputfile:
             json.dump(results.get_all(), outputfile, indent=4, sort_keys=True)
 
     @classmethod
     def run(cls, logs, app):  # pylint: disable=unused-argument
-        """
-        Function is used for storing output dictionary into JSON structure
-        JSON output is stored into report.json
-        """
-        path = cls.get_report_path(app)
-
-        cls.print_summary(path, results_store)
+        """Runs the output tool, writes the data to a JSON-formatted report."""
+        cls.print_summary(cls.get_report_path(app), results_store)

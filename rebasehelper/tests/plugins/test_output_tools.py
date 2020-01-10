@@ -22,8 +22,8 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-import os
 import json
+import os
 
 import pytest  # type: ignore
 
