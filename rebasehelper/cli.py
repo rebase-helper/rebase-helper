@@ -154,7 +154,7 @@ class CliHelper:
                 main_handler.setLevel(logging.DEBUG)
             ConsoleHelper.use_colors = ConsoleHelper.should_use_colors(config)
             if config.bugzilla_id:
-                repo_path, config.sources = BugzillaHelper.prepare_rebase_repository(config.bugzilla_id)
+                repo_path, config.config['sources'] = BugzillaHelper.prepare_rebase_repository(config.bugzilla_id)
                 try:
                     os.chdir(repo_path)
                 except OSError:
