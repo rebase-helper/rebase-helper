@@ -61,7 +61,7 @@ class LookasideCacheHelper:
         line_re = re.compile(r'^(?P<hashtype>[^ ]+?) \((?P<filename>[^ )]+?)\) = (?P<hash>[^ ]+?)$')
         sources = []
         path = os.path.join(basepath, 'sources')
-        if os.path.exists(path):
+        if os.path.isfile(path):
             with open(path, 'r') as f:
                 for line in f.readlines():
                     line = line.strip()
@@ -74,6 +74,8 @@ class LookasideCacheHelper:
                         d = dict(hash=hsh, filename=filename, hashtype='md5')
                     d['hashtype'] = d['hashtype'].lower()
                     sources.append(d)
+        elif os.path.exists(path):
+            logger.warning("\"sources\" is not a file, skipping parsing it")
         return sources
 
     @classmethod
