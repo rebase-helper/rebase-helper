@@ -39,11 +39,7 @@ logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
 
 
 class AbiPkgDiff(BaseChecker):
-    """abipkgdiff compare tool
-
-    Attributes:
-        abi_changes(bool): True if ABI changes were detected.
-    """
+    """abipkgdiff compare tool."""
 
     DEFAULT: bool = True
     CATEGORY: Optional[CheckerCategory] = CheckerCategory.RPM
@@ -53,7 +49,7 @@ class AbiPkgDiff(BaseChecker):
     ABIDIFF_ERROR: int = 1 << 0
     ABIDIFF_USAGE_ERROR: int = 1 << 1
     ABIDIFF_ABI_CHANGE: int = 1 << 2
-    abi_changes: bool = False
+    ABIDIFF_ABI_INCOMPATIBLE_CHANGE: int = 1 << 3
 
     @classmethod
     def is_available(cls):
@@ -95,13 +91,12 @@ class AbiPkgDiff(BaseChecker):
     def run_check(cls, results_dir, **kwargs):
         """Compares old and new RPMs using abipkgdiff"""
         # Check if ABI changes occured
-        cls.abi_changes = False
         cls.results_dir = os.path.join(results_dir, cls.name)
         os.makedirs(cls.results_dir)
         debug_old, rest_pkgs_old = cls._get_packages_for_abipkgdiff(results_store.get_build('old'))
         debug_new, rest_pkgs_new = cls._get_packages_for_abipkgdiff(results_store.get_build('new'))
         cmd = [cls.CMD]
-        reports = {}
+        ret_codes = {}
         for pkg in rest_pkgs_old:
             command = list(cmd)
             debug = cls._find_debuginfo(debug_old, pkg)
@@ -129,19 +124,19 @@ class AbiPkgDiff(BaseChecker):
 
             if int(ret_code) & cls.ABIDIFF_ERROR and int(ret_code) & cls.ABIDIFF_USAGE_ERROR:
                 raise RebaseHelperError('Execution of {} failed.\nCommand line is: {}'.format(cls.CMD, cmd))
-            reports[old_name] = int(ret_code)
-        return dict(packages=cls.parse_abi_logs(reports),
-                    abi_changes=cls.abi_changes,
-                    path=cls.get_checker_output_dir_short())
+            ret_codes[old_name] = int(ret_code)
+        return dict(packages=cls.parse_abi_logs(ret_codes),
+                    abi_changes=any(x & cls.ABIDIFF_ABI_CHANGE for x in ret_codes.values()),
+                    abi_incompatible_changes=any(x & cls.ABIDIFF_ABI_INCOMPATIBLE_CHANGE for x in ret_codes.values()),
+                    path=cls.get_checker_output_dir_short(),
+                    ret_codes=ret_codes)
 
     @classmethod
-    def parse_abi_logs(cls, reports):
+    def parse_abi_logs(cls, ret_codes):
         """Parses summary information from abipkgdiff logs.
 
-        Sets abi_changes attribute if there are any ABI changes found.
-
         Args:
-            reports(dict): Dictionary mapping package names to abipkgdiff return codes.
+            ret_codes(dict): Dictionary mapping package names to abipkgdiff return codes.
 
         Returns:
             dict: Dictionary mapping package names to a dict of summary information for each shared object.
@@ -198,17 +193,16 @@ class AbiPkgDiff(BaseChecker):
             return result_dict
 
         pkgs = {}
-        for pkg, ret_code in reports.items():
+        for pkg, ret_code in ret_codes.items():
             if ret_code & cls.ABIDIFF_ABI_CHANGE:
                 with open(os.path.join(cls.results_dir, pkg + '.txt'), 'r') as f:
-                    cls.abi_changes = True
                     pkgs[pkg] = parse_changes(f.readlines())
         return pkgs
 
     @classmethod
     def format(cls, data):
         output_lines = [cls.get_underlined_title('abipkgdiff')]
-        if not data['abi_changes']:
+        if not cls.get_important_changes(data):
             output_lines.append('No ABI changes occured.')
             return output_lines
         for pkg_name, pkg_changes in sorted(data['packages'].items()):
@@ -237,6 +231,8 @@ class AbiPkgDiff(BaseChecker):
 
     @classmethod
     def get_important_changes(cls, checker_output):
+        if checker_output['abi_incompatible_changes']:
+            return ['Incompatible ABI changes occurred. Check abipkgdiff output.']
         if checker_output['abi_changes']:
-            return ['ABI changes occured. Check abipkgdiff output.']
+            return ['ABI changes occurred. Check abipkgdiff output.']
         return []
