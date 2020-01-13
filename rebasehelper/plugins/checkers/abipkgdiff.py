@@ -50,8 +50,9 @@ class AbiPkgDiff(BaseChecker):
     results_dir: Optional[str] = ''
 
     CMD: str = 'abipkgdiff'
-    ABIDIFF_ERROR: int = 1
-    ABIDIFF_USAGE_ERROR: int = 2
+    ABIDIFF_ERROR: int = 1 << 0
+    ABIDIFF_USAGE_ERROR: int = 1 << 1
+    ABIDIFF_ABI_CHANGE: int = 1 << 2
     abi_changes: bool = False
 
     @classmethod
@@ -198,8 +199,7 @@ class AbiPkgDiff(BaseChecker):
 
         pkgs = {}
         for pkg, ret_code in reports.items():
-            # If no abi changes for the package, store empty dictionary
-            if ret_code:
+            if ret_code & cls.ABIDIFF_ABI_CHANGE:
                 with open(os.path.join(cls.results_dir, pkg + '.txt'), 'r') as f:
                     cls.abi_changes = True
                     pkgs[pkg] = parse_changes(f.readlines())
