@@ -68,8 +68,12 @@ class BaseOutputTool(Plugin):
             else:
                 # make the path relative to start_dir
                 prepend = os.path.relpath(os.path.join(app.execution_dir, app.conf.results_dir), app.start_dir)
-            return os.path.join(prepend, RESULTS_DIR, *path_members)
-        return os.path.join(os.path.relpath(os.getcwd(), app.start_dir), RESULTS_DIR, *path_members)
+            path = os.path.join(prepend, RESULTS_DIR, *path_members)
+        else:
+            path = os.path.join(os.path.relpath(os.getcwd(), app.start_dir), RESULTS_DIR, *path_members)
+        if not path.startswith(os.pardir) and not path.startswith(os.curdir):
+            path = os.path.join(os.curdir, path)
+        return path
 
     @classmethod
     def print_cli_summary(cls, app):
