@@ -62,6 +62,9 @@ class SpecContent:
         '%transfiletrigger',
         '%transfiletriggerun',
         '%transfiletriggerpostun',
+        '%end',
+        '%patchlist',
+        '%sourcelist',
     ]
 
     # Comments in these sections can only be on a separate line.
