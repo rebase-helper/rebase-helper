@@ -82,7 +82,24 @@ class Tags(collections.abc.Sequence):
 
     @classmethod
     def _parse(cls, raw_content: SpecContent, parsed_content: SpecContent) -> Tuple[Tag]:
-        """Parses all tags from provided SPEC content and determines if they are valid.
+        result = []
+        parsed_mapping = cls._map_sections_to_parsed(raw_content, parsed_content)
+        # counts number of occurrences of one particular section
+        for section_index, (section, section_content) in enumerate(raw_content.sections):
+            section = section.lower()
+            parsed_section_index = parsed_mapping[section_index]
+            parsed: List[str] = [] if parsed_section_index == -1 else parsed_content.sections[parsed_section_index][1]
+            if section.startswith('%package'):
+                result.extend(cls._parse_package_tags(section, section_content, parsed, section_index))
+            elif section.startswith('%sourcelist') or section.startswith('%patchlist'):
+                result.extend(cls._parse_list_tags(section, section_content, parsed,
+                                                   cast(Tuple[Tag], tuple(result)), section_index))
+        return cast(Tuple[Tag], tuple(result))
+
+    @classmethod
+    def _parse_package_tags(cls, section: str, section_content: List[str], parsed: List[str],
+                            section_index: int) -> List[Tag]:
+        """Parses all tags in a %package section and determines if they are valid.
 
         A tag is considered valid if it is still present after evaluating all conditions.
 
@@ -108,37 +125,62 @@ class Tags(collections.abc.Sequence):
                 return '{0}{1}'.format(tokens[0], int(tokens[1]))
             return name.capitalize()
         result = []
-        parsed_mapping = cls._map_sections_to_parsed(raw_content, parsed_content)
         tag_re = re.compile(r'^(?P<prefix>(?P<name>\w+)\s*:\s*)(?P<value>.+)$')
-        for section_index, (section, section_content) in enumerate(raw_content.sections):
-            section = section.lower()
-            if not section.startswith('%package'):
+        for line_index, line in enumerate(section_content):
+            expanded = MacroHelper.expand(line)
+            if not line or not expanded:
                 continue
-            parsed_section_index = parsed_mapping[section_index]
-            parsed: List[str] = [] if parsed_section_index == -1 else parsed_content.sections[parsed_section_index][1]
-            for line_index, line in enumerate(section_content):
-                expanded = MacroHelper.expand(line)
-                if not line or not expanded:
+            valid = bool(parsed and [p for p in parsed if p == expanded.rstrip()])
+            m = tag_re.match(line)
+            if m:
+                result.append(Tag(section_index, section, line_index,
+                                  sanitize(m.group('name')), m.span('value'), valid))
+                continue
+            m = tag_re.match(expanded)
+            if m:
+                start = line.find(m.group('prefix'))
+                if start < 0:
+                    # tag is probably defined by a macro, just ignore it
                     continue
-                valid = bool(parsed and [p for p in parsed if p == expanded.rstrip()])
+                # conditionalized tag
+                line = line[start:].rstrip('}')  # FIXME: removing trailing braces is not very robust
                 m = tag_re.match(line)
                 if m:
-                    result.append(Tag(section_index, section, line_index, sanitize(m.group('name')), m.span('value'),
-                                      valid))
-                    continue
-                m = tag_re.match(expanded)
-                if m:
-                    start = line.find(m.group('prefix'))
-                    if start < 0:
-                        # tag is probably defined by a macro, just ignore it
-                        continue
-                    # conditionalized tag
-                    line = line[start:].rstrip('}')  # FIXME: removing trailing braces is not very robust
-                    m = tag_re.match(line)
-                    if m:
-                        span = cast(Tuple[int, int], tuple(x + start for x in m.span('value')))
-                        result.append(Tag(section_index, section, line_index, sanitize(m.group('name')), span, valid))
-        return cast(Tuple[Tag], tuple(result))
+                    span = cast(Tuple[int, int], tuple(x + start for x in m.span('value')))
+                    result.append(Tag(section_index, section, line_index, sanitize(m.group('name')), span, valid))
+
+        return result
+
+    @classmethod
+    def _parse_list_tags(cls, section: str, section_content: List[str], parsed: List[str],
+                         parsed_tags: Tuple[Tag], section_index: int) -> List[Tag]:
+        """Parses all tags in a %sourcelist or %patchlist section.
+
+        Only parses tags that are valid (that is - are in parsed), nothing more can
+        consistently be detected.
+
+        Follows how rpm works, the new Source/Patch tags are indexed starting from
+        the last parsed Source/Patch tag.
+
+        """
+        tag = 'Source' if section == '%sourcelist' else 'Patch'
+        indexes = []
+        for parsed_tag in cls._filter(parsed_tags, name=tag + '*'):
+            try:
+                indexes.append(int(parsed_tag.name.lstrip(tag)))
+            except ValueError:
+                continue
+        index = 0 if not indexes else max(indexes) + 1
+        result = []
+        for i, line in enumerate(section_content):
+            expanded = MacroHelper.expand(line)
+            is_comment = SpecContent.get_comment_span(line, section)[0] != len(line)
+            if not expanded or not line or is_comment or not [p for p in parsed if p == expanded.rstrip()]:
+                continue
+            result.append(Tag(section_index, section, i, tag + str(index), (0, len(line)), True))
+            index += 1
+
+        return result
 
     @classmethod
     def _filter(cls, tags: Tuple[Tag], section_index: Optional[int] = None, section_name: Optional[str] = None,
