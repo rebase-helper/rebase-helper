@@ -376,28 +376,31 @@ class SpecFile:
         if not prep:
             return
 
-        patch_re = re.compile(r'^%patch(?P<index>\d+).*')
+        patch_re = re.compile(r'^%patch(?P<index>\d+)(.*)')
 
         i = 0
+        removed = 0
         while i < len(prep):
             line = prep[i]
             match = patch_re.match(line)
             if match:
                 index = int(match.group('index'))
-                for num in reversed(comment_out):
-                    if num == index:
-                        if disable_inapplicable_patches:
-                            prep[i] = '#%{}'.format(line)
-                        prep.insert(i, '# The following patch contains conflicts')
-                        comment_out.remove(num)
-                        i += 1
-                        break
-                for num in reversed(remove_patches):
-                    if num == index:
-                        del prep[i]
-                        remove_patches.remove(num)
-                        i -= 1
-                        break
+                if index in comment_out:
+                    if disable_inapplicable_patches:
+                        prep[i] = '#%{}'.format(line)
+                        removed += 1
+                    prep.insert(i, '# The following patch contains conflicts')
+                    comment_out.remove(index)
+                    i += 1
+                elif index in remove_patches:
+                    del prep[i]
+                    remove_patches.remove(index)
+                    i -= 1
+                    removed += 1
+                # When combining Patch tags and %patchlist, if a Patch is removed, the indexes
+                # of %patchlist patches change and %patch macros need to be modified.
+                elif self.tag('Patch{}'.format(index)).section_name.startswith('%patchlist'):
+                    prep[i] = patch_re.sub(r'%patch{}\2'.format(index - removed), prep[i])
             i += 1
 
     @saves
