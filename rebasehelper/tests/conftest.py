@@ -28,6 +28,8 @@ import shutil
 import pytest  # type: ignore
 
 from rebasehelper.specfile import SpecFile
+from rebasehelper.spec_content import SpecContent
+from rebasehelper.tags import Tags
 
 
 TESTS_DIR: str = os.path.dirname(__file__)
@@ -59,3 +61,16 @@ def pytest_collection_modifyitems(items):
             item.add_marker(pytest.mark.functional)
         else:
             item.add_marker(pytest.mark.standard)
+
+
+@pytest.fixture
+def mocked_spec_object(spec_attributes):
+    spec = SpecFile.__new__(SpecFile)
+    spec.save = lambda: None
+    for attribute, value in spec_attributes.items():
+        if attribute == 'spec_content' and isinstance(value, str):
+            value = SpecContent(value)
+        setattr(spec, attribute, value)
+    if hasattr(spec, 'spec_content') and not hasattr(spec, 'tags'):
+        spec.tags = Tags(spec.spec_content, spec.spec_content)
+    return spec

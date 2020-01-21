@@ -24,6 +24,7 @@
 
 import os
 from typing import List
+from textwrap import dedent
 
 import pytest  # type: ignore
 
@@ -198,6 +199,95 @@ class TestSpecFile:
         assert target == 'test-1.0.2'
         target = spec_object.find_archive_target_in_prep('misc.zip')
         assert target == 'test-1.0.2/misc'
+
+    @pytest.mark.parametrize('spec_attributes, kwargs, expected_content', [
+        (
+            {
+                'removed_patches': [],
+                'spec_content': dedent("""\
+                    Patch0:    0.patch
+                    Patch1:    1.patch
+
+                    %patchlist
+                    2.patch
+                    3.patch
+
+                    %prep
+                    %patch0 -p0
+                    %patch1 -p1
+                    %patch2 -p2
+                    %patch3 -p3
+                    """),
+            },
+            {
+                'patches':
+                    {
+                        'deleted': ['2.patch'],
+                        'inapplicable': ['1.patch'],
+                    },
+                'disable_inapplicable': False,
+            },
+            dedent("""\
+                Patch0:    0.patch
+                Patch1:    1.patch
+
+                %patchlist
+                3.patch
+
+                %prep
+                %patch0 -p0
+                # The following patch contains conflicts
+                %patch1 -p1
+                %patch2 -p3
+                """)
+        ),
+        (
+            {
+                'removed_patches': [],
+                'spec_content': dedent("""\
+                    Patch0:    0.patch
+                    Patch1:    1.patch
+
+                    %patchlist
+                    2.patch
+                    3.patch
+
+                    %prep
+                    %patch0 -p0
+                    %patch1 -p1
+                    %patch2 -p2
+                    %patch3 -p3
+                    """),
+            },
+            {
+                'patches':
+                    {
+                        'deleted': ['2.patch'],
+                        'inapplicable': ['1.patch'],
+                    },
+                'disable_inapplicable': True,
+            },
+            dedent("""\
+        Patch0:    0.patch
+        #Patch1:    1.patch
+
+        %patchlist
+        3.patch
+
+        %prep
+        %patch0 -p0
+        # The following patch contains conflicts
+        #%%patch1 -p1
+        %patch1 -p3
+        """),
+        ),
+    ], ids=[
+        'do_not_disable_inapplicable',
+        'disable_inapplicable',
+    ])
+    def test_write_updated_patches(self, mocked_spec_object, kwargs, expected_content):
+        mocked_spec_object.write_updated_patches(**kwargs)
+        assert expected_content == str(mocked_spec_object.spec_content)
 
     def test_update_paths_to_patches(self, spec_object):
         """
