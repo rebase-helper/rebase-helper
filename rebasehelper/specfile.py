@@ -113,7 +113,8 @@ def saves(func):
 
 class SpecFile:
 
-    """Class representing a SPEC file"""
+    """Class representing a SPEC file. Be aware that using SpecFile
+    modifies RPM macros in global context."""
 
     def __init__(self, path: str, sources_location: str = '', predefined_macros: Optional[Dict[str, str]] = None):
         # Initialize attributes
@@ -132,6 +133,10 @@ class SpecFile:
 
         # Load rpm information
         self._update_data()
+
+    def __del__(self):
+        # make sure there are no leftover macros
+        rpm.reloadConfig()
 
     def download_remote_sources(self):
         """
