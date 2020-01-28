@@ -33,13 +33,14 @@ from rebasehelper.helpers.macro_helper import MacroHelper
 
 class Tag:
     def __init__(self, section_index: int, section_name: str, line: int, name: str, value_span: Tuple[int, int],
-                 valid: bool) -> None:
+                 valid: bool, index: Optional[int] = None) -> None:
         self.section_index: int = section_index
         self.section_name: str = section_name
         self.line: int = line
         self.name: str = name
         self.value_span: Tuple[int, int] = value_span
         self.valid: bool = valid
+        self.index: Optional[int] = index
 
     def __eq__(self, other):
         return (self.section_index == other.section_index and
@@ -47,7 +48,8 @@ class Tag:
                 self.line == other.line and
                 self.name == other.name and
                 self.value_span == other.value_span and
-                self.valid == other.valid)
+                self.valid == other.valid and
+                self.index == other.index)
 
 
 class Tags(collections.abc.Sequence):
@@ -82,23 +84,49 @@ class Tags(collections.abc.Sequence):
 
     @classmethod
     def _parse(cls, raw_content: SpecContent, parsed_content: SpecContent) -> Tuple[Tag]:
-        result = []
+        result: List[Tag] = []
         parsed_mapping = cls._map_sections_to_parsed(raw_content, parsed_content)
+        next_source_index = 0
+        next_patch_index = 0
         # counts number of occurrences of one particular section
         for section_index, (section, section_content) in enumerate(raw_content.sections):
             section = section.lower()
             parsed_section_index = parsed_mapping[section_index]
             parsed: List[str] = [] if parsed_section_index == -1 else parsed_content.sections[parsed_section_index][1]
             if section.startswith('%package'):
-                result.extend(cls._parse_package_tags(section, section_content, parsed, section_index))
+                tags, next_source_index, next_patch_index = cls._parse_package_tags(section, section_content, parsed,
+                                                                                    section_index, next_source_index,
+                                                                                    next_patch_index)
+                result.extend(tags)
             elif section.startswith('%sourcelist') or section.startswith('%patchlist'):
-                result.extend(cls._parse_list_tags(section, section_content, parsed,
-                                                   cast(Tuple[Tag], tuple(result)), section_index))
+                tags, next_source_index, next_patch_index = cls._parse_list_tags(section, section_content, parsed,
+                                                                                 section_index, next_source_index,
+                                                                                 next_patch_index)
+                result.extend(tags)
         return cast(Tuple[Tag], tuple(result))
 
     @classmethod
-    def _parse_package_tags(cls, section: str, section_content: List[str], parsed: List[str],
-                            section_index: int) -> List[Tag]:
+    def _sanitize_tag(cls, name: str, next_source_index: int,
+                      next_patch_index: int) -> Tuple[str, Optional[int], int, int]:
+        """Sanitizes a tag name.
+
+        Capitalizes the tag. If the tag is numbered, strips padded zeroes.
+        Implements automatic numbering of Patches and Sources (adds the number
+        to their name).
+        """
+        name, *rest = re.split(r'(\d+)', name.lower(), 1)
+        sanitized_name = name.capitalize()
+        next_index = next_source_index if name == 'source' else next_patch_index
+        index = int(next(iter(rest), next_index))
+        if name == 'source':
+            return '{}{}'.format(sanitized_name, index), index, index + 1, next_patch_index
+        if name == 'patch':
+            return '{}{}'.format(sanitized_name, index), index, next_source_index, index + 1
+        return sanitized_name, None, next_source_index, next_patch_index
+
+    @classmethod
+    def _parse_package_tags(cls, section: str, section_content: List[str], parsed: List[str], section_index: int,
+                            next_source_index: int, next_patch_index: int) -> Tuple[List[Tag], int, int]:
         """Parses all tags in a %package section and determines if they are valid.
 
         A tag is considered valid if it is still present after evaluating all conditions.
@@ -108,7 +136,7 @@ class Tags(collections.abc.Sequence):
         is considered valid, disregarding the actual condition.
 
         Returns:
-              A tuple of all Tag objects.
+              A tuple containing: a tuple of all Tags object, new next source index, new next patch index.
 
               Indexed tag names are sanitized, for example 'Source' is replaced with 'Source0'
               and 'Patch007' with 'Patch7'.
@@ -116,14 +144,6 @@ class Tags(collections.abc.Sequence):
               Tag names are capitalized, section names are lowercase.
 
         """
-        def sanitize(name):
-            if name.startswith('Source') or name.startswith('Patch'):
-                # strip padding zeroes from indexes
-                tokens = re.split(r'(\d+)', name, 1)
-                if len(tokens) == 1:
-                    return '{0}0'.format(tokens[0])
-                return '{0}{1}'.format(tokens[0], int(tokens[1]))
-            return name.capitalize()
         result = []
         tag_re = re.compile(r'^(?P<prefix>(?P<name>\w+)\s*:\s*)(?P<value>.+)$')
         for line_index, line in enumerate(section_content):
@@ -133,8 +153,10 @@ class Tags(collections.abc.Sequence):
             valid = bool(parsed and [p for p in parsed if p == expanded.rstrip()])
             m = tag_re.match(line)
             if m:
-                result.append(Tag(section_index, section, line_index,
-                                  sanitize(m.group('name')), m.span('value'), valid))
+                tag_name, tag_index, next_source_index, next_patch_index = cls._sanitize_tag(m.group('name'),
+                                                                                             next_source_index,
+                                                                                             next_patch_index)
+                result.append(Tag(section_index, section, line_index, tag_name, m.span('value'), valid, tag_index))
                 continue
             m = tag_re.match(expanded)
             if m:
@@ -147,13 +169,16 @@ class Tags(collections.abc.Sequence):
                 m = tag_re.match(line)
                 if m:
                     span = cast(Tuple[int, int], tuple(x + start for x in m.span('value')))
-                    result.append(Tag(section_index, section, line_index, sanitize(m.group('name')), span, valid))
+                    tag_name, tag_index, next_source_index, next_patch_index = cls._sanitize_tag(m.group('name'),
+                                                                                                 next_source_index,
+                                                                                                 next_patch_index)
+                    result.append(Tag(section_index, section, line_index, tag_name, span, valid, tag_index))
 
-        return result
+        return result, next_source_index, next_patch_index
 
     @classmethod
-    def _parse_list_tags(cls, section: str, section_content: List[str], parsed: List[str],
-                         parsed_tags: Tuple[Tag], section_index: int) -> List[Tag]:
+    def _parse_list_tags(cls, section: str, section_content: List[str], parsed: List[str], section_index: int,
+                         next_source_index: int, next_patch_index: int) -> Tuple[List[Tag], int, int]:
         """Parses all tags in a %sourcelist or %patchlist section.
 
         Only parses tags that are valid (that is - are in parsed), nothing more can
@@ -164,23 +189,17 @@ class Tags(collections.abc.Sequence):
 
         """
         tag = 'Source' if section == '%sourcelist' else 'Patch'
-        indexes = []
-        for parsed_tag in cls._filter(parsed_tags, name=tag + '*'):
-            try:
-                indexes.append(int(parsed_tag.name.lstrip(tag)))
-            except ValueError:
-                continue
-        index = 0 if not indexes else max(indexes) + 1
         result = []
         for i, line in enumerate(section_content):
             expanded = MacroHelper.expand(line)
             is_comment = SpecContent.get_comment_span(line, section)[0] != len(line)
             if not expanded or not line or is_comment or not [p for p in parsed if p == expanded.rstrip()]:
                 continue
-            result.append(Tag(section_index, section, i, tag + str(index), (0, len(line)), True))
-            index += 1
+            tag_name, tag_index, next_source_index, next_patch_index = cls._sanitize_tag(tag, next_source_index,
+                                                                                         next_patch_index)
+            result.append(Tag(section_index, section, i, tag_name, (0, len(line)), True, tag_index))
 
-        return result
+        return result, next_source_index, next_patch_index
 
     @classmethod
     def _filter(cls, tags: Tuple[Tag], section_index: Optional[int] = None, section_name: Optional[str] = None,

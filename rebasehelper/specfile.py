@@ -435,7 +435,6 @@ class SpecFile:
             section = self.spec_content[tag.section_index]
             if section is None:
                 continue
-            patch_num = int(tag.name.split('Patch')[1])
             patch_name = self.get_raw_tag_value(tag.name) or ''
             if 'deleted' in patches:
                 patch_removed = [x for x in patches['deleted'] if patch_name in x]
@@ -448,7 +447,7 @@ class SpecFile:
             if patch_removed:
                 # remove the line of the patch that was removed
                 self.removed_patches.append(patch_name)
-                removed_patches.append(patch_num)
+                removed_patches.append(tag.index)
                 # find associated comments
                 i = tag.line
                 while i > 0 and is_comment(section[i - 1]):
@@ -459,7 +458,7 @@ class SpecFile:
                 if disable_inapplicable:
                     # comment out line if the patch was not applied
                     section[tag.line] = '#' + section[tag.line]
-                inapplicable_patches.append(patch_num)
+                inapplicable_patches.append(tag.index)
             if 'modified' in patches:
                 patch = [x for x in patches['modified'] if patch_name in x]
             else:
@@ -467,7 +466,7 @@ class SpecFile:
             if patch:
                 name = os.path.join(constants.RESULTS_DIR, constants.REBASED_SOURCES_DIR, patch_name)
                 self.set_raw_tag_value(tag.name, name)
-                modified_patches.append(patch_num)
+                modified_patches.append(tag.index)
         for section_index, remove in remove_lines.items():
             content = self.spec_content[section_index]
             for span in sorted(remove, key=lambda s: s[0], reverse=True):
