@@ -192,6 +192,6 @@ Binary packages and logs are in directory rebase-helper-results/new-build/RPM:
         JSON.print_summary(results_file_path, results_store)
 
         with open(results_file_path) as f:
-            json_dict = json.load(f, encoding='utf-8')
+            json_dict = json.load(f)
             # in Python2 strings in json decoded dict are Unicode, which would make the test fail
             assert json_dict == json.loads(json.dumps(self.get_expected_json_output()))
