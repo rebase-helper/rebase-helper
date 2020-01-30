@@ -116,11 +116,11 @@ class PkgDiff(BaseChecker):
         XML_FILES = ['files.xml', 'symbols.xml']
         if old_version is None:
             old_version = results_store.get_old_build().get('version')
-            if old_version is '':
+            if old_version == '':
                 old_version = cls._get_rpm_info('version', results_store.get_old_build()['rpm'])
         if new_version is None:
             new_version = results_store.get_new_build().get('version')
-            if new_version is '':
+            if new_version == '':
                 new_version = cls._get_rpm_info('version', results_store.get_new_build()['rpm'])
 
         for tag in cls.CHECKER_TAGS:
