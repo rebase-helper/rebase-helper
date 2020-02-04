@@ -44,13 +44,10 @@ class TestSpecFile:
     NAME: str = 'test'
     VERSION: str = '1.0.2'
     OLD_ARCHIVE: str = NAME + '-' + VERSION + '.tar.xz'
-    SOURCE_0: str = 'test-source.sh'
     SOURCE_1: str = 'source-tests.sh'
     SOURCE_2: str = ''
-    SOURCE_4: str = 'file.txt.bz2'
     SOURCE_5: str = 'documentation.tar.xz'
     SOURCE_6: str = 'misc.zip'
-    SOURCE_7: str = 'positional-1.1.0.tar.gz'
     PATCH_1: str = 'test-testing.patch'
     PATCH_2: str = 'test-testing2.patch'
     PATCH_3: str = 'test-testing3.patch'
@@ -58,12 +55,9 @@ class TestSpecFile:
 
     TEST_FILES: List[str] = [
         OLD_ARCHIVE,
-        SOURCE_0,
         SOURCE_1,
-        SOURCE_4,
         SOURCE_5,
         SOURCE_6,
-        SOURCE_7,
         PATCH_1,
         PATCH_2,
         PATCH_3,
@@ -112,10 +106,9 @@ class TestSpecFile:
         assert spec_object.get_archive() == self.OLD_ARCHIVE
 
     def test_get_sources(self, workdir, spec_object):
-        sources = [self.SOURCE_0, self.SOURCE_1, self.SOURCE_4, self.SOURCE_5,
-                   self.SOURCE_6, self.SOURCE_7, self.OLD_ARCHIVE]
+        sources = [self.SOURCE_1, self.SOURCE_5, self.SOURCE_6, self.OLD_ARCHIVE]
         sources = [os.path.join(workdir, f) for f in sources]
-        assert len(set(sources).intersection(set(spec_object.get_sources()))) == 7
+        assert len(set(sources).intersection(set(spec_object.get_sources()))) == 4
         # The Source0 has to be always in the beginning
         assert spec_object.get_archive() == 'test-1.0.2.tar.xz'
 
