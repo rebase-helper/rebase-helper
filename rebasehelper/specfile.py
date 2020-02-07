@@ -329,7 +329,7 @@ class SpecFile:
             except ParseError:
                 continue
             rest = [os.path.basename(a) for a in rest]
-            indexes = [p[1] for p in patches if p[0] in rest]
+            indexes = [p[1] for p in patches if os.path.basename(p[0]) in rest]
             for idx in indexes:
                 if idx not in result or result[idx] < ns.p:
                     result[idx] = ns.p
@@ -435,7 +435,7 @@ class SpecFile:
             section = self.spec_content[tag.section_index]
             if section is None:
                 continue
-            patch_name = self.get_raw_tag_value(tag.name) or ''
+            patch_name = os.path.basename(self.get_raw_tag_value(tag.name) or '')
             if 'deleted' in patches:
                 patch_removed = [x for x in patches['deleted'] if patch_name in x]
             else:
