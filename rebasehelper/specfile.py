@@ -606,18 +606,25 @@ class SpecFile:
             return result
 
         def _expand_macros(s):
-            """Expands all redefinable macros containing redefinable macros"""
+            """Expands all redefinable macros containing redefinable macros.
+
+            Keeps track of all expanded macros. Returns the expanded string and a set of expanded
+            macro names.
+            """
             replace = []
+            macros = set()
             for macro, span in _find_macros(s):
                 value = _get_macro_value(macro)
                 if not value:
                     continue
-                rep = _expand_macros(value)
+                macros.add(macro)
+                rep, new_macros = _expand_macros(value)
+                macros |= new_macros
                 if _find_macros(rep):
                     replace.append((rep, span))
             for rep, span in reversed(replace):
                 s = s[:span[0]] + rep + s[span[1]:]
-            return s
+            return s, macros
 
         def _tokenize(s):
             """Removes conditional macros and splits string on macro boundaries"""
@@ -710,8 +717,7 @@ class SpecFile:
 
         def _sync_macros(s):
             """Makes all macros present in a string up-to-date in rpm context"""
-            macros = {m for m, _ in _find_macros(s)}
-            macros.update(m for m, _ in _find_macros(_expand_macros(s)))
+            _, macros = _expand_macros(s)
             for macro in macros:
                 MacroHelper.purge_macro(macro)
                 value = _get_macro_value(macro)
@@ -723,7 +729,7 @@ class SpecFile:
             Replaces non-redefinable-macro parts of curval with matching parts from newval
             and redefines values of macros accordingly
             """
-            value = _expand_macros(curval)
+            value, _ = _expand_macros(curval)
             _sync_macros(curval + newval)
             tokens = _tokenize(value)
             values = [None] * len(tokens)
