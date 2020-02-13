@@ -2,7 +2,6 @@ sudo: required
 language: python
 services: docker
 env:
-    - DISTRO=fedora-29
     - DISTRO=fedora-latest
     - DISTRO=fedora-rawhide
 before_install:
