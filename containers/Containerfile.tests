@@ -1,5 +1,5 @@
 ARG DISTRO=fedora-latest
-FROM rebasehelper/base-image:${DISTRO}
+FROM quay.io/rebasehelper/base-image:${DISTRO}
 
 COPY containers/cert.pem /etc/pki/ca-trust/source/anchors/cert.pem
 RUN update-ca-trust

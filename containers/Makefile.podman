@@ -13,7 +13,7 @@ integration:
 
 	$(PODMAN) run \
 		--pod new\:integration \
-		-d rebasehelper/integration\:latest
+		-d quay.io/rebasehelper/integration\:latest
 
 $(DISTRO):
 	$(PODMAN) rmi -f rebase-helper-tests-$@ || true
