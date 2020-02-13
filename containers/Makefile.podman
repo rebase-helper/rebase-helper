@@ -20,7 +20,7 @@ $(DISTRO):
 
 	$(PODMAN) build \
 		--build-arg DISTRO="$@" \
-		-f docker/Dockerfile.tests \
+		-f containers/Containerfile.tests \
 		-t rebase-helper-tests-$@ \
 		..
 

@@ -9,6 +9,6 @@ include rebase-helper.*
 include Makefile
 include LICENSE
 include MANIFEST.in
-recursive-include docker *
+recursive-include containers *
 recursive-include docs *
 global-exclude *.pyc

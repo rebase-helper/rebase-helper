@@ -1,7 +1,7 @@
 ARG DISTRO=fedora-latest
 FROM rebasehelper/base-image:${DISTRO}
 
-COPY docker/cert.pem /etc/pki/ca-trust/source/anchors/cert.pem
+COPY containers/cert.pem /etc/pki/ca-trust/source/anchors/cert.pem
 RUN update-ca-trust
 
 WORKDIR /build

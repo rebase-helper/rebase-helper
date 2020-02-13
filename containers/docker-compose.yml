@@ -5,7 +5,7 @@ services:
     tests:
         build:
             context: ..
-            dockerfile: docker/Dockerfile.tests
+            dockerfile: containers/Containerfile.tests
         cap_add:
             - SYS_ADMIN
         environment:
