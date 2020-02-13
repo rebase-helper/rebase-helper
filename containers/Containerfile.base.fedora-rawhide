@@ -18,7 +18,8 @@ RUN echo -e "deltarpm=0\ninstall_weak_deps=0\ntsflags=nodocs" >> /etc/dnf/dnf.co
     redhat-rpm-config \
     libxml2-devel \
     libxslt-devel \
-    licensecheck \
+    # licensecheck is currently broken on rawhide, use F31 build
+    https://kojipkgs.fedoraproject.org/packages/licensecheck/3.0.37/2.fc31/noarch/licensecheck-3.0.37-2.fc31.noarch.rpm \
     xz-devel \
     krb5-devel \
     git \
