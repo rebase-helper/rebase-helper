@@ -1,7 +1,7 @@
 version: "3"
 services:
     integration:
-        image: rebasehelper/integration
+        image: quay.io/rebasehelper/integration
     tests:
         build:
             context: ..
