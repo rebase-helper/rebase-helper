@@ -1,6 +1,6 @@
 FROM python:3
 
-COPY docker/webhooks.py /webhooks.py
+COPY containers/webhooks.py /webhooks.py
 
 RUN pip install --no-cache-dir GitPython twine
 

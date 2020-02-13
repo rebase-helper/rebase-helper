@@ -69,8 +69,8 @@ test:
 
 
 test-docker:
-	make -C docker -f Makefile.docker test
+	make -C containers -f Makefile.docker test
 
 
 test-podman:
-	make -C docker -f Makefile.podman test
+	make -C containers -f Makefile.podman test

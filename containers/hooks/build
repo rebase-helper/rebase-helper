@@ -4,7 +4,7 @@ BUILDROOT="/src/${BUILD_CODE}"
 DOCKERFILE="${BUILDROOT}${BUILD_PATH}"
 
 if [ ! -f "${DOCKERFILE}" ]; then
-    DOCKERFILE="${DOCKERFILE}/Dockerfile"
+    DOCKERFILE="${DOCKERFILE}/Containerfile"
 fi
 
 BASE_IMAGE=
