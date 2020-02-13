@@ -6,7 +6,7 @@ include .coveragerc
 include .gitignore
 include pylintrc
 include rebase-helper.*
-include Makefile*
+include Makefile
 include LICENSE
 include MANIFEST.in
 recursive-include docker *

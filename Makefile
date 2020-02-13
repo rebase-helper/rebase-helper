@@ -49,11 +49,11 @@ source: clean
 
 
 html: build
-	make -f Makefile.docs clean html
+	make -C docs clean html
 
 
 man: build
-	make -f Makefile.docs clean man
+	make -C docs clean man
 
 
 completion: build
@@ -69,8 +69,8 @@ test:
 
 
 test-docker:
-	make -f Makefile.docker test
+	make -C docker -f Makefile.docker test
 
 
 test-podman:
-	make -f Makefile.podman test
+	make -C docker -f Makefile.podman test
