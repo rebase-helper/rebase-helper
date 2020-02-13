@@ -1,5 +1,4 @@
-ARG BASE_IMAGE=fedora:latest
-FROM ${BASE_IMAGE}
+FROM fedora:rawhide
 
 RUN echo -e "deltarpm=0\ninstall_weak_deps=0\ntsflags=nodocs" >> /etc/dnf/dnf.conf \
   # workaround mock group not being created in rawhide
