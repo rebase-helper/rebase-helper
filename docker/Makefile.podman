@@ -22,7 +22,7 @@ $(DISTRO):
 		--build-arg DISTRO="$@" \
 		-f docker/Dockerfile.tests \
 		-t rebase-helper-tests-$@ \
-		.
+		..
 
 	$(PODMAN) run \
 		--pod integration \

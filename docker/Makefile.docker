@@ -2,7 +2,7 @@ DISTRO ?= fedora-29 fedora-latest fedora-rawhide
 
 PYTEST_ADDOPTS ?= -m 'standard and not long_running'
 
-CONFIG := docker/docker-compose.yml
+CONFIG := docker-compose.yml
 
 DOCKER_COMPOSE := docker-compose
 
