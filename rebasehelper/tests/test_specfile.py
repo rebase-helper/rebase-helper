@@ -30,8 +30,6 @@ import pytest  # type: ignore
 
 from rebasehelper.tags import Tag
 from rebasehelper.specfile import SpecFile
-from rebasehelper.spec_content import SpecContent
-from rebasehelper.tests.conftest import SPEC_FILE
 
 
 class TestSpecFile:
@@ -79,14 +77,6 @@ class TestSpecFile:
         spec_object.save()
         assert spec_object.header.version == NEW_VERSION
 
-    def test__write_spec_content(self, spec_object):
-        # pylint: disable=protected-access
-        new_content = 'testing line 1\ntesting line 2\n'
-        spec_object.spec_content = SpecContent(new_content)
-        spec_object._write_spec_content()
-        with open(SPEC_FILE) as spec:
-            assert new_content == spec.read()
-
     def test__get_raw_source_string(self, spec_object):
         # pylint: disable=protected-access
         assert spec_object._get_raw_source_string(0) == 'ftp://ftp.test.org/%{name}-%{version}.tar.xz'
@@ -114,11 +104,6 @@ class TestSpecFile:
         for index, p in enumerate(spec_object.get_patches()):
             patches[index] = [p.path, p.index]
         assert patches == expected_patches
-
-    def test_get_requires(self, spec_object):
-        expected = {'openssl-devel', 'pkgconfig', 'texinfo', 'gettext', 'autoconf'}
-        req = spec_object.header.requires
-        assert len(expected.intersection(req)) == len(expected)
 
     def test_split_version_string(self):
         assert SpecFile.split_version_string('1.0.1', '1.0.1') == ('1.0.1', None)
