@@ -46,8 +46,7 @@ class TestArchive:
     ARCHIVED_FILE: str = 'file.txt'
     ARCHIVED_FILE_CONTENT: str = 'simple testing file'
 
-    #  These files located in TEST_FILES_DIR will be copied into the testing environment
-    TEST_FILES: List[str] = [
+    TEST_FILES: List[str] = [os.path.join('archives', archive) for archive in [
         TAR_GZ,
         TGZ,
         TAR_XZ,
@@ -58,7 +57,7 @@ class TestArchive:
         GEM,
         INVALID_TAR_BZ2,
         INVALID_TAR_XZ,
-    ]
+    ]]
 
     @pytest.fixture
     def extracted_archive(self, archive, workdir):
