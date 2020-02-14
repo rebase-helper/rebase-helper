@@ -85,12 +85,28 @@ class TestSpecFile:
         spec_object.save()
         assert spec_object.header.version == NEW_VERSION
 
-    def test__get_raw_source_string(self, spec_object):
+    @pytest.mark.parametrize('spec_attributes, sources', [
+        (
+            {
+                'spec_content': dedent("""\
+                    Source:     ftp://ftp.test.org/%{name}-%{version}.tar.xz
+                    Source1:    source-tests.sh
+                    Source2:    ftp://test.com/test-source.sh
+                    #Source3:    source-tests.sh
+                    """)
+            },
+            [
+                'ftp://ftp.test.org/%{name}-%{version}.tar.xz',
+                'source-tests.sh',
+                'ftp://test.com/test-source.sh',
+                None
+            ]
+        )
+    ])
+    def test__get_raw_source_string(self, mocked_spec_object, sources):
         # pylint: disable=protected-access
-        assert spec_object._get_raw_source_string(0) == 'ftp://ftp.test.org/%{name}-%{version}.tar.xz'
-        assert spec_object._get_raw_source_string(1) == 'source-tests.sh'
-        assert spec_object._get_raw_source_string(2) == 'ftp://test.com/test-source.sh'
-        assert spec_object._get_raw_source_string(3) is None
+        for i, source in enumerate(sources):
+            assert mocked_spec_object._get_raw_source_string(i) == source
 
     def test_old_tarball(self, spec_object):
         assert spec_object.get_archive() == self.OLD_ARCHIVE
@@ -149,12 +165,58 @@ class TestSpecFile:
         assert SpecFile.extract_version_from_archive_name('libsigc++-2.10.0.tar.xz',
                                                           name) == '2.10.0'
 
-    def test_get_main_files_section(self, spec_object):
-        assert spec_object.get_main_files_section() == '%files'
+    @pytest.mark.parametrize('spec_attributes, main_files', [
+        (
+            {
+                'spec_content': dedent("""\
+                    %files
+                    %files -n test
+                    %files test
+                    """)
+            },
+            '%files'
+        ),
+        (
+            {
+                'spec_content': dedent("""\
+                    %files -n test
+                    """)
+            },
+            None
+        ),
+    ], ids=[
+        'has-main-files',
+        'no-main-files',
+    ])
+    def test_get_main_files_section(self, mocked_spec_object, main_files):
+        assert mocked_spec_object.get_main_files_section() == main_files
 
-    def test_is_test_suite_enabled(self, spec_object):
-        found = spec_object.is_test_suite_enabled()
-        assert found is True
+    @pytest.mark.parametrize('spec_attributes, is_enabled', [
+        (
+            {
+                'spec_content': dedent("""\
+                    %check
+                    make test
+                    """)
+            },
+            True
+        ),
+        (
+            {
+                'spec_content': dedent("""\
+                    %check
+                    # disabled test
+                    # make test
+                    """)
+            },
+            False
+        ),
+    ], ids=[
+        'is_enabled',
+        'is_disabled',
+    ])
+    def test_is_test_suite_enabled(self, mocked_spec_object, is_enabled):
+        assert mocked_spec_object.is_test_suite_enabled() is is_enabled
 
     def test_set_extra_version(self, spec_object):
         spec_object.set_version('1.0.3')
@@ -170,20 +232,41 @@ class TestSpecFile:
         spec_object.set_extra_version('g1234567', False)
         assert spec_object.get_release() == '2.g1234567'
 
-    def test_update_setup_dirname(self, spec_object):
-        spec_object.set_extra_version('rc1', False)
+    @pytest.mark.parametrize('spec_attributes', [
+        {
+            'spec_content': dedent("""\
+                %global release 34
+                %global release_str %{release}%{?dist}
 
-        prep = spec_object.spec_content.section('%prep')
-        spec_object.update_setup_dirname('test-1.0.2')
-        assert spec_object.spec_content.section('%prep') == prep
+                Name:    test
+                Version: 1.0.2
+                Release: %{release_str}
 
-        spec_object.update_setup_dirname('test-1.0.2rc1')
-        prep = spec_object.spec_content.section('%prep')
+                %prep
+                %setup -q -c -a 5
+                """),
+            'get_release': lambda: '34',
+            'macros':
+                {
+                    'name': {'value': 'test', 'level': -3},
+                    'version': {'value': '1.0.2', 'level': -3},
+                },
+        }
+    ])
+    def test_update_setup_dirname(self, mocked_spec_object):
+        mocked_spec_object.set_extra_version('rc1', False)
+
+        prep = mocked_spec_object.spec_content.section('%prep')
+        mocked_spec_object.update_setup_dirname('test-1.0.2')
+        assert mocked_spec_object.spec_content.section('%prep') == prep
+
+        mocked_spec_object.update_setup_dirname('test-1.0.2rc1')
+        prep = mocked_spec_object.spec_content.section('%prep')
         setup = [l for l in prep if l.startswith('%setup')][0]
         assert '-n %{name}-%{version}rc1' in setup
 
-        spec_object.update_setup_dirname('test-1.0.2-rc1')
-        prep = spec_object.spec_content.section('%prep')
+        mocked_spec_object.update_setup_dirname('test-1.0.2-rc1')
+        prep = mocked_spec_object.spec_content.section('%prep')
         setup = [l for l in prep if l.startswith('%setup')][0]
         assert '-n %{name}-%{version}-rc1' in setup
 
@@ -282,17 +365,18 @@ class TestSpecFile:
         mocked_spec_object.write_updated_patches(**kwargs)
         assert expected_content == str(mocked_spec_object.spec_content)
 
-    def test_update_paths_to_patches(self, spec_object):
-        """
-        Check updated paths to patches in the rebased directory
-        :return:
-        """
-        line = [l for l in spec_object.spec_content.section('%package') if l.startswith('Patch5')][0]
+    @pytest.mark.parametrize('spec_attributes', [
+        {
+            'spec_content': 'Patch5: rebase-helper-results/rebased-sources/test-testing5.patch\n'
+        }
+    ])
+    def test_update_paths_to_patches(self, mocked_spec_object):
+        line = [l for l in mocked_spec_object.spec_content.section('%package') if l.startswith('Patch5')][0]
         assert 'rebased-sources' in line
 
-        spec_object.update_paths_to_patches()
+        mocked_spec_object.update_paths_to_patches()
 
-        line = [l for l in spec_object.spec_content.section('%package') if l.startswith('Patch5')][0]
+        line = [l for l in mocked_spec_object.spec_content.section('%package') if l.startswith('Patch5')][0]
         assert 'rebased-sources' not in line
 
     def test_tags(self, spec_object):
