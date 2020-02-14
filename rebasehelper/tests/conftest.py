@@ -26,10 +26,12 @@ import os
 import shutil
 
 import pytest  # type: ignore
+import rpm  # type: ignore
 
 from rebasehelper.specfile import SpecFile
 from rebasehelper.spec_content import SpecContent
 from rebasehelper.tags import Tags
+from rebasehelper.helpers.macro_helper import MacroHelper
 
 
 TESTS_DIR: str = os.path.dirname(__file__)
@@ -53,6 +55,30 @@ def spec_object(workdir):  # pylint: disable=redefined-outer-name
     return SpecFile(SPEC_FILE, workdir)
 
 
+@pytest.fixture
+def mocked_spec_object(spec_attributes):
+    spec = SpecFile.__new__(SpecFile)
+    spec.save = lambda: None
+    for attribute, value in spec_attributes.items():
+        if attribute == 'macros':
+            for macro, properties in value.items():
+                rpm.addMacro(macro, properties.get('value', ''))
+            macros = MacroHelper.dump()
+            for macro, properties in value.items():
+                for m in macros:
+                    if m['name'] == macro:
+                        for prop, v in properties.items():
+                            if prop != 'value':
+                                m[prop] = v
+            value = macros
+        if attribute == 'spec_content' and isinstance(value, str):
+            value = SpecContent(value)
+        setattr(spec, attribute, value)
+    if hasattr(spec, 'spec_content') and not hasattr(spec, 'tags'):
+        spec.tags = Tags(spec.spec_content, spec.spec_content)
+    return spec
+
+
 def pytest_collection_modifyitems(items):
     for item in items:
         # item is an instance of Function class.
@@ -61,16 +87,3 @@ def pytest_collection_modifyitems(items):
             item.add_marker(pytest.mark.functional)
         else:
             item.add_marker(pytest.mark.standard)
-
-
-@pytest.fixture
-def mocked_spec_object(spec_attributes):
-    spec = SpecFile.__new__(SpecFile)
-    spec.save = lambda: None
-    for attribute, value in spec_attributes.items():
-        if attribute == 'spec_content' and isinstance(value, str):
-            value = SpecContent(value)
-        setattr(spec, attribute, value)
-    if hasattr(spec, 'spec_content') and not hasattr(spec, 'tags'):
-        spec.tags = Tags(spec.spec_content, spec.spec_content)
-    return spec
