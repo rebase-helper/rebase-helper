@@ -35,7 +35,7 @@ class TestLookasideCacheHelper:
 
     TEST_FILES: List[str] = [
         'documentation.tar.xz',
-        'archive.tar.bz2',
+        'archives/archive.tar.bz2',
     ]
 
     @pytest.mark.parametrize('package, filename, hashtype, hsh', [
