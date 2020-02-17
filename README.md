@@ -1,6 +1,6 @@
 # Welcome to rebase-helper
 
-[![Travis CI build status](https://travis-ci.org/rebase-helper/rebase-helper.svg?branch=master)](https://travis-ci.org/rebase-helper/rebase-helper) [![Documentation build status](https://readthedocs.org/projects/rebase-helper/badge/?version=latest)](https://readthedocs.org/projects/rebase-helper) [![GitLab CI build status](https://gitlab.com/rebase-helper/rebase-helper/badges/master/build.svg)](https://gitlab.com/rebase-helper/rebase-helper/commits/master) [![PyPI version](https://img.shields.io/pypi/v/rebasehelper.svg)](https://pypi.org/project/rebasehelper) [![Project status](https://img.shields.io/pypi/status/rebasehelper.svg)](https://pypi.org/project/rebasehelper) [![Code Quality](https://api.codacy.com/project/badge/Grade/af059c941cd94f7aa557c3ae7ce75bb8)](https://www.codacy.com/app/rebase-helper/rebase-helper)
+[![Travis CI build status](https://travis-ci.org/rebase-helper/rebase-helper.svg?branch=master)](https://travis-ci.org/rebase-helper/rebase-helper) [![Documentation build status](https://readthedocs.org/projects/rebase-helper/badge/?version=latest)](https://readthedocs.org/projects/rebase-helper) [![Container image build status](https://quay.io/repository/rebasehelper/rebase-helper/status)](https://quay.io/repository/rebasehelper/rebase-helper) [![PyPI version](https://img.shields.io/pypi/v/rebasehelper.svg)](https://pypi.org/project/rebasehelper) [![Project status](https://img.shields.io/pypi/status/rebasehelper.svg)](https://pypi.org/project/rebasehelper) [![Code Quality](https://api.codacy.com/project/badge/Grade/af059c941cd94f7aa557c3ae7ce75bb8)](https://www.codacy.com/app/rebase-helper/rebase-helper)
 
 There are several steps that need to be done when rebasing a package. The goal of **rebase-helper** is to automate most of these steps.
 
@@ -29,7 +29,7 @@ Alternatively, you can run **rebase-helper** in a container:
 
 `$ docker run -it -e PACKAGE=foo rebasehelper/rebase-helper:latest`
 
-See [docker reference](https://rebase-helper.readthedocs.io/en/latest/user_guide/rebasing_in_container.html) for more information.
+See [container reference](https://rebase-helper.readthedocs.io/en/latest/user_guide/rebasing_in_container.html) for more information.
 
 ## What do I get from it?
 
