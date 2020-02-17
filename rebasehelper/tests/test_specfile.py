@@ -27,9 +27,17 @@ from typing import List
 from textwrap import dedent
 
 import pytest  # type: ignore
+import rpm  # type: ignore
 
 from rebasehelper.tags import Tag
 from rebasehelper.specfile import SpecFile
+
+
+@pytest.fixture(autouse=True)
+def rpm_cleanup():
+    # Some tests change macro values. This can influence other tests.
+    # Prevent it by resetting the macros before each test.
+    rpm.reloadConfig()
 
 
 class TestSpecFile:
