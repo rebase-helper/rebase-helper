@@ -22,6 +22,7 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
+import copy
 import os
 import shutil
 
@@ -77,6 +78,11 @@ def mocked_spec_object(spec_attributes):
     if hasattr(spec, 'spec_content') and not hasattr(spec, 'tags'):
         spec.tags = Tags(spec.spec_content, spec.spec_content)
     return spec
+
+
+@pytest.fixture
+def mocked_spec_object_copy(mocked_spec_object):  # pylint: disable=redefined-outer-name
+    return copy.deepcopy(mocked_spec_object)
 
 
 def pytest_collection_modifyitems(items):
