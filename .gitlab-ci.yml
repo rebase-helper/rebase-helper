@@ -4,12 +4,11 @@ stages:
 .test_template: &test_definition
     stage: test
     image: quay.io/rebasehelper/gitlab-ci
-    variables:
-        DOCKER_HOST: tcp://docker:2375
-        DOCKER_DRIVER: overlay
     services:
         - docker:dind
     script:
+        - export DOCKER_HOST=tcp://docker:2375
+        - export DOCKER_DRIVER=overlay
         - make PYTEST_ADDOPTS="-m 'not long_running'" test-docker
 
 test:fedora-latest:
