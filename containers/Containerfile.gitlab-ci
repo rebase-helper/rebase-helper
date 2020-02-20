@@ -1,4 +1,4 @@
 FROM alpine:latest
 
 RUN apk update \
-  && apk add --no-cache docker docker-compose
+  && apk add --no-cache docker docker-compose make
