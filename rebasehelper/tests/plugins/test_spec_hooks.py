@@ -112,18 +112,19 @@ class TestSpecHook:
         {
             'spec_content': dedent("""\
                 Version: 1.0.2
-                Source9: https://test.com/#/1.0/%{name}-hardcoded-version-1.0.2.tar.gz
+                Source9: https://test.com/#/1.0/%{name}-hardcoded-version-1.0.2b1.tar.gz
                 Recommends: test > 1.0.2
 
                 %changelog
                 * Wed Apr 26 2017 Nikola Forró <nforro@redhat.com> - 1.0.2-34
                 - Update to 1.0.2
                 """),
-            'header': SimpleNamespace(version='1.0.2', release='1'),
+            'header': SimpleNamespace(version='1.0.2', release='0.1.b1'),
         }
     ])
     def test_replace_old_version_spec_hook(self, mocked_spec_object, mocked_spec_object_copy, replace_with_macro):
         mocked_spec_object_copy.header.version = '1.1.0'
+        mocked_spec_object_copy.header.release = '1'
         mocked_spec_object_copy.set_raw_tag_value('Version', '1.1.0')
         ReplaceOldVersion.run(mocked_spec_object, mocked_spec_object_copy,
                               replace_old_version_with_macro=replace_with_macro)
