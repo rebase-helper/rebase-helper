@@ -84,11 +84,14 @@ class ReplaceOldVersion(BaseSpecHook):
         old = spec_file.get_version()
         new = rebase_spec_file.get_version()
         version_re = r'([\ /\-\s]){}([/.\-\s]|$)'
+        # Allow any character after whole version to replace strings such as
+        # 1.0.1bc1
+        full_version_re = r'([\ /\-\s]){}(.*)'
         replacement = r'\g<1>{}\g<2>'
         split_version = old.split('.')
 
         res = [
-            (re.compile(version_re.format(re.escape(old))), replacement.format('%{version}' if use_macro else new))
+            (re.compile(full_version_re.format(re.escape(old))), replacement.format('%{version}' if use_macro else new))
         ]
         # iterate backwards to go from longer to shorter subversions
         for i in reversed(range(2, len(split_version))):
