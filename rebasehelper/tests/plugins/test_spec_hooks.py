@@ -119,7 +119,7 @@ class TestSpecHook:
                 * Wed Apr 26 2017 Nikola Forró <nforro@redhat.com> - 1.0.2-34
                 - Update to 1.0.2
                 """),
-            'header': SimpleNamespace(version='1.0.2'),
+            'header': SimpleNamespace(version='1.0.2', release='1'),
         }
     ])
     def test_replace_old_version_spec_hook(self, mocked_spec_object, mocked_spec_object_copy, replace_with_macro):
