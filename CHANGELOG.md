@@ -2,6 +2,28 @@
 
 ## [Unreleased]
 
+## [0.21.0] - 2020-02-21
+### Added
+- Added public API tests for `Tags` class
+- Added support for *%patchlist* and *%sourcelist*
+- Added support for automatic *Source*/*Patch* numbering
+
+### Fixed
+- **commit-hash-updater** SPEC hook now handles empty release name
+- *sources* is now ignored if it's not a regular file
+- Fixed summary and report paths when using `--bugzila-id` or `--results-dir`
+- Fixed and extended detection of ABI changes reported by **abipkgdiff**
+- Removed deprecated encoding parameter in `json.load()` for Python 3.9
+- Fixed processing of remote patches
+- Fixed handling of intermediate macros in `SpecFile.set_tag()`
+
+### Changed
+- All RPM macros are now reset when `SpecFile` object is destroyed
+- Renamed docker directory to containers and Dockerfiles to Containerfiles
+- Switched from Docker Hub to quay.io for automatic image building
+- Improved and cleaned up `SpecFile` tests
+- **replace-old-version** SPEC hook can now replace also extraversion
+
 ## [0.20.0] - 2019-12-06
 ### Added
 - Introduced `Tags` class unifying and simplifying access to SPEC tags
