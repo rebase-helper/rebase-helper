@@ -27,6 +27,7 @@ import re
 import urllib.parse
 from typing import Any, Dict, List, Pattern, Tuple, Set
 
+from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.types import Options
 from rebasehelper.plugins.spec_hooks import BaseSpecHook
 from rebasehelper.specfile import SpecFile
@@ -62,12 +63,13 @@ class ReplaceOldVersion(BaseSpecHook):
     ]
 
     @classmethod
-    def _create_possible_replacements(cls, old: str, new: str, use_macro: bool) -> List[Tuple[Pattern[str], str]]:
+    def _create_possible_replacements(cls, spec_file: SpecFile, rebase_spec_file: SpecFile,
+                                      use_macro: bool) -> List[Tuple[Pattern[str], str]]:
         """Creates possible subversion replacements.
 
         Args:
-            old: Old version.
-            new: New Version.
+            spec_file: Old SpecFile.
+            rebase_spec_file: New SpecFile.
             use_macro: Whether %{version} macro should be used as a replacement.
 
         Returns:
@@ -79,6 +81,8 @@ class ReplaceOldVersion(BaseSpecHook):
             Subversions 1.2, 1.2.3, 1.2.3.4 would be created from version 1.2.3.4.
 
         """
+        old = spec_file.get_version()
+        new = rebase_spec_file.get_version()
         version_re = r'([\ /\-\s]){}([/.\-\s]|$)'
         replacement = r'\g<1>{}\g<2>'
         split_version = old.split('.')
@@ -91,15 +95,24 @@ class ReplaceOldVersion(BaseSpecHook):
             pattern = re.compile(version_re.format(re.escape('.'.join(split_version[:i]))))
             new_subversion = replacement.format('.'.join(new.split('.')[:i]))
             res.append((pattern, new_subversion))
+        # add hardcoded extra version replacement
+        try:
+            old_extra = spec_file.parse_release()[2]
+            if old_extra:
+                new_extra = rebase_spec_file.parse_release()[2] or ''
+                # allow extraversion to immediately follow version
+                extraversion = re.compile(r'([\ /\-\s\d\}])' + re.escape(old_extra) + r'([/.\-\s]|$)')
+                res.append((extraversion, replacement.format(new_extra)))
+        except RebaseHelperError:
+            # silently skip unparsable release
+            pass
         return res
 
     @classmethod
     def run(cls, spec_file: SpecFile, rebase_spec_file: SpecFile, **kwargs: Any):
-        old_version = spec_file.header.version
-        new_version = rebase_spec_file.header.version
         replace_with_macro = bool(kwargs.get('replace_old_version_with_macro'))
 
-        subversion_patterns = cls._create_possible_replacements(old_version, new_version, replace_with_macro)
+        subversion_patterns = cls._create_possible_replacements(spec_file, rebase_spec_file, replace_with_macro)
         examined_lines: Dict[int, Set[int]] = collections.defaultdict(set)
         for tag in rebase_spec_file.tags.filter():
             examined_lines[tag.section_index].add(tag.line)
