@@ -27,7 +27,7 @@ For complete CLI reference see [usage](https://rebase-helper.readthedocs.io/en/l
 
 Alternatively, you can run **rebase-helper** in a container:
 
-`$ docker run -it -e PACKAGE=foo rebasehelper/rebase-helper:latest`
+`$ docker run -it -e PACKAGE=foo quay.io/rebasehelper/rebase-helper:latest`
 
 See [container reference](https://rebase-helper.readthedocs.io/en/latest/user_guide/rebasing_in_container.html) for more information.
 
