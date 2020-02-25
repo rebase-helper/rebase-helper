@@ -1,12 +1,8 @@
 FROM fedora:latest
 
 RUN echo -e "deltarpm=0\ninstall_weak_deps=0\ntsflags=nodocs" >> /etc/dnf/dnf.conf \
-  # workaround mock group not being created in rawhide
-  && groupadd -g 135 mock || true \
   # update GPG keys first in case some of them are missing
   && dnf -y --nogpgcheck update fedora-gpg-keys || true \
-  # workaround conflict between coreutils and coreutils-single
-  && dnf -y --allowerasing install coreutils fedora-release \
   && dnf -y update \
   && dnf -y install \
     python36 \

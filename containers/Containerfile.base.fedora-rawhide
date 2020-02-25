@@ -1,12 +1,8 @@
 FROM fedora:rawhide
 
 RUN echo -e "deltarpm=0\ninstall_weak_deps=0\ntsflags=nodocs" >> /etc/dnf/dnf.conf \
-  # workaround mock group not being created in rawhide
-  && groupadd -g 135 mock || true \
   # update GPG keys first in case some of them are missing
   && dnf -y --nogpgcheck update fedora-gpg-keys || true \
-  # workaround conflict between coreutils and coreutils-single
-  && dnf -y --allowerasing install coreutils fedora-release \
   && dnf -y update \
   && dnf -y install \
     python36 \
@@ -18,8 +14,7 @@ RUN echo -e "deltarpm=0\ninstall_weak_deps=0\ntsflags=nodocs" >> /etc/dnf/dnf.co
     redhat-rpm-config \
     libxml2-devel \
     libxslt-devel \
-    # licensecheck is currently broken on rawhide, use F31 build
-    https://kojipkgs.fedoraproject.org/packages/licensecheck/3.0.37/2.fc31/noarch/licensecheck-3.0.37-2.fc31.noarch.rpm \
+    licensecheck \
     xz-devel \
     krb5-devel \
     git \
