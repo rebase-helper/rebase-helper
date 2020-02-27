@@ -29,7 +29,7 @@ from typing import cast
 from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.helpers.path_helper import PathHelper
 from rebasehelper.logger import CustomLogger
-from rebasehelper.plugins.build_tools import MockTemporaryEnvironment, check_mock_privileges
+from rebasehelper.plugins.build_tools import MockTemporaryEnvironment, check_mock_privileges, get_mock_logfile_path
 from rebasehelper.plugins.build_tools.rpm import BuildToolBase
 from rebasehelper.exceptions import BinaryPackageBuildError
 
@@ -86,40 +86,8 @@ class Mock(BuildToolBase):  # pylint: disable=abstract-method
         if ret == 0:
             return [f for f in PathHelper.find_all_files(results_dir, '*.rpm') if not f.endswith('.src.rpm')], logs
         else:
-            logfile = Mock.get_mock_logfile_path(ret, rpm_results_dir, tmp_path=results_dir)
+            logfile = get_mock_logfile_path(ret, rpm_results_dir, tmp_path=results_dir)
         raise BinaryPackageBuildError("Building RPMs failed!", rpm_results_dir, logfile=logfile, logs=logs)
-
-    @staticmethod
-    def get_mock_logfile_path(ret, results_dir, tmp_path=None):
-        """
-        Get path to logfile containing the error message
-
-        :param ret: return code from mock
-        :param results_dir: directory where logs will be stored
-        :param tmp_path: temporary directory where logs are during build
-        :return:
-        """
-        tmp_build_log_path = os.path.join(results_dir, 'build.log')
-        tmp_mock_log_path = os.path.join(results_dir, 'mock_output.log')
-
-        if tmp_path:
-            # The logs are still located in the temporary build directory
-            tmp_build_log_path = os.path.join(tmp_path, 'build.log')
-            tmp_mock_log_path = os.path.join(tmp_path, 'mock_output.log')
-
-        build_log_path = os.path.join(results_dir, 'build.log')
-        mock_log_path = os.path.join(results_dir, 'mock_output.log')
-        root_log_path = os.path.join(results_dir, 'root.log')
-
-        # Mock return code classification based on https://pagure.io/koji/blob/c496bf9/f/builder/kojid#_481
-        if ret == 1:
-            if not os.path.exists(tmp_build_log_path) and os.path.exists(tmp_mock_log_path):
-                logfile = mock_log_path
-            else:
-                logfile = build_log_path
-        else:
-            logfile = root_log_path
-        return logfile
 
     @classmethod
     def build(cls, spec, results_dir, srpm, **kwargs):

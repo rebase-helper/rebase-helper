@@ -37,6 +37,41 @@ from rebasehelper.temporary_environment import TemporaryEnvironment
 logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
 
 
+def get_mock_logfile_path(ret, results_dir, tmp_path=None):
+    """
+    Get path to logfile containing the error message
+
+    :param ret: return code from mock
+    :param results_dir: directory where logs will be stored
+    :param tmp_path: temporary directory where logs are during build
+    :return:
+    """
+    tmp_build_log_path = os.path.join(results_dir, 'build.log')
+    tmp_mock_log_path = os.path.join(results_dir, 'mock_output.log')
+
+    if tmp_path:
+        # The logs are still located in the temporary build directory
+        tmp_build_log_path = os.path.join(tmp_path, 'build.log')
+        tmp_mock_log_path = os.path.join(tmp_path, 'mock_output.log')
+
+    build_log_path = os.path.join(results_dir, 'build.log')
+    mock_log_path = os.path.join(results_dir, 'mock_output.log')
+    root_log_path = os.path.join(results_dir, 'root.log')
+
+    # Mock return code classification based on https://pagure.io/koji/blob/c496bf9/f/builder/kojid#_481
+    if ret == 1:
+        if not os.path.exists(tmp_build_log_path) and os.path.exists(tmp_mock_log_path):
+            logfile = mock_log_path
+        else:
+            logfile = build_log_path
+    elif ret < 0:
+        # koji error
+        logfile = None
+    else:
+        logfile = root_log_path
+    return logfile
+
+
 def check_mock_privileges() -> bool:
     # try to authenticate as superuser using mock PAM service
     return pam.pam().authenticate('root', '', service='mock')

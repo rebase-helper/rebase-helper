@@ -36,6 +36,7 @@ from rebasehelper.types import Options
 from rebasehelper.helpers.koji_helper import KojiHelper
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.plugins.build_tools.rpm import BuildToolBase
+from rebasehelper.plugins.build_tools import get_mock_logfile_path
 from rebasehelper.exceptions import BinaryPackageBuildError
 from rebasehelper.logger import CustomLogger
 
@@ -88,7 +89,7 @@ class Koji(BuildToolBase):
         return None
 
     @classmethod
-    def _scratch_build(cls, srpm, **kwargs):
+    def _scratch_build(cls, results_dir, srpm, **kwargs):
         session = KojiHelper.create_session(login=True)
         remote = KojiHelper.upload_srpm(session, srpm)
         task_id = session.build(remote, cls.TARGET_TAG, dict(scratch=True))
@@ -102,7 +103,7 @@ class Koji(BuildToolBase):
         rpms, logs = KojiHelper.download_task_results(session, list(task_dict), path)
         exit_code = cls._verify_tasks(session, task_dict)
         if exit_code:
-            raise BinaryPackageBuildError(exit_code=exit_code, logs=logs)
+            raise BinaryPackageBuildError(logs=logs, logfile=get_mock_logfile_path(exit_code, results_dir))
         return rpms, logs, task_id
 
     @classmethod
@@ -112,7 +113,7 @@ class Koji(BuildToolBase):
         rpms, logs = KojiHelper.download_task_results(session, list(task_dict), results_dir)
         exit_code = cls._verify_tasks(session, task_dict)
         if exit_code:
-            raise BinaryPackageBuildError(exit_code=exit_code, logs=logs)
+            raise BinaryPackageBuildError(logs=logs, logfile=get_mock_logfile_path(exit_code, results_dir))
         return rpms, logs
 
     @classmethod
@@ -128,7 +129,7 @@ class Koji(BuildToolBase):
         task = session.getTaskInfo(task_id)
         exit_code = cls._verify_tasks(session, {task_id: task['state']})
         if exit_code:
-            raise BinaryPackageBuildError(exit_code=exit_code, logs=logs)
+            raise BinaryPackageBuildError(logs=logs, logfile=get_mock_logfile_path(exit_code, results_dir))
         if not rpms:
             raise RebaseHelperError('Koji tasks are not finished yet. Try again later.')
         return rpms, logs
@@ -147,5 +148,5 @@ class Koji(BuildToolBase):
                  'logs' -> list with absolute paths to build_logs
                  'koji_task_id' -> ID of koji task
         """
-        rpms, logs, koji_task_id = cls._scratch_build(srpm, **kwargs)
+        rpms, logs, koji_task_id = cls._scratch_build(results_dir, srpm, **kwargs)
         return dict(rpm=rpms, logs=logs, koji_task_id=koji_task_id)
