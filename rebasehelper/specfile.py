@@ -996,7 +996,6 @@ class SpecFile:
 
     def reload(self):
         """Reloads the whole Spec file."""
-        self._read_spec_content()
         self.update()
 
     def save(self):
