@@ -203,9 +203,13 @@ class Patcher:
                     # check for unresolved conflicts
                     unresolved = []
                     for file in unmerged:
-                        with open(os.path.join(cls.old_sources, file), 'rb') as f:
-                            if [l for l in f if b'<<<<<<<' in l]:
-                                unresolved.append(file)
+                        try:
+                            with open(os.path.join(cls.old_sources, file), 'rb') as f:
+                                if [l for l in f if b'<<<<<<<' in l]:
+                                    unresolved.append(file)
+                        except FileNotFoundError:
+                            # skip deleted files
+                            continue
                     if unresolved:
                         if InputHelper.get_message('There are still unresolved conflicts. '
                                                    'Do you want to skip this patch',
