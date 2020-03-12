@@ -55,6 +55,7 @@ class CustomAction(argparse.Action):
                  dest=None,
                  default=None,
                  nargs=None,
+                 const=None,
                  required=False,
                  type=None,  # pylint: disable=redefined-builtin
                  metavar=None,
@@ -64,6 +65,7 @@ class CustomAction(argparse.Action):
         super(CustomAction, self).__init__(
             option_strings=option_strings,
             dest=dest,
+            const=const,
             default=default,
             required=required,
             metavar=metavar,
@@ -95,7 +97,8 @@ class CustomArgumentParser(argparse.ArgumentParser):
     def _check_value(self, action, value):
         if isinstance(value, list):
             # converted value must be subset of the choices (if specified)
-            if action.choices is not None and not set(value).issubset(action.choices):
+            empty = value == action.const
+            if action.choices is not None and not empty and not set(value).issubset(action.choices):
                 invalid = set(value).difference(action.choices)
                 if len(invalid) == 1:
                     tup = repr(invalid.pop()), ', '.join(map(repr, action.choices))

@@ -161,7 +161,7 @@ class TestRebase:
             '--force-build-log-hooks',
             '--buildtool', buildtool,
             '--outputtool', 'json',
-            '--pkgcomparetool', 'rpmdiff',  # FIXME: no checkers are actually needed here
+            '--pkgcomparetool', '',
             '--color=always',
             new_version,
         ])
