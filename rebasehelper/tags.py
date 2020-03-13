@@ -51,6 +51,18 @@ class Tag:
                 self.valid == other.valid and
                 self.index == other.index)
 
+    def __str__(self) -> str:
+        return (
+            "Tag("
+            f"section_index='{self.section_index}', "
+            f"section_name='{self.section_name}', "
+            f"line='{self.line}', "
+            f"name='{self.name}', "
+            f"value_span='{self.value_span}', "
+            f"valid='{self.valid}', "
+            f"index='{self.index}')"
+        )
+
 
 class Tags(collections.abc.Sequence):
     def __init__(self, raw_content: SpecContent, parsed_content: SpecContent) -> None:
