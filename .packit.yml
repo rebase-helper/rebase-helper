@@ -1,4 +1,3 @@
-specfile_path: rebase-helper.spec
 current_version_command: ["python3", "setup.py", "--version"]
 create_tarball_command: ["python3", "setup.py", "sdist", "--base-name", "rebase-helper", "--dist-dir", "."]
 jobs:
