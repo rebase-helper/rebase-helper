@@ -26,7 +26,7 @@ import collections
 import logging
 import os
 import re
-from typing import List, Optional, Set, cast
+from typing import Dict, List, Optional, Set, Union, cast
 
 from rebasehelper.logger import CustomLogger
 from rebasehelper.results_store import results_store
@@ -35,6 +35,8 @@ from rebasehelper.helpers.rpm_helper import RpmHelper
 
 
 logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
+
+SonameChanges = Dict[str, Dict[str, List[Union[str, Dict[str, str]]]]]
 
 
 class SonameCheck(BaseChecker):
@@ -60,7 +62,7 @@ class SonameCheck(BaseChecker):
     def run_check(cls, results_dir, **kwargs):
         old_headers = [RpmHelper.get_header_from_rpm(x) for x in results_store.get_old_build().get('rpm', [])]
         new_headers = [RpmHelper.get_header_from_rpm(x) for x in results_store.get_new_build().get('rpm', [])]
-        soname_changes = collections.defaultdict(lambda: collections.defaultdict(list))
+        soname_changes: SonameChanges = collections.defaultdict(lambda: collections.defaultdict(list))
         for old in old_headers:
             new = [x for x in new_headers if x.name == old.name]
             if not new:

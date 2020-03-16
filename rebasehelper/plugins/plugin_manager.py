@@ -23,8 +23,9 @@
 #          František Nečas <fifinecas@seznam.cz>
 
 import re
-from typing import List, Type
+from typing import List, Dict, Type
 
+from rebasehelper.types import Options
 from rebasehelper.plugins.plugin_collection import PluginCollection
 from rebasehelper.plugins.build_log_hooks import BuildLogHookCollection
 from rebasehelper.plugins.build_tools.rpm import BuildToolCollection
@@ -54,20 +55,20 @@ class PluginManager:
             class_name = re.sub(r'(.)([A-Z][a-z]+)', r'\1_\2', class_name)
             return re.sub(r'([a-z0-9])([A-Z])', r'\1_\2', class_name).lower().replace('_collection', '') + 's'
 
-        self.plugin_collections = {}
+        self.plugin_collections: Dict[str, PluginCollection] = {}
         for collection in self.COLLECTIONS:
             name = convert_class_name(collection.__name__)
             entrypoint = 'rebasehelper.' + name
             self.plugin_collections[name] = collection(entrypoint, self)
 
-    def get_options(self):
+    def get_options(self) -> Options:
         """Gets options of all plugins.
 
         Returns:
             list: List of plugins' options.
 
         """
-        options = []
+        options: Options = []
         for collection in self.plugin_collections.values():
             options.extend(collection.get_options())
 
