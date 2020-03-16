@@ -23,7 +23,7 @@
 #          František Nečas <fifinecas@seznam.cz>
 
 import re
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 
 class SpecContent:
@@ -77,10 +77,10 @@ class SpecContent:
         '%changelog',
     ]
 
-    def __init__(self, content):
-        self.sections = self._split_sections(content)
+    def __init__(self, content: str) -> None:
+        self.sections: List[Tuple[str, List[str]]] = self._split_sections(content)
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Join SPEC file sections back together."""
         content = []
         for header, section in self.sections:
@@ -90,7 +90,7 @@ class SpecContent:
                 content.append(line + '\n')
         return ''.join(content)
 
-    def __getitem__(self, index):
+    def __getitem__(self, index: int) -> List[str]:
         return self.sections[index][1]
 
     @classmethod
@@ -110,16 +110,16 @@ class SpecContent:
         comment = re.search(r" #.*" if inline_comment_allowed else r"^\s*#.*", line)
         return comment.span() if comment else (len(line), len(line))
 
-    def section(self, name):
+    def section(self, name: str) -> Optional[List[str]]:
         """Gets content of a section.
 
         In case there are multiple sections with the same name, the first one is returned.
 
         Args:
-            name (str): Section name.
+            name: Section name.
 
         Returns:
-            list: Section content as a list of lines.
+            Section content as a list of lines.
 
         """
         for header, section in self.sections:
@@ -127,17 +127,17 @@ class SpecContent:
                 return section
         return None
 
-    def replace_section(self, name, content):
+    def replace_section(self, name: str, content: List[str]) -> bool:
         """Replaces content of a section.
 
         In case there are multiple sections with the same name, the first one is replaced.
 
         Args:
-            name (str): Section name.
-            content (list): Section content as a list of lines.
+            name: Section name.
+            content: Section content as a list of lines.
 
         Returns:
-            bool: False if section was not found else True.
+            False if section was not found else True.
 
         """
         for i, (header, _) in enumerate(self.sections):
@@ -147,17 +147,21 @@ class SpecContent:
         return False
 
     @classmethod
-    def _split_sections(cls, content):
+    def _split_sections(cls, content: str) -> List[Tuple[str, List[str]]]:
         """Splits content of a SPEC file into sections.
 
         Args:
-            content (str): Content of the SPEC file
+            content: Content of the SPEC file
+
+        Returns:
+            The split sections represented as a list of tuples (the first element
+            is the section name, the second is the content of the section).
 
         """
         lines = content.splitlines()
         section_headers_re = [re.compile(r'^{0}\b.*'.format(re.escape(x)), re.IGNORECASE) for x in cls.SECTION_HEADERS]
 
-        section_beginnings = []
+        section_beginnings: List[Optional[int]] = []
         for i, line in enumerate(lines):
             if line.startswith('%'):
                 for header in section_headers_re:
@@ -168,7 +172,9 @@ class SpecContent:
         sections = [('%package', lines[:section_beginnings[0]])]
 
         for i in range(len(section_beginnings) - 1):
-            start = section_beginnings[i] + 1
+            # Only the last element of section_beginnings is None, section_beginnings[i] can never be None
+            # (the last element isn't iterated over), so section_beginnings[i] + 1 is always valid. Ignore the type.
+            start = section_beginnings[i] + 1  # type: ignore
             end = section_beginnings[i + 1]
             sections.append((lines[start - 1], lines[start:end]))
         return sections

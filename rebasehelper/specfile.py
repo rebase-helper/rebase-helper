@@ -252,13 +252,8 @@ class SpecFile:
         regular_sources = [source[0] for source in sorted(regular_sources, key=itemgetter(1))]
         return regular_sources
 
-    def get_sources(self):
-        """
-        Method returns dictionary with local sources list.
-
-        :return: list of Sources with absolute path
-        :rtype: list of str
-        """
+    def get_sources(self) -> List[str]:
+        """Gets a list of local sources."""
         return [os.path.join(self.sources_location, os.path.basename(source)) for source in self.sources]
 
     def get_archive(self):
@@ -998,7 +993,7 @@ class SpecFile:
         """Reloads the whole Spec file."""
         self.update()
 
-    def save(self):
+    def save(self) -> None:
         """Saves changes made to SpecContent and updates the internal state."""
         self._write_spec_content()
         #  Update internal variables
@@ -1026,11 +1021,11 @@ class SpecFile:
             return False
 
     @saves
-    def update_changelog(self, changelog_entry):
+    def update_changelog(self, changelog_entry: str) -> None:
         """Inserts a new entry into the changelog and saves the SpecFile.
 
         Args:
-            changelog_entry (str): Message to use in the entry.
+            changelog_entry: Message to use in the entry.
 
         """
         new_entry = self.get_new_log(changelog_entry)
