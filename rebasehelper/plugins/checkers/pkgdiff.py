@@ -233,7 +233,7 @@ class PkgDiff(BaseChecker):
         if int(ret_code) != 0 and int(ret_code) != 1:
             raise RebaseHelperError('Execution of {} failed.\nCommand line is: {}'.format(cls.CMD, cmd))
         results_dict = cls.process_xml_results(cls.results_dir)
-        lines = []
+        lines: List[str] = []
 
         for key, val in results_dict.items():
             if val:

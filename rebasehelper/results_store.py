@@ -24,6 +24,8 @@
 
 import copy
 
+from typing import Dict, Any
+
 
 class ResultsStore:
     """Class for storing information about results from rebase-helper actions."""
@@ -37,7 +39,7 @@ class ResultsStore:
     RESULTS_SUCCESS: str = 'result'
 
     def __init__(self):
-        self._data_store = dict()
+        self._data_store: Dict[str, Any] = dict()
 
     def clear(self):
         self._data_store.clear()

@@ -26,7 +26,7 @@ import io
 import logging
 import os
 import re
-from typing import List, Optional, cast
+from typing import Dict, List, Optional, cast
 
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
 from rebasehelper.logger import CustomLogger
@@ -107,7 +107,7 @@ class RpmDiff(BaseChecker):
     @classmethod
     def run_check(cls, results_dir, **kwargs):
         """Compares old and new RPMs using rpmdiff"""
-        results_dict = {}
+        results_dict: Dict[str, List[str]] = {}
 
         for tag in cls.CHECKER_TAGS:
             results_dict[tag] = []
@@ -142,7 +142,7 @@ class RpmDiff(BaseChecker):
             results_dict = cls._analyze_logs(output, results_dict)
         results_dict = cls.update_added_removed(results_dict)
         cls.results_dict = {k: v for k, v in results_dict.items() if v}
-        lines = []
+        lines: List[str] = []
         for key, val in results_dict.items():
             if val:
                 if lines:

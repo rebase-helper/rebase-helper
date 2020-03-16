@@ -28,16 +28,20 @@ import fnmatch
 import logging
 import os
 import re
-from typing import Dict, List, Optional, cast
+from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
 from rebasehelper.logger import CustomLogger
 from rebasehelper.plugins.build_log_hooks import BaseBuildLogHook
 from rebasehelper.types import PackageCategories
 from rebasehelper.helpers.macro_helper import MacroHelper
 from rebasehelper.constants import NEW_BUILD_DIR
+from rebasehelper.specfile import SpecFile
 
 
 logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
+
+AddedFiles = Dict[str, List[str]]
+RemovedFiles = Union[List[str], Dict[str, List[str]]]
 
 
 class Files(BaseBuildLogHook):
@@ -204,7 +208,7 @@ class Files(BaseBuildLogHook):
                     if new_best_match:
                         # the new match is a closer match
                         if new_best_match[0] != best_match:
-                            best_match = new_best_match[0]
+                            best_match = str(new_best_match[0])
                             best_match_section = sec_name
 
         return best_match_section or rebase_spec_file.get_main_files_section() or (files[0] if files else None)
@@ -233,7 +237,7 @@ class Files(BaseBuildLogHook):
         # ensure maximal greediness
         macros.sort(key=lambda k: len(k['value']), reverse=True)
 
-        result = collections.defaultdict(lambda: collections.defaultdict(list))
+        result: Dict[str, AddedFiles] = collections.defaultdict(lambda: collections.defaultdict(list))
         for file in files:
             section = cls._get_best_matching_files_section(rebase_spec_file, file)
             if section is None:
@@ -258,7 +262,7 @@ class Files(BaseBuildLogHook):
         and it is mentioned in the final report.
 
         """
-        result = collections.defaultdict(lambda: collections.defaultdict(list))
+        result: Dict[str, RemovedFiles] = collections.defaultdict(lambda: collections.defaultdict(list))
         for sec_name, sec_content in rebase_spec_file.spec_content.sections:
             if sec_name.startswith('%files'):
                 subpackage = rebase_spec_file.get_subpackage_name(sec_name)
@@ -273,7 +277,7 @@ class Files(BaseBuildLogHook):
                         i += 1
                         continue
                     split_line = original_line[:]
-                    directives = []
+                    directives: List[str] = []
                     prepend_macro = None
                     for element in reversed(split_line):
                         if element in cls.FILES_DIRECTIVES:
@@ -323,7 +327,8 @@ class Files(BaseBuildLogHook):
         return result
 
     @classmethod
-    def run(cls, spec_file, rebase_spec_file, results_dir, **kwargs):
+    def run(cls, spec_file: SpecFile, rebase_spec_file: SpecFile, results_dir: str,
+            **kwargs: Any) -> Tuple[Dict[str, Union[RemovedFiles, AddedFiles]], bool]:
         if not results_dir:
             return {}, False
         log = os.path.join(results_dir, NEW_BUILD_DIR, 'RPM', 'build.log')
@@ -331,7 +336,7 @@ class Files(BaseBuildLogHook):
         nvr = rebase_spec_file.get_NVR()
         error_type, files = cls._parse_build_log(log, nvr)
 
-        result = {}
+        result: Dict[str, Union[AddedFiles, RemovedFiles]] = {}
         if error_type == 'deleted':
             logger.info('The following files are absent in sources but are in the SPEC file, trying to remove them:')
             for file in files:

@@ -24,7 +24,7 @@
 
 import logging
 import shutil
-from typing import cast
+from typing import Dict, cast
 
 from rebasehelper.logger import CustomLogger
 from rebasehelper.helpers.path_helper import PathHelper
@@ -44,7 +44,7 @@ class TemporaryEnvironment:
     TEMPDIR: str = 'TEMPDIR'
 
     def __init__(self, exit_callback=None):
-        self._env = {}
+        self._env: Dict[str, str] = {}
         self._exit_callback = exit_callback
 
     def __enter__(self):

@@ -25,7 +25,7 @@
 import io
 import os
 import re
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.plugins.checkers import BaseChecker, CheckerCategory
@@ -82,7 +82,7 @@ class LicenseCheck(BaseChecker):
             diffs.append(diff)
 
         old_lics, new_lics = set(), set()
-        changes = {'appeared': {}, 'transitioned': {}, 'disappeared': {}}
+        changes: Dict[str, Dict[str, List[str]]] = {'appeared': {}, 'transitioned': {}, 'disappeared': {}}
         # Get changed licenses in existing files
         for new_file, new_license in diffs[1].items():
             new_lics.add(new_license)

@@ -311,7 +311,7 @@ class SpecFile:
         patches_applied = sorted(patches_applied, key=lambda x: x.index)
         return {"applied": patches_applied, "not_applied": patches_not_used}
 
-    def _get_patch_strip_options(self, patches):
+    def _get_patch_strip_options(self, patches: List[Tuple[str, int, int]]):
         """
         Gets value of strip option of each used patch
 
@@ -320,7 +320,7 @@ class SpecFile:
         """
         parser = SilentArgumentParser()
         parser.add_argument('-p', type=int, default=1)
-        result = {}
+        result: Dict[int, int] = {}
         for line in self.get_prep_section():
             try:
                 tokens = shlex.split(line, comments=True)

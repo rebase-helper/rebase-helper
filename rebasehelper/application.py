@@ -547,7 +547,7 @@ class Application:
             spec = None
             task_id = None
             koji_build_id = None
-            build_dict = {}
+            build_dict: Dict[str, Any] = {}
 
             if self.conf.build_tasks is None:
                 spec = self.spec_file if version == 'old' else self.rebase_spec_file
@@ -646,7 +646,7 @@ class Application:
             results_store.set_checker_output(diff_name, result)
 
     def get_new_build_logs(self):
-        result = {}
+        result: Dict[str, Dict[str, Dict[str, Any]]] = {}
         result['build_ref'] = {}
         for version in ['old', 'new']:
             result['build_ref'][version] = results_store.get_build(version)

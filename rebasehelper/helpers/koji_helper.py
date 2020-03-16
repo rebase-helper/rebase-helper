@@ -29,7 +29,7 @@ import string
 import sys
 import time
 
-from typing import cast
+from typing import List, cast
 
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.helpers.console_helper import ConsoleHelper
@@ -235,8 +235,8 @@ class KojiHelper:
             DownloadError: If download failed.
 
         """
-        rpms = []
-        logs = []
+        rpms: List[str] = []
+        logs: List[str] = []
         for task_id in tasklist:
             logger.info('Downloading packages and logs for task %s', task_id)
             task = session.getTaskInfo(task_id, request=True)
@@ -337,8 +337,8 @@ class KojiHelper:
         """
         build = session.getBuild(build_id)
         pathinfo = koji.PathInfo(topdir=session.opts['topurl'])
-        rpms = []
-        logs = []
+        rpms: List[str] = []
+        logs: List[str] = []
         os.makedirs(destination, exist_ok=True)
         for pkg in session.listBuildRPMs(build_id):
             if pkg['arch'] not in arches:

@@ -25,7 +25,7 @@
 import logging
 import os
 import re
-from typing import Optional, cast
+from typing import Dict, Optional, cast
 
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
 from rebasehelper.logger import CustomLogger
@@ -36,6 +36,8 @@ from rebasehelper.helpers.rpm_helper import RpmHelper
 
 
 logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
+
+AbiChange = Dict[str, Dict[str, Dict[str, str]]]
 
 
 class AbiPkgDiff(BaseChecker):
@@ -171,7 +173,7 @@ class AbiPkgDiff(BaseChecker):
             (?P<what>Added|Changed|Removed)(\s+functions|variables)?
             (\s+\((?P<filtered_out>\d+)\s+filtered\s+out\))?
             ''', re.VERBOSE)
-            result_dict = {}
+            result_dict: Dict[str, AbiChange] = {}
             filename = 'Undetected filename'
             for line in lines:
                 mt = title_re.match(line)
@@ -181,7 +183,7 @@ class AbiPkgDiff(BaseChecker):
                         result_dict[filename] = {}
                 ms = summary_re.match(line)
                 if ms:
-                    result = {}
+                    result: AbiChange = {}
                     ds = ms.groupdict()
                     result[ds['kind']] = {}
                     for mc in changes_re.finditer(ds['changes']):
@@ -189,6 +191,7 @@ class AbiPkgDiff(BaseChecker):
                         dc['count'] = int(dc['count'])
                         if int(dc['count']) or dc['filtered_out']:
                             result[ds['kind']][dc['what']] = dc
+
                     result_dict[filename].update(result)
             return result_dict
 
