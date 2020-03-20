@@ -179,6 +179,9 @@ class LookasideCacheHelper:
         logger.info('Uploading %s to lookaside cache', path)
         try:
             post()
+        except requests.exceptions.ConnectionError as e:
+            # Skip error, the rebase can continue even after a failed upload
+            logger.error("Upload to lookaside cache failed: %s", str(e))
         finally:
             sys.stdout.write('\n')
             sys.stdout.flush()
