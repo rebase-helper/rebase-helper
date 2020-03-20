@@ -74,7 +74,7 @@ class Copr(BuildToolBase):
     def _build_rpms(cls, srpm, name, **kwargs):
         project = cls.PREFIX + name
         client = CoprHelper.get_client()
-        options = kwargs.get('app_kwargs')
+        options = kwargs.get('app_kwargs', {})
         hide = not options.get('copr_project_frontpage')
         permanent = options.get('copr_project_permanent')
         chroots = options.get('copr_chroots')
