@@ -179,10 +179,16 @@ class Patcher:
                 else:
                     break
             try:
-                with open(os.path.join(cls.old_sources, '.git', 'rebase-apply', 'next')) as f:
-                    next_index = int(f.readline())
-                with open(os.path.join(cls.old_sources, '.git', 'rebase-apply', 'last')) as f:
-                    last_index = int(f.readline())
+                if os.path.isdir(os.path.join(cls.old_sources, '.git', 'rebase-merge')):
+                    with open(os.path.join(cls.old_sources, '.git', 'rebase-merge', 'msgnum')) as f:
+                        next_index = int(f.readline())
+                    with open(os.path.join(cls.old_sources, '.git', 'rebase-merge', 'end')) as f:
+                        last_index = int(f.readline())
+                else:
+                    with open(os.path.join(cls.old_sources, '.git', 'rebase-apply', 'next')) as f:
+                        next_index = int(f.readline())
+                    with open(os.path.join(cls.old_sources, '.git', 'rebase-apply', 'last')) as f:
+                        last_index = int(f.readline())
             except (FileNotFoundError, IOError):
                 raise RuntimeError('Git rebase failed with unknown reason. Please check log file')
             patch_name = cls.patches[next_index - 1].get_patch_name()
