@@ -2,6 +2,22 @@
 
 ## [Unreleased]
 
+## [0.22.0] - 2020-03-31
+### Added
+- Added more type hints, including all public API methods
+
+### Fixed
+- `SpecFile.reload()` no longer pointlessly calls `SpecFile._read_spec_content()`
+- Deleted files are now skipped when detecting unresolved conflicts during `git rebase`
+- Fixed detection of Koji log file containing build failure
+- Adapted to changes in git 2.26.0
+- Fixed unhandled exception during upload to lookaside cache
+
+### Changed
+- Removed no longer necessary workarounds from Fedora base images
+- Simplified packit configuration
+- Options `--pkgcomparetool`, `--versioneer-blacklist`, `--spec-hook-blacklist` and `--build-log-hook-blacklist` can now be specified without an argument to indicate none of the tools/hooks should be run
+
 ## [0.21.0] - 2020-02-21
 ### Added
 - Added public API tests for `Tags` class
