@@ -65,7 +65,7 @@ class TemporaryEnvironment:
         logger.debug("Destroyed environment in '%s'", self.path())
 
     def __str__(self):
-        return "<TemporaryEnvironment path='%s'>", self.path()
+        return "<TemporaryEnvironment path='{}'>".format(self.path())
 
     def path(self):
         """Gets the path to the temporary environment.
