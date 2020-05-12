@@ -87,8 +87,12 @@ The following steps describe a rebase process:
 
     - *rebase-helper-workspace* directory is removed
 
-## Video presentation
+## Videos
 
-At DevConf.cz 2016, Tomáš Hozza, Petr Hráček presented on rebase-helper.
+A talk about **rebase-helper** at DevConf.CZ 2020 given by František Nečas:
 
-[![rebase-helper presentation at DevConf.cz 2016](https://img.youtube.com/vi/Y-5Qiwaujd8/0.jpg)](https://www.youtube.com/watch?v=Y-5Qiwaujd8)
+[![Rebasing RPM packages with rebase-helper - DevConf.CZ 2020](https://img.youtube.com/vi/xI6edOXqk8U/0.jpg)](https://www.youtube.com/watch?v=xI6edOXqk8U)
+
+Another presentation, this time from DevConf.CZ 2016, by Petr Hráček and Tomáš Hozza:
+
+[![Rebase-helper and Upstream Release Monitoring - DevConf.CZ 2016](https://img.youtube.com/vi/Y-5Qiwaujd8/0.jpg)](https://www.youtube.com/watch?v=Y-5Qiwaujd8)
