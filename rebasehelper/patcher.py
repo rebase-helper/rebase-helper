@@ -24,6 +24,7 @@
 
 import logging
 import os
+import shutil
 from typing import List, Optional, cast
 
 import git  # type: ignore
@@ -42,7 +43,6 @@ class Patcher:
 
     """Class for git command used for patching old and new sources"""
 
-    source_dir: Optional[str] = None
     old_sources: Optional[str] = None
     new_sources: Optional[str] = None
     output_data: Optional[str] = None
@@ -290,26 +290,42 @@ class Patcher:
         return patch_dictionary
 
     @classmethod
-    def apply_old_patches(cls):
+    def apply_old_patches(cls, source_dir):
         """Function applies a patch to a old/new sources"""
         for patch in cls.patches:
             logger.info("Applying patch '%s' to '%s'",
                         patch.get_patch_name(),
-                        os.path.basename(cls.source_dir))
+                        os.path.basename(source_dir))
             try:
                 cls.apply_patch(cls.old_repo, patch)
             except git.GitCommandError:
                 raise RuntimeError('Failed to patch old sources')
+        # update repository state
+        cls.old_repo.git.config('rebasehelper.state', 'PATCHES', local=True)
 
     @classmethod
     def init_git(cls, directory):
         """Function initialize old and new Git repository"""
+        try:
+            repo = git.Repo(directory)
+            try:
+                state = repo.git.config('rebasehelper.state', get=True, local=True)
+            except git.GitCommandError:
+                del repo
+                # repository not created by us, remove the metadata
+                shutil.rmtree(os.path.join(directory, '.git'))
+            else:
+                return repo, state
+        except git.InvalidGitRepositoryError:
+            pass
         repo = git.Repo.init(directory)
+        state = 'INIT'
+        repo.git.config('rebasehelper.state', state, local=True)
         repo.git.config('user.name', GitHelper.get_user(), local=True)
         repo.git.config('user.email', GitHelper.get_email(), local=True)
         repo.git.add(all=True)
         repo.index.commit('Initial commit', skip_hooks=True)
-        return repo
+        return repo, state
 
     @classmethod
     def patch(cls, old_dir, new_dir, rest_sources, patches, **kwargs):
@@ -325,13 +341,8 @@ class Patcher:
         cls.patches = patches
         cls.non_interactive = kwargs.get('non_interactive')
         cls.favor_on_conflict = kwargs.get('favor_on_conflict')
-        if not os.path.isdir(os.path.join(cls.old_sources, '.git')):
-            cls.old_repo = cls.init_git(old_dir)
-            cls.new_repo = cls.init_git(new_dir)
-            cls.source_dir = cls.old_sources
-            cls.apply_old_patches()
-        else:
-            cls.old_repo = git.Repo(old_dir)
-            cls.new_repo = git.Repo(new_dir)
-
+        cls.old_repo, old_repo_state = cls.init_git(old_dir)
+        if old_repo_state == 'INIT':
+            cls.apply_old_patches(old_dir)
+        cls.new_repo, _ = cls.init_git(new_dir)
         return cls._git_rebase()
