@@ -323,6 +323,8 @@ class Patcher:
         repo.git.config('rebasehelper.state', state, local=True)
         repo.git.config('user.name', GitHelper.get_user(), local=True)
         repo.git.config('user.email', GitHelper.get_email(), local=True)
+        # prevent git commands from launching an interactive editor
+        repo.git.config('core.editor', 'true', local=True)
         repo.git.add(all=True)
         repo.index.commit('Initial commit', skip_hooks=True)
         return repo, state
