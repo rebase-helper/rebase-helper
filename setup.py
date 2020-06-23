@@ -123,6 +123,7 @@ setup(
             'csmock = rebasehelper.plugins.checkers.csmock:CsMock',
             'licensecheck = rebasehelper.plugins.checkers.licensecheck:LicenseCheck',
             'sonamecheck = rebasehelper.plugins.checkers.sonamecheck:SonameCheck',
+            'rpminspect-rpm = rebasehelper.plugins.checkers.rpminspect_rpm:RpminspectRpm',
         ],
         'rebasehelper.spec_hooks': [
             'typo-fix = rebasehelper.plugins.spec_hooks.typo_fix:TypoFix',
