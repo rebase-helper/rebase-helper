@@ -124,6 +124,7 @@ setup(
             'licensecheck = rebasehelper.plugins.checkers.licensecheck:LicenseCheck',
             'sonamecheck = rebasehelper.plugins.checkers.sonamecheck:SonameCheck',
             'rpminspect-rpm = rebasehelper.plugins.checkers.rpminspect_rpm:RpminspectRpm',
+            'rpminspect-srpm = rebasehelper.plugins.checkers.rpminspect_srpm:RpminspectSrpm',
         ],
         'rebasehelper.spec_hooks': [
             'typo-fix = rebasehelper.plugins.spec_hooks.typo_fix:TypoFix',
