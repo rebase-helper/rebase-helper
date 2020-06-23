@@ -28,6 +28,7 @@ from typing import cast
 
 from rebasehelper.logger import CustomLogger
 from rebasehelper.plugins.output_tools import BaseOutputTool
+from rebasehelper.plugins.checkers import CheckerCategory
 from rebasehelper.logger import LoggerHelper
 from rebasehelper.results_store import results_store
 from rebasehelper.constants import RESULTS_DIR
@@ -198,11 +199,12 @@ class Text(BaseOutputTool):
     @classmethod
     def print_checkers_text_output(cls, checkers_results):
         """Outputs text output of every checker."""
-        for check_tool in cls.manager.checkers.plugins.values():
-            if check_tool:
-                for check, data in sorted(checkers_results.items()):
-                    if check == check_tool.name:
-                        logger_report.info('\n'.join(check_tool.format(data)))
+        for category in (CheckerCategory.SOURCE, CheckerCategory.SRPM, CheckerCategory.RPM):
+            for check_tool in cls.manager.checkers.plugins.values():
+                if check_tool and check_tool.get_category() == category:
+                    for check, data in sorted(checkers_results.items()):
+                        if check == check_tool.name:
+                            logger_report.info('\n'.join(check_tool.format(data)))
 
     @classmethod
     def print_build_log_hooks_result(cls, build_log_hooks_result):
