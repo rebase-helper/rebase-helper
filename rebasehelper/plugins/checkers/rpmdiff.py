@@ -113,7 +113,7 @@ class RpmDiff(BaseChecker):
             results_dict[tag] = []
 
         cls.results_dir = os.path.join(results_dir, cls.name)
-        os.makedirs(cls.results_dir)
+        cls.prepare_results_dir()
 
         # Only S (size), M(mode) and 5 (checksum) are now important
         not_catched_flags = ['T', 'F', 'G', 'U', 'V', 'L', 'D', 'N']

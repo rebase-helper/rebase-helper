@@ -25,6 +25,7 @@
 import enum
 import logging
 import os
+import shutil
 from typing import Any, Dict, List, Optional, Type, Union, cast
 
 from rebasehelper.logger import CustomLogger
@@ -54,6 +55,16 @@ class BaseChecker(Plugin):
     DEFAULT: bool = False
     CATEGORY: Optional[CheckerCategory] = None
     results_dir: Optional[str] = None
+
+    @classmethod
+    def prepare_results_dir(cls):
+        """Creates checker's results dir.
+
+        Removes the existing results dir if it exists to avoid collisions.
+        """
+        if os.path.exists(cls.results_dir):
+            shutil.rmtree(cls.results_dir)
+        os.makedirs(cls.results_dir)
 
     @classmethod
     def get_checker_output_dir_short(cls):

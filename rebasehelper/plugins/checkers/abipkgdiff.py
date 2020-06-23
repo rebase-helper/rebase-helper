@@ -94,7 +94,7 @@ class AbiPkgDiff(BaseChecker):
         """Compares old and new RPMs using abipkgdiff"""
         # Check if ABI changes occured
         cls.results_dir = os.path.join(results_dir, cls.name)
-        os.makedirs(cls.results_dir)
+        cls.prepare_results_dir()
         debug_old, rest_pkgs_old = cls._get_packages_for_abipkgdiff(results_store.get_build('old'))
         debug_new, rest_pkgs_new = cls._get_packages_for_abipkgdiff(results_store.get_build('new'))
         cmd = [cls.CMD]

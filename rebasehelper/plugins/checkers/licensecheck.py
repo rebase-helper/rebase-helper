@@ -149,7 +149,7 @@ class LicenseCheck(BaseChecker):
         cls.license_changes = False
         cls.license_files_changes = dict()
         cls.results_dir = os.path.join(results_dir, 'licensecheck')
-        os.makedirs(cls.results_dir)
+        cls.prepare_results_dir()
         changes, new_licenses, disappeared_licenses = cls.get_license_changes(kwargs['old_dir'], kwargs['new_dir'])
         cls.output_to_report_file(changes, os.path.join(cls.results_dir, 'report.txt'))
 
