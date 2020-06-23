@@ -207,7 +207,7 @@ class PkgDiff(BaseChecker):
         :param results_dir result dir where are stored results
         """
         cls.results_dir = os.path.join(results_dir, cls.name)
-        os.makedirs(cls.results_dir)
+        cls.prepare_results_dir()
         cls.pkgdiff_results_full_path_html = os.path.join(cls.results_dir, cls.pkgdiff_results_filename + '.html')
 
         cmd = [cls.CMD]

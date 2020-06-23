@@ -634,7 +634,7 @@ class Application:
 
         for checker_name in self.conf.pkgcomparetool:
             try:
-                data = plugin_manager.checkers.run(os.path.join(results_dir, 'checkers'),
+                data = plugin_manager.checkers.run(os.path.join(results_dir, constants.CHECKERS_DIR),
                                                    checker_name,
                                                    **kwargs)
                 if data:

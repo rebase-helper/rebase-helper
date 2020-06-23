@@ -45,7 +45,7 @@ class RpminspectRpm(Rpminspect):
     @classmethod
     def run_check(cls, results_dir, **kwargs):
         cls.results_dir = os.path.join(results_dir, 'rpminspect-rpm')
-        os.makedirs(cls.results_dir)
+        cls.prepare_results_dir()
 
         result = {'path': cls.get_checker_output_dir_short(), 'files': [], 'checks': {}}
         old_pkgs = results_store.get_old_build()['rpm']

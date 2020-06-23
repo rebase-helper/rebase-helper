@@ -54,8 +54,8 @@ class CsMock(BaseChecker):
 
         old_pkgs = results_store.get_old_build().get('srpm', None)
         new_pkgs = results_store.get_new_build().get('srpm', None)
-        results_dir = os.path.join(results_dir, cls.CMD)
-        os.makedirs(results_dir)
+        cls.results_dir = os.path.join(results_dir, cls.CMD)
+        cls.prepare_results_dir()
         arguments = ['--force', '-a', '-r', 'fedora-rawhide-x86_64', '--base-srpm']
         if old_pkgs and new_pkgs:
             cmd = [cls.CMD]
