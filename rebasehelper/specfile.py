@@ -876,7 +876,7 @@ class SpecFile:
             RebaseHelperError in case passed version string is not valid.
 
         """
-        version_re = re.compile(r'^(\d+[.\d]*\d+|\d+)(\.|-|_|\+)?(\w+)?$')
+        version_re = re.compile(r'^(\d+[.\d]*\d+|\d+)(\.|-|_|\+|~)?(\w+)?$')
         m = version_re.match(version_string)
         if not m:
             raise RebaseHelperError('Invalid version string: {}'.format(version_string))
