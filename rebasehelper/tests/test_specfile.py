@@ -351,9 +351,37 @@ class TestSpecFile:
         %patch1 -p3
         """),
         ),
+        (
+            {
+                'removed_patches': [],
+                'spec_content': dedent("""\
+                    Patch0:     0.patch
+                    
+                    
+                    # Patch comment
+                    # line2
+                    Patch1:     1.patch
+                    
+                    Patch2:     2.patch
+                    """),
+            },
+            {
+                'patches':
+                    {
+                        'deleted': ['1.patch'],
+                    },
+                'disable_inapplicable': False,
+            },
+            dedent("""\
+            Patch0:     0.patch
+            
+            Patch2:     2.patch
+            """),
+        ),
     ], ids=[
         'do_not_disable_inapplicable',
         'disable_inapplicable',
+        'comments_and_blank_lines',
     ])
     def test_write_updated_patches(self, mocked_spec_object, kwargs, expected_content):
         mocked_spec_object.write_updated_patches(**kwargs)

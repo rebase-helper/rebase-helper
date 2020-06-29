@@ -425,6 +425,9 @@ class SpecFile:
                 # ignore commented-out tag
                 return False
             return line.startswith('#')
+
+        def is_empty(line):
+            return not line or line.isspace()
         if not patches:
             return None
         removed_patches = []
@@ -450,7 +453,10 @@ class SpecFile:
                 removed_patches.append(tag.index)
                 # find associated comments
                 i = tag.line
-                while i > 0 and is_comment(section[i - 1]):
+                # if the tag is followed by an empty line remove empty lines
+                # in front of the tag to avoid unnecessary blank lines in the spec.
+                blank_follows = i + 1 < len(section) and is_empty(section[i + 1])
+                while i > 0 and (is_comment(section[i - 1]) or blank_follows and is_empty(section[i - 1])):
                     i -= 1
                 remove_lines[tag.section_index].append((i, tag.line + 1))
                 continue
