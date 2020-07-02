@@ -43,7 +43,6 @@ from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
 from rebasehelper.exceptions import SourcePackageBuildError, BinaryPackageBuildError
 from rebasehelper.results_store import results_store
 from rebasehelper.helpers.path_helper import PathHelper
-from rebasehelper.helpers.macro_helper import MacroHelper
 from rebasehelper.helpers.input_helper import InputHelper
 from rebasehelper.helpers.git_helper import GitHelper
 from rebasehelper.helpers.koji_helper import KojiHelper
@@ -407,7 +406,8 @@ class Application:
         # Generate patch
         self.rebased_repo.git.add(all=True)
         self.rebase_spec_file.update()
-        self.rebased_repo.index.commit(MacroHelper.expand(self.conf.changelog_entry, self.conf.changelog_entry))
+        message = self.rebase_spec_file.expand(self.conf.changelog_entry, self.conf.changelog_entry)
+        self.rebased_repo.index.commit(message)
         patch = self.rebased_repo.git.format_patch('-1', stdout=True, stdout_as_string=False)
         with open(os.path.join(self.results_dir, 'changes.patch'), 'wb') as f:
             f.write(patch)

@@ -204,7 +204,7 @@ class Files(BaseBuildLogHook):
             if sec_name.startswith('%files'):
                 files.append(sec_name)
                 for line in sec_content:
-                    new_best_match = difflib.get_close_matches(file, [best_match, MacroHelper.expand(line)])
+                    new_best_match = difflib.get_close_matches(file, [best_match, rebase_spec_file.expand(line, line)])
                     if new_best_match:
                         # the new match is a closer match
                         if new_best_match[0] != best_match:
@@ -272,7 +272,7 @@ class Files(BaseBuildLogHook):
                     # Expand the whole line to check for occurrences of
                     # special keywords, such as %global and %if blocks.
                     # Macro definitions expand to empty string.
-                    expanded = MacroHelper.expand(sec_content[i])
+                    expanded = rebase_spec_file.expand(sec_content[i], sec_content[i])
                     if not original_line or not expanded or any(k in expanded for k in cls.PROHIBITED_KEYWORDS):
                         i += 1
                         continue
@@ -290,7 +290,7 @@ class Files(BaseBuildLogHook):
                         for j, path in enumerate(split_line):
                             if not os.path.isabs(path):
                                 split_line[j] = os.path.join(prepend_macro, subpackage, os.path.basename(path))
-                    split_line = [MacroHelper.expand(p) for p in split_line]
+                    split_line = [rebase_spec_file.expand(p, p) for p in split_line]
 
                     j = 0
                     while j < len(split_line) and files:

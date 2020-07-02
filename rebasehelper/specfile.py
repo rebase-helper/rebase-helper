@@ -493,7 +493,7 @@ class SpecFile:
     def get_release(self) -> str:
         """Returns release string without %dist"""
         release = self.header.release
-        dist = MacroHelper.expand('%{dist}')
+        dist = self.expand('%{dist}')
         if dist and release.endswith(dist):
             release = release[:-len(dist)]
         return release
@@ -707,10 +707,10 @@ class SpecFile:
                         result.extend([t for t in re.split(r'(\.|-|_)', node[1]) if t])
                     elif node[0] == 'm':
                         m = '%{{{}}}'.format(node[1])
-                        if MacroHelper.expand(m):
+                        if self.expand(m):
                             result.append(m)
                     elif node[0] == 'c':
-                        if MacroHelper.expand('%{{{}:1}}'.format(node[1])):
+                        if self.expand('%{{{}:1}}'.format(node[1])):
                             result.extend(traverse(node[2]))
                     elif node[0] == 's':
                         # ignore shell expansions, push nonsensical value
@@ -727,7 +727,7 @@ class SpecFile:
             for macro in macros:
                 MacroHelper.purge_macro(macro)
                 value = _get_macro_value(macro)
-                if value and MacroHelper.expand(value):
+                if value and self.expand(value):
                     rpm.addMacro(macro, value)
 
         def _process_value(curval, newval):
@@ -745,7 +745,7 @@ class SpecFile:
             for index, token in enumerate(tokens):
                 if token[0] == '%':
                     # for macros, try both literal and expanded value
-                    for v in [token, MacroHelper.expand(token, token)]:
+                    for v in [token, self.expand(token, token)]:
                         sm.set_seq2(v)
                         m = sm.find_longest_match(i, len(newval), 0, len(v))
                         valid = m.size == len(v)  # only full match is valid
@@ -822,7 +822,7 @@ class SpecFile:
             result = ''.join(tokens)
             _sync_macros(curval + result)
             # only change value if necessary
-            if MacroHelper.expand(curval) == MacroHelper.expand(result):
+            if self.expand(curval) == self.expand(result):
                 return curval
             return result
 
@@ -1009,6 +1009,11 @@ class SpecFile:
     # UNSORTED METHODS #
     ####################
 
+    def expand(self, s, default=None):
+        """Expands macros in a string in the context of the SpecFile instance."""
+        self.update()
+        return MacroHelper.expand(s, default)
+
     def is_test_suite_enabled(self):
         """
         Returns whether test suite is enabled during the build time
@@ -1062,7 +1067,7 @@ class SpecFile:
                                                                     email=GitHelper.get_email(),
                                                                     evr=evr))
         self.update()
-        new_record.append(MacroHelper.expand(changelog_entry, changelog_entry))
+        new_record.append(self.expand(changelog_entry, changelog_entry))
         new_record.append('')
         return new_record
 
@@ -1073,7 +1078,7 @@ class SpecFile:
         :return: constructed ArgumentParser
         """
         parser = SilentArgumentParser()
-        parser.add_argument('-n', default=MacroHelper.expand('%{name}-%{version}', '%{name}-%{version}'))
+        parser.add_argument('-n', default=self.expand('%{name}-%{version}', '%{name}-%{version}'))
         parser.add_argument('-a', type=int, default=-1)
         parser.add_argument('-b', type=int, default=-1)
         parser.add_argument('-T', action='store_true')
@@ -1101,7 +1106,7 @@ class SpecFile:
         for line in prep:
             if line.startswith('%setup') or line.startswith('%autosetup'):
                 args = shlex.split(line)
-                args = [MacroHelper.expand(a, '') for a in args[1:]]
+                args = [self.expand(a, '') for a in args[1:]]
 
                 # parse macro arguments
                 try:
@@ -1132,7 +1137,7 @@ class SpecFile:
             if line.startswith('%setup') or line.startswith('%autosetup'):
                 args = shlex.split(line)
                 macro = args[0]
-                args = [MacroHelper.expand(a, '') for a in args[1:]]
+                args = [self.expand(a, '') for a in args[1:]]
 
                 # parse macro arguments
                 try:
@@ -1204,7 +1209,7 @@ class SpecFile:
         unzip_parser = argparse.ArgumentParser()
         unzip_parser.add_argument('-d', default='.', dest='target')
         archive = os.path.basename(archive)
-        builddir = MacroHelper.expand('%{_builddir}', '')
+        builddir = self.expand('%{_builddir}', '')
         basedir = builddir
         for line in self.get_prep_section():
             tokens = shlex.split(line, comments=True)

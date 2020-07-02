@@ -59,6 +59,7 @@ def spec_object(workdir):  # pylint: disable=redefined-outer-name
 @pytest.fixture
 def mocked_spec_object(spec_attributes):
     spec = SpecFile.__new__(SpecFile)
+    spec.update = lambda: None
     spec.save = lambda: None
     for attribute, value in spec_attributes.items():
         if attribute == 'macros':
