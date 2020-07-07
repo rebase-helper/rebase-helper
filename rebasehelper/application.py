@@ -158,9 +158,7 @@ class Application:
                                         'and no SOURCES argument specified!')
 
         # Prepare rebased_sources_dir
-        self.rebased_repo = self._prepare_rebased_repository(self.spec_file.patches,
-                                                             self.execution_dir,
-                                                             self.rebased_sources_dir)
+        self.rebased_repo = self._prepare_rebased_repository()
 
         # check if argument passed as new source is a file or just a version
         if [True for ext in Archive.get_supported_archives() if self.conf.sources.endswith(ext)]:
@@ -443,24 +441,23 @@ class Application:
             for src in [s for s in sources if not match(s)]:
                 f.write(os.path.sep + src + '\n')
 
-    @classmethod
-    def _prepare_rebased_repository(cls, patches, execution_dir, rebased_sources_dir):
+    def _prepare_rebased_repository(self):
         """
         Initialize git repository in the rebased directory
         :return: git.Repo instance of rebased_sources
         """
-        for patch in patches['applied'] + patches['not_applied']:
-            shutil.copy(patch.path, rebased_sources_dir)
+        for patch in self.spec_file.get_applied_patches() + self.spec_file.get_not_used_patches():
+            shutil.copy(patch.path, self.rebased_sources_dir)
 
-        sources = os.path.join(execution_dir, 'sources')
+        sources = os.path.join(self.execution_dir, 'sources')
         if os.path.isfile(sources):
-            shutil.copy(sources, rebased_sources_dir)
+            shutil.copy(sources, self.rebased_sources_dir)
 
-        gitignore = os.path.join(execution_dir, '.gitignore')
+        gitignore = os.path.join(self.execution_dir, '.gitignore')
         if os.path.isfile(gitignore):
-            shutil.copy(gitignore, rebased_sources_dir)
+            shutil.copy(gitignore, self.rebased_sources_dir)
 
-        repo = git.Repo.init(rebased_sources_dir)
+        repo = git.Repo.init(self.rebased_sources_dir)
         repo.git.config('user.name', GitHelper.get_user(), local=True)
         repo.git.config('user.email', GitHelper.get_email(), local=True)
         repo.git.add(all=True)
