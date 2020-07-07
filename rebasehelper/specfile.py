@@ -404,13 +404,14 @@ class SpecFile:
             i += 1
 
     @saves
-    def update_paths_to_patches(self) -> None:
-        """Fixes paths of patches to make them usable in SPEC file location"""
+    def update_paths_to_sources_and_patches(self) -> None:
+        """Fixes paths of patches and sources to make them usable in SPEC file location"""
         rebased_sources_path = os.path.join(constants.RESULTS_DIR, constants.REBASED_SOURCES_DIR)
-        for tag in self.tags.filter(name='Patch*'):
-            value = self.get_raw_tag_value(tag.name)
-            if value:
-                self.set_raw_tag_value(tag.name, value.replace(rebased_sources_path + os.path.sep, ''))
+        for tag_type in ('Patch', 'Source'):
+            for tag in self.tags.filter(name='{}*'.format(tag_type)):
+                value = self.get_raw_tag_value(tag.name)
+                if value and not urllib.parse.urlparse(value).scheme:
+                    self.set_raw_tag_value(tag.name, value.replace(rebased_sources_path + os.path.sep, ''))
 
     @saves
     def write_updated_patches(self, patches: Dict[str, List[str]], disable_inapplicable: bool) -> None:

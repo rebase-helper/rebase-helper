@@ -392,11 +392,11 @@ class TestSpecFile:
             'spec_content': 'Patch5: rebase-helper-results/rebased-sources/test-testing5.patch\n'
         }
     ])
-    def test_update_paths_to_patches(self, mocked_spec_object):
+    def test_update_paths_to_sources_and_patches(self, mocked_spec_object):
         line = [l for l in mocked_spec_object.spec_content.section('%package') if l.startswith('Patch5')][0]
         assert 'rebased-sources' in line
 
-        mocked_spec_object.update_paths_to_patches()
+        mocked_spec_object.update_paths_to_sources_and_patches()
 
         line = [l for l in mocked_spec_object.spec_content.section('%package') if l.startswith('Patch5')][0]
         assert 'rebased-sources' not in line

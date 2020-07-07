@@ -173,6 +173,8 @@ class Application:
         self.rebase_spec_file.set_version(version)
         self.rebase_spec_file.set_extra_version(extra_version, version != self.spec_file.header.version)
 
+        self._sanitize_sources()
+
         oldver = parse_version(self.spec_file.header.version)
         newver = parse_version(self.rebase_spec_file.header.version)
         oldex = self.spec_file.parse_release()[2]
@@ -192,6 +194,45 @@ class Application:
                 spec_file.download_remote_sources()
                 # parse spec again with sources downloaded to properly expand %prep section
                 spec_file.update()
+
+    def _sanitize_sources(self) -> None:
+        """Renames local sources whose name changed after version bump.
+
+        For example if the specfile contains a Patch such as %{name}-%{version}.patch,
+        the name changes after changing the version and the rebase would fail due to
+        a missing patch whilst building SRPM.
+
+        This method tries to correct such cases and rename the local file to match
+        the new name. Modifies the rebase_spec_file object to contain the correct
+        paths.
+        """
+        for source, index, source_type in self.rebase_spec_file.spc.sources:
+            if urllib.parse.urlparse(source).scheme or source_type == 0:
+                continue
+            if os.path.exists(os.path.join(self.execution_dir, source)):
+                continue
+            # Find matching source in the old spec
+            sources = [n for n, i, t in self.spec_file.spc.sources if i == index and t == source_type]
+            if not sources:
+                logger.error('Failed to find the source corresponding to %s in old version spec', source)
+                continue
+            source_old = sources[0]
+
+            # rename the source
+            old_source_path = os.path.join(self.rebased_sources_dir, source_old)
+            new_source_path = os.path.join(self.rebased_sources_dir, source)
+            logger.debug('Renaming %s to %s', old_source_path, new_source_path)
+            try:
+                os.rename(old_source_path, new_source_path)
+            except OSError:
+                logger.error('Failed to rename %s to %s while sanitizing sources', old_source_path, new_source_path)
+
+            # prepend the Source/Path with rebased-sources directory in the specfile
+            to_prepend = os.path.relpath(self.rebased_sources_dir, self.execution_dir)
+            tag = '{0}{1}'.format('Patch' if source_type == 2 else 'Source', index)
+            value = self.rebase_spec_file.get_raw_tag_value(tag)
+            self.rebase_spec_file.set_raw_tag_value(tag, os.path.join(to_prepend, value))
+        self.rebase_spec_file.save()
 
     def _initialize_data(self):
         """Function fill dictionary with default data"""
@@ -401,7 +442,7 @@ class Application:
         if removed_patches:
             self.rebased_repo.index.remove(removed_patches, working_tree=True)
 
-        self.rebase_spec_file.update_paths_to_patches()
+        self.rebase_spec_file.update_paths_to_sources_and_patches()
 
         # Generate patch
         self.rebased_repo.git.add(all=True)
@@ -676,7 +717,7 @@ class Application:
             results_store.set_result_message('success', result)
 
         if self.rebase_spec_file:
-            self.rebase_spec_file.update_paths_to_patches()
+            self.rebase_spec_file.update_paths_to_sources_and_patches()
             self.generate_patch()
 
         plugin_manager.output_tools.run(self.conf.outputtool, logs, self)
