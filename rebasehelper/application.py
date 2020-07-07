@@ -26,6 +26,7 @@ import fnmatch
 import logging
 import os
 import shutil
+import urllib.parse
 from typing import Any, Dict, List, Optional, cast
 
 import git  # type: ignore
@@ -446,6 +447,13 @@ class Application:
         Initialize git repository in the rebased directory
         :return: git.Repo instance of rebased_sources
         """
+        for source, _, source_type in self.spec_file.spc.sources:
+            # copy only existing local sources
+            if not urllib.parse.urlparse(source).scheme and source_type == 1:
+                source_path = os.path.join(self.execution_dir, source)
+                if os.path.isfile(source_path):
+                    shutil.copy(source_path, self.rebased_sources_dir)
+
         for patch in self.spec_file.get_applied_patches() + self.spec_file.get_not_used_patches():
             shutil.copy(patch.path, self.rebased_sources_dir)
 
