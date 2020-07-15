@@ -8,6 +8,7 @@ Source0:        https://integration:4430/pkgs/%{name}/%{name}-%{version}.tar.gz
 Patch0:         applicable.patch
 Patch1:         conflicting.patch
 Patch2:         backported.patch
+Patch3:         renamed-%{version}.patch
 
 BuildRequires:  gcc make
 

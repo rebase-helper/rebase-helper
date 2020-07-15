@@ -54,8 +54,9 @@ class TestRebase:
     TEST_FILES: List[str] = [
         'rebase/test.spec',
         'rebase/applicable.patch',
-        'rebase/conflicting.patch',
         'rebase/backported.patch',
+        'rebase/conflicting.patch',
+        'rebase/renamed-0.1.patch',
     ]
 
     @pytest.mark.parametrize('buildtool', [
@@ -90,16 +91,21 @@ class TestRebase:
         patch = unidiff.PatchSet.from_filename(changes, encoding='UTF-8')
 
         if favor_on_conflict == 'upstream':
-            backported_patch, conflicting_patch, spec_file = patch
+            backported_patch, conflicting_patch, renamed_patch, spec_file = patch
             assert conflicting_patch.is_removed_file  # conflicting.patch
         elif favor_on_conflict == 'downstream':
-            backported_patch, conflicting_patch, spec_file = patch
+            backported_patch, conflicting_patch, renamed_patch, spec_file = patch
             assert conflicting_patch.is_modified_file  # conflicting.patch
         else:
-            backported_patch, spec_file = patch
+            backported_patch, renamed_patch, spec_file = patch
             # Non interactive mode - inapplicable patches are only commented out.
             assert [h for h in spec_file if '+#Patch1:         conflicting.patch\n' in h.target]
             assert [h for h in spec_file if '+#%%patch1 -p1\n' in h.target]
+        assert renamed_patch.is_rename  # renamed patch 0.1.patch to 0.2.patch
+        assert os.path.basename(renamed_patch.source_file) == 'renamed-0.1.patch'
+        assert os.path.basename(renamed_patch.target_file) == 'renamed-0.2.patch'
+        # Check that the renamed patch path is unchanged
+        assert not [h for h in spec_file if '-Patch3:         renamed-%{version}.patch\n' in h.source]
         assert backported_patch.is_removed_file   # backported.patch
         assert spec_file.is_modified_file  # test.spec
         if favor_on_conflict != 'downstream':
@@ -179,7 +185,7 @@ class TestRebase:
         changes = os.path.join(RESULTS_DIR, CHANGES_PATCH)
         patch = unidiff.PatchSet.from_filename(changes, encoding='UTF-8')
 
-        _, spec_file = patch
+        _, _, spec_file = patch
 
         assert spec_file.is_modified_file
         # removed files
