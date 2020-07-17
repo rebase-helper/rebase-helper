@@ -9,25 +9,30 @@ PODMAN := sudo podman
 test: integration $(DISTRO)
 
 integration:
-	$(PODMAN) pod rm -f integration || true
+	$(PODMAN) pod create \
+		--name=integration \
+		--hostname=integration \
+		--share=net \
+		--replace=true
 
 	$(PODMAN) run \
-		--pod new\:integration \
-		-d quay.io/rebasehelper/integration\:latest
+		--pod=integration \
+		--detach=true \
+		quay.io/rebasehelper/integration\:latest
 
 $(DISTRO):
-	$(PODMAN) rmi -f rebase-helper-tests-$@ || true
+	$(PODMAN) rmi --force rebase-helper-tests-$@ || true
 
 	$(PODMAN) build \
-		--build-arg DISTRO="$@" \
-		-f containers/Containerfile.tests \
-		-t rebase-helper-tests-$@ \
+		--build-arg=DISTRO="$@" \
+		--file=containers/Containerfile.tests \
+		--tag=rebase-helper-tests-$@ \
 		..
 
 	$(PODMAN) run \
-		--pod integration \
-		--add-host integration\:127.0.0.1 \
-		--cap-add SYS_ADMIN \
-		-e TOXENV="$(TOXENV)" \
-		-e PYTEST_ADDOPTS="$(PYTEST_ADDOPTS)" \
-		-t rebase-helper-tests-$@
+		--pod=integration \
+		--privileged=true \
+		--env=TOXENV="$(TOXENV)" \
+		--env=PYTEST_ADDOPTS="$(PYTEST_ADDOPTS)" \
+		--tty=true \
+		rebase-helper-tests-$@
