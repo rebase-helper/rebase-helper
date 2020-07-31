@@ -13,7 +13,7 @@ install: true
 before_script:
     - |
         if [ "${TRAVIS_EVENT_TYPE}" = "cron" ]; then
-            PYTEST_ADDOPTS="-m 1"
+            PYTEST_ADDOPTS="-m 'standard or functional'"
         else
             PYTEST_ADDOPTS="-m 'not long_running'"
         fi
