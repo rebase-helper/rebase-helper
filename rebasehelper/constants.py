@@ -42,6 +42,7 @@ TRACEBACK_LOG: str = 'traceback.log'
 VERBOSE_LOG: str = 'verbose.log'
 INFO_LOG: str = 'info.log'
 REPORT: str = 'report'
+CHANGES_PATCH: str = 'changes.patch'
 
 OLD_SOURCES_DIR: str = 'old_sources'
 NEW_SOURCES_DIR: str = 'new_sources'

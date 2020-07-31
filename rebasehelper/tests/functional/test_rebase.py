@@ -34,7 +34,7 @@ from typing import List
 from rebasehelper.cli import CLI
 from rebasehelper.config import Config
 from rebasehelper.application import Application
-from rebasehelper.constants import RESULTS_DIR
+from rebasehelper.constants import RESULTS_DIR, CHANGES_PATCH
 from rebasehelper.helpers.git_helper import GitHelper
 
 
@@ -86,7 +86,7 @@ class TestRebase:
         execution_dir, results_dir = Application.setup(config)
         app = Application(config, os.getcwd(), execution_dir, results_dir)
         app.run()
-        changes = os.path.join(RESULTS_DIR, 'changes.patch')
+        changes = os.path.join(RESULTS_DIR, CHANGES_PATCH)
         patch = unidiff.PatchSet.from_filename(changes, encoding='UTF-8')
 
         if favor_on_conflict == 'upstream':
@@ -170,7 +170,7 @@ class TestRebase:
         execution_dir, results_dir = Application.setup(config)
         app = Application(config, os.getcwd(), execution_dir, results_dir)
         app.run()
-        changes = os.path.join(RESULTS_DIR, 'changes.patch')
+        changes = os.path.join(RESULTS_DIR, CHANGES_PATCH)
         patch = unidiff.PatchSet.from_filename(changes, encoding='UTF-8')
 
         _, spec_file = patch

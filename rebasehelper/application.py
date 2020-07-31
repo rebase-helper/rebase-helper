@@ -449,11 +449,11 @@ class Application:
         self.rebase_spec_file.update()
         self.rebased_repo.index.commit(MacroHelper.expand(self.conf.changelog_entry, self.conf.changelog_entry))
         patch = self.rebased_repo.git.format_patch('-1', stdout=True, stdout_as_string=False)
-        with open(os.path.join(self.results_dir, 'changes.patch'), 'wb') as f:
+        with open(os.path.join(self.results_dir, constants.CHANGES_PATCH), 'wb') as f:
             f.write(patch)
             f.write(b'\n')
 
-        results_store.set_changes_patch('changes_patch', os.path.join(self.results_dir, 'changes.patch'))
+        results_store.set_changes_patch('changes_patch', os.path.join(self.results_dir, constants.CHANGES_PATCH))
 
     @classmethod
     def _update_gitignore(cls, sources, rebased_sources_dir):
@@ -734,12 +734,12 @@ class Application:
             repo = git.Repo.init(self.execution_dir)
         patch = results_store.get_changes_patch()
         if not patch:
-            logger.warning('Cannot apply changes.patch. No patch file was created')
+            logger.warning('Cannot apply %s. No patch file was created', constants.CHANGES_PATCH)
         try:
             repo.git.am(patch['changes_patch'])
         except git.GitCommandError as e:
-            logger.warning('changes.patch was not applied properly. Please review changes manually.'
-                           '\nThe error message is: %s', str(e))
+            logger.warning('%s was not applied properly. Please review changes manually.'
+                           '\nThe error message is: %s', constants.CHANGES_PATCH, str(e))
 
     def prepare_next_run(self, results_dir):
         # Running build log hooks only makes sense after a failed build
