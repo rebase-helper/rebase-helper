@@ -26,12 +26,14 @@ import os
 
 import pytest  # type: ignore
 
-from rebasehelper.constants import RESULTS_DIR, DEBUG_LOG
+from rebasehelper.constants import RESULTS_DIR, DEBUG_LOG, CHANGES_PATCH, REPORT
 
 
-def make_logs_report():
-    logs = [
+def make_artifacts_report():
+    artifacts = [
         DEBUG_LOG,
+        CHANGES_PATCH,
+        REPORT + '.json',
         'old-build/SRPM/build.log',
         'old-build/RPM/build.log',
         'old-build/RPM/root.log',
@@ -42,11 +44,11 @@ def make_logs_report():
         'new-build/RPM/mock_output.log',
     ]
     report = []
-    for log in logs:
+    for artifact in artifacts:
         try:
-            with open(os.path.join(RESULTS_DIR, log)) as f:
+            with open(os.path.join(RESULTS_DIR, artifact)) as f:
                 content = f.read()
-                report.append(' {} '.format(log).center(80, '_'))
+                report.append(' {} '.format(artifact).center(80, '_'))
                 report.append(content)
         except IOError:
             continue
@@ -57,4 +59,4 @@ def make_logs_report():
 def pytest_runtest_makereport():
     outcome = yield
     report = outcome.get_result()
-    report.sections.append(('Logs', make_logs_report()))
+    report.sections.append(('Artifacts', make_artifacts_report()))
