@@ -25,7 +25,7 @@
 import os
 
 from rebasehelper.types import Options
-from rebasehelper.constants import CONFIG_PATH, CONFIG_FILENAME
+from rebasehelper.constants import CONFIG_PATH, CONFIG_FILENAME, CHANGES_PATCH
 from rebasehelper.plugins.plugin_manager import plugin_manager
 
 
@@ -172,7 +172,7 @@ OPTIONS: Options = [
         "name": ["--apply-changes"],
         "default": False,
         "switch": True,
-        "help": "apply changes.patch after a successful rebase",
+        "help": "apply {} after a successful rebase".format(CHANGES_PATCH),
     },
     {
         "name": ["--disable-inapplicable-patches"],
