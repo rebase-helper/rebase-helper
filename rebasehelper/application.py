@@ -173,8 +173,6 @@ class Application:
         self.rebase_spec_file.set_version(version)
         self.rebase_spec_file.set_extra_version(extra_version, version != self.spec_file.header.version)
 
-        self._sanitize_sources()
-
         oldver = parse_version(self.spec_file.header.version)
         newver = parse_version(self.rebase_spec_file.header.version)
         oldex = self.spec_file.parse_release()[2]
@@ -194,6 +192,8 @@ class Application:
                 spec_file.download_remote_sources()
                 # parse spec again with sources downloaded to properly expand %prep section
                 spec_file.update()
+        # all local sources have been downloaded; we can check for name changes
+        self._sanitize_sources()
 
     def _sanitize_sources(self) -> None:
         """Renames local sources whose name changed after version bump.
