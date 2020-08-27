@@ -137,8 +137,8 @@ class RpmDiff(BaseChecker):
             output = io.StringIO()
             try:
                 ProcessHelper.run_subprocess(cmd, output_file=output)
-            except OSError:
-                raise CheckerNotFoundError("Checker '{}' was not found or installed.".format(cls.name))
+            except OSError as e:
+                raise CheckerNotFoundError("Checker '{}' was not found or installed.".format(cls.name)) from e
             results_dict = cls._analyze_logs(output, results_dict)
         results_dict = cls.update_added_removed(results_dict)
         cls.results_dict = {k: v for k, v in results_dict.items() if v}
@@ -157,8 +157,8 @@ class RpmDiff(BaseChecker):
         try:
             with open(rpmdiff_report, "w") as f:
                 f.write('\n'.join(lines))
-        except IOError:
-            raise RebaseHelperError("Unable to write result from {} to '{}'".format(cls.name, rpmdiff_report))
+        except IOError as e:
+            raise RebaseHelperError("Unable to write result from {} to '{}'".format(cls.name, rpmdiff_report)) from e
 
         return {'path': cls.get_checker_output_dir_short(), 'files_changes': counts}
 

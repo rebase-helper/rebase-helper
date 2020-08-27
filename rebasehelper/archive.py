@@ -218,7 +218,7 @@ class Archive:
         try:
             archive = self._archive_type.open(self._filename)
         except (EOFError, tarfile.ReadError, lzma.LZMAError) as e:
-            raise IOError(str(e))
+            raise IOError(str(e)) from e
 
         try:
             self._archive_type.extract(archive, self._filename, path)

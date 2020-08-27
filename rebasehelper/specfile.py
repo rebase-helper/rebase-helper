@@ -162,7 +162,7 @@ class SpecFile:
                     DownloadHelper.download_file(remote_file, local_file)
                 except DownloadError as e:
                     raise RebaseHelperError("Failed to download file from URL {}. "
-                                            "Reason: '{}'. ".format(remote_file, str(e)))
+                                            "Reason: '{}'. ".format(remote_file, str(e))) from e
 
     def update(self) -> None:
         # explicitly discard old instance to prevent rpm from destroying
@@ -968,8 +968,8 @@ class SpecFile:
         try:
             with open(self.path) as f:
                 content = f.read()
-        except IOError:
-            raise RebaseHelperError("Unable to open and read SPEC file '{}'".format(self.path))
+        except IOError as e:
+            raise RebaseHelperError("Unable to open and read SPEC file '{}'".format(self.path)) from e
         return SpecContent(content)
 
     def _write_spec_content(self):
@@ -978,8 +978,8 @@ class SpecFile:
         try:
             with open(self.path, "w") as f:
                 f.write(str(self.spec_content))
-        except IOError:
-            raise RebaseHelperError("Unable to write updated data to SPEC file '{}'".format(self.path))
+        except IOError as e:
+            raise RebaseHelperError("Unable to write updated data to SPEC file '{}'".format(self.path)) from e
 
     def copy(self, new_path):
         """Creates a copy of the current object and copies the SPEC file

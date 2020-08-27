@@ -121,8 +121,8 @@ class AbiPkgDiff(BaseChecker):
             output = os.path.join(cls.results_dir, old_name + '.txt')
             try:
                 ret_code = ProcessHelper.run_subprocess(command, output_file=output)
-            except OSError:
-                raise CheckerNotFoundError("Checker '{}' was not found or installed.".format(cls.name))
+            except OSError as e:
+                raise CheckerNotFoundError("Checker '{}' was not found or installed.".format(cls.name)) from e
 
             if int(ret_code) & cls.ABIDIFF_ERROR and int(ret_code) & cls.ABIDIFF_USAGE_ERROR:
                 raise RebaseHelperError('Execution of {} failed.\nCommand line is: {}'.format(cls.CMD, cmd))

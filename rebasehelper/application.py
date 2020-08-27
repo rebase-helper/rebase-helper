@@ -346,10 +346,10 @@ class Application:
 
         try:
             archive.extract_archive(destination)
-        except IOError:
-            raise RebaseHelperError("Archive '{}' can not be extracted".format(archive_path))
-        except (EOFError, SystemError):
-            raise RebaseHelperError("Archive '{}' is damaged".format(archive_path))
+        except IOError as e:
+            raise RebaseHelperError("Archive '{}' can not be extracted".format(archive_path)) from e
+        except (EOFError, SystemError) as e:
+            raise RebaseHelperError("Archive '{}' is damaged".format(archive_path)) from e
 
     @staticmethod
     def extract_sources(archive_path, destination):
@@ -426,8 +426,8 @@ class Application:
                                                  self.old_rest_sources,
                                                  self.spec_file.get_applied_patches(),
                                                  **self.kwargs)
-        except RuntimeError:
-            raise RebaseHelperError('Patching failed')
+        except RuntimeError as e:
+            raise RebaseHelperError('Patching failed') from e
         self.rebase_spec_file.write_updated_patches(self.rebased_patches,
                                                     self.conf.disable_inapplicable_patches)
         results_store.set_patches_results(self.rebased_patches)
@@ -529,7 +529,7 @@ class Application:
             builder = plugin_manager.srpm_build_tools.get_plugin(self.conf.srpm_buildtool)
         except NotImplementedError as e:
             raise RebaseHelperError('{}. Supported SRPM build tools are {}'.format(
-                str(e), ', '.join(plugin_manager.srpm_build_tools.get_supported_plugins())))
+                str(e), ', '.join(plugin_manager.srpm_build_tools.get_supported_plugins()))) from e
 
         for version in ['old', 'new']:
             koji_build_id = None
@@ -575,10 +575,10 @@ class Application:
                 else:
                     msg = 'Building {} SRPM packages failed; see logs in {} for more information'.format(version,
                                                                                                          results_dir)
-                raise RebaseHelperError(msg, logfiles=e.logs)
-            except Exception:
+                raise RebaseHelperError(msg, logfiles=e.logs) from e
+            except Exception as e:
                 raise RebaseHelperError('Building package failed with unknown reason. '
-                                        'Check all available log files.')
+                                        'Check all available log files.') from e
 
     def build_binary_packages(self):
         """Function calls build class for building packages"""
@@ -586,7 +586,7 @@ class Application:
             builder = plugin_manager.build_tools.get_plugin(self.conf.buildtool)
         except NotImplementedError as e:
             raise RebaseHelperError('{}. Supported build tools are {}'.format(
-                str(e), ', '.join(plugin_manager.build_tools.get_supported_plugins())))
+                str(e), ', '.join(plugin_manager.build_tools.get_supported_plugins()))) from e
 
         for version in ['old', 'new']:
             results_dir = os.path.join(self.results_dir, '{}-build'.format(version), 'RPM')
@@ -657,10 +657,10 @@ class Application:
                 else:
                     msg = 'Building {} RPM packages failed; see {} for more information'.format(version, e.logfile)
 
-                raise RebaseHelperError(msg, logfiles=e.logs)
-            except Exception:
+                raise RebaseHelperError(msg, logfiles=e.logs) from e
+            except Exception as e:
                 raise RebaseHelperError('Building package failed with unknown reason. '
-                                        'Check all available log files.')
+                                        'Check all available log files.') from e
 
         if self.conf.builds_nowait and not self.conf.build_tasks:
             if builder.CREATES_TASKS:

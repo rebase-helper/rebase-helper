@@ -189,8 +189,8 @@ class Patcher:
                         next_index = int(f.readline())
                     with open(os.path.join(cls.old_sources, '.git', 'rebase-apply', 'last')) as f:
                         last_index = int(f.readline())
-            except (FileNotFoundError, IOError):
-                raise RuntimeError('Git rebase failed with unknown reason. Please check log file')
+            except (FileNotFoundError, IOError) as e:
+                raise RuntimeError('Git rebase failed with unknown reason. Please check log file') from e
             patch_name = cls.patches[next_index - 1].get_patch_name()
             inapplicable = False
             if cls.non_interactive:
@@ -298,8 +298,8 @@ class Patcher:
                         os.path.basename(source_dir))
             try:
                 cls.apply_patch(cls.old_repo, patch)
-            except git.GitCommandError:
-                raise RuntimeError('Failed to patch old sources')
+            except git.GitCommandError as e:
+                raise RuntimeError('Failed to patch old sources') from e
         # update repository state
         cls.old_repo.git.config('rebasehelper.state', 'PATCHES', local=True)
 

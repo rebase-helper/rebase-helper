@@ -50,8 +50,8 @@ class PluginCollection:
     def get_plugin(self, tool: str) -> Optional[Type[Plugin]]:
         try:
             return self.plugins[tool]
-        except KeyError:
-            raise NotImplementedError("Unsupported plugin")
+        except KeyError as e:
+            raise NotImplementedError("Unsupported plugin") from e
 
     def get_options(self) -> Options:
         """Gets options of all plugins of one type.

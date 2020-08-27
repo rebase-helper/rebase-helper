@@ -91,8 +91,8 @@ class PkgDiff(BaseChecker):
         try:
             with open(file_name, 'w') as f:
                 f.writelines(lines)
-        except IOError:
-            raise RebaseHelperError("Unable to create XML file for pkgdiff tool '{}'".format(file_name))
+        except IOError as e:
+            raise RebaseHelperError("Unable to create XML file for pkgdiff tool '{}'".format(file_name)) from e
 
         return file_name
 
@@ -223,8 +223,8 @@ class PkgDiff(BaseChecker):
         cmd.append(cls.pkgdiff_results_full_path_html)
         try:
             ret_code = ProcessHelper.run_subprocess(cmd, output_file=ProcessHelper.DEV_NULL)
-        except OSError:
-            raise CheckerNotFoundError("Checker '{}' was not found or installed.".format(cls.name))
+        except OSError as e:
+            raise CheckerNotFoundError("Checker '{}' was not found or installed.".format(cls.name)) from e
 
         # From pkgdiff source code:
         # ret_code 0 means unchanged
@@ -246,8 +246,8 @@ class PkgDiff(BaseChecker):
         try:
             with open(pkgdiff_report, "w") as f:
                 f.write('\n'.join(lines))
-        except IOError:
-            raise RebaseHelperError("Unable to write result from {} to '{}'".format(cls.name, pkgdiff_report))
+        except IOError as e:
+            raise RebaseHelperError("Unable to write result from {} to '{}'".format(cls.name, pkgdiff_report)) from e
 
         return dict(path=cls.get_checker_output_dir_short())
 
