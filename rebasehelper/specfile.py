@@ -1063,6 +1063,8 @@ class SpecFile:
                                                                     email=GitHelper.get_email(),
                                                                     evr=evr))
         self.update()
+        # FIXME: ugly workaround for mysterious rpm bug causing macros to disappear
+        self.update()
         new_record.append(MacroHelper.expand(changelog_entry, changelog_entry))
         new_record.append('')
         return new_record
