@@ -129,8 +129,8 @@ class Rpminspect(BaseChecker):  # pylint: disable=abstract-method
         outfile = os.path.join(checker_dir, '{}.json'.format(pkg_name))
         try:
             ret = ProcessHelper.run_subprocess(cmd, output_file=outfile, ignore_stderr=True)
-        except OSError:
-            raise CheckerNotFoundError('Checker \'{}\' was not found or installed.'.format(cls.name))
+        except OSError as e:
+            raise CheckerNotFoundError('Checker \'{}\' was not found or installed.'.format(cls.name)) from e
 
         # Exit code 1 is used when bad check is found, 0 when everything is OK. Others on error
         if ret not in (0, 1):

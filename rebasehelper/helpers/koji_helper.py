@@ -84,7 +84,7 @@ class KojiHelper:
         try:
             session.krb_login()
         except exc as e:
-            raise RebaseHelperError('Login failed: {}'.format(str(e)))
+            raise RebaseHelperError('Login failed: {}'.format(str(e))) from e
         else:
             return session
 
@@ -113,7 +113,7 @@ class KojiHelper:
                 upload_start = time.time()
                 session.uploadWrapper(srpm, path, callback=progress)
             except koji.GenericError as e:
-                raise RebaseHelperError('Upload failed: {}'.format(str(e)))
+                raise RebaseHelperError('Upload failed: {}'.format(str(e))) from e
         finally:
             sys.stdout.write('\n')
             sys.stdout.flush()

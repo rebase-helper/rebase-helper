@@ -66,8 +66,8 @@ class CsMock(BaseChecker):
             output = io.StringIO()
             try:
                 ProcessHelper.run_subprocess(cmd, output_file=output)
-            except OSError:
-                raise CheckerNotFoundError("Checker '{}' was not found or installed.".format(cls.name))
+            except OSError as e:
+                raise CheckerNotFoundError("Checker '{}' was not found or installed.".format(cls.name)) from e
         csmock_report['error'] = PathHelper.find_all_files_current_dir(results_dir, '*.err')
         csmock_report['txt'] = PathHelper.find_all_files_current_dir(results_dir, '*.txt')
         csmock_report['log'] = PathHelper.find_all_files_current_dir(results_dir, '*.log')

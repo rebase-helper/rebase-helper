@@ -89,8 +89,8 @@ class LookasideCacheHelper:
     def _hash(cls, filename, hashtype):
         try:
             chksum = hashlib.new(hashtype)
-        except ValueError:
-            raise LookasideCacheError('Unsupported hash type \'{}\''.format(hashtype))
+        except ValueError as e:
+            raise LookasideCacheError('Unsupported hash type \'{}\''.format(hashtype)) from e
         with open(filename, 'rb') as f:
             chunk = f.read(8192)
             while chunk:
@@ -115,15 +115,15 @@ class LookasideCacheHelper:
         try:
             DownloadHelper.download_file(url, target)
         except DownloadError as e:
-            raise LookasideCacheError(str(e))
+            raise LookasideCacheError(str(e)) from e
 
     @classmethod
     def download(cls, tool, basepath, package, target_dir=None):
         try:
             config = cls._read_config(tool)
             url = config['lookaside']
-        except (configparser.Error, KeyError):
-            raise LookasideCacheError('Failed to read rpkg configuration')
+        except (configparser.Error, KeyError) as e:
+            raise LookasideCacheError('Failed to read rpkg configuration') from e
         for source in cls._read_sources(basepath):
             target = os.path.join(target_dir, source['filename'])
             cls._download_source(tool, url, package, source['filename'], source['hashtype'], source['hash'], target)
@@ -192,8 +192,8 @@ class LookasideCacheHelper:
             config = cls._read_config(tool)
             url = config['lookaside_cgi']
             hashtype = config['lookasidehash']
-        except (configparser.Error, KeyError):
-            raise LookasideCacheError('Failed to read rpkg configuration')
+        except (configparser.Error, KeyError) as e:
+            raise LookasideCacheError('Failed to read rpkg configuration') from e
         uploaded = []
         sources = cls._read_sources(basepath)
         for idx, src in enumerate(old_sources):

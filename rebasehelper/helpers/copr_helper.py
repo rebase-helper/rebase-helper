@@ -47,9 +47,8 @@ class CoprHelper:
     def get_client(cls):
         try:
             client = Client.create_from_config_file()
-        except (CoprNoConfigException, CoprConfigException):
-            raise RebaseHelperError(
-                'Missing or invalid copr configuration file')
+        except (CoprNoConfigException, CoprConfigException) as e:
+            raise RebaseHelperError('Missing or invalid copr configuration file') from e
         else:
             return client
 
@@ -74,14 +73,14 @@ class CoprHelper:
                 # reuse existing project
                 pass
             else:
-                raise RebaseHelperError('Failed to create copr project. Reason: {}'.format(error))
+                raise RebaseHelperError('Failed to create copr project. Reason: {}'.format(error)) from e
 
     @classmethod
     def build(cls, client, project, srpm):
         try:
             result = client.build_proxy.create_from_file(client.config.get('username'), project, srpm)
         except CoprRequestException as e:
-            raise RebaseHelperError('Failed to start copr build: {}'.format(str(e)))
+            raise RebaseHelperError('Failed to start copr build: {}'.format(str(e))) from e
         else:
             return result.id
 
@@ -91,7 +90,7 @@ class CoprHelper:
             result = client.build_proxy.get(build_id)
         except CoprRequestException as e:
             raise RebaseHelperError(
-                'Failed to get copr build details for id {}: {}'.format(build_id, str(e)))
+                'Failed to get copr build details for id {}: {}'.format(build_id, str(e))) from e
         else:
             return '{}/coprs/{}/{}/build/{}/'.format(client.config.get('copr_url'),
                                                      result.ownername,
@@ -104,7 +103,7 @@ class CoprHelper:
             result = client.build_proxy.get(build_id)
         except CoprRequestException as e:
             raise RebaseHelperError(
-                'Failed to get copr build details for id {}: {}'.format(build_id, str(e)))
+                'Failed to get copr build details for id {}: {}'.format(build_id, str(e))) from e
         else:
             return result.state
 

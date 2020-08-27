@@ -157,8 +157,8 @@ class CliHelper:
                 repo_path, config.config['sources'] = BugzillaHelper.prepare_rebase_repository(config.bugzilla_id)
                 try:
                     os.chdir(repo_path)
-                except OSError:
-                    raise RebaseHelperError('Could not change directory to the cloned repository')
+                except OSError as e:
+                    raise RebaseHelperError('Could not change directory to the cloned repository') from e
                 # update relative paths in config
                 for option in ('results_dir', 'workspace_dir'):
                     path = getattr(config, option)

@@ -180,11 +180,12 @@ class RpmHelper:
                 try:
                     with ConsoleHelper.Capturer(stderr=True) as capturer:
                         result = rpm.spec(tmp.name, flags) if flags is not None else rpm.spec(tmp.name)
-                except ValueError:
+                except ValueError as e:
                     output = capturer.stderr.strip().split('\n') if capturer else []
                     if len(output) == 1:
                         output = output[0]
-                    raise RebaseHelperError('Failed to parse SPEC file{0}'.format(': ' + str(output) if output else ''))
+                    raise RebaseHelperError('Failed to parse SPEC file{0}'.format(
+                        ': ' + str(output) if output else '')) from e
                 return result
 
     @classmethod
