@@ -2,6 +2,23 @@
 
 ## [Unreleased]
 
+## [0.23.0] - 2020-08-28
+### Added
+- Added **rpminspect** checker
+
+### Fixed
+- **rebase-helper** is now able to deal with existing git repository in extracted upstream sources
+- Prevented git commands executed in the background from launching an interactive editor and effectively rendering **rebase-helper** unusable
+- Outputs of checkers are now removed before subsequent runs
+- Tilde is now recognized as extra version separator
+- `make test-podman` has been updated to work with the latest podman
+
+### Changed
+- Checker outputs are now ordered by type in the text report
+- Excessive blank lines are now removed from the SPEC file when removing patches
+- Sources and patches are now automatically renamed, if necessary
+- **abipkgdiff** now falls back to comparing without debuginfo in case it is unable to read it from the provided debuginfo packages
+
 ## [0.22.0] - 2020-03-31
 ### Added
 - Added more type hints, including all public API methods
