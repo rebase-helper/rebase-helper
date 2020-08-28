@@ -97,10 +97,10 @@ class AbiPkgDiff(BaseChecker):
         cls.prepare_results_dir()
         debug_old, rest_pkgs_old = cls._get_packages_for_abipkgdiff(results_store.get_build('old'))
         debug_new, rest_pkgs_new = cls._get_packages_for_abipkgdiff(results_store.get_build('new'))
-        cmd = [cls.CMD]
         ret_codes = {}
         for pkg in rest_pkgs_old:
-            command = list(cmd)
+            command = [cls.CMD]
+            command_fallback = [cls.CMD]
             debug = cls._find_debuginfo(debug_old, pkg)
             if debug:
                 command.append('--d1')
@@ -115,17 +115,22 @@ class AbiPkgDiff(BaseChecker):
             if debug:
                 command.append('--d2')
                 command.append(debug)
-            command.append(pkg)
-            command.append(new_pkg)
+            command.extend([pkg, new_pkg])
+            command_fallback.extend([pkg, new_pkg])
             logger.verbose('Package name for ABI comparison %s', old_name)
             output = os.path.join(cls.results_dir, old_name + '.txt')
-            try:
-                ret_code = ProcessHelper.run_subprocess(command, output_file=output)
-            except OSError as e:
-                raise CheckerNotFoundError("Checker '{}' was not found or installed.".format(cls.name)) from e
-
-            if int(ret_code) & cls.ABIDIFF_ERROR and int(ret_code) & cls.ABIDIFF_USAGE_ERROR:
-                raise RebaseHelperError('Execution of {} failed.\nCommand line is: {}'.format(cls.CMD, cmd))
+            for cmd in [command, command_fallback]:
+                try:
+                    ret_code = ProcessHelper.run_subprocess(cmd, output_file=output)
+                except OSError as e:
+                    raise CheckerNotFoundError("Checker '{}' was not found or installed.".format(cls.name)) from e
+                if int(ret_code) & cls.ABIDIFF_ERROR and int(ret_code) & cls.ABIDIFF_USAGE_ERROR:
+                    raise RebaseHelperError(
+                        'Execution of {} failed.\nCommand line is: {}'.format(cls.CMD, ' '.join(cmd)))
+                if int(ret_code) & cls.ABIDIFF_ERROR:
+                    # abipkgdiff might not be able to read the debuginfo, try again without it
+                    continue
+                break
             ret_codes[old_name] = int(ret_code)
         return dict(packages=cls.parse_abi_logs(ret_codes),
                     abi_changes=any(x & cls.ABIDIFF_ABI_CHANGE for x in ret_codes.values()),
