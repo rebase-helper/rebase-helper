@@ -133,9 +133,15 @@ class TestRebase:
             # abipkgdiff
             assert report['checkers']['abipkgdiff']['abi_changes']
             lib = report['checkers']['abipkgdiff']['packages']['test']['libtest1.so']
-            assert lib['Functions changes summary']['Added']['count'] == 1
+            if 'Function symbols changes summary' in lib:
+                assert lib['Function symbols changes summary']['Added']['count'] == 1
+            elif 'Functions changes summary' in lib:
+                assert lib['Functions changes summary']['Added']['count'] == 1
             if favor_on_conflict != 'downstream':
-                assert lib['Variables changes summary']['Removed']['count'] == 1
+                if 'Variable symbols changes summary' in lib:
+                    assert lib['Variable symbols changes summary']['Removed']['count'] == 1
+                elif 'Variables changes summary' in lib:
+                    assert lib['Variables changes summary']['Removed']['count'] == 1
             # sonamecheck
             change = report['checkers']['sonamecheck']['soname_changes']['test']['changed'][0]
             assert change['from'] == 'libtest2.so.0.1'
