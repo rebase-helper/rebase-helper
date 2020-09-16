@@ -28,6 +28,7 @@ import logging
 import os
 import re
 import sys
+import threading
 import time
 from typing import cast
 
@@ -164,9 +165,39 @@ class LookasideCacheHelper:
                         yield self.data[offset:transferred]
                     self.uploaded = True
 
+        class FakeProgress(threading.Thread):
+            def __init__(self, check_only, interval=0.2):
+                self.check_only = check_only
+                self.interval = interval
+                self.stop_event = threading.Event()
+                super().__init__()
+
+            def run(self):
+                if self.check_only:
+                    return
+                n = 0
+                start = time.time()
+                while not self.stop_event.is_set():
+                    DownloadHelper.progress(-1, n * 256 * 1024, start, show_size=False)
+                    n += 1
+                    self.stop_event.wait(self.interval)
+
+            def stop(self):
+                self.stop_event.set()
+                super().join()
+
         def post(check_only=False):
             cd = ChunkedData(check_only)
-            r = requests.post(url, data=cd, headers=cd.headers, auth=auth)
+            if 'src.fedoraproject.org' in url:
+                # src.fedoraproject.org seems to have trouble with chunked requests, don't even try
+                fp = FakeProgress(check_only)
+                fp.start()
+                try:
+                    r = requests.post(url, data=cd.data, headers=cd.headers, auth=auth)
+                finally:
+                    fp.stop()
+            else:
+                r = requests.post(url, data=cd, headers=cd.headers, auth=auth)
             if not 200 <= r.status_code < 300:
                 raise LookasideCacheError('{0}: {1}'.format(r.reason, r.text.strip()))
             return r.content
@@ -182,7 +213,7 @@ class LookasideCacheHelper:
 
         if state.strip() == b'Available':
             # already uploaded
-            logger.info('Source is already present in lookaside cache')
+            logger.info('%s is already present in lookaside cache, not uploading', path)
             return
 
         logger.info('Uploading %s to lookaside cache', path)
