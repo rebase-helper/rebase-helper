@@ -143,6 +143,7 @@ class LookasideCacheHelper:
                 if check_only:
                     fields.append(('filename', filename))
                 else:
+                    fields.append(('mtime', str(int(os.stat(filename).st_mtime))))
                     with open(path, 'rb') as f:
                         rf = RequestField('file', f.read(), filename)
                         rf.make_multipart()
