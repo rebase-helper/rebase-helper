@@ -75,7 +75,7 @@ class PatchList(list):
                 return x
 
     def __getitem__(self, item):
-        return super(PatchList, self).__getitem__(self._get_index_list(item))
+        return super().__getitem__(self._get_index_list(item))
 
 
 class PatchObject:

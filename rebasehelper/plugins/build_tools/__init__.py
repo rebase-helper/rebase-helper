@@ -86,14 +86,14 @@ class BuildTemporaryEnvironment(TemporaryEnvironment):
     TEMPDIR_RESULTS: str = TemporaryEnvironment.TEMPDIR + '_RESULTS'
 
     def __init__(self, sources, patches, spec, results_dir):
-        super(BuildTemporaryEnvironment, self).__init__(self._build_env_exit_callback)
+        super().__init__(self._build_env_exit_callback)
         self._env['results_dir'] = results_dir
         self.sources = sources
         self.patches = patches
         self.spec = spec
 
     def __enter__(self):
-        obj = super(BuildTemporaryEnvironment, self).__enter__()
+        obj = super().__enter__()
         log_message = "Copying '%s' to '%s'"
         # create the directory structure
         self._create_directory_structure()

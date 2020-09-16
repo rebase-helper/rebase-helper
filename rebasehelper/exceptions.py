@@ -31,7 +31,7 @@ class RebaseHelperError(Exception):
 
     def __init__(self, *args, **kwargs):
         """Constructor of RebaseHelperError"""
-        super(RebaseHelperError, self).__init__()
+        super().__init__()
         if not args:
             self.msg = None
         elif len(args) > 1:
@@ -71,7 +71,7 @@ class SourcePackageBuildError(RuntimeError):
             **kwargs: Keyword arguments containing paths to logs with errors.
 
         """
-        super(SourcePackageBuildError, self).__init__()
+        super().__init__()
         self.args = args
         self.logfile = kwargs.get('logfile')
         self.logs = kwargs.get('logs')
@@ -88,7 +88,7 @@ class BinaryPackageBuildError(RuntimeError):
             **kwargs: Keyword arguments containing paths to logs with errors.
 
         """
-        super(BinaryPackageBuildError, self).__init__()
+        super().__init__()
         self.args = args
         self.logfile = kwargs.get('logfile')
         self.logs = kwargs.get('logs')
