@@ -167,24 +167,33 @@ class LookasideCacheHelper:
             cd = ChunkedData(check_only)
             r = requests.post(url, data=cd, headers=cd.headers, auth=auth)
             if not 200 <= r.status_code < 300:
-                raise LookasideCacheError(r.reason)
+                raise LookasideCacheError('{0}: {1}'.format(r.reason, r.text.strip()))
             return r.content
 
         path = os.path.join(source_dir, filename)
-        state = post(check_only=True)
+
+        try:
+            state = post(check_only=True)
+        except (requests.exceptions.ConnectionError, LookasideCacheError) as e:
+            # just log the error and bail out
+            logger.error('Attempt to upload to lookaside cache failed: %s', str(e))
+            return
+
         if state.strip() == b'Available':
             # already uploaded
+            logger.info('Source is already present in lookaside cache')
             return
 
         logger.info('Uploading %s to lookaside cache', path)
         try:
-            post()
-        except requests.exceptions.ConnectionError as e:
+            try:
+                post()
+            finally:
+                sys.stdout.write('\n')
+                sys.stdout.flush()
+        except (requests.exceptions.ConnectionError, LookasideCacheError) as e:
             # Skip error, the rebase can continue even after a failed upload
             logger.error("Upload to lookaside cache failed: %s", str(e))
-        finally:
-            sys.stdout.write('\n')
-            sys.stdout.flush()
 
     @classmethod
     def update_sources(cls, tool, basepath, package, old_sources, new_sources, upload=True, source_dir=''):
