@@ -30,7 +30,7 @@ from rebasehelper.exceptions import RebaseHelperError, ParseError
 
 class SilentArgumentParser(argparse.ArgumentParser):
     def __init__(self):
-        super(SilentArgumentParser, self).__init__(add_help=False)
+        super().__init__(add_help=False)
 
     def error(self, message):
         raise ParseError(message)
@@ -43,7 +43,7 @@ class CustomHelpFormatter(argparse.HelpFormatter):
         if isinstance(action.default, list):
             default_str = ','.join(str(c) for c in action.default)
             action.default = default_str
-        return super(CustomHelpFormatter, self)._expand_help(action)
+        return super()._expand_help(action)
 
 
 class CustomAction(argparse.Action):
@@ -62,7 +62,7 @@ class CustomAction(argparse.Action):
                  help=None,  # pylint: disable=redefined-builtin
                  choices=None):
 
-        super(CustomAction, self).__init__(
+        super().__init__(
             option_strings=option_strings,
             dest=dest,
             const=const,
@@ -108,7 +108,7 @@ class CustomArgumentParser(argparse.ArgumentParser):
                     msg = 'invalid choices: %s (choose from %s)' % tup
                 raise argparse.ArgumentError(action, msg)
         else:
-            super(CustomArgumentParser, self)._check_value(action, value)
+            super()._check_value(action, value)
 
     def error(self, message):
         self.print_usage(sys.stderr)

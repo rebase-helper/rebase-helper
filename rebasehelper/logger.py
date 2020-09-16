@@ -48,7 +48,7 @@ class CustomLogger(logging.Logger):
     }
 
     def __init__(self, name, level=logging.NOTSET):
-        super(CustomLogger, self).__init__(name, level)
+        super().__init__(name, level)
 
         for lev, severity in self._nameToLevel.items():
             logging.addLevelName(severity, lev)
@@ -118,7 +118,7 @@ class MemoryHandler(logging.handlers.BufferingHandler):
     buffer: List[logging.LogRecord]  # until this is added to typeshed: https://github.com/python/typeshed/pull/3402
 
     def __init__(self) -> None:
-        super(MemoryHandler, self).__init__(0)
+        super().__init__(0)
 
     def shouldFlush(self, record: logging.LogRecord) -> bool:
         return False
