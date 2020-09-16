@@ -44,13 +44,14 @@ class DownloadHelper:
     """Class for downloading files and performing HTTP requests."""
 
     @staticmethod
-    def progress(download_total, downloaded, start_time):
+    def progress(download_total, downloaded, start_time, show_size=True):
         """Prints current progress and estimated remaining time of a download to the standard output.
 
         Args:
             download_total (int): Total download size in bytes.
             downloaded (int): Size of the already downloaded portion of a file in bytes.
             start_time (float): Time when the download started in seconds since epoch.
+            show_size (bool): Whether to show the number of downloaded bytes.
 
         """
         bar_width = 32
@@ -84,7 +85,7 @@ class DownloadHelper:
             bar = '[{}>{}]'.format('=' * pos, ' ' * (bar_width - 3 - pos))
             ts = 'eta {}'.format(format_time(delta / r - delta) if r > 0.0 else ' ' * 7 + '?')
 
-        size = format_size(downloaded)
+        size = format_size(downloaded) if show_size else ''
 
         # no point to log progress, write directly to stdout
         sys.stdout.write('\r{}{}  {}  {} '.format(pct, bar, size, ts))
