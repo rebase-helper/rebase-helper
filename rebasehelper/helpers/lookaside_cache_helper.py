@@ -130,13 +130,13 @@ class LookasideCacheHelper:
             cls._download_source(tool, url, package, source['filename'], source['hashtype'], source['hash'], target)
 
     @classmethod
-    def _upload_source(cls, url, package, source_dir, filename, hashtype, hsh, auth=requests_gssapi.HTTPSPNEGOAuth()):
+    def _upload_source(cls, url, package, source_dir, filename, hashtype, hsh,
+                       auth=requests_gssapi.HTTPSPNEGOAuth(opportunistic_auth=True)):
         class ChunkedData:
             def __init__(self, check_only, chunksize=8192):
                 self.check_only = check_only
                 self.chunksize = chunksize
                 self.start = time.time()
-                self.uploaded = False
                 fields = [
                     ('name', package),
                     ('{}sum'.format(hashtype), hsh),
@@ -153,17 +153,12 @@ class LookasideCacheHelper:
                 self.headers = {'Content-Type': content_type}
 
             def __iter__(self):
-                if self.uploaded:
-                    # ensure the progressbar is shown only once (HTTPSPNEGOAuth causes second request)
-                    yield self.data
-                else:
-                    totalsize = len(self.data)
-                    for offset in range(0, totalsize, self.chunksize):
-                        transferred = min(offset + self.chunksize, totalsize)
-                        if not self.check_only:
-                            DownloadHelper.progress(totalsize, transferred, self.start)
-                        yield self.data[offset:transferred]
-                    self.uploaded = True
+                totalsize = len(self.data)
+                for offset in range(0, totalsize, self.chunksize):
+                    transferred = min(offset + self.chunksize, totalsize)
+                    if not self.check_only:
+                        DownloadHelper.progress(totalsize, transferred, self.start)
+                    yield self.data[offset:transferred]
 
         class FakeProgress(threading.Thread):
             def __init__(self, check_only, interval=0.2):
