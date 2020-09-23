@@ -685,6 +685,8 @@ class Application:
                                                    **kwargs)
                 if data:
                     results[checker_name] = data
+            except RebaseHelperError as e:
+                logger.error(e.msg)
             except CheckerNotFoundError:
                 logger.error("Rebase-helper did not find checker '%s'.", checker_name)
 
