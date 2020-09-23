@@ -515,13 +515,13 @@ class SpecFile:
             raise RebaseHelperError('Invalid release string: {}'.format(release))
         return bool(m.group(1)), int(m.group(2)), m.group(3)
 
-    def set_version(self, version: str) -> None:
+    def set_version(self, version: str, preserve_macros: bool = True) -> None:
         logger.verbose('Updating version in SPEC from %s to %s', self.header.version, version)
-        self.set_tag('Version', version, preserve_macros=True)
+        self.set_tag('Version', version, preserve_macros=preserve_macros)
 
-    def set_release(self, release: str) -> None:
+    def set_release(self, release: str, preserve_macros: bool = True) -> None:
         logger.verbose('Changing release to %s', release)
-        self.set_tag('Release', '{}%{{?dist}}'.format(release), preserve_macros=True)
+        self.set_tag('Release', '{}%{{?dist}}'.format(release), preserve_macros=preserve_macros)
 
     def set_release_number(self, release: str) -> None:
         # deprecated, kept for backward compatibility
