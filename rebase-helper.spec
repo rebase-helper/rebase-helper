@@ -42,7 +42,7 @@ Recommends:     licensecheck
 Recommends:     rpmlint
 Recommends:     libabigail
 Recommends:     pkgdiff >= 1.6.3
-Recommends:     rpminspect
+Recommends:     rpminspect-data-fedora
 
 
 %description

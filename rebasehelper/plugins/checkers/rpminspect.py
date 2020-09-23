@@ -63,7 +63,7 @@ class Rpminspect(BaseChecker):  # pylint: disable=abstract-method
     """
     DEFAULT: bool = True
 
-    CMD: str = 'rpminspect'
+    CMD: str = 'rpminspect-fedora'
 
     BAD_CHECK: str = 'BAD'
     VERIFY_CHECK: str = 'VERIFY'
