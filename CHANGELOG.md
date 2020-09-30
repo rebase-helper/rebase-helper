@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+## [0.23.1] - 2020-09-30
+### Fixed
+- Fixed uploads to Fedora lookaside cache and improved error handling
+- A build is no longer retried as a result of checker failure
+
+### Changed
+- `SpecFile.set_version()` and `SpecFile.set_release()` now allow disabling of preserving macros
+- **rpminspect** checker now uses `rpminspect-fedora`
+
 ## [0.23.0] - 2020-08-28
 ### Added
 - Added **rpminspect** checker
