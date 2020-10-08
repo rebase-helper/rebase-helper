@@ -40,7 +40,8 @@ class TestSpecFile:
         spec = SpecFile(SPEC_FILE)
         assert isinstance(spec, SpecFile)
         # check that arguments were not renamed or removed
-        spec = SpecFile(path=SPEC_FILE, sources_location=workdir, predefined_macros=None)
+        spec = SpecFile(path=SPEC_FILE, sources_location=workdir, predefined_macros=None,
+                        lookaside_cache_preset='fedpkg')
         assert isinstance(spec, SpecFile)
 
     def test_update_changelog(self, spec_object):

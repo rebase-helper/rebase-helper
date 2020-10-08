@@ -112,7 +112,8 @@ class Application:
             if self.conf.update_sources:
                 sources = [os.path.basename(s) for s in self.spec_file.sources]
                 rebased_sources = [os.path.basename(s) for s in self.rebase_spec_file.sources]
-                uploaded = LookasideCacheHelper.update_sources('fedpkg', self.rebased_sources_dir,
+                uploaded = LookasideCacheHelper.update_sources(self.conf.lookaside_cache_preset,
+                                                               self.rebased_sources_dir,
                                                                self.rebase_spec_file.header.name,
                                                                sources, rebased_sources,
                                                                upload=not self.conf.skip_upload)
@@ -140,7 +141,8 @@ class Application:
 
         :return:
         """
-        self.spec_file = SpecFile(self.spec_file_path, self.execution_dir, self.kwargs['rpmmacros'])
+        self.spec_file = SpecFile(self.spec_file_path, self.execution_dir, self.kwargs['rpmmacros'],
+                                  self.conf.lookaside_cache_preset)
         # Check whether test suite is enabled at build time
         if not self.spec_file.is_test_suite_enabled():
             results_store.set_info_text('WARNING', 'Test suite is not enabled at build time.')
