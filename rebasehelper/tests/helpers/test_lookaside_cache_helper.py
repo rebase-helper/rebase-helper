@@ -57,8 +57,7 @@ class TestLookasideCacheHelper:
     def test_download(self, package, filename, hashtype, hsh):
         # pylint: disable=protected-access
         target = os.path.basename(filename)
-        LookasideCacheHelper._download_source('fedpkg',
-                                              'https://integration:4430/pkgs',
+        LookasideCacheHelper._download_source('https://integration:4430/pkgs',
                                               package,
                                               filename,
                                               hashtype,

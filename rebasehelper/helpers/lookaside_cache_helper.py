@@ -100,7 +100,7 @@ class LookasideCacheHelper:
         return chksum.hexdigest()
 
     @classmethod
-    def _download_source(cls, tool, url, package, filename, hashtype, hsh, target=None):
+    def _download_source(cls, url, package, filename, hashtype, hsh, target=None):
         if target is None:
             target = os.path.basename(filename)
         if os.path.exists(target):
@@ -109,10 +109,7 @@ class LookasideCacheHelper:
                 return
             else:
                 os.unlink(target)
-        if tool == 'fedpkg':
-            url = '{0}/{1}/{2}/{3}/{4}/{2}'.format(url, package, filename, hashtype, hsh)
-        else:
-            url = '{0}/{1}/{2}/{3}/{2}'.format(url, package, filename, hsh)
+        url = '{0}/rpms/{1}/{2}/{3}/{4}/{2}'.format(url, package, filename, hashtype, hsh)
         try:
             DownloadHelper.download_file(url, target)
         except DownloadError as e:
@@ -127,7 +124,7 @@ class LookasideCacheHelper:
             raise LookasideCacheError('Failed to read rpkg configuration') from e
         for source in cls._read_sources(basepath):
             target = os.path.join(target_dir, source['filename'])
-            cls._download_source(tool, url, package, source['filename'], source['hashtype'], source['hash'], target)
+            cls._download_source(url, package, source['filename'], source['hashtype'], source['hash'], target)
 
     @classmethod
     def _upload_source(cls, url, package, source_dir, filename, hashtype, hsh,
