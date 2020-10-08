@@ -116,11 +116,13 @@ class SpecFile:
     """Class representing a SPEC file. Be aware that using SpecFile
     modifies RPM macros in global context."""
 
-    def __init__(self, path: str, sources_location: str = '', predefined_macros: Optional[Dict[str, str]] = None):
+    def __init__(self, path: str, sources_location: str = '', predefined_macros: Optional[Dict[str, str]] = None,
+                 lookaside_cache_preset: str = 'fedpkg'):
         # Initialize attributes
         self.path: str = path
         self.sources_location: str = sources_location
         self.predefined_macros: Dict[str, str] = predefined_macros or {}
+        self.lookaside_cache_preset: str = lookaside_cache_preset
         self.prep_section: str = ''
         self.sources: List[str] = []
         self.patches: Dict[str, List[PatchObject]] = {}
@@ -146,7 +148,8 @@ class SpecFile:
         """
         try:
             # try to download old sources from Fedora lookaside cache
-            LookasideCacheHelper.download('fedpkg', os.path.dirname(self.path), self.header.name, self.sources_location)
+            LookasideCacheHelper.download(self.lookaside_cache_preset, os.path.dirname(self.path), self.header.name,
+                                          self.sources_location)
         except LookasideCacheError as e:
             logger.verbose("Downloading sources from lookaside cache failed. "
                            "Reason: %s.", str(e))

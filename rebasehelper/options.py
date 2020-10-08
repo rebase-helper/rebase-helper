@@ -236,6 +236,12 @@ OPTIONS: Options = [
     },
     # misc
     {
+        "name": ["--lookaside-cache-preset"],
+        "choices": ["fedpkg", "rhpkg", "rhpkg-sha512"],
+        "default": "fedpkg",
+        "help": "use specified lookaside cache configuration preset, defaults to %(default)s",
+    },
+    {
         "name": ["--changelog-entry"],
         "default": "- New upstream release %{version}",
         "help": "text to use as changelog entry, can contain RPM macros, which will be expanded",
