@@ -4,7 +4,7 @@ Release:        1%{?dist}
 Summary:        Test package
 
 License:        BSD
-Source0:        https://integration:4430/pkgs/%{name}/%{name}-%{version}.tar.gz
+Source0:        https://integration:4430/pkgs/rpms/%{name}/%{name}-%{version}.tar.gz
 Patch0:         applicable.patch
 Patch1:         conflicting.patch
 Patch2:         backported.patch
