@@ -127,8 +127,7 @@ class LookasideCacheHelper:
             cls._download_source(url, package, source['filename'], source['hashtype'], source['hash'], target)
 
     @classmethod
-    def _upload_source(cls, url, package, source_dir, filename, hashtype, hsh,
-                       auth=requests_gssapi.HTTPSPNEGOAuth(opportunistic_auth=True)):
+    def _upload_source(cls, url, package, source_dir, filename, hashtype, hsh, auth=requests_gssapi.HTTPSPNEGOAuth()):
         class ChunkedData:
             def __init__(self, check_only, chunksize=8192):
                 self.check_only = check_only
@@ -181,11 +180,12 @@ class LookasideCacheHelper:
         def post(check_only=False):
             cd = ChunkedData(check_only)
             if 'src.fedoraproject.org' in url:
-                # src.fedoraproject.org seems to have trouble with chunked requests, don't even try
+                # src.fedoraproject.org can't handle chunked requests properly and requires opportunistic authentication
                 fp = FakeProgress(check_only)
                 fp.start()
                 try:
-                    r = requests.post(url, data=cd.data, headers=cd.headers, auth=auth)
+                    r = requests.post(url, data=cd.data, headers=cd.headers,
+                                      auth=requests_gssapi.HTTPSPNEGOAuth(opportunistic_auth=True))
                 finally:
                     fp.stop()
             else:
