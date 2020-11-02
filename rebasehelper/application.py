@@ -556,11 +556,11 @@ class Application:
                 os.makedirs(results_dir)
                 if koji_build_id:
                     session = KojiHelper.create_session()
-                    build_dict['srpm'], build_dict['logs'] = KojiHelper.download_build(session,
-                                                                                       koji_build_id,
-                                                                                       results_dir,
-                                                                                       arches=['src'])
-
+                    srpms, logs = KojiHelper.download_build(session,
+                                                            koji_build_id,
+                                                            results_dir,
+                                                            arches=['src'])
+                    build_dict['srpm'], build_dict['logs'] = srpms[0], logs
                 else:
                     build_dict.update(builder.build(spec, results_dir, **build_dict))
                 build_dict = self._sanitize_build_dict(build_dict)
