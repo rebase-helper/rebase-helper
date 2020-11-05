@@ -117,12 +117,13 @@ class SpecFile:
     modifies RPM macros in global context."""
 
     def __init__(self, path: str, sources_location: str = '', predefined_macros: Optional[Dict[str, str]] = None,
-                 lookaside_cache_preset: str = 'fedpkg'):
+                 lookaside_cache_preset: str = 'fedpkg', keep_comments: bool = False):
         # Initialize attributes
         self.path: str = path
         self.sources_location: str = sources_location
         self.predefined_macros: Dict[str, str] = predefined_macros or {}
         self.lookaside_cache_preset: str = lookaside_cache_preset
+        self.keep_comments: bool = keep_comments
         self.prep_section: str = ''
         self.sources: List[str] = []
         self.patches: Dict[str, List[PatchObject]] = {}
@@ -457,11 +458,12 @@ class SpecFile:
                 removed_patches.append(tag.index)
                 # find associated comments
                 i = tag.line
-                # if the tag is followed by an empty line remove empty lines
-                # in front of the tag to avoid unnecessary blank lines in the spec.
-                blank_follows = i + 1 < len(section) and is_empty(section[i + 1])
-                while i > 0 and (is_comment(section[i - 1]) or blank_follows and is_empty(section[i - 1])):
-                    i -= 1
+                if not self.keep_comments:
+                    # if the tag is followed by an empty line remove empty lines
+                    # in front of the tag to avoid unnecessary blank lines in the spec.
+                    blank_follows = i + 1 < len(section) and is_empty(section[i + 1])
+                    while i > 0 and (is_comment(section[i - 1]) or blank_follows and is_empty(section[i - 1])):
+                        i -= 1
                 remove_lines[tag.section_index].append((i, tag.line + 1))
                 continue
             if patch_inapplicable:
@@ -996,7 +998,8 @@ class SpecFile:
 
         """
         shutil.copy(self.path, new_path)
-        new_object = SpecFile(new_path, self.sources_location, self.predefined_macros)
+        new_object = SpecFile(new_path, self.sources_location, self.predefined_macros,
+                              self.lookaside_cache_preset, self.keep_comments)
         return new_object
 
     def reload(self):

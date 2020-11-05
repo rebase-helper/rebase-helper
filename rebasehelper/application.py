@@ -142,7 +142,7 @@ class Application:
         :return:
         """
         self.spec_file = SpecFile(self.spec_file_path, self.execution_dir, self.kwargs['rpmmacros'],
-                                  self.conf.lookaside_cache_preset)
+                                  self.conf.lookaside_cache_preset, self.conf.keep_comments)
         # Check whether test suite is enabled at build time
         if not self.spec_file.is_test_suite_enabled():
             results_store.set_info_text('WARNING', 'Test suite is not enabled at build time.')
