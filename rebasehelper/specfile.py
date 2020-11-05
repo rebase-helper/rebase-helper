@@ -425,7 +425,7 @@ class SpecFile:
             disable_inapplicable: Whether to comment out inapplicable patches.
         """
         def is_comment(line):
-            if re.match(r'^#\s*[A-Za-z][A-Za-z0-9]+\s*:(?!//)', line):
+            if re.match(r'^#(Patch|Source)[0-9]*\s*:(?!//)', line, re.IGNORECASE):
                 # ignore commented-out tag
                 return False
             return line.startswith('#')
