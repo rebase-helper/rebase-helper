@@ -92,7 +92,7 @@ class Koji(BuildToolBase):
     def _scratch_build(cls, results_dir, srpm, **kwargs):
         session = KojiHelper.create_session(login=True)
         remote = KojiHelper.upload_srpm(session, srpm)
-        task_id = session.build(remote, cls.TARGET_TAG, dict(scratch=True))
+        task_id = session.build(remote, cls.TARGET_TAG, dict(scratch=True, arch_override='x86_64'))
         if kwargs['builds_nowait']:
             return None, None, task_id
         url = KojiHelper.get_task_url(session, task_id)
