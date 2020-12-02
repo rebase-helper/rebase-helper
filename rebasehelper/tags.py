@@ -159,7 +159,7 @@ class Tags(collections.abc.Sequence):
         result = []
         tag_re = re.compile(r'^(?P<prefix>(?P<name>\w+)\s*:\s*)(?P<value>.+)$')
         for line_index, line in enumerate(section_content):
-            expanded = MacroHelper.expand(line)
+            expanded = MacroHelper.expand(line, suppress_errors=True)
             if not line or not expanded:
                 continue
             valid = bool(parsed and [p for p in parsed if p == expanded.rstrip()])
@@ -203,7 +203,7 @@ class Tags(collections.abc.Sequence):
         tag = 'Source' if section == '%sourcelist' else 'Patch'
         result = []
         for i, line in enumerate(section_content):
-            expanded = MacroHelper.expand(line)
+            expanded = MacroHelper.expand(line, suppress_errors=True)
             is_comment = SpecContent.get_comment_span(line, section)[0] != len(line)
             if not expanded or not line or is_comment or not [p for p in parsed if p == expanded.rstrip()]:
                 continue

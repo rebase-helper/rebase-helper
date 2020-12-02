@@ -53,9 +53,12 @@ class MacroHelper:
     ]
 
     @staticmethod
-    def expand(s, default=None):
+    def expand(s, default=None, suppress_errors=False):
         try:
-            return rpm.expandMacro(s)
+            if not suppress_errors:
+                return rpm.expandMacro(s)
+            with ConsoleHelper.Capturer(stderr=True):
+                return rpm.expandMacro(s)
         except rpm.error:
             return default
 
