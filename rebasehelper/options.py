@@ -247,6 +247,12 @@ OPTIONS: Options = [
         "help": "text to use as changelog entry, can contain RPM macros, which will be expanded",
     },
     {
+        "name": ["--no-changelog-entry"],
+        "default": False,
+        "switch": True,
+        "help": "do not add a changelog entry at all",
+    },
+    {
         "name": ["--config-file"],
         "default": os.path.join(CONFIG_PATH, CONFIG_FILENAME),
         "help": "path to a configuration file, defaults to %(default)s",

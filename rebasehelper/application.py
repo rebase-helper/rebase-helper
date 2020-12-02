@@ -183,7 +183,8 @@ class Application:
         if not self.conf.skip_version_check and (newver < oldver or (newver == oldver and newex == oldex)):
             raise RebaseHelperError("Current version is equal to or newer than the requested version, nothing to do.")
 
-        self.rebase_spec_file.update_changelog(self.conf.changelog_entry)
+        if not self.conf.no_changelog_entry:
+            self.rebase_spec_file.update_changelog(self.conf.changelog_entry)
 
         # run spec hooks
         plugin_manager.spec_hooks.run(self.spec_file, self.rebase_spec_file, **self.kwargs)
