@@ -1,5 +1,3 @@
-current_version_command: ["python3", "setup.py", "--version"]
-create_tarball_command: ["python3", "setup.py", "sdist", "--base-name", "rebase-helper", "--dist-dir", "."]
 jobs:
   - job: copr_build
     trigger: pull_request
@@ -9,4 +7,8 @@ jobs:
   - job: propose_downstream
     trigger: release
     metadata:
-      dist-git-branch: fedora-all
+      dist_git_branches: fedora-all
+actions:
+  create-archive:
+  - "python3 setup.py sdist --base-name rebase-helper --dist-dir ."
+  - "bash -c 'ls -1t ./rebase-helper-*.tar.gz | head -n 1'"
