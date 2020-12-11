@@ -59,6 +59,10 @@ class TestRebase:
         'rebase/renamed-0.1.patch',
     ]
 
+    @pytest.mark.xfail(reason='''
+        the test fails from time to time due to RPM macros not being expanded,
+        see https://github.com/rebase-helper/rebase-helper/issues/811
+    ''')
     @pytest.mark.parametrize('buildtool', [
         pytest.param('rpmbuild', marks=pytest.mark.skipif(
             os.geteuid() != 0,
