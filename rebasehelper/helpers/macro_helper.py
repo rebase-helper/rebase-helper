@@ -66,7 +66,8 @@ class MacroHelper:
     def purge_macro(cls, macro: str) -> None:
         m = '%{{{}}}'.format(macro)
         while cls.expand(m, m) != m:
-            rpm.delMacro(macro)
+            with ConsoleHelper.Capturer(stderr=True):
+                rpm.delMacro(macro)
 
     @classmethod
     def expand_macros(cls, macros):
