@@ -24,10 +24,13 @@
 
 import logging
 import os
+import re
 import shutil
+import tempfile
 from typing import List, Optional, cast
 
 import git  # type: ignore
+import unidiff  # type: ignore
 
 from rebasehelper.specfile import PatchObject
 from rebasehelper.helpers.git_helper import GitHelper
@@ -82,8 +85,27 @@ class Patcher:
         It tries apply patch with am command and if it fails
         then with command --apply
         """
+        def sanitize(patch_filename):
+            diffgit = re.compile(r'diff\s+--git\s+(a/.*)\s+(b/.*)')
+            patch = unidiff.PatchSet.from_filename(patch_filename)
+            for pf in patch:
+                # use paths from "diff --git" line if present
+                if pf.patch_info:
+                    for line in pf.patch_info:
+                        m = diffgit.match(line)
+                        if not m:
+                            continue
+                        pf.source_file = m.group(1)
+                        pf.target_file = m.group(2)
+                # use the shortest path
+                fn = min([pf.source_file, pf.target_file], key=len)
+                pf.source_file = fn
+                pf.target_file = fn
+            tmp = tempfile.NamedTemporaryFile(mode='w')
+            tmp.write(str(patch))
+            tmp.flush()
+            return tmp
         logger.verbose('Applying patch with git-am')
-
         patch_name = patch_object.path
         patch_strip = patch_object.strip
         try:
@@ -97,15 +119,17 @@ class Patcher:
             except git.GitCommandError:
                 pass
             logger.verbose('Applying patch with git-apply')
-            try:
-                repo.git.apply(patch_name, p=patch_strip)
-            except git.GitCommandError:
+            # before trying git-apply, sanitize the paths in the patch
+            with sanitize(patch_name) as sanitized_patch:
                 try:
-                    repo.git.apply(patch_name, p=patch_strip, reject=True, whitespace='fix')
-                except git.GitCommandError as e:
-                    logger.verbose('Applying patch with git-apply failed.')
-                    logger.debug(str(e))
-                    raise
+                    repo.git.apply(sanitized_patch.name, p=patch_strip)
+                except git.GitCommandError:
+                    try:
+                        repo.git.apply(sanitized_patch.name, p=patch_strip, reject=True, whitespace='fix')
+                    except git.GitCommandError as e:
+                        logger.verbose('Applying patch with git-apply failed.')
+                        logger.debug(str(e))
+                        raise
             repo.git.add(all=True)
             commit = repo.index.commit(cls.decorate_patch_name(os.path.basename(patch_name)), skip_hooks=True)
         repo.git.commit(amend=True, m=cls.insert_patch_name(commit.message, os.path.basename(patch_name)))
