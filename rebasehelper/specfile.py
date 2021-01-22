@@ -363,18 +363,19 @@ class SpecFile:
         """
         return self.patches['not_applied']
 
-    def _process_patches(self, comment_out=None, remove_patches=None, disable_inapplicable_patches=None):
-        """
-        Comment out and delete patches from SPEC file
+    def process_patch_macros(self, comment_out: Optional[List[int]] = None, remove: Optional[List[int]] = None,
+                             annotate: Optional[List[int]] = None, note: Optional[str] = None) -> None:
+        """Processes %patch macros in %prep section.
 
-        :var comment_out: list with patch numbers to comment out
-        :var remove_patches: list with patch numbers to delete
-        :var disable_inapplicable_patches: boolean value deciding if the inapplicable patches should be commented out
+        Args:
+            comment_out: List of patch numbers to comment out.
+            remove: List of patch numbers to remove.
+            annotate: List of patch numbers to annotate.
+            note: Message to annotate patches with.
         """
-        if comment_out is None:
-            comment_out = []
-        if remove_patches is None:
-            remove_patches = []
+        comment_out = list(comment_out or [])
+        remove = list(remove or [])
+        annotate = list(annotate or [])
 
         prep = self.spec_content.section('%prep')
         if not prep:
@@ -389,22 +390,26 @@ class SpecFile:
             match = patch_re.match(line)
             if match:
                 index = int(match.group('index'))
-                if index in comment_out:
-                    if disable_inapplicable_patches:
-                        prep[i] = '#%{}'.format(line)
-                        removed += 1
-                    prep.insert(i, '# The following patch contains conflicts')
-                    comment_out.remove(index)
+                if note and index in annotate and index not in remove:
+                    prep.insert(i, '# {}'.format(note))
+                    annotate.remove(index)
                     i += 1
-                elif index in remove_patches:
-                    del prep[i]
-                    remove_patches.remove(index)
-                    i -= 1
+                    continue
+                if index in comment_out:
+                    prep[i] = '#%{}'.format(line)
+                    comment_out.remove(index)
                     removed += 1
+                elif index in remove:
+                    del prep[i]
+                    remove.remove(index)
+                    removed += 1
+                    i -= 1
                 # When combining Patch tags and %patchlist, if a Patch is removed, the indexes
                 # of %patchlist patches change and %patch macros need to be modified.
-                elif self.tag('Patch{}'.format(index)).section_name.startswith('%patchlist'):
-                    prep[i] = patch_re.sub(r'%patch{}\2'.format(index - removed), prep[i])
+                else:
+                    tag = self.tag('Patch{}'.format(index))
+                    if tag and tag.section_name.startswith('%patchlist'):
+                        prep[i] = patch_re.sub(r'%patch{}\2'.format(index - removed), prep[i])
             i += 1
 
     @saves
@@ -455,7 +460,8 @@ class SpecFile:
             if patch_removed:
                 # remove the line of the patch that was removed
                 self.removed_patches.append(patch_name)
-                removed_patches.append(tag.index)
+                if tag.index:
+                    removed_patches.append(tag.index)
                 # find associated comments
                 i = tag.line
                 if not self.keep_comments:
@@ -470,7 +476,8 @@ class SpecFile:
                 if disable_inapplicable:
                     # comment out line if the patch was not applied
                     section[tag.line] = '#' + section[tag.line]
-                inapplicable_patches.append(tag.index)
+                if tag.index:
+                    inapplicable_patches.append(tag.index)
             if 'modified' in patches:
                 patch = [x for x in patches['modified'] if patch_name in x]
             else:
@@ -478,12 +485,15 @@ class SpecFile:
             if patch:
                 name = os.path.join(constants.RESULTS_DIR, constants.REBASED_SOURCES_DIR, patch_name)
                 self.set_raw_tag_value(tag.name, name)
-                modified_patches.append(tag.index)
+                if tag.index:
+                    modified_patches.append(tag.index)
         for section_index, remove in remove_lines.items():
             content = self.spec_content[section_index]
             for span in sorted(remove, key=lambda s: s[0], reverse=True):
                 del content[slice(*span)]
-        self._process_patches(inapplicable_patches, removed_patches, disable_inapplicable)
+        self.process_patch_macros(comment_out=inapplicable_patches if disable_inapplicable else None,
+                                  remove=removed_patches, annotate=inapplicable_patches,
+                                  note='The following patch contains conflicts')
 
     ###################################
     # PACKAGE VERSION RELATED METHODS #
