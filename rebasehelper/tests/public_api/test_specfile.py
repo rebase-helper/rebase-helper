@@ -79,3 +79,7 @@ class TestSpecFile:
 
     def test_udpate(self, spec_object):
         assert spec_object.update() is None
+
+    def test_process_patch_macros(self, spec_object):
+        assert spec_object.process_patch_macros() is None
+        assert spec_object.process_patch_macros(comment_out=[0], remove=[1], annotate=[2], note='test') is None
