@@ -49,6 +49,7 @@ def get_requirements():
         'pyquery',
         'python-pam',
         'requests',
+        'unidiff',
         'GitPython',
     ]
     # there is no rpm nor gssapi inside RTD build environment
