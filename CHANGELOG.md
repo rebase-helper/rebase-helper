@@ -2,6 +2,23 @@
 
 ## [Unreleased]
 
+## [0.24.0] - 2021-02-02
+### Added
+- Added `--lookaside-cache-preset` option to enable using different lookaside cache configuration presets
+- Added `--no-changelog-entry` option to prevent **rebase-helper** from generating an entry in *%changelog* section
+- Added `--keep-comments` option to disable removing comments
+
+### Fixed
+- Fixed removing accompanying comments alongside patches
+- Fixed broken `--get-old-build-from-koji` option
+
+### Changed
+- Switched to new format of Fedora lookaside cache URLs
+- Limited **koji** builds to *x86_64* (it's a waste of resources until **rebase-helper** fully supports other architectures)
+- Suppressed harmless errors produced by `rpm` when expanding and deleting macros
+- Paths in patches are now sanitized before applying with `git apply`, to allow dealing with unusual patch formats
+- `SpecFile._process_patches()` method has been replaced with a public `SpecFile.process_patch_macros()` method
+
 ## [0.23.1] - 2020-09-30
 ### Fixed
 - Fixed uploads to Fedora lookaside cache and improved error handling

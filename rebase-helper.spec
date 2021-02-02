@@ -3,7 +3,7 @@
 %global pkgname rebasehelper
 
 Name:           rebase-helper
-Version:        0.23.1
+Version:        0.24.0
 Release:        1%{?dist}
 Summary:        The tool that helps you to rebase your package to the latest version
 
@@ -37,6 +37,7 @@ Requires:       rpm-build
 Requires:       mock
 Requires:       python3-setuptools
 Requires:       python3-koji
+Requires:       python3-unidiff
 
 Recommends:     licensecheck
 Recommends:     rpmlint
@@ -101,6 +102,9 @@ PYTHONPATH=$(pwd) py.test-3 -v %{pkgname}
 
 
 %changelog
+* Tue Feb 02 2021 Nikola Forró <nforro@redhat.com> - 0.24.0-1
+- New release 0.24.0
+
 * Wed Sep 30 2020 Nikola Forró <nforro@redhat.com> - 0.23.1-1
 - New release 0.23.1
 
