@@ -22,7 +22,7 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-import collections
+import collections.abc
 
 import pytest  # type: ignore
 
@@ -39,8 +39,8 @@ class TestTags:
 
     def test_filter(self, spec_object):
         result = spec_object.tags.filter()
-        assert isinstance(result, collections.Iterator)
+        assert isinstance(result, collections.abc.Iterator)
         assert isinstance(next(result), Tag)
         result = spec_object.tags.filter(section_index=0, section_name='%package', name='Source*', valid=True)
-        assert isinstance(result, collections.Iterator)
+        assert isinstance(result, collections.abc.Iterator)
         assert isinstance(next(result), Tag)
