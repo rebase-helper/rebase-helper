@@ -13,6 +13,7 @@ Source0:        https://github.com/rebase-helper/%{name}/archive/%{version}/%{na
 
 BuildArch:      noarch
 
+BuildRequires:  make
 BuildRequires:  python3-devel
 BuildRequires:  python3-setuptools
 BuildRequires:  python3-setuptools_scm
