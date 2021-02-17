@@ -67,7 +67,7 @@ class Mock(BuildToolBase):  # pylint: disable=abstract-method
         logger.info("Building RPMs")
         output = os.path.join(results_dir, "mock_output.log")
 
-        cmd = [cls.CMD, '--old-chroot', '--rebuild', srpm, '--resultdir', results_dir]
+        cmd = [cls.CMD, '--isolation', 'simple', '--rebuild', srpm, '--resultdir', results_dir]
         if root is not None:
             cmd.extend(['--root', root])
         if arch is not None:
