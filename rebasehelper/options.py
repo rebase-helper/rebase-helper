@@ -244,7 +244,7 @@ OPTIONS: Options = [
     # misc
     {
         "name": ["--lookaside-cache-preset"],
-        "choices": ["fedpkg", "rhpkg", "rhpkg-sha512"],
+        "choices": ["fedpkg", "centpkg", "rhpkg", "rhpkg-sha512"],
         "default": "fedpkg",
         "help": "use specified lookaside cache configuration preset, defaults to %(default)s",
     },
