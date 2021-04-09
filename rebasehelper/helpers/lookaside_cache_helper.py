@@ -127,7 +127,7 @@ class LookasideCacheHelper:
             cls._download_source(url, package, source['filename'], source['hashtype'], source['hash'], target)
 
     @classmethod
-    def _upload_source(cls, url, package, source_dir, filename, hashtype, hsh, auth=requests_gssapi.HTTPSPNEGOAuth()):
+    def _upload_source(cls, url, package, source_dir, filename, hashtype, hsh):
         class ChunkedData:
             def __init__(self, check_only, chunksize=8192):
                 self.check_only = check_only
@@ -178,18 +178,24 @@ class LookasideCacheHelper:
                 super().join()
 
         def post(check_only=False):
+            def _post(url, data, headers):
+                try:
+                    # try to authenticate using opportunistic auth first
+                    return requests.post(url, data=data, headers=headers,
+                                         auth=requests_gssapi.HTTPSPNEGOAuth(opportunistic_auth=True))
+                except requests_gssapi.exceptions.SPNEGOExchangeError:
+                    return requests.post(url, data=data, headers=headers, auth=requests_gssapi.HTTPSPNEGOAuth())
             cd = ChunkedData(check_only)
-            if 'src.fedoraproject.org' in url:
-                # src.fedoraproject.org can't handle chunked requests properly and requires opportunistic authentication
+            if 'devel.redhat.com' in url:
+                # the only server that properly handles chunked POST requests
+                r = _post(url, cd, cd.headers)
+            else:
                 fp = FakeProgress(check_only)
                 fp.start()
                 try:
-                    r = requests.post(url, data=cd.data, headers=cd.headers,
-                                      auth=requests_gssapi.HTTPSPNEGOAuth(opportunistic_auth=True))
+                    r = _post(url, cd.data, cd.headers)
                 finally:
                     fp.stop()
-            else:
-                r = requests.post(url, data=cd, headers=cd.headers, auth=auth)
             if not 200 <= r.status_code < 300:
                 raise LookasideCacheError('{0}: {1}'.format(r.reason, r.text.strip()))
             return r.content
