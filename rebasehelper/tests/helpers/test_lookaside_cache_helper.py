@@ -86,5 +86,4 @@ class TestLookasideCacheHelper:
                                             '',
                                             filename,
                                             hashtype,
-                                            hsh,
-                                            None)
+                                            hsh)
