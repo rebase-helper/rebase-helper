@@ -22,6 +22,7 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
+import locale
 import os
 from typing import List
 from textwrap import dedent
@@ -565,3 +566,15 @@ class TestSpecFile:
         spec_object.set_tag(tag, value, preserve_macros=preserve_macros)
         for line in lines_preserve if preserve_macros else lines:
             assert line in spec_object.spec_content.section('%package')
+
+    def test_get_new_log_with_non_c_locale(self, spec_object):
+        # Changelogs should be identical no matter what locale
+        changelog = spec_object.get_new_log("test2")
+        for l in locale.locale_alias:
+            try:
+                locale.setlocale(locale.LC_TIME, l)
+                # Prevents us from trying out strange locale aliases that fail
+                locale.setlocale(locale.LC_TIME, locale.getlocale(locale.LC_TIME))
+            except locale.Error:
+                continue
+            assert changelog == spec_object.get_new_log("test2")

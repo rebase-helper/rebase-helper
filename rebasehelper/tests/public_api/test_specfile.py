@@ -22,7 +22,6 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-import locale
 import os
 import shutil
 
@@ -48,18 +47,6 @@ class TestSpecFile:
     def test_update_changelog(self, spec_object):
         assert spec_object.update_changelog('test2') is None
         assert spec_object.update_changelog(changelog_entry='test') is None
-
-    def test_get_new_log_with_non_c_locale(self, spec_object):
-        # Changelogs should be identical no matter what locale
-        changelog = spec_object.get_new_log("test2")
-        for l in locale.locale_alias:
-            try:
-                locale.setlocale(locale.LC_TIME, l)
-                # Prevents us from trying out strange locale aliases that fail
-                locale.setlocale(locale.LC_TIME, locale.getlocale(locale.LC_TIME))
-            except:
-                continue
-            assert changelog == spec_object.get_new_log("test2")
 
     def test_set_version(self, spec_object):
         assert spec_object.set_version('1.2.3.4') is None
