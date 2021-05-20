@@ -26,6 +26,7 @@ import argparse
 import collections
 import enum
 import itertools
+import locale
 import logging
 import os
 import re
@@ -1074,7 +1075,14 @@ class SpecFile:
                                            ver=self.header.version,
                                            rel=self.get_release())
         evr = evr[2:] if evr.startswith('0:') else evr
-        new_record.append('* {day} {name} <{email}> - {evr}'.format(day=today.strftime('%a %b %d %Y'),
+        # %changelog entries are always in the C locale
+        old_locale = locale.getlocale(locale.LC_TIME)
+        try:
+            locale.setlocale(locale.LC_TIME, "C")
+            day=today.strftime('%a %b %d %Y')
+        finally:
+            locale.setlocale(locale.LC_TIME, old_locale)
+        new_record.append('* {day} {name} <{email}> - {evr}'.format(day=day,
                                                                     name=GitHelper.get_user(),
                                                                     email=GitHelper.get_email(),
                                                                     evr=evr))
