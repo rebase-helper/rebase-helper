@@ -1,4 +1,4 @@
-FROM rebasehelper/base-image:fedora-latest
+FROM quay.io/rebasehelper/base-image:fedora-latest
 
 COPY containers/entrypoint.sh /entrypoint.sh
 
