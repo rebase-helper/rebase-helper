@@ -13,6 +13,8 @@ RUN echo -e "deltarpm=0\ninstall_weak_deps=0\ntsflags=nodocs" >> /etc/dnf/dnf.co
     python3-tox \
     # needed for setup
     python3-setuptools_scm_git_archive \
+    # needed for test_get_new_log_with_non_c_locale
+    glibc-langpack-de \
     redhat-rpm-config \
     libxml2-devel \
     libxslt-devel \
