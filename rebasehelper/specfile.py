@@ -577,21 +577,25 @@ class SpecFile:
         macro_def_re = re.compile(
             r'''
             ^
-            (?P<cond>%{!?\?\w+:\s*)?
-            (?(cond)%global|%(global|define))
+            (?P<cond>%{!?\?\w+:\s*)?          # conditional macro, keep track of the opening brace
+            (?(cond)%global|%(global|define)) # only global can be conditional, not define
             \s+
-            (?P<name>\w+)
-            (?P<options>\(.+?\))?
+            (?P<name>\w+)                     # macro name
+            (?P<options>\(.+?\))?             # optional macro arguments
             \s+
             (?P<value>
-                (%((?P<b>{)|(?P<s>\()))?
-                .+?
-                (?(b)})(?(s)\))
+                (                             # the value consists of multiple macros and/or other text
+                    %(?![{(]) |               # match % but we don't want to consume macros or shell, ignore %( and %{
+                    [^%] |                    # other regular text, do not match %, force the line above to match it
+                    (%((?P<b>{)|(?P<s>\()))?  # macro or shell, track the parenthesis type
+                    [\s\S]+?                  # macro and shell may be multiline, match ASAP using non-greedy matching
+                    (?(b)})(?(s)\))           # parenthesis must be closed if it was used
+                )+?
             )
-            (?(cond)})
+            (?(cond)})                        # conditional macros must have closing brace
             $
             ''',
-            re.VERBOSE | re.MULTILINE | re.DOTALL)
+            re.VERBOSE | re.MULTILINE)
 
         def _get_macro_value(macro):
             """Returns raw value of a macro"""
