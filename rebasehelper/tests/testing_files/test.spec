@@ -19,7 +19,12 @@ Version: %{version}
 Release: %{release_str}
 License: GPL2+
 Group: System Environment
-URL: http://testing.org
+
+# Regression test for #855: https://github.com/rebase-helper/rebase-helper/issues/855
+%global domain testing
+%global address %{domain}.org
+%global full_address http://%{address}
+URL: %{full_address}
 
 # Note: non-current tarballs get moved to the history/ subdirectory,
 # so look there if you fail to retrieve the version you want
