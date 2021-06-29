@@ -1,0 +1,32 @@
+name: build
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '0 0 * * *'
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - distro: fedora-latest
+          - distro: fedora-rawhide
+    steps:
+      - uses: actions/checkout@v2
+        # Setup docker
+      - run: curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+      - run: sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+      - run: sudo apt-get update
+      - run: sudo apt-get -y -o Dpkg::Options::="--force-confnew" install docker-ce
+      - name: Select correct tests
+        run: |
+          if [ "${GITHUB_EVENT_NAME}" = "schedule" ]; then
+            echo "PYTEST_ADDOPTS=-m 'standard or functional'" >> $GITHUB_ENV
+          else
+            echo "PYTEST_ADDOPTS=-m 'not long_running'" >> $GITHUB_ENV
+          fi
+      - name: Run the tests
+        env:
+          DISTRO: ${{ matrix.distro }}
+        run: make PYTEST_ADDOPTS="${PYTEST_ADDOPTS}" test-docker
