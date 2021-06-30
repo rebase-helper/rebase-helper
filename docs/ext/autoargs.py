@@ -361,18 +361,18 @@ class AutoArgsDirective(Directive):
         try:
             mod = __import__(module, globals(), locals(), [parts[0]])
         except ImportError as e:
-            raise AutoArgsError('Problem importing module: {}'.format(str(e)))
+            raise AutoArgsError('Problem importing module: {}'.format(str(e))) from e
         try:
             obj = getattr(mod, parts[0])
             for sub in parts[1:]:
                 obj = getattr(obj, sub)
         except AttributeError as e:
-            raise AutoArgsError('Problem accessing function: {}'.format(str(e)))
+            raise AutoArgsError('Problem accessing function: {}'.format(str(e))) from e
         # instantiate object
         try:
             parser = obj()
         except TypeError as e:
-            raise AutoArgsError('Problem calling function: {}'.format(str(e)))
+            raise AutoArgsError('Problem calling function: {}'.format(str(e))) from e
         if not isinstance(parser, ArgumentParser):
             raise AutoArgsError('Function must return instance of argparse.ArgumentParser or derived class')
         return parser
