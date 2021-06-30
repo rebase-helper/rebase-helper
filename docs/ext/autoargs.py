@@ -192,7 +192,7 @@ class AutoArgsDirective(Directive):
         self.state.document.note_explicit_target(signature)
         description = self._build_option_description(fmt, action, custom_content)
         content = addnodes.desc_content('', description)
-        result.append(addnodes.desc('', signature, content, objtype='option'))
+        result.append(addnodes.desc('', signature, content, objtype='option', domain=''))
         progname = self._get_program_name(parser)
         synopses = []
         for option in self._get_option_group(fmt, action):
