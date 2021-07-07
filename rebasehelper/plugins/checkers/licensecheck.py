@@ -49,7 +49,7 @@ class LicenseCheck(BaseChecker):
     @classmethod
     def is_available(cls):
         try:
-            return ProcessHelper.run_subprocess([cls.CMD, '--help'], output_file=ProcessHelper.DEV_NULL) == 0
+            return ProcessHelper.run_subprocess([cls.CMD, '--version'], output_file=ProcessHelper.DEV_NULL) == 0
         except (IOError, OSError):
             return False
 
