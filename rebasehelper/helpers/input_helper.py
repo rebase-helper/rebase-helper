@@ -24,7 +24,6 @@
 
 import logging
 from typing import cast
-from distutils.util import strtobool
 
 from rebasehelper.logger import CustomLogger
 
@@ -37,7 +36,31 @@ class InputHelper:
     """Class for command line interaction with the user."""
 
     @staticmethod
-    def get_message(message, default_yes=True, any_input=False):
+    def strtobool(message):
+        """Converts a user message to a corresponding truth value.
+
+        This method is a replacement for deprecated strtobool from distutils,
+        its behaviour remains the same.
+
+        Args:
+            message (str): Message to evaluate.
+
+        Returns:
+            bool: True on 'y', 'yes', 't', 'true', 'on' and '1'.
+                  False on 'n', 'no', 'f', 'false', 'off' and '0'.
+
+        Raises:
+            ValueError: On any other value.
+        """
+        message = message.lower()
+        if message in ('y', 'yes', 't', 'true', 'on', '1'):
+            return True
+        elif message in ('n', 'no', 'f', 'false', 'off', '0'):
+            return False
+        raise ValueError('No conversion to truth value for "{}"'.format(message))
+
+    @classmethod
+    def get_message(cls, message, default_yes=True, any_input=False):
         """Prompts a user with yes/no message and gets the response.
 
         Args:
@@ -66,7 +89,7 @@ class InputHelper:
                 return True if default_yes else False
 
             try:
-                user_input = strtobool(user_input)
+                user_input = cls.strtobool(user_input)
             except ValueError:
                 logger.error('You have to type y(es) or n(o).')
                 continue
