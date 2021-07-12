@@ -23,11 +23,11 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-import distutils.command.sdist
 import os
 import types
 
 import pkg_resources
+import setuptools.command.sdist
 from setuptools import setup, find_packages
 
 
@@ -64,9 +64,9 @@ def get_readme():
         return f.read()
 
 
-class SDistCommand(distutils.command.sdist.sdist):
+class SDistCommand(setuptools.command.sdist.sdist):
 
-    user_options = distutils.command.sdist.sdist.user_options + \
+    user_options = setuptools.command.sdist.sdist.user_options + \
         [('base-name=', 'b', 'override base name of the distribution')]
 
     def initialize_options(self):

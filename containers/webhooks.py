@@ -8,8 +8,8 @@ import tempfile
 import threading
 import traceback
 
-import distutils.core
 import git
+import setuptools.sandbox
 import twine.commands.upload
 
 
@@ -22,8 +22,8 @@ class PyPI:
             repo = git.Repo.clone_from(url, wd)
             repo.git.checkout(tag)
             sys.path.insert(0, wd)
-            distutils.core.run_setup(os.path.join(wd, 'setup.py'),
-                                     ['sdist', 'bdist_wheel', '--universal'])
+            setuptools.sandbox.run_setup(os.path.join(wd, 'setup.py'),
+                                         ['sdist', 'bdist_wheel', '--universal'])
             twine.commands.upload.main([os.path.join(wd, 'dist', '*')])
 
 
