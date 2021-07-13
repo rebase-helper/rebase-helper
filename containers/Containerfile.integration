@@ -1,13 +1,14 @@
-FROM python:3
+FROM registry.access.redhat.com/ubi8-minimal:latest
 
 COPY containers/integration.py /integration.py
 COPY containers/cert.pem /cert.pem
 
-RUN pip install --no-cache-dir pyftpdlib six
+RUN microdnf install python3-pip && microdnf clean all
+RUN pip3 install --no-cache-dir pyftpdlib six
 
 EXPOSE 2100/TCP 2101/TCP 8000/TCP 8001/TCP 4430/TCP 4431/TCP
 
 WORKDIR /srv
 COPY containers/integration_data .
 
-CMD ["python", "/integration.py"]
+CMD ["python3", "/integration.py"]
