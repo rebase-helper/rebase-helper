@@ -2,6 +2,21 @@
 
 ## [Unreleased]
 
+## [0.25.0] - 2021-07-13
+### Added
+- Added lookaside cache preset for **centpkg**
+
+### Fixed
+- Started using C locale for updating *%changelog* section
+- Fixed documentation builds with Sphinx 4
+- Fixed macro value detection in `SpecFile.set_tag()`
+- Fixed **licensecheck** availability test
+
+### Changed
+- Moved from using deprecated `--old-chroot` `mock` option to `--isolation simple`
+- Migrated from Travis CI to Github Actions
+- Moved away from soon-to-be-deprecated distutils
+
 ## [0.24.0] - 2021-02-02
 ### Added
 - Added `--lookaside-cache-preset` option to enable using different lookaside cache configuration presets
