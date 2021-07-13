@@ -6,8 +6,7 @@ services:
         build:
             context: ..
             dockerfile: containers/Containerfile.tests
-        cap_add:
-            - SYS_ADMIN
+        privileged: true
         environment:
             - PYTEST_ADDOPTS
             - TOXENV
