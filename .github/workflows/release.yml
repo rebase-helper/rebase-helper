@@ -15,7 +15,8 @@ jobs:
         if: ${{ github.event_name == 'release' }}
       - uses: actions/checkout@v2
         if: ${{ github.event_name == 'workflow_dispatch' }}
-        ref: ${{ github.event.inputs.ref }}
+        with:
+          ref: ${{ github.event.inputs.ref }}
       - name: Create dist
         run: python3 setup.py sdist bdist_wheel --universal
       - name: Publish to PyPI
