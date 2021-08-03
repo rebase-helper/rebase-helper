@@ -1085,7 +1085,11 @@ class SpecFile:
             locale.setlocale(locale.LC_TIME, "C")
             day=today.strftime('%a %b %d %Y')
         finally:
-            locale.setlocale(locale.LC_TIME, old_locale)
+            try:
+                locale.setlocale(locale.LC_TIME, old_locale)
+            except locale.Error:
+                # we can't really do anything reasonable here, just keep the C locale
+                pass
         new_record.append('* {day} {name} <{email}> - {evr}'.format(day=day,
                                                                     name=GitHelper.get_user(),
                                                                     email=GitHelper.get_email(),
