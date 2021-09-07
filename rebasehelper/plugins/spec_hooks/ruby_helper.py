@@ -28,6 +28,7 @@ import re
 import urllib.parse
 from typing import cast
 
+from rebasehelper.constants import ENCODING
 from rebasehelper.logger import CustomLogger
 from rebasehelper.plugins.spec_hooks import BaseSpecHook
 from rebasehelper.temporary_environment import TemporaryEnvironment
@@ -62,7 +63,7 @@ class RubyHelper(BaseSpecHook):
         logger.info("Attempting to create source '%s' using instructions in comments", source)
         with TemporaryEnvironment() as tmp:
             script = os.path.join(tmp.path(), 'script.sh')
-            with open(script, 'w') as f:
+            with open(script, 'w', encoding=ENCODING) as f:
                 f.write('#!/bin/sh -x\n')
                 f.write('{}\n'.format('\n'.join(instructions)))
                 f.write('cp "{}" "{}"\n'.format(source, os.getcwd()))

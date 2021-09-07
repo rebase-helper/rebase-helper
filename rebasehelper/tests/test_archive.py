@@ -29,6 +29,7 @@ import pytest  # type: ignore
 from typing import List
 
 from rebasehelper.archive import Archive
+from rebasehelper.constants import ENCODING
 
 
 class TestArchive:
@@ -95,7 +96,7 @@ class TestArchive:
         #  check if the file was extracted
         assert os.path.isfile(extracted_file)
         #  check the content
-        with open(extracted_file) as f:
+        with open(extracted_file, encoding=ENCODING) as f:
             assert f.read().strip() == self.ARCHIVED_FILE_CONTENT
 
     @pytest.mark.parametrize('archive', [

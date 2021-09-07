@@ -27,6 +27,7 @@ import json
 
 from typing import Any, Dict, Tuple
 
+from rebasehelper.constants import ENCODING
 from rebasehelper.exceptions import CheckerNotFoundError, RebaseHelperError
 from rebasehelper.helpers.rpm_helper import RpmHelper
 from rebasehelper.helpers.process_helper import ProcessHelper
@@ -136,7 +137,7 @@ class Rpminspect(BaseChecker):  # pylint: disable=abstract-method
         if ret not in (0, 1):
             raise RebaseHelperError('An error occurred when running checker \'{}\''.format(cls.name))
 
-        with open(outfile, 'r') as json_file:
+        with open(outfile, 'r', encoding=ENCODING) as json_file:
             data = json.load(json_file)
 
         return outfile, cls.process_data(data)

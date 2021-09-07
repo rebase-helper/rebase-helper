@@ -34,7 +34,7 @@ from rebasehelper.logger import CustomLogger
 from rebasehelper.plugins.build_log_hooks import BaseBuildLogHook
 from rebasehelper.types import PackageCategories
 from rebasehelper.helpers.macro_helper import MacroHelper
-from rebasehelper.constants import NEW_BUILD_DIR
+from rebasehelper.constants import NEW_BUILD_DIR, ENCODING
 from rebasehelper.specfile import SpecFile
 
 
@@ -132,7 +132,7 @@ class Files(BaseBuildLogHook):
 
         """
         try:
-            with open(log_path, 'r') as build_log:
+            with open(log_path, 'r', encoding=ENCODING) as build_log:
                 lines = build_log.read().splitlines()
         except IOError:
             logger.error('There was an error opening %s', log_path)

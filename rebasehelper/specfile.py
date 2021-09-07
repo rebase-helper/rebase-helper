@@ -986,7 +986,7 @@ class SpecFile:
 
         """
         try:
-            with open(self.path) as f:
+            with open(self.path, encoding=constants.ENCODING) as f:
                 content = f.read()
         except IOError as e:
             raise RebaseHelperError("Unable to open and read SPEC file '{}'".format(self.path)) from e
@@ -996,7 +996,7 @@ class SpecFile:
         """Writes the current state of SpecContent into a file."""
         logger.verbose("Writing SPEC file '%s' to the disc", self.path)
         try:
-            with open(self.path, "w") as f:
+            with open(self.path, "w", encoding=constants.ENCODING) as f:
                 f.write(str(self.spec_content))
         except IOError as e:
             raise RebaseHelperError("Unable to write updated data to SPEC file '{}'".format(self.path)) from e

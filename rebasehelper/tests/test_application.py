@@ -153,9 +153,9 @@ class TestApplication:
         'gitignore',
     ])
     def test_update_gitignore(self, workdir, gitignore, sources, result):
-        with open(os.path.join(workdir, '.gitignore'), 'w') as f:
+        with open(os.path.join(workdir, '.gitignore'), 'w', encoding=constants.ENCODING) as f:
             for line in gitignore:
                 f.write(line)
         Application._update_gitignore(sources, workdir)  # pylint: disable=protected-access
-        with open(os.path.join(workdir, '.gitignore')) as f:
+        with open(os.path.join(workdir, '.gitignore'), encoding=constants.ENCODING) as f:
             assert f.readlines() == result

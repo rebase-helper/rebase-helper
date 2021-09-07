@@ -25,6 +25,7 @@
 import os
 import tempfile
 
+from rebasehelper.constants import ENCODING
 from rebasehelper.temporary_environment import TemporaryEnvironment
 
 
@@ -64,13 +65,13 @@ class TestTemporaryEnvironment:
         def callback(**kwargs):
             path = kwargs.get(TemporaryEnvironment.TEMPDIR, '')
             assert path != ''
-            with open(tmp_path, 'w') as f:
+            with open(tmp_path, 'w', encoding=ENCODING) as f:
                 f.write(path)
 
         with TemporaryEnvironment(exit_callback=callback) as temp:
             path = temp.path()
 
-        with open(tmp_path, 'r') as f:
+        with open(tmp_path, 'r', encoding=ENCODING) as f:
             assert f.read() == path
 
         os.unlink(tmp_path)
@@ -83,7 +84,7 @@ class TestTemporaryEnvironment:
         def callback(**kwargs):
             path = kwargs.get(TemporaryEnvironment.TEMPDIR, '')
             assert path != ''
-            with open(tmp_path, 'w') as f:
+            with open(tmp_path, 'w', encoding=ENCODING) as f:
                 f.write(path)
 
         try:
@@ -93,7 +94,7 @@ class TestTemporaryEnvironment:
         except RuntimeError:
             pass
 
-        with open(tmp_path, 'r') as f:
+        with open(tmp_path, 'r', encoding=ENCODING) as f:
             assert f.read() == path
 
         os.unlink(tmp_path)

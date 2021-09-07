@@ -27,6 +27,7 @@ import os
 import re
 from typing import Dict, Optional, cast
 
+from rebasehelper.constants import ENCODING
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
 from rebasehelper.logger import CustomLogger
 from rebasehelper.results_store import results_store
@@ -203,7 +204,7 @@ class AbiPkgDiff(BaseChecker):
         pkgs = {}
         for pkg, ret_code in ret_codes.items():
             if ret_code & cls.ABIDIFF_ABI_CHANGE:
-                with open(os.path.join(cls.results_dir, pkg + '.txt'), 'r') as f:
+                with open(os.path.join(cls.results_dir, pkg + '.txt'), 'r', encoding=ENCODING) as f:
                     pkgs[pkg] = parse_changes(f.readlines())
         return pkgs
 

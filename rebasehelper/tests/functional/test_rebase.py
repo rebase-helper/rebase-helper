@@ -34,7 +34,7 @@ from typing import List
 from rebasehelper.cli import CLI
 from rebasehelper.config import Config
 from rebasehelper.application import Application
-from rebasehelper.constants import RESULTS_DIR, CHANGES_PATCH
+from rebasehelper.constants import RESULTS_DIR, CHANGES_PATCH, ENCODING
 from rebasehelper.helpers.git_helper import GitHelper
 
 
@@ -118,7 +118,7 @@ class TestRebase:
         assert [h for h in spec_file if '-Patch2:         backported.patch\n' in h.source]
         assert [h for h in spec_file if '-%patch2 -p1\n' in h.source]
         assert [h for h in spec_file if '+- New upstream release {}\n'.format(new_version) in h.target]
-        with open(os.path.join(RESULTS_DIR, 'report.json')) as f:
+        with open(os.path.join(RESULTS_DIR, 'report.json'), encoding=ENCODING) as f:
             report = json.load(f)
             assert 'success' in report['result']
             # patches
@@ -203,7 +203,7 @@ class TestRebase:
         assert [h for h in spec_file if '+%{_datadir}/%{name}/2.dat\n' in h.target]
         assert [h for h in spec_file if '+%{_datadir}/%{name}/extra/D.dat\n' in h.target]
 
-        with open(os.path.join(RESULTS_DIR, 'report.json')) as f:
+        with open(os.path.join(RESULTS_DIR, 'report.json'), encoding=ENCODING) as f:
             report = json.load(f)
             assert 'success' in report['result']
             # files build log hook

@@ -35,7 +35,7 @@ import unidiff  # type: ignore
 from rebasehelper.specfile import PatchObject
 from rebasehelper.helpers.git_helper import GitHelper
 from rebasehelper.helpers.input_helper import InputHelper
-from rebasehelper.constants import SYSTEM_ENCODING
+from rebasehelper.constants import ENCODING
 from rebasehelper.logger import CustomLogger
 
 
@@ -71,7 +71,7 @@ class Patcher:
 
     @classmethod
     def strip_patch_name(cls, diff, patch_name):
-        token = '\n\n{0}'.format(cls.decorate_patch_name(patch_name)).encode(SYSTEM_ENCODING)
+        token = '\n\n{0}'.format(cls.decorate_patch_name(patch_name)).encode(ENCODING)
         try:
             idx = diff.index(token)
             return diff[:idx] + diff[idx + len(token):]
@@ -204,14 +204,14 @@ class Patcher:
                     break
             try:
                 if os.path.isdir(os.path.join(cls.old_sources, '.git', 'rebase-merge')):
-                    with open(os.path.join(cls.old_sources, '.git', 'rebase-merge', 'msgnum')) as f:
+                    with open(os.path.join(cls.old_sources, '.git', 'rebase-merge', 'msgnum'), encoding=ENCODING) as f:
                         next_index = int(f.readline())
-                    with open(os.path.join(cls.old_sources, '.git', 'rebase-merge', 'end')) as f:
+                    with open(os.path.join(cls.old_sources, '.git', 'rebase-merge', 'end'), encoding=ENCODING) as f:
                         last_index = int(f.readline())
                 else:
-                    with open(os.path.join(cls.old_sources, '.git', 'rebase-apply', 'next')) as f:
+                    with open(os.path.join(cls.old_sources, '.git', 'rebase-apply', 'next'), encoding=ENCODING) as f:
                         next_index = int(f.readline())
-                    with open(os.path.join(cls.old_sources, '.git', 'rebase-apply', 'last')) as f:
+                    with open(os.path.join(cls.old_sources, '.git', 'rebase-apply', 'last'), encoding=ENCODING) as f:
                         last_index = int(f.readline())
             except (FileNotFoundError, IOError) as e:
                 raise RuntimeError('Git rebase failed with unknown reason. Please check log file') from e

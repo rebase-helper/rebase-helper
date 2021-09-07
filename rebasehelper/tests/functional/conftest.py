@@ -26,7 +26,7 @@ import os
 
 import pytest  # type: ignore
 
-from rebasehelper.constants import RESULTS_DIR, DEBUG_LOG, CHANGES_PATCH, REPORT
+from rebasehelper.constants import RESULTS_DIR, DEBUG_LOG, CHANGES_PATCH, REPORT, ENCODING
 
 
 def make_artifacts_report():
@@ -46,7 +46,7 @@ def make_artifacts_report():
     report = []
     for artifact in artifacts:
         try:
-            with open(os.path.join(RESULTS_DIR, artifact)) as f:
+            with open(os.path.join(RESULTS_DIR, artifact), encoding=ENCODING) as f:
                 content = f.read()
                 report.append(' {} '.format(artifact).center(80, '_'))
                 report.append(content)

@@ -26,6 +26,7 @@ import re
 import sys
 
 from rebasehelper.cli import CLI
+from rebasehelper.constants import ENCODING
 from rebasehelper.archive import Archive
 
 
@@ -86,10 +87,10 @@ def replace_placeholders(s, **kwargs):
 def main():
     if len(sys.argv) != 3:
         return 1
-    with open(sys.argv[1]) as f:
+    with open(sys.argv[1], encoding=ENCODING) as f:
         s = f.read()
     s = replace_placeholders(s, **Completion.dump())
-    with open(sys.argv[2], 'w') as f:
+    with open(sys.argv[2], 'w', encoding=ENCODING) as f:
         f.write(s)
     return 0
 

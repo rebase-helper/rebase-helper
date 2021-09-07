@@ -34,7 +34,7 @@ import tty
 
 import colors  # type: ignore
 
-from rebasehelper.constants import SYSTEM_ENCODING
+from rebasehelper.constants import ENCODING
 
 
 class ConsoleHelper:
@@ -229,11 +229,11 @@ class ConsoleHelper:
             if self._stdout_tmp:
                 self._stdout_tmp.flush()
                 self._stdout_tmp.seek(0, io.SEEK_SET)
-                self.stdout = self._stdout_tmp.read().decode(SYSTEM_ENCODING)
+                self.stdout = self._stdout_tmp.read().decode(ENCODING)
             if self._stderr_tmp:
                 self._stderr_tmp.flush()
                 self._stderr_tmp.seek(0, io.SEEK_SET)
-                self.stderr = self._stderr_tmp.read().decode(SYSTEM_ENCODING)
+                self.stderr = self._stderr_tmp.read().decode(ENCODING)
 
             if self._stdout_tmp:
                 self._stdout_tmp.close()

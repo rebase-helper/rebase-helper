@@ -52,4 +52,6 @@ GIT_CONFIG: str = '.gitconfig'
 CONFIG_PATH: str = '$XDG_CONFIG_HOME'
 CONFIG_FILENAME: str = 'rebase-helper.cfg'
 
-SYSTEM_ENCODING: str = locale.getpreferredencoding()
+# Preferred system encoding, will most likely be UTF-8 on RHEL/Fedora
+# but try to maintain compatibility even if it was different.
+ENCODING: str = locale.getpreferredencoding()

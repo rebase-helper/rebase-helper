@@ -27,6 +27,7 @@ import os
 
 import pytest  # type: ignore
 
+from rebasehelper.constants import ENCODING
 from rebasehelper.helpers.download_helper import DownloadHelper, DownloadError
 
 
@@ -91,7 +92,7 @@ class TestDownloadHelper:
         local_file = 'local_file'
         DownloadHelper.download_file(url, local_file)
         assert os.path.isfile(local_file)
-        with open(local_file) as f:
+        with open(local_file, encoding=ENCODING) as f:
             assert f.readline().strip() == content
 
     @pytest.mark.parametrize('url', [

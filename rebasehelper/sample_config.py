@@ -28,7 +28,7 @@ from argparse import SUPPRESS
 from typing import List
 
 from rebasehelper.cli import CLI
-from rebasehelper.constants import CONFIG_PATH, CONFIG_FILENAME
+from rebasehelper.constants import CONFIG_PATH, CONFIG_FILENAME, ENCODING
 
 
 class SampleConfig:
@@ -76,7 +76,7 @@ def main():
     if len(sys.argv) != 2:
         return 1
     s = SampleConfig.generate()
-    with open(sys.argv[1], 'w') as f:
+    with open(sys.argv[1], 'w', encoding=ENCODING) as f:
         f.write(s)
     return 0
 
