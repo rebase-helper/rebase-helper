@@ -24,6 +24,7 @@
 
 import json
 
+from rebasehelper.constants import ENCODING
 from rebasehelper.plugins.output_tools import BaseOutputTool
 from rebasehelper.results_store import results_store
 
@@ -42,7 +43,7 @@ class JSON(BaseOutputTool):
             results: Results store instance to get the data from.
 
         """
-        with open(report_path, 'w') as outputfile:
+        with open(report_path, 'w', encoding=ENCODING) as outputfile:
             json.dump(results.get_all(), outputfile, indent=4, sort_keys=True)
 
     @classmethod

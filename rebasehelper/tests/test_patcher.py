@@ -30,6 +30,7 @@ import pytest  # type: ignore
 
 from typing import List
 
+from rebasehelper.constants import ENCODING
 from rebasehelper.patcher import Patcher
 from rebasehelper.specfile import PatchObject
 
@@ -132,7 +133,7 @@ class TestPatcher:
             assert patches['modified'] == [os.path.basename(self.PATCH2)]
             assert patches['deleted'] == [os.path.basename(self.PATCH4)]
             assert patches['inapplicable'] == [os.path.basename(self.PATCH3)]
-        with open(os.path.join(rebased_sources, os.path.basename(self.PATCH2))) as f:
+        with open(os.path.join(rebased_sources, os.path.basename(self.PATCH2)), encoding=ENCODING) as f:
             content = f.read()
             assert 'From: {0} <{1}>\n'.format(self.USER, self.EMAIL) in content
             assert 'Subject: [PATCH] P2\n' in content

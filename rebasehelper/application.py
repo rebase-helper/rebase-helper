@@ -472,7 +472,7 @@ class Application:
         if not os.path.isfile(gitignore):
             return
 
-        with open(gitignore) as f:
+        with open(gitignore, encoding=constants.ENCODING) as f:
             entries = f.readlines()
 
         def match(source):
@@ -482,7 +482,7 @@ class Application:
                     return True
             return False
 
-        with open(gitignore, 'a') as f:
+        with open(gitignore, 'a', encoding=constants.ENCODING) as f:
             for src in [s for s in sources if not match(s)]:
                 f.write(os.path.sep + src + '\n')
 

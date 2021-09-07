@@ -27,6 +27,7 @@ import os
 
 import pytest  # type: ignore
 
+from rebasehelper.constants import ENCODING
 from rebasehelper.plugins.output_tools.json_ import JSON
 from rebasehelper.plugins.output_tools.text import Text
 from rebasehelper.plugins.plugin_manager import plugin_manager
@@ -183,7 +184,7 @@ Binary packages and logs are in directory rebase-helper-results/new-build/RPM:
         assert Text.name in plugin_manager.output_tools.plugins
         Text.print_summary(results_file_path, results_store)
 
-        with open(results_file_path) as f:
+        with open(results_file_path, encoding=ENCODING) as f:
             lines = [y.strip() for y in f.readlines()]
             assert lines == self.get_expected_text_output(os.path.dirname(results_file_path)).split('\n')
 
@@ -191,7 +192,7 @@ Binary packages and logs are in directory rebase-helper-results/new-build/RPM:
         assert JSON.name in plugin_manager.output_tools.plugins
         JSON.print_summary(results_file_path, results_store)
 
-        with open(results_file_path) as f:
+        with open(results_file_path, encoding=ENCODING) as f:
             json_dict = json.load(f)
             # in Python2 strings in json decoded dict are Unicode, which would make the test fail
             assert json_dict == json.loads(json.dumps(self.get_expected_json_output()))

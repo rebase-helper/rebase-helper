@@ -37,6 +37,7 @@ import requests_gssapi  # type: ignore
 from urllib3.fields import RequestField  # type: ignore
 from urllib3.filepost import encode_multipart_formdata  # type: ignore
 
+from rebasehelper.constants import ENCODING
 from rebasehelper.exceptions import LookasideCacheError, DownloadError
 from rebasehelper.logger import CustomLogger
 from rebasehelper.helpers.download_helper import DownloadHelper
@@ -63,7 +64,7 @@ class LookasideCacheHelper:
         sources = []
         path = os.path.join(basepath, 'sources')
         if os.path.isfile(path):
-            with open(path, 'r') as f:
+            with open(path, 'r', encoding=ENCODING) as f:
                 for line in f.readlines():
                     line = line.strip()
                     m = line_re.match(line)
@@ -82,7 +83,7 @@ class LookasideCacheHelper:
     @classmethod
     def _write_sources(cls, basepath, sources):
         path = os.path.join(basepath, 'sources')
-        with open(path, 'w') as f:
+        with open(path, 'w', encoding=ENCODING) as f:
             for source in sources:
                 f.write('{0} ({1}) = {2}\n'.format(source['hashtype'].upper(), source['filename'], source['hash']))
 

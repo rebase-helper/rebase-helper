@@ -29,6 +29,7 @@ import pytest  # type: ignore
 
 from rebasehelper.cli import CLI
 from rebasehelper.config import Config
+from rebasehelper.constants import ENCODING
 
 
 class TestConfig:
@@ -40,7 +41,7 @@ class TestConfig:
         config.add_section('Section1')
         for key, value in config_args.items():
             config.set('Section1', key, value)
-        with open(self.CONFIG_FILE, 'w') as configfile:
+        with open(self.CONFIG_FILE, 'w', encoding=ENCODING) as configfile:
             config.write(configfile)
 
         return os.path.abspath(self.CONFIG_FILE)

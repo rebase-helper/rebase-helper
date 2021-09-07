@@ -29,6 +29,7 @@ import string
 
 from typing import List
 
+from rebasehelper.constants import ENCODING
 from rebasehelper.helpers.process_helper import ProcessHelper
 
 
@@ -57,7 +58,7 @@ class TestProcessHelper:
                                                output_file=self.OUT_FILE)
             assert ret == 0
             assert os.path.exists(self.OUT_FILE)
-            assert open(self.OUT_FILE).readline().strip('\n') == self.PHRASE
+            assert open(self.OUT_FILE, encoding=ENCODING).readline().strip('\n') == self.PHRASE
 
         def test_simple_cmd_with_redirected_output_fileobject(self):
             buff = io.StringIO()
@@ -69,18 +70,18 @@ class TestProcessHelper:
             buff.close()
 
         def test_simple_cmd_with_input_path_and_redirected_output_path(self):
-            with open(self.IN_FILE, 'w') as f:
+            with open(self.IN_FILE, 'w', encoding=ENCODING) as f:
                 f.write(self.PHRASE)
 
             assert os.path.exists(self.IN_FILE)
-            assert open(self.IN_FILE).readline().strip('\n') == self.PHRASE
+            assert open(self.IN_FILE, encoding=ENCODING).readline().strip('\n') == self.PHRASE
 
             ret = ProcessHelper.run_subprocess(self.CAT_COMMAND,
                                                input_file=self.IN_FILE,
                                                output_file=self.OUT_FILE)
             assert ret == 0
             assert os.path.exists(self.OUT_FILE)
-            assert open(self.OUT_FILE).readline().strip('\n') == self.PHRASE
+            assert open(self.OUT_FILE, encoding=ENCODING).readline().strip('\n') == self.PHRASE
 
         def test_simple_cmd_with_input_fileobject_and_redirected_output_path(self):
             in_buff = io.StringIO()
@@ -96,15 +97,15 @@ class TestProcessHelper:
             in_buff.close()
             assert ret == 0
             assert os.path.exists(self.OUT_FILE)
-            assert open(self.OUT_FILE).readline().strip('\n') == self.PHRASE
+            assert open(self.OUT_FILE, encoding=ENCODING).readline().strip('\n') == self.PHRASE
 
         def test_simple_cmd_with_input_path_and_redirected_output_fileobject(self):
             out_buff = io.StringIO()
-            with open(self.IN_FILE, 'w') as f:
+            with open(self.IN_FILE, 'w', encoding=ENCODING) as f:
                 f.write(self.PHRASE)
 
             assert os.path.exists(self.IN_FILE)
-            assert open(self.IN_FILE).readline().strip('\n') == self.PHRASE
+            assert open(self.IN_FILE, encoding=ENCODING).readline().strip('\n') == self.PHRASE
 
             ret = ProcessHelper.run_subprocess(self.CAT_COMMAND,
                                                input_file=self.IN_FILE,
@@ -160,7 +161,7 @@ class TestProcessHelper:
             assert ret == 0
             assert os.path.exists(os.path.join(self.TEMP_DIR, self.TEMP_FILE))
             assert os.path.exists(self.OUT_FILE)
-            assert open(self.OUT_FILE).readline().strip("\n") == self.TEMP_FILE
+            assert open(self.OUT_FILE, encoding=ENCODING).readline().strip("\n") == self.TEMP_FILE
 
     class TestRunSubprocessCwdEnv:
         """ ProcessHelper - run_subprocess_cwd_env() tests """
@@ -184,7 +185,7 @@ class TestProcessHelper:
                                                        shell=True)
             assert ret == 0
             assert os.path.exists(self.OUT_FILE)
-            assert open(self.OUT_FILE).readline().strip("\n") == self.PHRASE
+            assert open(self.OUT_FILE, encoding=ENCODING).readline().strip("\n") == self.PHRASE
 
         def test_setting_existing_env(self):
             # make copy of existing environment
@@ -203,4 +204,4 @@ class TestProcessHelper:
                                                        shell=True)
             assert ret == 0
             assert os.path.exists(self.OUT_FILE)
-            assert open(self.OUT_FILE).readline().strip("\n") == self.PHRASE
+            assert open(self.OUT_FILE, encoding=ENCODING).readline().strip("\n") == self.PHRASE

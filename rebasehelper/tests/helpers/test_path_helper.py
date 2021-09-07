@@ -26,6 +26,7 @@ import os
 
 import pytest  # type: ignore
 
+from rebasehelper.constants import ENCODING
 from rebasehelper.helpers.path_helper import PathHelper
 
 
@@ -54,7 +55,7 @@ class TestPathHelper:
                 os.makedirs(os.path.dirname(f))
             except OSError:
                 pass
-            with open(f, 'w') as fd:
+            with open(f, 'w', encoding=ENCODING) as fd:
                 fd.write(f)
 
         return files

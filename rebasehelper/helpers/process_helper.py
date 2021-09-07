@@ -28,7 +28,7 @@ import subprocess
 import tempfile
 from typing import cast
 
-from rebasehelper.constants import SYSTEM_ENCODING
+from rebasehelper.constants import ENCODING
 from rebasehelper.logger import CustomLogger
 
 
@@ -140,7 +140,7 @@ class ProcessHelper:
 
         # read the input from a file/file-like object?
         try:
-            in_file = open(input_file, 'r')
+            in_file = open(input_file, 'r', encoding=ENCODING)
         except TypeError:
             in_file = input_file
         else:
@@ -163,7 +163,7 @@ class ProcessHelper:
             except AttributeError:
                 spooled_in_file.close()
             else:
-                spooled_in_file.write(in_data.encode(SYSTEM_ENCODING))
+                spooled_in_file.write(in_data.encode(ENCODING))
                 spooled_in_file.seek(0)
                 in_file = spooled_in_file
                 close_in_file = True
@@ -193,7 +193,7 @@ class ProcessHelper:
             # read the output
             for line in sp.stdout:
                 try:
-                    out_file.write(line.decode(SYSTEM_ENCODING))
+                    out_file.write(line.decode(ENCODING))
                 except TypeError:
                     out_file.write(line)
             # TODO: Need to figure out how to send output to stdout (without logger) and to logger

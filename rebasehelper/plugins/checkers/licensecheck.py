@@ -27,6 +27,7 @@ import os
 import re
 from typing import Dict, List, Optional
 
+from rebasehelper.constants import ENCODING
 from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.plugins.checkers import BaseChecker, CheckerCategory
 
@@ -180,7 +181,7 @@ class LicenseCheck(BaseChecker):
         else:
             output_string.append('No license changes detected.')
 
-        with open(report_file_path, 'w') as f:
+        with open(report_file_path, 'w', encoding=ENCODING) as f:
             f.write('\n'.join(output_string))
 
     @classmethod

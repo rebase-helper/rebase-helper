@@ -27,13 +27,14 @@ import os
 import git  # type: ignore
 import pytest  # type: ignore
 
+from rebasehelper.constants import ENCODING
 from rebasehelper.helpers.git_helper import GitHelper
 
 
 class TestGitHelper:
 
     def write_config_file(self, config_file, name, email):
-        with open(config_file, 'w') as f:
+        with open(config_file, 'w', encoding=ENCODING) as f:
             f.write('[user]\n'
                     '    name = {0}\n'
                     '    email = {1}\n'.format(name, email))
@@ -67,7 +68,7 @@ class TestGitHelper:
                 os.makedirs(work_git_path)
 
                 config_file = os.path.join(work_git_path, 'config')
-                with open(config_file, 'w') as f:
+                with open(config_file, 'w', encoding=ENCODING) as f:
                     f.write('[include]\n'
                             '    path = included_config\n')
                 included_config_file = os.path.join(work_git_path, 'included_config')

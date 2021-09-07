@@ -27,6 +27,7 @@ import os
 from typing import Dict, List, Optional, cast
 from xml.etree import ElementTree
 
+from rebasehelper.constants import ENCODING
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
 from rebasehelper.logger import CustomLogger
 from rebasehelper.results_store import results_store
@@ -89,7 +90,7 @@ class PkgDiff(BaseChecker):
             lines.append('<{0}>\n{1}\n</{0}>\n'.format(key, new_value))
 
         try:
-            with open(file_name, 'w') as f:
+            with open(file_name, 'w', encoding=ENCODING) as f:
                 f.writelines(lines)
         except IOError as e:
             raise RebaseHelperError("Unable to create XML file for pkgdiff tool '{}'".format(file_name)) from e
@@ -128,7 +129,7 @@ class PkgDiff(BaseChecker):
         for file_name in [os.path.join(result_dir, x) for x in XML_FILES]:
             logger.verbose('Processing %s file.', file_name)
             try:
-                with open(file_name, "r") as f:
+                with open(file_name, "r", encoding=ENCODING) as f:
                     lines = ['<pkgdiff>']
                     lines.extend(f.readlines())
                     lines.append('</pkgdiff>')
@@ -244,7 +245,7 @@ class PkgDiff(BaseChecker):
 
         pkgdiff_report = os.path.join(cls.results_dir, cls.pkgdiff_results_filename + '.txt')
         try:
-            with open(pkgdiff_report, "w") as f:
+            with open(pkgdiff_report, "w", encoding=ENCODING) as f:
                 f.write('\n'.join(lines))
         except IOError as e:
             raise RebaseHelperError("Unable to write result from {} to '{}'".format(cls.name, pkgdiff_report)) from e

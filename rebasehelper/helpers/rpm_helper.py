@@ -30,7 +30,7 @@ from typing import Any, Dict, List, cast
 
 import rpm  # type: ignore
 
-from rebasehelper.constants import SYSTEM_ENCODING
+from rebasehelper.constants import ENCODING
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.logger import CustomLogger
 from rebasehelper.helpers.macro_helper import MacroHelper
@@ -48,7 +48,7 @@ class RpmHeader:
     def __getattr__(self, item: str) -> Any:
         def decode(s):
             if isinstance(s, bytes):
-                return s.decode(SYSTEM_ENCODING)
+                return s.decode(ENCODING)
             return s
         result = getattr(self.hdr, item)
         if isinstance(result, list):
@@ -127,7 +127,7 @@ class RpmHelper:
         ts = rpm.TransactionSet()
         # disable signature checking
         ts.setVSFlags(rpm._RPMVSF_NOSIGNATURES)  # pylint: disable=protected-access
-        with open(rpm_name, "r") as f:
+        with open(rpm_name, "r", encoding=ENCODING) as f:
             hdr = ts.hdrFromFdno(f)
         return RpmHeader(hdr)
 

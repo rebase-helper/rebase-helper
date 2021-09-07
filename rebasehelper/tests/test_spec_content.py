@@ -24,6 +24,7 @@
 
 import pytest  # type: ignore
 
+from rebasehelper.constants import ENCODING
 from rebasehelper.spec_content import SpecContent
 from rebasehelper.tests.conftest import SPEC_FILE
 
@@ -35,11 +36,11 @@ class TestSpecContent:
 
     @pytest.fixture
     def spec_content(self):
-        with open(SPEC_FILE, 'r') as infile:
+        with open(SPEC_FILE, 'r', encoding=ENCODING) as infile:
             return SpecContent(infile.read())
 
     def test_string_representation(self, spec_content):
-        with open(SPEC_FILE, 'r') as infile:
+        with open(SPEC_FILE, 'r', encoding=ENCODING) as infile:
             assert str(spec_content) == infile.read()
 
     @pytest.mark.parametrize('line, section, expected', [

@@ -28,6 +28,7 @@ import os
 import re
 from typing import Dict, List, Optional, cast
 
+from rebasehelper.constants import ENCODING
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
 from rebasehelper.logger import CustomLogger
 from rebasehelper.results_store import results_store
@@ -155,7 +156,7 @@ class RpmDiff(BaseChecker):
         counts = {k: len(v) for k, v in results_dict.items()}
 
         try:
-            with open(rpmdiff_report, "w") as f:
+            with open(rpmdiff_report, "w", encoding=ENCODING) as f:
                 f.write('\n'.join(lines))
         except IOError as e:
             raise RebaseHelperError("Unable to write result from {} to '{}'".format(cls.name, rpmdiff_report)) from e
