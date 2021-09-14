@@ -29,7 +29,9 @@ import urllib.parse
 from typing import cast
 
 import pyquery  # type: ignore
-from copr.v3 import Client, CoprConfigException, CoprNoConfigException, CoprRequestException  # type: ignore
+from copr.v3 import (  # type: ignore
+    Client, CoprConfigException, CoprNoConfigException, CoprRequestException, CoprNoResultException)
+
 
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.helpers.download_helper import DownloadHelper
@@ -55,24 +57,23 @@ class CoprHelper:
     @classmethod
     def create_project(cls, client, project, chroots, description, instructions, permanent=False, hide=True):
         try:
-            client.project_proxy.add(ownername=client.config.get('username'),
-                                     projectname=project,
-                                     chroots=chroots,
-                                     delete_after_days=None if permanent else cls.DELETE_PROJECT_AFTER,
-                                     unlisted_on_hp=hide,
-                                     description=description,
-                                     instructions=instructions)
-        except CoprRequestException as e:
-            error = e.result.error
+            client.project_proxy.get(ownername=client.config.get('username'), projectname=project)
+            # Project found, reuse it
+        except CoprNoResultException:
             try:
-                [[error]] = error.values()
-            except AttributeError:
-                pass
-
-            if error.startswith('You already have project named'):
-                # reuse existing project
-                pass
-            else:
+                client.project_proxy.add(ownername=client.config.get('username'),
+                                         projectname=project,
+                                         chroots=chroots,
+                                         delete_after_days=None if permanent else cls.DELETE_PROJECT_AFTER,
+                                         unlisted_on_hp=hide,
+                                         description=description,
+                                         instructions=instructions)
+            except CoprRequestException as e:
+                error = e.result.error
+                try:
+                    [[error]] = error.values()
+                except AttributeError:
+                    pass
                 raise RebaseHelperError('Failed to create copr project. Reason: {}'.format(error)) from e
 
     @classmethod
