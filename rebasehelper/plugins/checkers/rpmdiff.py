@@ -127,7 +127,7 @@ class RpmDiff(BaseChecker):
             cmd = [cls.CMD]
             # TODO modify to online command
             for x in not_catched_flags:
-                cmd.extend(['-i', x])
+                cmd.extend(['--ignore={0}'.format(x)])
             cmd.append(value)
             # We would like to build correct old package against correct new packages
             try:
