@@ -102,6 +102,7 @@ class TestSpecFile:
         # pylint: disable=protected-access
         for i, source in enumerate(sources):
             assert mocked_spec_object._get_raw_source_string(i) == source
+        assert mocked_spec_object._get_raw_source_string(None) == None
 
     def test_old_tarball(self, spec_object):
         assert spec_object.get_archive() == self.OLD_ARCHIVE

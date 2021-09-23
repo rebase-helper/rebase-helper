@@ -235,7 +235,10 @@ class SpecFile:
     ###########################
 
     @staticmethod
-    def _identify_main_source(spec: rpm.spec) -> int:
+    def _identify_main_source(spec: rpm.spec) -> Optional[int]:
+        # a spec file does not need to have sources
+        if not spec.sources:
+            return None
         # lowest index is the main source
         return min([s[1] for s in spec.sources if s[2] == 1])
 
@@ -270,11 +273,14 @@ class SpecFile:
         """
         return os.path.basename(self.get_sources()[0])
 
-    def _get_raw_source_string(self, source_num: int) -> Optional[str]:
+    def _get_raw_source_string(self, source_num: Optional[int]) -> Optional[str]:
+        if source_num is None:
+            return None
         tag = 'Source{0}'.format(source_num)
         return self.get_raw_tag_value(tag)
 
     def get_main_source(self) -> str:
+        """Provide the main source, returns empty string if there are no sources"""
         return self._get_raw_source_string(self.main_source_index) or ''
 
     ###########################
