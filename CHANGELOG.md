@@ -2,6 +2,19 @@
 
 ## [Unreleased]
 
+## [0.26.0] - 2021-09-27
+### Added
+- Added support for SPEC files with no Source tags
+
+### Fixed
+- Fixed traceback on setting original locale
+- `rpmdiff` is now called with long options to workaround a bug in argument parsing
+
+### Changed
+- Employed Github Actions for CI and PyPI deployment
+- Character encoding is now explicitly specified everywhere, to conform with PEP597
+- Made `copr` project creation more robust
+
 ## [0.25.0] - 2021-07-13
 ### Added
 - Added lookaside cache preset for **centpkg**
