@@ -155,10 +155,11 @@ class Patcher:
         # in old_sources do:
         # 1) git remote add new_sources <path_to_new_sources>
         # 2) git fetch new_sources
-        # 3) git rebase --onto new_sources/master <root_commit_old_sources> <last_commit_old_sources>
+        # 3) git rebase --onto new_sources/<main_branch> <root_commit_old_sources> <last_commit_old_sources>
         if not os.path.exists(os.path.join(cls.old_sources, '.git', 'rebase-apply')):
             logger.info('git-rebase operation to %s is ongoing...', os.path.basename(cls.new_sources))
             upstream = 'new_upstream'
+            upstream_branch = '{}/{}'.format(upstream, cls.new_repo.heads.pop().name)
             cls.old_repo.create_remote(upstream, url=cls.new_sources).fetch()
             root_commit = cls.old_repo.git.rev_list('HEAD', max_parents=0)
             last_commit = cls.old_repo.commit('HEAD')
@@ -171,7 +172,7 @@ class Patcher:
             try:
                 cls.output_data = cls.old_repo.git.rebase(root_commit, last_commit,
                                                           strategy_option=strategy_option,
-                                                          onto='{}/master'.format(upstream),
+                                                          onto=upstream_branch,
                                                           stdout_as_string=True)
             except git.GitCommandError as e:
                 ret_code = e.status
@@ -276,7 +277,7 @@ class Patcher:
                 cls.output_data = e.stdout
             else:
                 break
-        original_commits = list(cls.old_repo.iter_commits(rev=cls.old_repo.branches.master))
+        original_commits = list(cls.old_repo.iter_commits(rev=cls.old_repo.heads.pop()))
         commits = list(cls.old_repo.iter_commits())
         untouched_patches = []
         deleted_patches = []
