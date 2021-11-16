@@ -41,7 +41,9 @@ from rebasehelper.specfile import SpecFile
 logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
 
 AddedFiles = Dict[str, List[str]]
-RemovedFiles = Union[List[str], Dict[str, List[str]]]
+RemovedFromSections = Dict[str, List[str]]
+RemainingFiles = List[str]
+RemovedFiles = Union[RemainingFiles, RemovedFromSections]
 
 
 class Files(BaseBuildLogHook):
@@ -256,75 +258,130 @@ class Files(BaseBuildLogHook):
         return result
 
     @classmethod
-    def _correct_deleted_files(cls, rebase_spec_file, files):
+    def _get_line_directives(cls, split_line) -> Tuple[List[str], Optional[str]]:
+        """Gathers directives present in the line.
+
+        Args:
+            split_line: Line split at whitespaces. Each element must either be
+                a directive or a file path.
+
+        Returns:
+            A tuple of 2 elements. The first is a list of used directives.
+            The second is a directive which influences the subsequent paths
+            (e. g. %doc). Will be None if no such directive is present.
+        """
+        directives: List[str] = []
+        prepended_directive = None
+        for element in reversed(split_line):
+            if element in cls.FILES_DIRECTIVES:
+                if cls.FILES_DIRECTIVES[element]:
+                    prepended_directive = element
+                directives.insert(0, element)
+                split_line.remove(element)
+        return directives, prepended_directive
+
+    @classmethod
+    def _correct_one_section(cls, subpackage: str, sec_name: str, sec_content: List[str], files: List[str],
+                             result: Dict[str, RemovedFromSections]) -> None:
+        """Removes deleted files from one %files section.
+
+        Args:
+            subpackage: Name of the subpackage which the section relates to.
+            sec_name: Name of the %files section
+            sec_content: Content of the %files section
+            files: Files that still need to be removed
+            result: Dict summarizing the changes done to the SPEC file.
+
+        """
+        i = 0
+        while i < len(sec_content):
+            original_line = sec_content[i].split()
+            # Expand the whole line to check for occurrences of special
+            # keywords, such as %global and %if blocks. Macro definitions
+            # expand to empty string.
+            expanded = MacroHelper.expand(sec_content[i])
+            if not original_line or not expanded or any(k in expanded for k in cls.PROHIBITED_KEYWORDS):
+                i += 1
+                continue
+            split_line = original_line[:]
+            # Keep track of files which could possibly be renamed but not
+            # detected by the hook. %doc and %license files are the 2 examples
+            # of this. If %doc README is renamed to README.md, the hook will
+            # simply remove it but README.md won't be added (it is installed
+            # by the directive). We want to warn the user about this.
+            possible_rename = [False for _ in split_line]
+            directives, prepended_directive = cls._get_line_directives(split_line)
+            # Determine absolute paths
+            if prepended_directive:
+                for j, path in enumerate(split_line):
+                    if not os.path.isabs(path):
+                        prepend_macro = cls.FILES_DIRECTIVES[prepended_directive] or ''
+                        split_line[j] = os.path.join(prepend_macro, subpackage, os.path.basename(path))
+                        possible_rename[j] = True
+            split_line = [MacroHelper.expand(p) for p in split_line]
+
+            j = 0
+            while j < len(split_line) and files:
+                file = split_line[j]
+                warn_about_rename = possible_rename[j]
+                for deleted_file in reversed(files):
+                    if not fnmatch.fnmatch(deleted_file, file):
+                        continue
+
+                    original_file = original_line[len(directives) + j]
+
+                    del possible_rename[j]
+                    del split_line[j]
+                    del original_line[len(directives) + j]
+                    files.remove(deleted_file)
+                    result['removed'][sec_name].append(original_file)
+                    logger.info("Removed %s from '%s' section", original_file, sec_name)
+                    if warn_about_rename:
+                        logger.warning("The installation of %s was handled by %s directive and the file has now been "
+                                       "removed. The file may have been renamed and rebase-helper cannot automatically "
+                                       "detect it. A common example of this is renaming README to README.md. It might "
+                                       "be necessary to re-add such renamed file to the rebased SPEC file manually.",
+                                       original_file, prepended_directive)
+                    break
+                else:
+                    j += 1
+
+            if not split_line:
+                del sec_content[i]
+            else:
+                sec_content[i] = ' '.join(original_line)
+                i += 1
+
+    @classmethod
+    def _correct_deleted_files(cls, rebase_spec_file: SpecFile, files: List[str]) -> Dict[str, RemovedFiles]:
         """Removes files newly missing in buildroot from %files sections
         of the SPEC file. If a file cannot be removed, the user is informed
         and it is mentioned in the final report.
 
+        Args:
+            rebase_spec_file: SPEC file to remove the files from.
+            files: List of files to remove.
+
+        Returns:
+            Dict summarizing the changes done to the SPEC file.
+
         """
-        result: Dict[str, RemovedFiles] = collections.defaultdict(lambda: collections.defaultdict(list))
+        result: Dict[str, RemovedFromSections] = collections.defaultdict(lambda: collections.defaultdict(list))
         for sec_name, sec_content in rebase_spec_file.spec_content.sections:
             if sec_name.startswith('%files'):
                 subpackage = rebase_spec_file.get_subpackage_name(sec_name)
-                i = 0
-                while i < len(sec_content):
-                    original_line = sec_content[i].split()
-                    # Expand the whole line to check for occurrences of
-                    # special keywords, such as %global and %if blocks.
-                    # Macro definitions expand to empty string.
-                    expanded = MacroHelper.expand(sec_content[i])
-                    if not original_line or not expanded or any(k in expanded for k in cls.PROHIBITED_KEYWORDS):
-                        i += 1
-                        continue
-                    split_line = original_line[:]
-                    directives: List[str] = []
-                    prepend_macro = None
-                    for element in reversed(split_line):
-                        if element in cls.FILES_DIRECTIVES:
-                            if cls.FILES_DIRECTIVES[element]:
-                                prepend_macro = cls.FILES_DIRECTIVES[element]
-                            directives.insert(0, element)
-                            split_line.remove(element)
+                cls._correct_one_section(subpackage, sec_name, sec_content, files, result)
+                if not files:
+                    # Nothing more to be done
+                    return cast(Dict[str, RemovedFiles], result)
 
-                    if prepend_macro:
-                        for j, path in enumerate(split_line):
-                            if not os.path.isabs(path):
-                                split_line[j] = os.path.join(prepend_macro, subpackage, os.path.basename(path))
-                    split_line = [MacroHelper.expand(p) for p in split_line]
-
-                    j = 0
-                    while j < len(split_line) and files:
-                        file = split_line[j]
-                        for deleted_file in reversed(files):
-                            if not fnmatch.fnmatch(deleted_file, file):
-                                continue
-
-                            original_file = original_line[len(directives) + j]
-
-                            del split_line[j]
-                            del original_line[len(directives) + j]
-                            files.remove(deleted_file)
-                            result['removed'][sec_name].append(original_file)
-                            logger.info("Removed %s from '%s' section", original_file, sec_name)
-                            break
-                        else:
-                            j += 1
-
-                    if not split_line:
-                        del sec_content[i]
-                    else:
-                        sec_content[i] = ' '.join(original_line)
-                        i += 1
-
-                    if not files:
-                        return result
-
+        result_with_irremovable: Dict[str, RemovedFiles] = cast(Dict[str, RemovedFiles], result)
         logger.info('Could not remove the following files:')
         for file in files:
             logger.info('\t%s', file)
 
-        result['unable_to_remove'] = files
-        return result
+        result_with_irremovable['unable_to_remove'] = files
+        return result_with_irremovable
 
     @classmethod
     def run(cls, spec_file: SpecFile, rebase_spec_file: SpecFile, results_dir: str,
