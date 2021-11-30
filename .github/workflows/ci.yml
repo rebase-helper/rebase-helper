@@ -10,13 +10,8 @@ jobs:
     strategy:
       matrix:
         include:
-          # Use an older version of the base image. This is a temporary
-          # workaround for an issue in Actions with docker, where any make
-          # command (e.g. make clean) inside a Dockerfile fails with
-          # "Operation not permitted" error. This only started occurring
-          # when the base images were updated.
-          - distro: latest-723d477
-          - distro: rawhide-723d477
+          - distro: fedora-latest
+          - distro: fedora-rawhide
     steps:
       - uses: actions/checkout@v2
         # Setup docker
