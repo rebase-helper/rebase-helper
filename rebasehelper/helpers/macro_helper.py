@@ -151,10 +151,20 @@ class MacroHelper:
             else:
                 macros.append(macro)
 
-        for line in capturer.stderr.split('\n'):
+        lines = capturer.stderr.strip().split('\n')
+        # last line contains only summary
+        lines.pop()
+        while lines:
+            line = lines.pop(0)
+            # squash lines ending with \
+            while line.endswith('\\'):
+                line = line[:-1] + lines.pop(0)
             match = macro_re.match(line)
             if match:
                 add_macro(match.groupdict())
+            elif macros:
+                # part of the value of the last parsed macro
+                macros[-1]['value'] += '\n' + line
 
         return macros
 
