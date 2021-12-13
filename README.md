@@ -12,16 +12,25 @@ If you wish to use the latest codebase, consult [installation instructions](http
 
 ## How to use it?
 
-After installation, execute **rebase-helper** from a directory containing SPEC file, sources and patches (usually cloned dist-git repository).
+After installation, execute **rebase-helper** from a directory containing SPEC file, sources and patches (usually cloned dist-git repository):
+
+```bash
+$ ls
+foo-3.1.9.tar.xz foo.spec sources
+```
 
 Without any arguments or configuration **rebase-helper** will attempt to determine the latest upstream version automatically.
 If that fails, or if you wish to rebase to some different version, you can specify it explicitly as an argument:
 
-`$ rebase-helper 3.1.10`
+```bash
+$ rebase-helper 3.1.10
+```
 
 or you can pass source tarball filename instead:
 
-`$ rebase-helper foo-4.2.tar.gz`
+```bash
+$ rebase-helper foo-3.1.10.tar.xz
+```
 
 For complete CLI reference see [usage](https://rebase-helper.readthedocs.io/en/latest/user_guide/usage.html).
 
