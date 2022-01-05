@@ -74,7 +74,7 @@ class RpmDiff(BaseChecker):
             if [x for x in removed_things if x in line]:
                 continue
 
-            fields = line.strip().split()
+            fields = line.strip().split(maxsplit=1)
             logger.verbose(fields)
             if line.startswith('removed'):
                 results_dict['removed'].append(fields[1])
