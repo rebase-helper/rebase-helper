@@ -33,7 +33,7 @@ class SpecContent:
     SECTION_HEADERS: List[str] = [
         '%package',
         '%prep',
-        '%generate_build_requires',
+        '%generate_buildrequires',
         '%build',
         '%install',
         '%check',
