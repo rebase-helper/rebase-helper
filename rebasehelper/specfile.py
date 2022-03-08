@@ -39,6 +39,7 @@ from operator import itemgetter
 from typing import List, Optional, Pattern, Tuple, Dict, Union, cast
 
 import rpm  # type: ignore
+from specfile.rpm import Macros
 
 from rebasehelper import constants
 from rebasehelper.archive import Archive
@@ -200,7 +201,7 @@ class SpecFile:
         self.prep_section = self.spc.prep
         self.main_source_index = self._identify_main_source(self.spc)
         self.patches = self._get_initial_patches()
-        self.macros = MacroHelper.dump()
+        self.macros = Macros.dump()
 
     ######################
     # TAG HELPER METHODS #
@@ -752,7 +753,7 @@ class SpecFile:
             """Makes all macros present in a string up-to-date in rpm context"""
             _, macros = _expand_macros(s)
             for macro in macros:
-                MacroHelper.purge_macro(macro)
+                Macros.remove(macro)
                 value = _get_macro_value(macro)
                 if value and MacroHelper.expand(value):
                     rpm.addMacro(macro, value)
@@ -1190,18 +1191,18 @@ class SpecFile:
                     new_dirname = dirname
 
                     # get %{name} and %{version} macros
-                    macros = [m for m in MacroHelper.filter(self.macros, level=-3) if m['name'] in ('name', 'version')]
+                    macros = [m for m in MacroHelper.filter(self.macros, level=-3) if m.name in ('name', 'version')]
                     # add all macros from spec file scope
                     macros.extend(MacroHelper.filter(self.macros, level=0))
                     # omit short macros
-                    macros = [m for m in macros if len(m['value']) > 1]
+                    macros = [m for m in macros if len(m.body) > 1]
                     # ensure maximal greediness
-                    macros.sort(key=lambda k: len(k['value']), reverse=True)
+                    macros.sort(key=lambda k: len(k.body), reverse=True)
 
                     # substitute tokens with macros
                     for m in macros:
-                        if m['value'] and m['value'] in dirname:
-                            new_dirname = new_dirname.replace(m['value'], '%{{{}}}'.format(m['name']))
+                        if m.body and m.body in dirname:
+                            new_dirname = new_dirname.replace(m.body, '%{{{}}}'.format(m.name))
 
                     args = [macro]
                     args.extend(['-n', new_dirname])

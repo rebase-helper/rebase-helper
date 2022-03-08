@@ -233,11 +233,11 @@ class Files(BaseBuildLogHook):
 
         """
         # get %{name} macro
-        macros = [m for m in MacroHelper.filter(rebase_spec_file.macros, level=-3) if m['name'] == 'name']
-        macros.extend(m for m in rebase_spec_file.macros if m['name'] in MacroHelper.MACROS_WHITELIST)
+        macros = [m for m in MacroHelper.filter(rebase_spec_file.macros, level=-3) if m.name == 'name']
+        macros.extend(m for m in rebase_spec_file.macros if m.name in MacroHelper.MACROS_WHITELIST)
         macros = MacroHelper.expand_macros(macros)
         # ensure maximal greediness
-        macros.sort(key=lambda k: len(k['value']), reverse=True)
+        macros.sort(key=lambda k: len(k.body), reverse=True)
 
         result: Dict[str, AddedFiles] = collections.defaultdict(lambda: collections.defaultdict(list))
         for file in files:

@@ -28,11 +28,11 @@ import shutil
 
 import pytest  # type: ignore
 import rpm  # type: ignore
+from specfile.rpm import Macros
 
 from rebasehelper.specfile import SpecFile
 from rebasehelper.spec_content import SpecContent
 from rebasehelper.tags import Tags
-from rebasehelper.helpers.macro_helper import MacroHelper
 
 
 TESTS_DIR: str = os.path.dirname(__file__)
@@ -64,13 +64,13 @@ def mocked_spec_object(spec_attributes):
         if attribute == 'macros':
             for macro, properties in value.items():
                 rpm.addMacro(macro, properties.get('value', ''))
-            macros = MacroHelper.dump()
+            macros = Macros.dump()
             for macro, properties in value.items():
                 for m in macros:
-                    if m['name'] == macro:
+                    if m.name == macro:
                         for prop, v in properties.items():
                             if prop != 'value':
-                                m[prop] = v
+                                setattr(m, prop, v)
             value = macros
         if attribute == 'spec_content' and isinstance(value, str):
             value = SpecContent(value)

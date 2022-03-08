@@ -29,6 +29,7 @@ import tempfile
 from typing import Any, Dict, List, cast
 
 import rpm  # type: ignore
+from specfile.rpm import Macros
 
 from rebasehelper.constants import ENCODING
 from rebasehelper.exceptions import RebaseHelperError
@@ -135,10 +136,10 @@ class RpmHelper:
     def get_arches():
         """Gets list of all known architectures"""
         arches = ['aarch64', 'noarch', 'ppc', 'riscv64', 's390', 's390x', 'src', 'x86_64']
-        macros = MacroHelper.dump()
-        macros = [m for m in macros if m['name'] in ('ix86', 'arm', 'mips', 'sparc', 'alpha', 'power64')]
+        macros = Macros.dump()
+        macros = [m for m in macros if m.name in ('ix86', 'arm', 'mips', 'sparc', 'alpha', 'power64')]
         for m in macros:
-            arches.extend(MacroHelper.expand(m['value'], '').split())
+            arches.extend(MacroHelper.expand(m.body, '').split())
         return arches
 
     @classmethod
@@ -193,7 +194,7 @@ class RpmHelper:
         # reset all macros and settings
         rpm.reloadConfig()
         # ensure that %{_sourcedir} macro is set to proper location
-        MacroHelper.purge_macro('_sourcedir')
+        Macros.remove('_sourcedir')
         rpm.addMacro('_sourcedir', sourcedir)
         # add predefined macros
         for macro, value in predefined_macros.items():

@@ -22,13 +22,10 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-import re
 from typing import List
 
-import rpm  # type: ignore
-from pkg_resources import parse_version
-
-from rebasehelper.helpers.console_helper import ConsoleHelper
+from specfile.rpm import Macros, Macro
+from specfile.exceptions import RPMException
 
 
 class MacroHelper:
@@ -53,136 +50,60 @@ class MacroHelper:
     ]
 
     @staticmethod
-    def expand(s, default=None, suppress_errors=False):
+    def expand(s, default=None):
+        # FIXME: Remove this wrapper
         try:
-            if not suppress_errors:
-                return rpm.expandMacro(s)
-            with ConsoleHelper.Capturer(stderr=True):
-                return rpm.expandMacro(s)
-        except rpm.error:
+            return Macros.expand(s)
+        except RPMException:
             return default
 
     @classmethod
-    def purge_macro(cls, macro: str) -> None:
-        m = '%{{{}}}'.format(macro)
-        while cls.expand(m, m) != m:
-            with ConsoleHelper.Capturer(stderr=True):
-                rpm.delMacro(macro)
-
-    @classmethod
-    def expand_macros(cls, macros):
-        """Expands values of multiple macros.
+    def expand_macros(cls, macros: List[Macro]) -> List[Macro]:
+        """Expands values of multiple macros in-place.
 
         Args:
-            macros (list): List of macros to be expanded, macros are
-                represented as dicts.
+            macros: List of macros to be expanded.
 
         Returns:
-            list: List of macros with expanded values.
-
+            List of macros with expanded values
         """
         for macro in macros:
-            macro['value'] = cls.expand(macro['value'])
+            macro.body = cls.expand(macro.body)
         return macros
 
     @staticmethod
-    def substitute_path_with_macros(path, macros):
+    def substitute_path_with_macros(path: str, macros: List[Macro]) -> str:
         """Substitutes parts of a path with macros.
 
         Args:
-            path (str): Path to be changed.
-            macros (list): Macros which can be used as a substitution.
+            path: Path to be changed.
+            macros: Macros which can be used as a substitution.
 
         Returns:
-            str: Path expressed using macros.
+            Path expressed using macros.
 
         """
         for m in macros:
-            if m['value'] and m['value'] in path:
-                path = path.replace(m['value'], '%{{{}}}'.format(m['name']))
+            if m.body and m.body in path:
+                path = path.replace(m.body, '%{{{}}}'.format(m.name))
 
         return path
 
     @staticmethod
-    def dump():
-        """Gets list of all defined macros.
-
-        Returns:
-            list: All defined macros.
-
-        """
-        macro_re = re.compile(
-            r'''
-            ^\s*
-            (?P<level>-?\d+)
-            (?P<used>=|:)
-            [ ]
-            (?P<name>\w+)
-            (?P<options>\(.+?\))?
-            [\t]
-            (?P<value>.*)
-            $
-            ''',
-            re.VERBOSE)
-
-        with ConsoleHelper.Capturer(stderr=True) as capturer:
-            rpm.expandMacro('%dump')
-
-        macros = []
-
-        def add_macro(properties):
-            macro = dict(properties)
-            macro['used'] = macro['used'] == '='
-            macro['level'] = int(macro['level'])
-            if parse_version(rpm.__version__) < parse_version('4.13.90'):
-                # in RPM < 4.13.90 level of some macros is decreased by 1
-                if macro['level'] == -1:
-                    # this could be macro with level -1 or level 0, we can not be sure
-                    # so just duplicate the macro for both levels
-                    macros.append(macro)
-                    macro = dict(macro)
-                    macro['level'] = 0
-                    macros.append(macro)
-                elif macro['level'] in (-14, -16):
-                    macro['level'] += 1
-                    macros.append(macro)
-                else:
-                    macros.append(macro)
-            else:
-                macros.append(macro)
-
-        lines = capturer.stderr.strip().split('\n')
-        # last line contains only summary
-        lines.pop()
-        while lines:
-            line = lines.pop(0)
-            # squash lines ending with \
-            while line.endswith('\\'):
-                line = line[:-1] + lines.pop(0)
-            match = macro_re.match(line)
-            if match:
-                add_macro(match.groupdict())
-            elif macros:
-                # part of the value of the last parsed macro
-                macros[-1]['value'] += '\n' + line
-
-        return macros
-
-    @staticmethod
-    def filter(macros, **kwargs):
+    def filter(macros: List[Macro], **kwargs) -> List[Macro]:
         """Finds all macros satisfying certain conditions.
 
         Args:
-            macros (list): Macros to be filtered.
+            macros: Macros to be filtered.
             **kwargs: Filters to be used.
 
         Returns:
             list: Macros satisfying the conditions.
 
         """
-        def _test(macro):
-            return all(macro.get(k[4:]) >= v if k.startswith('min_') else
-                       macro.get(k[4:]) <= v if k.startswith('max_') else
-                       macro.get(k) == v for k, v in kwargs.items())
+        def _test(macro: Macro):
+            return all(getattr(macro, k[4:]) >= v if k.startswith('min_') else
+                       getattr(macro, k[4:]) <= v if k.startswith('max_') else
+                       getattr(macro, k) == v for k, v in kwargs.items())
 
         return [m for m in macros if _test(m)]

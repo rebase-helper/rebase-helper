@@ -31,10 +31,10 @@ class PathsToRPMMacros(BaseSpecHook):
 
     @classmethod
     def run(cls, spec_file, rebase_spec_file, **kwargs):
-        macros = [m for m in rebase_spec_file.macros if m['name'] in MacroHelper.MACROS_WHITELIST]
+        macros = [m for m in rebase_spec_file.macros if m.name in MacroHelper.MACROS_WHITELIST]
         macros = MacroHelper.expand_macros(macros)
         # ensure maximal greediness
-        macros.sort(key=lambda k: len(k['value']), reverse=True)
+        macros.sort(key=lambda k: len(k.body), reverse=True)
 
         for sec_name, sec_content in rebase_spec_file.spec_content.sections:
             if sec_name.startswith('%files'):
