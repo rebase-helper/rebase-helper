@@ -40,7 +40,7 @@ TEST_FILES_DIR: str = os.path.join(TESTS_DIR, 'testing_files')
 SPEC_FILE: str = 'test.spec'
 
 
-@pytest.yield_fixture(autouse=True)
+@pytest.fixture(autouse=True)
 def workdir(request, tmpdir_factory):
     with tmpdir_factory.mktemp('workdir').as_cwd():
         wd = os.getcwd()
