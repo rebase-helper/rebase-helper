@@ -55,7 +55,7 @@ def make_artifacts_report():
     return '\n'.join(report)
 
 
-@pytest.mark.hookwrapper
+@pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_makereport():
     outcome = yield
     report = outcome.get_result()
