@@ -332,6 +332,11 @@ class Patcher:
     def init_git(cls, directory):
         """Function initialize old and new Git repository"""
         try:
+            # remove any existing submodule configuration
+            os.remove(os.path.join(directory, '.gitmodules'))
+        except FileNotFoundError:
+            pass
+        try:
             repo = git.Repo(directory)
             try:
                 state = repo.git.config('rebasehelper.state', get=True, local=True)
