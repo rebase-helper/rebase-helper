@@ -1,3 +1,6 @@
 .
 sphinx_rtd_theme
+# m2r doesn't work with the new mistune API:
+# https://github.com/miyakogi/m2r/pull/43
+mistune<2
 m2r
