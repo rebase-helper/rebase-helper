@@ -54,6 +54,7 @@ def get_requirements():
         'rpkg',
         'unidiff',
         'GitPython',
+        'specfile',
     ]
     # there is no rpm nor gssapi inside RTD build environment
     if not os.getenv('READTHEDOCS'):
