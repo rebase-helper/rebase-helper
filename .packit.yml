@@ -15,3 +15,6 @@ actions:
   create-archive:
   - "python3 setup.py sdist --base-name rebase-helper --dist-dir ."
   - "bash -c 'ls -1t ./rebase-helper-*.tar.gz | head -n 1'"
+  fix-spec-file:
+  - bash -c "rpmdev-bumpspec -c \"Rebuild $PACKIT_PROJECT_COMMIT\" -n $(python3 setup.py --version) ./rebase-helper.spec"
+copy_upstream_release_description: true
