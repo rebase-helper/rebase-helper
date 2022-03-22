@@ -39,19 +39,19 @@ class TestSpecHook:
 
     @pytest.mark.parametrize('spec_attributes', [
         {
-            'spec_content': '%changelog\n- This is chnagelog entry with some indentional typos'
+            'sections': '%changelog\n- This is chnagelog entry with some indentional typos'
         }
     ])
     def test_typo_fix_spec_hook(self, mocked_spec_object):
         assert '- This is chnagelog entry with some indentional typos' in \
-               mocked_spec_object.spec_content.section('%changelog')
+               mocked_spec_object.sections.changelog
         TypoFix.run(mocked_spec_object, mocked_spec_object)
         assert '- This is changelog entry with some intentional typos' in \
-               mocked_spec_object.spec_content.section('%changelog')
+               mocked_spec_object.sections.changelog
 
     @pytest.mark.parametrize('spec_attributes', [
         {
-            'spec_content': dedent("""\
+            'sections': dedent("""\
                 %files
                 /usr/share/man/man1/*
                 /usr/bin/%{name}
@@ -80,12 +80,12 @@ class TestSpecHook:
             '/no/macros/here',
         ]
         PathsToRPMMacros.run(mocked_spec_object, mocked_spec_object)
-        assert files == mocked_spec_object.spec_content.section('%files')
-        assert files_devel == mocked_spec_object.spec_content.section('%files devel')
+        assert files == mocked_spec_object.sections.files
+        assert files_devel == mocked_spec_object.sections.get('files devel')
 
     @pytest.mark.parametrize('spec_attributes', [
         {
-            'spec_content': dedent("""\
+            'sections': dedent("""\
                 Source9: https://test.com/#/1.0/%{name}-hardcoded-version-1.0.2.tar.gz
 
                 %build
@@ -95,7 +95,7 @@ class TestSpecHook:
     ])
     def test_escape_macros_spec_hook(self, mocked_spec_object):
         EscapeMacros.run(mocked_spec_object, mocked_spec_object)
-        build = mocked_spec_object.spec_content.section('%build')
+        build = mocked_spec_object.sections.get('build')
         assert build[0] == "autoreconf -vi # Unescaped macros %%name %%{name}"
         # Test that the string after `#` wasn't recognized as a comment.
         source9 = mocked_spec_object.get_raw_tag_value('Source9')
@@ -110,7 +110,7 @@ class TestSpecHook:
     ])
     @pytest.mark.parametrize('spec_attributes', [
         {
-            'spec_content': dedent("""\
+            'sections': dedent("""\
                 Version: 1.0.2
                 Source9: https://test.com/#/1.0/%{name}-hardcoded-version-1.0.2b1.tar.gz
                 Recommends: test > 1.0.2
@@ -129,7 +129,7 @@ class TestSpecHook:
         ReplaceOldVersion.run(mocked_spec_object, mocked_spec_object_copy,
                               replace_old_version_with_macro=replace_with_macro)
         # The spec is not saved due to mocking, refresh tags for the assertions
-        mocked_spec_object_copy.tags = Tags(mocked_spec_object_copy.spec_content, mocked_spec_object_copy.spec_content)
+        mocked_spec_object_copy.tags = Tags(mocked_spec_object_copy.sections, mocked_spec_object_copy.sections)
 
         # Check if the version has been updated
         test_source = mocked_spec_object_copy.get_raw_tag_value('Source9')
@@ -143,12 +143,12 @@ class TestSpecHook:
         assert mocked_spec_object_copy.get_raw_tag_value('Version') == '1.1.0'
 
         # Check if version in changelog hasn't been changed
-        changelog = mocked_spec_object_copy.spec_content.section('%changelog')
+        changelog = mocked_spec_object_copy.sections.get('changelog')
         assert '1.0.2' in changelog[0]
 
     @pytest.mark.parametrize('spec_attributes', [
         {
-            'spec_content': dedent("""\
+            'sections': dedent("""\
                 URL: https://pypi.python.org/pypi/%{name}
                 Source0: https://pypi.python.org/.../%{name}.%{version}.tar.gz
                 """)

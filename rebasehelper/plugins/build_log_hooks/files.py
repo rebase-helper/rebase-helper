@@ -202,16 +202,16 @@ class Files(BaseBuildLogHook):
         best_match = ''
         best_match_section = ''
         files = []
-        for sec_name, sec_content in rebase_spec_file.spec_content.sections:
-            if sec_name.startswith('%files'):
-                files.append(sec_name)
-                for line in sec_content:
+        for section in rebase_spec_file.sections:
+            if section.name.lower().startswith('files'):
+                files.append(section.name)
+                for line in section:
                     new_best_match = difflib.get_close_matches(file, [best_match, MacroHelper.expand(line)])
                     if new_best_match:
                         # the new match is a closer match
                         if new_best_match[0] != best_match:
                             best_match = str(new_best_match[0])
-                            best_match_section = sec_name
+                            best_match_section = section.name
 
         return best_match_section or rebase_spec_file.get_main_files_section() or (files[0] if files else None)
 
@@ -247,11 +247,11 @@ class Files(BaseBuildLogHook):
                 break
             substituted_path = cls._sanitize_path(MacroHelper.substitute_path_with_macros(file, macros))
             try:
-                index = [i for i, l in enumerate(rebase_spec_file.spec_content.section(section)) if l][-1] + 1
+                index = [i for i, l in enumerate(rebase_spec_file.sections.get(section)) if l][-1] + 1
             except IndexError:
                 # section is empty
                 index = 0
-            rebase_spec_file.spec_content.section(section).insert(index, substituted_path)
+            rebase_spec_file.sections.get(section).insert(index, substituted_path)
             result['added'][section].append(substituted_path)
             logger.info("Added %s to '%s' section", substituted_path, section)
 
@@ -367,10 +367,10 @@ class Files(BaseBuildLogHook):
 
         """
         result: Dict[str, RemovedFromSections] = collections.defaultdict(lambda: collections.defaultdict(list))
-        for sec_name, sec_content in rebase_spec_file.spec_content.sections:
-            if sec_name.startswith('%files'):
-                subpackage = rebase_spec_file.get_subpackage_name(sec_name)
-                cls._correct_one_section(subpackage, sec_name, sec_content, files, result)
+        for section in rebase_spec_file.sections:
+            if section.name.lower().startswith('files'):
+                subpackage = rebase_spec_file.get_subpackage_name(section.name)
+                cls._correct_one_section(subpackage, section.name, section.data, files, result)
                 if not files:
                     # Nothing more to be done
                     return cast(Dict[str, RemovedFiles], result)

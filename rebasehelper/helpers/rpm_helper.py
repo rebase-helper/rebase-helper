@@ -26,7 +26,7 @@ import logging
 import os
 import re
 import tempfile
-from typing import Any, Dict, List, cast
+from typing import Any, Dict, List, cast, Tuple
 
 import rpm  # type: ignore
 from specfile.rpm import Macros
@@ -205,3 +205,28 @@ class RpmHelper:
             # try again with RPMSPEC_FORCE flag (the default)
             spec = cls.parse_spec(path)
         return spec
+
+
+DISALLOW_INLINE_COMMENTS: List[str] = [
+    '%package',
+    '%patchlist',
+    '%sourcelist',
+    '%description',
+    '%files',
+    '%changelog',
+]
+
+
+# FIXME: remove or find a better place for this (leftover from SpecContent)
+def get_comment_span(line: str, section: str) -> Tuple[int, int]:
+    """Gets span of a comment depending on the section.
+    Args:
+        line: Line to find the comment in.
+        section: Section the line is in.
+    Returns:
+        Span of the comment. If no comment is found, both tuple elements
+        are equal to the length of the line for convenient use in a slice.
+    """
+    inline_comment_allowed = not any(section.startswith(s) for s in DISALLOW_INLINE_COMMENTS)
+    comment = re.search(r" #.*" if inline_comment_allowed else r"^\s*#.*", line)
+    return comment.span() if comment else (len(line), len(line))

@@ -24,9 +24,9 @@
 
 import pytest  # type: ignore
 import rpm  # type: ignore
+from specfile.sections import Sections
 
 from rebasehelper.tags import Tag, Tags
-from rebasehelper.spec_content import SpecContent
 
 
 class TestTags:
@@ -104,30 +104,30 @@ source4.zip
         rpm.reloadConfig()
         for macro in self.MACROS:
             rpm.addMacro(*macro)
-        return Tags(SpecContent(self.RAW_CONTENT), SpecContent(self.PARSED_CONTENT))
+        return Tags(Sections.parse(self.RAW_CONTENT), Sections.parse(self.PARSED_CONTENT))
 
     def test_tags(self, tags):
         assert len(tags) == 16
-        assert tags[0] == Tag(0, '%package', 1, 'Name', (6, 10), True)
-        assert tags[1] == Tag(0, '%package', 2, 'Version', (9, 12), True)
-        assert tags[2] == Tag(0, '%package', 3, 'Source0', (8, 19), True, 0)
-        assert tags[3] == Tag(0, '%package', 4, 'Source1', (9, 29), True, 1)
-        assert tags[4] == Tag(0, '%package', 5, 'Patch0', (9, 23), True, 0)
-        assert tags[5] == Tag(0, '%package', 6, 'Patch1', (9, 23), True, 1)
-        assert tags[6] == Tag(0, '%package', 7, 'Patch2', (9, 23), True, 2)
-        assert tags[7] == Tag(0, '%package', 8, 'Patch3', (9, 23), True, 3)
-        assert tags[8] == Tag(0, '%package', 10, 'Patch999', (22, 44), True, 999)
-        assert tags[9] == Tag(1, '%sourcelist', 1, 'Source2', (0, 11), True, 2)
-        assert tags[10] == Tag(2, '%patchlist', 0, 'Patch1000', (0, 10), True, 1000)
-        assert tags[11] == Tag(3, '%package libs', 0, 'Requires', (10, 28), True)
-        assert tags[12] == Tag(3, '%package libs', 1, 'Requires', (10, 18), True)
-        assert tags[13] == Tag(3, '%package libs', 2, 'Source3', (8, 22), True, 3)
-        assert tags[14] == Tag(4, '%sourcelist', 0, 'Source4', (0, 11), True, 4)
-        assert tags[15] == Tag(5, '%package utils', 0, 'Requires', (10, 28), False)
+        assert tags[0] == Tag(0, 'package', 1, 'Name', (6, 10), True)
+        assert tags[1] == Tag(0, 'package', 2, 'Version', (9, 12), True)
+        assert tags[2] == Tag(0, 'package', 3, 'Source0', (8, 19), True, 0)
+        assert tags[3] == Tag(0, 'package', 4, 'Source1', (9, 29), True, 1)
+        assert tags[4] == Tag(0, 'package', 5, 'Patch0', (9, 23), True, 0)
+        assert tags[5] == Tag(0, 'package', 6, 'Patch1', (9, 23), True, 1)
+        assert tags[6] == Tag(0, 'package', 7, 'Patch2', (9, 23), True, 2)
+        assert tags[7] == Tag(0, 'package', 8, 'Patch3', (9, 23), True, 3)
+        assert tags[8] == Tag(0, 'package', 10, 'Patch999', (22, 44), True, 999)
+        assert tags[9] == Tag(1, 'sourcelist', 1, 'Source2', (0, 11), True, 2)
+        assert tags[10] == Tag(2, 'patchlist', 0, 'Patch1000', (0, 10), True, 1000)
+        assert tags[11] == Tag(3, 'package libs', 0, 'Requires', (10, 28), True)
+        assert tags[12] == Tag(3, 'package libs', 1, 'Requires', (10, 18), True)
+        assert tags[13] == Tag(3, 'package libs', 2, 'Source3', (8, 22), True, 3)
+        assert tags[14] == Tag(4, 'sourcelist', 0, 'Source4', (0, 11), True, 4)
+        assert tags[15] == Tag(5, 'package utils', 0, 'Requires', (10, 28), False)
 
     def test_filter(self, tags):
-        assert len(list(tags.filter(section_name='%package'))) == 9
-        assert len(list(tags.filter(section_name='%package', name='Patch*'))) == 5
-        assert len(list(tags.filter(section_name='%package', valid=False))) == 0
+        assert len(list(tags.filter(section_name='package'))) == 9
+        assert len(list(tags.filter(section_name='package', name='Patch*'))) == 5
+        assert len(list(tags.filter(section_name='package', valid=False))) == 0
         assert len(list(tags.filter(valid=False))) == 1
         assert len(list(tags.filter(name='Requires', valid=None))) == 3

@@ -29,9 +29,9 @@ import shutil
 import pytest  # type: ignore
 import rpm  # type: ignore
 from specfile.rpm import Macros
+from specfile.sections import Sections
 
 from rebasehelper.specfile import SpecFile
-from rebasehelper.spec_content import SpecContent
 from rebasehelper.tags import Tags
 
 
@@ -72,11 +72,11 @@ def mocked_spec_object(spec_attributes):
                             if prop != 'value':
                                 setattr(m, prop, v)
             value = macros
-        if attribute == 'spec_content' and isinstance(value, str):
-            value = SpecContent(value)
+        if attribute == 'sections' and isinstance(value, str):
+            value = Sections.parse(value)
         setattr(spec, attribute, value)
-    if hasattr(spec, 'spec_content') and not hasattr(spec, 'tags'):
-        spec.tags = Tags(spec.spec_content, spec.spec_content)
+    if hasattr(spec, 'sections') and not hasattr(spec, 'tags'):
+        spec.tags = Tags(spec.sections, spec.sections)
     return spec
 
 

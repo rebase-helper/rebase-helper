@@ -36,9 +36,9 @@ class PathsToRPMMacros(BaseSpecHook):
         # ensure maximal greediness
         macros.sort(key=lambda k: len(k.body), reverse=True)
 
-        for sec_name, sec_content in rebase_spec_file.spec_content.sections:
-            if sec_name.startswith('%files'):
-                for index, line in enumerate(sec_content):
+        for section in rebase_spec_file.sections:
+            if section.name.startswith('files'):
+                for index, line in enumerate(section):
                     new_path = MacroHelper.substitute_path_with_macros(line, macros)
-                    sec_content[index] = new_path
+                    section[index] = new_path
         rebase_spec_file.save()

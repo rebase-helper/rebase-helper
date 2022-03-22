@@ -27,8 +27,10 @@ import fnmatch
 import re
 from typing import Dict, Iterator, List, Optional, Tuple, cast
 
-from rebasehelper.spec_content import SpecContent
+from specfile.sections import Sections
+
 from rebasehelper.helpers.macro_helper import MacroHelper
+from rebasehelper.helpers.rpm_helper import get_comment_span
 
 
 class Tag:
@@ -65,8 +67,8 @@ class Tag:
 
 
 class Tags(collections.abc.Sequence):
-    def __init__(self, raw_content: SpecContent, parsed_content: SpecContent) -> None:
-        self.items: Tuple[Tag] = self._parse(raw_content, parsed_content)
+    def __init__(self, raw_sections: Sections, parsed_sections: Sections) -> None:
+        self.items: Tuple[Tag] = self._parse(raw_sections, parsed_sections)
 
     def __getitem__(self, index):
         return self.items[index]
@@ -75,18 +77,18 @@ class Tags(collections.abc.Sequence):
         return len(self.items)
 
     @classmethod
-    def _map_sections_to_parsed(cls, raw_content: SpecContent, parsed_content: SpecContent) -> Dict[int, int]:
+    def _map_sections_to_parsed(cls, raw_sections: Sections, parsed_sections: Sections) -> Dict[int, int]:
         """Creates a mapping of raw sections to parsed sections.
 
         Returns:
             A dict where the keys are indexes of sections in raw content and values are their
             counterparts in parsed content. Value is set to -1 if the section is not in
-            parsed SpecContent.
+            parsed Sections.
         """
         result: Dict[int, int] = {}
         parsed = 0
-        for index, (section, _) in enumerate(raw_content.sections):
-            if parsed < len(parsed_content.sections) and parsed_content.sections[parsed][0].lower() == section.lower():
+        for index, section in enumerate(raw_sections):
+            if parsed < len(parsed_sections) and parsed_sections[parsed].name.lower() == section.name.lower():
                 result[index] = parsed
                 parsed += 1
             else:
@@ -95,23 +97,23 @@ class Tags(collections.abc.Sequence):
         return result
 
     @classmethod
-    def _parse(cls, raw_content: SpecContent, parsed_content: SpecContent) -> Tuple[Tag]:
+    def _parse(cls, raw_sections: Sections, parsed_sections: Sections) -> Tuple[Tag]:
         result: List[Tag] = []
-        parsed_mapping = cls._map_sections_to_parsed(raw_content, parsed_content)
+        parsed_mapping = cls._map_sections_to_parsed(raw_sections, parsed_sections)
         next_source_index = 0
         next_patch_index = 0
         # counts number of occurrences of one particular section
-        for section_index, (section, section_content) in enumerate(raw_content.sections):
-            section = section.lower()
+        for section_index, section in enumerate(raw_sections):
+            name = section.name.lower()
             parsed_section_index = parsed_mapping[section_index]
-            parsed: List[str] = [] if parsed_section_index == -1 else parsed_content.sections[parsed_section_index][1]
-            if section.startswith('%package'):
-                tags, next_source_index, next_patch_index = cls._parse_package_tags(section, section_content, parsed,
+            parsed: List[str] = [] if parsed_section_index == -1 else parsed_sections[parsed_section_index].data
+            if name.startswith('package'):
+                tags, next_source_index, next_patch_index = cls._parse_package_tags(name, section.data, parsed,
                                                                                     section_index, next_source_index,
                                                                                     next_patch_index)
                 result.extend(tags)
-            elif section.startswith('%sourcelist') or section.startswith('%patchlist'):
-                tags, next_source_index, next_patch_index = cls._parse_list_tags(section, section_content, parsed,
+            elif name.startswith('sourcelist') or name.startswith('patchlist'):
+                tags, next_source_index, next_patch_index = cls._parse_list_tags(name, section.data, parsed,
                                                                                  section_index, next_source_index,
                                                                                  next_patch_index)
                 result.extend(tags)
@@ -200,11 +202,11 @@ class Tags(collections.abc.Sequence):
         the last parsed Source/Patch tag.
 
         """
-        tag = 'Source' if section == '%sourcelist' else 'Patch'
+        tag = 'Source' if section == 'sourcelist' else 'Patch'
         result = []
         for i, line in enumerate(section_content):
             expanded = MacroHelper.expand(line)
-            is_comment = SpecContent.get_comment_span(line, section)[0] != len(line)
+            is_comment = get_comment_span(line, section)[0] != len(line)
             if not expanded or not line or is_comment or not [p for p in parsed if p == expanded.rstrip()]:
                 continue
             tag_name, tag_index, next_source_index, next_patch_index = cls._sanitize_tag(tag, next_source_index,

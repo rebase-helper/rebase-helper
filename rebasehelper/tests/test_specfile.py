@@ -83,7 +83,7 @@ class TestSpecFile:
     @pytest.mark.parametrize('spec_attributes, sources', [
         (
             {
-                'spec_content': dedent("""\
+                'sections': dedent("""\
                     Source:     ftp://ftp.test.org/%{name}-%{version}.tar.xz
                     Source1:    source-tests.sh
                     Source2:    ftp://test.com/test-source.sh
@@ -164,7 +164,7 @@ class TestSpecFile:
     @pytest.mark.parametrize('spec_attributes, main_files', [
         (
             {
-                'spec_content': dedent("""\
+                'sections': dedent("""\
                     %files
                     %files -n test
                     %files test
@@ -174,7 +174,7 @@ class TestSpecFile:
         ),
         (
             {
-                'spec_content': dedent("""\
+                'sections': dedent("""\
                     %files -n test
                     """)
             },
@@ -190,7 +190,7 @@ class TestSpecFile:
     @pytest.mark.parametrize('spec_attributes, is_enabled', [
         (
             {
-                'spec_content': dedent("""\
+                'sections': dedent("""\
                     %check
                     make test
                     """)
@@ -199,7 +199,7 @@ class TestSpecFile:
         ),
         (
             {
-                'spec_content': dedent("""\
+                'sections': dedent("""\
                     %check
                     # disabled test
                     # make test
@@ -230,7 +230,7 @@ class TestSpecFile:
 
     @pytest.mark.parametrize('spec_attributes', [
         {
-            'spec_content': dedent("""\
+            'sections': dedent("""\
                 %global release 34
                 %global release_str %{release}%{?dist}
 
@@ -252,17 +252,17 @@ class TestSpecFile:
     def test_update_setup_dirname(self, mocked_spec_object):
         mocked_spec_object.set_extra_version('rc1', False)
 
-        prep = mocked_spec_object.spec_content.section('%prep')
+        prep = mocked_spec_object.sections.prep[:]
         mocked_spec_object.update_setup_dirname('test-1.0.2')
-        assert mocked_spec_object.spec_content.section('%prep') == prep
+        assert mocked_spec_object.sections.prep == prep
 
         mocked_spec_object.update_setup_dirname('test-1.0.2rc1')
-        prep = mocked_spec_object.spec_content.section('%prep')
+        prep = mocked_spec_object.sections.prep
         setup = [l for l in prep if l.startswith('%setup')][0]
         assert '-n %{name}-%{version}rc1' in setup
 
         mocked_spec_object.update_setup_dirname('test-1.0.2-rc1')
-        prep = mocked_spec_object.spec_content.section('%prep')
+        prep = mocked_spec_object.sections.prep
         setup = [l for l in prep if l.startswith('%setup')][0]
         assert '-n %{name}-%{version}-rc1' in setup
 
@@ -277,7 +277,7 @@ class TestSpecFile:
             {
                 'keep_comments': False,
                 'removed_patches': [],
-                'spec_content': dedent("""\
+                'sections': dedent("""\
                     Patch0:    0.patch
                     Patch1:    1.patch
 
@@ -318,7 +318,7 @@ class TestSpecFile:
             {
                 'keep_comments': False,
                 'removed_patches': [],
-                'spec_content': dedent("""\
+                'sections': dedent("""\
                     Patch0:    0.patch
                     Patch1:    1.patch
 
@@ -359,7 +359,7 @@ class TestSpecFile:
             {
                 'keep_comments': False,
                 'removed_patches': [],
-                'spec_content': dedent("""\
+                'sections': dedent("""\
                     Patch0:     0.patch
                     
                     
@@ -387,7 +387,7 @@ class TestSpecFile:
             {
                 'keep_comments': True,
                 'removed_patches': [],
-                'spec_content': dedent("""\
+                'sections': dedent("""\
                 Patch0:     0.patch
 
 
@@ -423,20 +423,20 @@ class TestSpecFile:
     ])
     def test_write_updated_patches(self, mocked_spec_object, kwargs, expected_content):
         mocked_spec_object.write_updated_patches(**kwargs)
-        assert expected_content == str(mocked_spec_object.spec_content)
+        assert expected_content == str(mocked_spec_object.sections)
 
     @pytest.mark.parametrize('spec_attributes', [
         {
-            'spec_content': 'Patch5: rebase-helper-results/rebased-sources/test-testing5.patch\n'
+            'sections': 'Patch5: rebase-helper-results/rebased-sources/test-testing5.patch\n'
         }
     ])
     def test_update_paths_to_sources_and_patches(self, mocked_spec_object):
-        line = [l for l in mocked_spec_object.spec_content.section('%package') if l.startswith('Patch5')][0]
+        line = [l for l in mocked_spec_object.sections.package if l.startswith('Patch5')][0]
         assert 'rebased-sources' in line
 
         mocked_spec_object.update_paths_to_sources_and_patches()
 
-        line = [l for l in mocked_spec_object.spec_content.section('%package') if l.startswith('Patch5')][0]
+        line = [l for l in mocked_spec_object.sections.package if l.startswith('Patch5')][0]
         assert 'rebased-sources' not in line
 
     def test_tags(self, spec_object):
@@ -583,7 +583,7 @@ class TestSpecFile:
     def test_set_tag(self, spec_object, preserve_macros, tag, value, lines, lines_preserve):
         spec_object.set_tag(tag, value, preserve_macros=preserve_macros)
         for line in lines_preserve if preserve_macros else lines:
-            assert line in spec_object.spec_content.section('%package')
+            assert line in spec_object.sections.package
 
     def test_get_new_log_with_non_c_locale(self, spec_object):
         # Changelogs should be identical no matter what locale

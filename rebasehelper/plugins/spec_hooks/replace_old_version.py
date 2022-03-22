@@ -32,6 +32,7 @@ from rebasehelper.types import Options
 from rebasehelper.plugins.spec_hooks import BaseSpecHook
 from rebasehelper.specfile import SpecFile
 from rebasehelper.helpers.macro_helper import MacroHelper
+from rebasehelper.helpers.rpm_helper import get_comment_span
 
 
 class ReplaceOldVersion(BaseSpecHook):
@@ -135,14 +136,14 @@ class ReplaceOldVersion(BaseSpecHook):
                     updated_value = sub_pattern.sub(repl, updated_value)
             rebase_spec_file.set_raw_tag_value(tag.name, updated_value, tag.section_index)
 
-        for sec_index, (sec_name, section) in enumerate(rebase_spec_file.spec_content.sections):
-            if sec_name.startswith('%changelog'):
+        for sec_index, section in enumerate(rebase_spec_file.sections):
+            if section.name.startswith('changelog'):
                 continue
             for index, line in enumerate(section):
                 tag_ignored = any(MacroHelper.expand(line, line).startswith(tag) for tag in cls.IGNORED_TAGS)
                 if index in examined_lines[sec_index] or tag_ignored:
                     continue
-                start, end = spec_file.spec_content.get_comment_span(line, sec_name)
+                start, end = get_comment_span(line, section.name)
                 updated_line = subversion_patterns[0][0].sub(subversion_patterns[0][1], line[:start])
                 section[index] = updated_line + line[start:end]
 

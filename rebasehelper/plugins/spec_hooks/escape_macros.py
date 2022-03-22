@@ -25,6 +25,7 @@
 import re
 
 from rebasehelper.plugins.spec_hooks import BaseSpecHook
+from rebasehelper.helpers.rpm_helper import get_comment_span
 
 
 class EscapeMacros(BaseSpecHook):
@@ -32,8 +33,8 @@ class EscapeMacros(BaseSpecHook):
 
     @classmethod
     def run(cls, spec_file, rebase_spec_file, **kwargs):
-        for sec_name, section in rebase_spec_file.spec_content.sections:
+        for section in rebase_spec_file.sections:
             for index, line in enumerate(section):
-                start, end = spec_file.spec_content.get_comment_span(line, sec_name)
+                start, end = get_comment_span(line, section.name)
                 new_comment = re.sub(r'(?<!%)(%(?P<brace>{\??)?\w+(?(brace)}))', r'%\1', line[start:end])
                 section[index] = line[:start] + new_comment

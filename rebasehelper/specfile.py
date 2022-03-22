@@ -40,10 +40,10 @@ from typing import List, Optional, Pattern, Tuple, Dict, Union, cast
 
 import rpm  # type: ignore
 from specfile.rpm import Macros
+from specfile.sections import Sections, Section
 
 from rebasehelper import constants
 from rebasehelper.archive import Archive
-from rebasehelper.spec_content import SpecContent
 from rebasehelper.tags import Tag, Tags
 from rebasehelper.exceptions import RebaseHelperError, DownloadError, ParseError, LookasideCacheError
 from rebasehelper.argument_parser import SilentArgumentParser
@@ -133,8 +133,8 @@ class SpecFile:
         self.category: Optional[PackageCategory] = None
         self.spc: rpm.spec = RpmHelper.get_rpm_spec(self.path, self.sources_location, self.predefined_macros)
         self.header: RpmHeader = RpmHeader(self.spc.sourceHeader)
-        self.spec_content: SpecContent = self._read_spec_content()
-        self.tags: Tags = Tags(self.spec_content, SpecContent(self.spc.parsed))
+        self.sections: Sections = self._read_spec_content()
+        self.tags: Tags = Tags(self.sections, Sections.parse(self.spc.parsed))
 
         # Load rpm information
         self._update_data()
@@ -176,8 +176,8 @@ class SpecFile:
         self.spc = None
         self.spc = RpmHelper.get_rpm_spec(self.path, self.sources_location, self.predefined_macros)
         self.header = RpmHeader(self.spc.sourceHeader)
-        self.spec_content = self._read_spec_content()
-        self.tags = Tags(self.spec_content, SpecContent(self.spc.parsed))
+        self.sections = self._read_spec_content()
+        self.tags = Tags(self.sections, Sections.parse(self.spc.parsed))
         self._update_data()
 
     def _update_data(self):
@@ -219,13 +219,13 @@ class SpecFile:
         tag = self.tag(tag_name, section)
         if not tag:
             return None
-        return self.spec_content[tag.section_index][tag.line][slice(*tag.value_span)]
+        return self.sections[tag.section_index][tag.line][slice(*tag.value_span)]
 
     def set_raw_tag_value(self, tag_name: str, value: str, section: Optional[Union[str, int]] = None) -> None:
         tag = self.tag(tag_name, section)
         if not tag:
             return
-        sec = self.spec_content[tag.section_index]
+        sec = self.sections[tag.section_index]
         line = sec[tag.line]
         sec[tag.line] = line[:tag.value_span[0]] + value + line[tag.value_span[1]:]
         # update span
@@ -385,8 +385,9 @@ class SpecFile:
         remove = list(remove or [])
         annotate = list(annotate or [])
 
-        prep = self.spec_content.section('%prep')
-        if not prep:
+        try:
+            prep = self.sections.prep
+        except AttributeError:
             return
 
         patch_re = re.compile(r'^%patch(?P<index>\d+)(.*)')
@@ -453,7 +454,7 @@ class SpecFile:
         modified_patches = []
         remove_lines: Dict[int, List[Tuple[int, int]]] = collections.defaultdict(list)
         for tag in self.tags.filter(name='Patch*'):
-            section = self.spec_content[tag.section_index]
+            section = self.sections[tag.section_index]
             if section is None:
                 continue
             patch_name = os.path.basename(self.get_raw_tag_value(tag.name) or '')
@@ -496,7 +497,7 @@ class SpecFile:
                 if tag.index:
                     modified_patches.append(tag.index)
         for section_index, remove in remove_lines.items():
-            content = self.spec_content[section_index]
+            content = self.sections[section_index]
             for span in sorted(remove, key=lambda s: s[0], reverse=True):
                 del content[slice(*span)]
         self.process_patch_macros(comment_out=inapplicable_patches if disable_inapplicable else None,
@@ -606,14 +607,14 @@ class SpecFile:
 
         def _get_macro_value(macro):
             """Returns raw value of a macro"""
-            for match in macro_def_re.finditer('\n'.join(self.spec_content.section('%package'))):
+            for match in macro_def_re.finditer(str(self.sections.package)):
                 if match.group('name') == macro:
                     return match.group('value')
             return None
 
         def _redefine_macro(macro, value):
             """Replaces value of an existing macro"""
-            content = '\n'.join(self.spec_content.section('%package'))
+            content = str(self.sections.package)
             for match in macro_def_re.finditer(content):
                 if match.group('name') != macro:
                     continue
@@ -621,14 +622,14 @@ class SpecFile:
                 if match.group('options'):
                     content = content[:match.start('options')] + content[match.end('options'):]
                 break
-            self.spec_content.replace_section('%package', content.split('\n'))
+            self.sections.package = content.split('\n')
             self.save()
 
         def _find_macros(s):
             """Returns all redefinable macros present in a string"""
             macro_re = re.compile(r'%(?P<brace>{\??)?(?P<name>\w+)(?(brace)})')
             macros = []
-            for match in macro_def_re.finditer('\n'.join(self.spec_content.section('%package'))):
+            for match in macro_def_re.finditer(str(self.sections.package)):
                 macros.append(match.group('name'))
             result = []
             for match in macro_re.finditer(s):
@@ -973,20 +974,20 @@ class SpecFile:
             str: Name of the main files section.
 
         """
-        for sec_name, _ in self.spec_content.sections:
-            if sec_name.startswith('%files'):
-                if self.get_subpackage_name(sec_name) == '%{name}':
-                    return sec_name
+        for section in self.sections:
+            if section.name.lower().startswith('files'):
+                if self.get_subpackage_name(section.name) == '%{name}':
+                    return section.name
 
     #############################################
     # SPEC CONTENT MANIPULATION RELATED METHODS #
     #############################################
 
-    def _read_spec_content(self) -> SpecContent:
+    def _read_spec_content(self) -> Sections:
         """Reads the content of the Spec file.
 
         Returns:
-            The created SpecContent instance.
+            The created Sections instance.
 
         Raises:
             RebaseHelperError: If the Spec file cannot be read.
@@ -997,14 +998,14 @@ class SpecFile:
                 content = f.read()
         except IOError as e:
             raise RebaseHelperError("Unable to open and read SPEC file '{}'".format(self.path)) from e
-        return SpecContent(content)
+        return Sections.parse(content)
 
     def _write_spec_content(self):
-        """Writes the current state of SpecContent into a file."""
+        """Writes the current state of Sections into a file."""
         logger.verbose("Writing SPEC file '%s' to the disc", self.path)
         try:
             with open(self.path, "w", encoding=constants.ENCODING) as f:
-                f.write(str(self.spec_content))
+                f.write(str(self.sections))
         except IOError as e:
             raise RebaseHelperError("Unable to write updated data to SPEC file '{}'".format(self.path)) from e
 
@@ -1029,7 +1030,7 @@ class SpecFile:
         self.update()
 
     def save(self) -> None:
-        """Saves changes made to SpecContent and updates the internal state."""
+        """Saves changes made to Sections and updates the internal state."""
         self._write_spec_content()
         #  Update internal variables
         self.update()
@@ -1044,8 +1045,9 @@ class SpecFile:
 
         :return: True if enabled or False if not
         """
-        check_section = self.spec_content.section('%check')
-        if not check_section:
+        try:
+            check_section = self.sections.check
+        except AttributeError:
             return False
         # Remove commented lines
         check_section = [x.strip() for x in check_section if not x.strip().startswith('#')]
@@ -1064,10 +1066,11 @@ class SpecFile:
 
         """
         new_entry = self.get_new_log(changelog_entry)
-        changelog = self.spec_content.section('%changelog')
-        if changelog is None:
-            changelog = []
-            self.spec_content.replace_section('%changelog', changelog)
+        try:
+            changelog = self.sections.changelog
+        except AttributeError:
+            changelog = Section('changelog', [])
+            self.sections.append(changelog)
         changelog[0:0] = new_entry
 
     def get_new_log(self, changelog_entry):
@@ -1136,8 +1139,9 @@ class SpecFile:
         """
         parser = self._get_setup_parser()
 
-        prep = self.spec_content.section('%prep')
-        if not prep:
+        try:
+            prep = self.sections.prep
+        except AttributeError:
             return None
 
         for line in prep:
@@ -1166,8 +1170,9 @@ class SpecFile:
         """
         parser = self._get_setup_parser()
 
-        prep = self.spec_content.section('%prep')
-        if not prep:
+        try:
+            prep = self.sections.prep
+        except AttributeError:
             return
 
         for index, line in enumerate(prep):
