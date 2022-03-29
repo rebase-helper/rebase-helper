@@ -64,7 +64,7 @@ class TestOutputTool:
         rs.set_patches_results(data['patches'])
         rs.set_checker_output('pkgdiff', {'path': 'rebase-helper-results/checkers/pkgdiff'})
         files_build_log_hook_result = {
-            'removed': {'%files': ['README']}
+            'removed': {'files': ['README']}
         }
         rs.set_build_log_hooks_result('files', files_build_log_hook_result)
         rs.set_info_text('Information text', 'some information text')
@@ -87,7 +87,7 @@ Details in rebase-helper-results/checkers/pkgdiff:
 files build log hook
 ====================
 - removed
-- %files
+- files
 - README
 
 Downstream Patches
@@ -163,7 +163,7 @@ Binary packages and logs are in directory rebase-helper-results/new-build/RPM:
             ResultsStore.RESULTS_BUILD_LOG_HOOKS: {
                 'files': {
                     'removed': {
-                        '%files': ['README']
+                        'files': ['README']
                     }
                 }
             },

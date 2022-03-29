@@ -208,12 +208,12 @@ class RpmHelper:
 
 
 DISALLOW_INLINE_COMMENTS: List[str] = [
-    '%package',
-    '%patchlist',
-    '%sourcelist',
-    '%description',
-    '%files',
-    '%changelog',
+    'package',
+    'patchlist',
+    'sourcelist',
+    'description',
+    'files',
+    'changelog',
 ]
 
 

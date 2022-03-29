@@ -417,7 +417,7 @@ class SpecFile:
                 # of %patchlist patches change and %patch macros need to be modified.
                 else:
                     tag = self.tag('Patch{}'.format(index))
-                    if tag and tag.section_name.startswith('%patchlist'):
+                    if tag and tag.section_name.startswith('patchlist'):
                         prep[i] = patch_re.sub(r'%patch{}\2'.format(index - removed), prep[i])
             i += 1
 
