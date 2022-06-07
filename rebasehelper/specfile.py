@@ -1267,12 +1267,18 @@ class SpecFile:
                         parser = tar_parser
                     elif cmd == 'unzip':
                         parser = unzip_parser
+                    elif cmd == 'rpmuncompress':
+                        parser = None
+                        target = '.'
                     else:
                         continue
-                    try:
-                        ns, _ = parser.parse_known_args(args)
-                    except ParseError:
-                        continue
+                    if parser:
+                        try:
+                            ns, _ = parser.parse_known_args(args)
+                        except ParseError:
+                            continue
+                        else:
+                            target = ns.target
                     basedir = os.path.relpath(basedir, builddir)
-                    return os.path.normpath(os.path.join(basedir, ns.target))
+                    return os.path.normpath(os.path.join(basedir, target))
         return None
