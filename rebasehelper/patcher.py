@@ -126,9 +126,9 @@ class Patcher:
                 except git.GitCommandError:
                     try:
                         repo.git.apply(sanitized_patch.name, p=patch_strip, reject=True, whitespace='fix')
-                    except git.GitCommandError as e:
+                    except git.GitCommandError as ee:
                         logger.verbose('Applying patch with git-apply failed.')
-                        logger.debug(str(e))
+                        logger.debug(str(ee))
                         raise
             repo.git.add(all=True)
             commit = repo.index.commit(cls.decorate_patch_name(os.path.basename(patch_name)), skip_hooks=True)

@@ -152,10 +152,11 @@ class ConsoleHelper:
 
         """
         prefix, suffix = query.split('?', 1)
-        attrs_obtained = False
         try:
             attrs = termios.tcgetattr(sys.stdin)
-            attrs_obtained = True
+        except termios.error:
+            return None
+        try:
             flags = fcntl.fcntl(sys.stdin.fileno(), fcntl.F_GETFL)
 
             # disable STDIN line buffering
@@ -181,9 +182,8 @@ class ConsoleHelper:
             return None
         finally:
             # set terminal settings to the starting point
-            if attrs_obtained:
-                termios.tcsetattr(sys.stdin, termios.TCSADRAIN, attrs)
-                fcntl.fcntl(sys.stdin.fileno(), fcntl.F_SETFL, flags)
+            termios.tcsetattr(sys.stdin, termios.TCSADRAIN, attrs)
+            fcntl.fcntl(sys.stdin.fileno(), fcntl.F_SETFL, flags)
 
     class Capturer:
         """ContextManager for capturing stdout/stderr"""
