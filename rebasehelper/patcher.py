@@ -175,8 +175,10 @@ class Patcher:
                                                           onto=upstream_branch,
                                                           stdout_as_string=True)
             except git.GitCommandError as e:
-                ret_code = e.status
-                cls.output_data = e.stdout
+                if e.status == 128:
+                    logger.debug(str(e))
+                    raise RuntimeError('git-rebase failed unexpectedly. Please check log files') from e
+                ret_code, cls.output_data = e.status, e.stdout
             else:
                 ret_code = 0
         else:
@@ -188,7 +190,8 @@ class Patcher:
                 cls.output_data = e.stdout
             else:
                 ret_code = 0
-        logger.verbose(cls.output_data)
+        if cls.output_data:
+            logger.verbose(cls.output_data)
         patch_dictionary = {}
         modified_patches = []
         inapplicable_patches = []
@@ -198,8 +201,10 @@ class Patcher:
                 try:
                     cls.output_data = cls.old_repo.git.rebase(skip=True, stdout_as_string=True)
                 except git.GitCommandError as e:
-                    ret_code = e.status
-                    cls.output_data = e.stdout
+                    if e.status == 128:
+                        logger.debug(str(e))
+                        raise RuntimeError('git-rebase failed unexpectedly. Please check log files') from e
+                    ret_code, cls.output_data = e.status, e.stdout
                     continue
                 else:
                     break
@@ -215,7 +220,7 @@ class Patcher:
                     with open(os.path.join(cls.old_sources, '.git', 'rebase-apply', 'last'), encoding=ENCODING) as f:
                         last_index = int(f.readline())
             except (FileNotFoundError, IOError) as e:
-                raise RuntimeError('Git rebase failed with unknown reason. Please check log file') from e
+                raise RuntimeError('git-rebase failed with unknown reason. Please check log files') from e
             patch_name = cls.patches[next_index - 1].get_patch_name()
             inapplicable = False
             if cls.non_interactive:
@@ -256,8 +261,10 @@ class Patcher:
                 try:
                     cls.output_data = cls.old_repo.git.rebase(skip=True, stdout_as_string=True)
                 except git.GitCommandError as e:
-                    ret_code = e.status
-                    cls.output_data = e.stdout
+                    if e.status == 128:
+                        logger.debug(str(e))
+                        raise RuntimeError('git-rebase failed unexpectedly. Please check log files') from e
+                    ret_code, cls.output_data = e.status, e.stdout
                     continue
                 else:
                     break
@@ -273,8 +280,10 @@ class Patcher:
                 else:
                     cls.output_data = cls.old_repo.git.rebase(skip=True, stdout_as_string=True)
             except git.GitCommandError as e:
-                ret_code = e.status
-                cls.output_data = e.stdout
+                if e.status == 128:
+                    logger.debug(str(e))
+                    raise RuntimeError('git-rebase failed unexpectedly. Please check log files') from e
+                ret_code, cls.output_data = e.status, e.stdout
             else:
                 break
         original_commits = list(cls.old_repo.iter_commits(rev=cls.old_repo.heads.pop()))
