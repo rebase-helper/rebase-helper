@@ -2,6 +2,21 @@
 
 ## [Unreleased]
 
+## [0.27.0] - 2022-06-24
+### Added
+- Added support for `rpmuncompress` being used by `rpm` >= 4.18
+
+### Fixed
+- Replaced hardcoded references to *master* branch
+- Fixed typos in `%preun`, `%postun` and `%generate_buildrequires` section names
+- Fixed parsing of macros with multiline bodies in `%dump` output
+- Fixed parsing issue in **rpmdiff** checker
+- **rebase-helper** now removes any existing submodule configuration from upstream tarballs before rebasing to avoid errors due to submodules not being checked out
+
+### Changed
+- **rebase-helper** now warns about a potential rename that can't be handled automatically, such as `README` to `README.md`
+- **rebase-helper** is now able to handle unexpected `git rebase` errors
+
 ## [0.26.0] - 2021-09-27
 ### Added
 - Added support for SPEC files with no Source tags
