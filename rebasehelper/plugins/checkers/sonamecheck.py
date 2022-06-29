@@ -64,6 +64,10 @@ class SonameCheck(BaseChecker):
         new_headers = [RpmHelper.get_header_from_rpm(x) for x in results_store.get_new_build().get('rpm', [])]
         soname_changes: SonameChanges = collections.defaultdict(lambda: collections.defaultdict(list))
         for old in old_headers:
+            if old.name.endswith('-debuginfo'):
+                # skip debuginfo packages, they can provide a shared library
+                # but it doesn't actually have a SONAME
+                continue
             new = [x for x in new_headers if x.name == old.name]
             if not new:
                 logger.warning('New version of package %s was not found!', old.name)
