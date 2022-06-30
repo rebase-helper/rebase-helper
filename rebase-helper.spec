@@ -24,7 +24,7 @@ BuildRequires:  python3-pyquery
 BuildRequires:  python3-copr
 BuildRequires:  python3-pam
 BuildRequires:  python3-requests
-BuildRequires:  python3-requests-gssapi
+BuildRequires:  python3-requests-kerberos
 BuildRequires:  python3-GitPython
 BuildRequires:  python3-ansicolors
 BuildRequires:  python3-sphinx

@@ -52,10 +52,10 @@ def get_requirements():
         'unidiff',
         'GitPython',
     ]
-    # there is no rpm nor gssapi inside RTD build environment
+    # there is no rpm nor kerberos inside RTD build environment
     if not os.getenv('READTHEDOCS'):
         result.append(get_rpm_distribution())
-        result.append('requests-gssapi')
+        result.append('requests-kerberos')
     return result
 
 

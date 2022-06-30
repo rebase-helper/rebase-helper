@@ -33,7 +33,7 @@ import time
 from typing import cast
 
 import requests
-import requests_gssapi  # type: ignore
+import requests_kerberos  # type: ignore
 from urllib3.fields import RequestField  # type: ignore
 from urllib3.filepost import encode_multipart_formdata  # type: ignore
 
@@ -181,11 +181,11 @@ class LookasideCacheHelper:
         def post(check_only=False):
             def _post(url, data, headers):
                 try:
-                    # try to authenticate using opportunistic auth first
+                    # try to authenticate using preemptive auth first
                     return requests.post(url, data=data, headers=headers,
-                                         auth=requests_gssapi.HTTPSPNEGOAuth(opportunistic_auth=True))
-                except requests_gssapi.exceptions.SPNEGOExchangeError:
-                    return requests.post(url, data=data, headers=headers, auth=requests_gssapi.HTTPSPNEGOAuth())
+                                         auth=requests_kerberos.HTTPKerberosAuth(force_preemptive=True))
+                except requests_kerberos.exceptions.KerberosExchangeError:
+                    return requests.post(url, data=data, headers=headers, auth=requests_kerberos.HTTPKerberosAuth())
             cd = ChunkedData(check_only)
             if 'devel.redhat.com' in url:
                 # the only server that properly handles chunked POST requests
