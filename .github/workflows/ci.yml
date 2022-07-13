@@ -15,11 +15,6 @@ jobs:
           - distro: fedora-rawhide
     steps:
       - uses: actions/checkout@v2
-        # Setup docker
-      - run: curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-      - run: sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-      - run: sudo apt-get update
-      - run: sudo apt-get -y -o Dpkg::Options::="--force-confnew" install docker-ce
       - name: Select correct tests
         run: |
           if [ "${GITHUB_EVENT_NAME}" = "schedule" ]; then
@@ -30,4 +25,5 @@ jobs:
       - name: Run the tests
         env:
           DISTRO: ${{ matrix.distro }}
-        run: make PYTEST_ADDOPTS="${PYTEST_ADDOPTS}" test-docker
+        # https://github.com/containers/podman/issues/14920
+        run: make PODMAN="sudo -E XDG_RUNTIME_DIR= podman" test-podman

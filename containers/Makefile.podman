@@ -2,7 +2,7 @@ DISTRO ?= fedora-latest fedora-rawhide
 
 PYTEST_ADDOPTS ?= -m 'standard and not long_running'
 
-PODMAN := sudo podman
+PODMAN ?= sudo podman
 
 .PHONY: test integration $(DISTRO)
 
