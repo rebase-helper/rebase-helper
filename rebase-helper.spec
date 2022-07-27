@@ -19,6 +19,7 @@ BuildRequires:  python3-setuptools
 BuildRequires:  python3-setuptools_scm
 BuildRequires:  python3-setuptools_scm_git_archive
 BuildRequires:  python3-rpm
+BuildRequires:  python3-rpkg
 BuildRequires:  python3-koji
 BuildRequires:  python3-pyquery
 BuildRequires:  python3-copr

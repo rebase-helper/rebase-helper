@@ -100,8 +100,12 @@ class HTTPServer:
                         hsh = data[hashtype].value
                         hashtype = hashtype.split('sum')[0]
                         if verify_hash(data['file'].file, hashtype, hsh):
-                            self.send_response(204)
+                            resp = b'OK'
+                            self.send_response(200)
+                            self.send_header('Content-Type', 'text/plain')
+                            self.send_header('Content-Length', len(resp))
                             self.end_headers()
+                            self.wfile.write(resp)
                         else:
                             self.send_error(500)
                 except (KeyError, IndexError):
