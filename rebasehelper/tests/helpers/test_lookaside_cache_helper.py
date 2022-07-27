@@ -57,14 +57,13 @@ class TestLookasideCacheHelper:
     def test_download(self, package, filename, hashtype, hsh):
         # pylint: disable=protected-access
         target = os.path.basename(filename)
-        LookasideCacheHelper._download_source('https://integration:4430/pkgs',
-                                              package,
-                                              filename,
-                                              hashtype,
-                                              hsh,
-                                              target)
+        cache = LookasideCacheHelper._get_cache(dict(
+            lookaside='https://integration:4430/pkgs',
+            lookaside_cgi='https://integration:4430/pkgs',
+            lookasidehash=hashtype))
+        cache.download('rpms/{}'.format(package), filename, hsh, target, hashtype)
         assert os.path.isfile(target)
-        assert LookasideCacheHelper._hash(target, hashtype) == hsh
+        assert cache.hash_file(target) == hsh
 
     @pytest.mark.parametrize('filename, hashtype, hsh', [
         ('documentation.tar.xz', 'md5', '03a77b3e59deec24c1d70a495e41602b'),
@@ -81,9 +80,8 @@ class TestLookasideCacheHelper:
     @pytest.mark.integration
     def test_upload(self, filename, hashtype, hsh):
         # pylint: disable=protected-access
-        LookasideCacheHelper._upload_source('https://integration:4430/pkgs',
-                                            'test',
-                                            '',
-                                            filename,
-                                            hashtype,
-                                            hsh)
+        cache = LookasideCacheHelper._get_cache(dict(
+            lookaside='https://integration:4430/pkgs',
+            lookaside_cgi='https://integration:4430/pkgs',
+            lookasidehash=hashtype))
+        cache.upload('rpms/test', filename, hsh)
