@@ -75,15 +75,7 @@ class KojiHelper:
             return session
         try:
             session.gssapi_login()
-        except Exception:  # pylint: disable=broad-except
-            pass
-        else:
-            return session
-        # fall back to kerberos login (doesn't work with python3)
-        exc = (koji.AuthError, koji.krbV.Krb5Error) if koji.krbV else koji.AuthError
-        try:
-            session.krb_login()
-        except exc as e:
+        except Exception as e:  # pylint: disable=broad-except
             raise RebaseHelperError('Login failed: {}'.format(str(e))) from e
         else:
             return session
