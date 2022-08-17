@@ -49,6 +49,8 @@ def get_requirements():
         'pyquery',
         'python-pam',
         'requests',
+        # for Python 3.6
+        'gssapi<1.8.1',
         'rpkg',
         'unidiff',
         'GitPython',
