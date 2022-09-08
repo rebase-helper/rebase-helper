@@ -44,6 +44,7 @@ class BugzillaHelper:
     DIST_GIT_REPO_URL = 'https://src.fedoraproject.org/rpms'
     BUGZILLA_REST_API_URL = 'https://bugzilla.redhat.com/rest'
     UPSTREAM_RELEASE_MONITORING_USERNAME = 'upstream-release-monitoring'
+    QUERY_TIMEOUT = 30  # give up after 30 seconds
 
     @classmethod
     def get_bugzilla_component(cls, bugzilla_id: str) -> str:
@@ -60,7 +61,8 @@ class BugzillaHelper:
             was not created by Upstream Release Monitoring.
 
         """
-        r = requests.get('{}/bug/{}'.format(cls.BUGZILLA_REST_API_URL, bugzilla_id))
+        r = requests.get('{}/bug/{}'.format(cls.BUGZILLA_REST_API_URL, bugzilla_id),
+                         timeout=cls.QUERY_TIMEOUT)
         if not r.ok:
             raise RebaseHelperError('Could not obtain data from bugzilla')
 
@@ -89,7 +91,8 @@ class BugzillaHelper:
             RebaseHelperError: If no such bugzilla exists.
 
         """
-        r = requests.get('{}/bug/{}/comment'.format(cls.BUGZILLA_REST_API_URL, bugzilla_id))
+        r = requests.get('{}/bug/{}/comment'.format(cls.BUGZILLA_REST_API_URL, bugzilla_id),
+                         timeout=cls.QUERY_TIMEOUT)
         if not r.ok:
             raise RebaseHelperError('Could not obtain data from bugzilla')
         version = None
