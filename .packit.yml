@@ -1,28 +1,43 @@
+specfile_path: rebase-helper.spec
+
+# name in upstream package repository or registry (e.g. in PyPI)
+upstream_package_name: rebasehelper
+# downstream (Fedora) RPM package name
+downstream_package_name: rebase-helper
+
+copy_upstream_release_description: true
+
+upstream_project_url: https://github.com/rebase-helper/rebase-helper
+issue_repository: https://github.com/rebase-helper/rebase-helper
+
+actions:
+  create-archive:
+    - python3 setup.py sdist --base-name rebase-helper --dist-dir .
+    - bash -c "ls -1t ./rebase-helper-*.tar.gz | head -n 1"
+  fix-spec-file:
+    - bash -c "rpmdev-bumpspec -c \"Rebuild $PACKIT_PROJECT_COMMIT\" -n $(python3 setup.py --version) ./rebase-helper.spec"
+
+srpm_build_deps:
+  - python3-pip # "python3 setup.py --version" needs it
+  - python3-setuptools_scm
+
 jobs:
   - job: copr_build
     trigger: pull_request
-    metadata:
-      targets:
-        - fedora-all
+    targets:
+      - fedora-all
+
   - job: propose_downstream
     trigger: release
-    metadata:
-      dist_git_branches:
-        - fedora-all
+    dist_git_branches:
+      - fedora-all
+
   - job: koji_build
     trigger: commit
-    metadata:
-      dist_git_branches:
-        - fedora-all
+    dist_git_branches:
+      - fedora-all
+
   - job: bodhi_update
     trigger: commit
-    metadata:
-      dist_git_branches:
-        - fedora-branched # rawhide updates are created automatically
-actions:
-  create-archive:
-  - "python3 setup.py sdist --base-name rebase-helper --dist-dir ."
-  - "bash -c 'ls -1t ./rebase-helper-*.tar.gz | head -n 1'"
-  fix-spec-file:
-  - bash -c "rpmdev-bumpspec -c \"Rebuild $PACKIT_PROJECT_COMMIT\" -n $(python3 setup.py --version) ./rebase-helper.spec"
-copy_upstream_release_description: true
+    dist_git_branches:
+      - fedora-branched # rawhide updates are created automatically
