@@ -4,25 +4,21 @@ jobs:
     metadata:
       targets:
         - fedora-all
-        - epel-8-x86_64
   - job: propose_downstream
     trigger: release
     metadata:
       dist_git_branches:
         - fedora-all
-        - epel8
   - job: koji_build
     trigger: commit
     metadata:
       dist_git_branches:
         - fedora-all
-        - epel-8
   - job: bodhi_update
     trigger: commit
     metadata:
       dist_git_branches:
         - fedora-branched # rawhide updates are created automatically
-        - epel-8
 actions:
   create-archive:
   - "python3 setup.py sdist --base-name rebase-helper --dist-dir ."
