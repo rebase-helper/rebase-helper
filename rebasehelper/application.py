@@ -26,11 +26,11 @@ import fnmatch
 import logging
 import os
 import shutil
-import urllib.parse
 from typing import Any, Dict, List, Optional, cast
 
 import git  # type: ignore
 from pkg_resources import parse_version
+from specfile.sources import Patch
 
 from rebasehelper.archive import Archive
 from rebasehelper.specfile import SpecFile, get_rebase_name
@@ -44,7 +44,6 @@ from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
 from rebasehelper.exceptions import SourcePackageBuildError, BinaryPackageBuildError
 from rebasehelper.results_store import results_store
 from rebasehelper.helpers.path_helper import PathHelper
-from rebasehelper.helpers.macro_helper import MacroHelper
 from rebasehelper.helpers.input_helper import InputHelper
 from rebasehelper.helpers.git_helper import GitHelper
 from rebasehelper.helpers.koji_helper import KojiHelper
@@ -104,17 +103,20 @@ class Application:
             self._check_workspace_dir()
 
             # verify all sources for the new version are present
-            missing_sources = [os.path.basename(s) for s in self.rebase_spec_file.sources
-                               if not os.path.isfile(os.path.basename(s))]
+            missing_sources = [
+                s.expanded_filename
+                for s in self.rebase_spec_file.sources
+                if not (self.rebase_spec_file.spec.sourcedir / s.expanded_filename).is_file()
+            ]
             if missing_sources:
                 raise RebaseHelperError('The following sources are missing: {}'.format(','.join(missing_sources)))
 
             if self.conf.update_sources:
-                sources = [os.path.basename(s) for s in self.spec_file.sources]
-                rebased_sources = [os.path.basename(s) for s in self.rebase_spec_file.sources]
+                sources = [s.expanded_filename for s in self.spec_file.sources]
+                rebased_sources = [s.expanded_filename for s in self.rebase_spec_file.sources]
                 uploaded = LookasideCacheHelper.update_sources(self.conf.lookaside_cache_preset,
                                                                self.rebased_sources_dir,
-                                                               self.rebase_spec_file.header.name,
+                                                               self.rebase_spec_file.spec.expanded_name,
                                                                sources, rebased_sources,
                                                                upload=not self.conf.skip_upload)
                 self._update_gitignore(uploaded, self.rebased_sources_dir)
@@ -142,7 +144,7 @@ class Application:
         :return:
         """
         self.spec_file = SpecFile(self.spec_file_path, self.execution_dir, self.kwargs['rpmmacros'],
-                                  self.conf.lookaside_cache_preset, self.conf.keep_comments)
+                                  self.conf.lookaside_cache_preset)
         # Check whether test suite is enabled at build time
         if not self.spec_file.is_test_suite_enabled():
             results_store.set_info_text('WARNING', 'Test suite is not enabled at build time.')
@@ -151,7 +153,7 @@ class Application:
 
         if not self.conf.sources:
             self.conf.sources = plugin_manager.versioneers.run(self.conf.versioneer,
-                                                               self.spec_file.header.name,
+                                                               self.spec_file.spec.expanded_name,
                                                                self.spec_file.category,
                                                                self.conf.versioneer_blacklist)
             if self.conf.sources:
@@ -167,16 +169,16 @@ class Application:
         if [True for ext in Archive.get_supported_archives() if self.conf.sources.endswith(ext)]:
             logger.verbose("argument passed as a new source is a file")
             version_string = self.spec_file.extract_version_from_archive_name(self.conf.sources,
-                                                                              self.spec_file.get_main_source())
+                                                                              self.spec_file.get_raw_main_source())
         else:
             logger.verbose("argument passed as a new source is a version")
             version_string = self.conf.sources
-        version, extra_version = SpecFile.split_version_string(version_string, self.spec_file.header.version)
+        version, extra_version = SpecFile.split_version_string(version_string, self.spec_file.spec.expanded_version)
         self.rebase_spec_file.set_version(version)
-        self.rebase_spec_file.set_extra_version(extra_version, version != self.spec_file.header.version)
+        self.rebase_spec_file.set_extra_version(extra_version, version != self.spec_file.spec.expanded_version)
 
-        oldver = parse_version(self.spec_file.header.version)
-        newver = parse_version(self.rebase_spec_file.header.version)
+        oldver = parse_version(self.spec_file.spec.expanded_version)
+        newver = parse_version(self.rebase_spec_file.spec.expanded_version)
         oldex = self.spec_file.parse_release()[2]
         newex = extra_version
 
@@ -209,21 +211,28 @@ class Application:
         the new name. Modifies the rebase_spec_file object to contain the correct
         paths.
         """
-        for source, index, source_type in self.rebase_spec_file.spc.sources:
-            if urllib.parse.urlparse(source).scheme or source_type == 0:
+        for source in self.rebase_spec_file.all_sources:
+            if source.remote:
                 continue
-            if os.path.exists(os.path.join(self.execution_dir, source)):
+            if os.path.exists(os.path.join(self.execution_dir, source.expanded_filename)):
                 continue
             # Find matching source in the old spec
-            sources = [n for n, i, t in self.spec_file.spc.sources if i == index and t == source_type]
-            if not sources:
-                logger.error('Failed to find the source corresponding to %s in old version spec', source)
+            old_source = next(iter(
+                s
+                for s in self.spec_file.all_sources
+                if type(s) == type(source)
+                and s.number == source.number
+            ), None)
+            if not old_source:
+                logger.error(
+                    'Failed to find the source corresponding to %s in old version spec',
+                    source.expanded_filename,
+                )
                 continue
-            source_old = sources[0]
 
             # rename the source
-            old_source_path = os.path.join(self.rebased_sources_dir, source_old)
-            new_source_path = os.path.join(self.rebased_sources_dir, source)
+            old_source_path = os.path.join(self.rebased_sources_dir, old_source.expanded_filename)
+            new_source_path = os.path.join(self.rebased_sources_dir, source.expanded_filename)
             logger.debug('Renaming %s to %s', old_source_path, new_source_path)
             try:
                 os.rename(old_source_path, new_source_path)
@@ -232,16 +241,22 @@ class Application:
 
             # prepend the Source/Path with rebased-sources directory in the specfile
             to_prepend = os.path.relpath(self.rebased_sources_dir, self.execution_dir)
-            tag = '{0}{1}'.format('Patch' if source_type == 2 else 'Source', index)
-            value = self.rebase_spec_file.get_raw_tag_value(tag)
-            self.rebase_spec_file.set_raw_tag_value(tag, os.path.join(to_prepend, value))
+            sources = (
+                self.rebase_spec_file.spec.patches
+                if isinstance(source, Patch)
+                else self.rebase_spec_file.spec.sources
+            )
+            with sources() as srcs:
+                next(
+                    s for s in srcs if s.number == source.number
+                ).location = os.path.join(to_prepend, source.location)
         self.rebase_spec_file.save()
 
     def _initialize_data(self):
         """Function fill dictionary with default data"""
         # Get all tarballs before self.kwargs initialization
-        self.old_sources = self.spec_file.get_archive()
-        new_sources = self.rebase_spec_file.get_archive()
+        self.old_sources = self.spec_file.get_main_source()
+        new_sources = self.rebase_spec_file.get_main_source()
 
         self.old_sources = os.path.abspath(self.old_sources)
         if new_sources:
@@ -252,8 +267,8 @@ class Application:
         else:
             self.new_sources = os.path.abspath(self.conf.sources)
         # Contains all sources except the main source
-        self.old_rest_sources = [os.path.abspath(x) for x in self.spec_file.get_sources()[1:]]
-        self.new_rest_sources = [os.path.abspath(x) for x in self.rebase_spec_file.get_sources()[1:]]
+        self.old_rest_sources = [os.path.abspath(x) for x in self.spec_file.get_other_sources()]
+        self.new_rest_sources = [os.path.abspath(x) for x in self.rebase_spec_file.get_other_sources()]
 
     def _find_spec_file(self) -> str:
         """Finds a spec file in the execution_dir directory.
@@ -450,7 +465,7 @@ class Application:
         # Generate patch
         self.rebased_repo.git.add(all=True)
         self.rebase_spec_file.update()
-        self.rebased_repo.index.commit(MacroHelper.expand(self.conf.changelog_entry, self.conf.changelog_entry))
+        self.rebased_repo.index.commit(self.rebase_spec_file.expand(self.conf.changelog_entry, self.conf.changelog_entry))
         patch = self.rebased_repo.git.format_patch('-1', stdout=True, stdout_as_string=False)
         with open(os.path.join(self.results_dir, constants.CHANGES_PATCH), 'wb') as f:
             f.write(patch)
@@ -491,10 +506,10 @@ class Application:
         Initialize git repository in the rebased directory
         :return: git.Repo instance of rebased_sources
         """
-        for source, _, source_type in self.spec_file.spc.sources:
+        for source in self.spec_file.all_sources:
             # copy only existing local sources
-            if not urllib.parse.urlparse(source).scheme and source_type == 1:
-                source_path = os.path.join(self.execution_dir, source)
+            if not source.remote:
+                source_path = os.path.join(self.execution_dir, source.filename)
                 if os.path.isfile(source_path):
                     shutil.copy(source_path, self.rebased_sources_dir)
 
@@ -538,8 +553,8 @@ class Application:
             koji_build_id = None
             results_dir = os.path.join(self.results_dir, '{}-build'.format(version), 'SRPM')
             spec = self.spec_file if version == 'old' else self.rebase_spec_file
-            package_name = spec.header.name
-            package_version = spec.header.version
+            package_name = spec.spec.expanded_name
+            package_version = spec.spec.expanded_version
             logger.info('Building source package for %s version %s', package_name, package_version)
 
             if version == 'old' and self.conf.get_old_build_from_koji:
@@ -600,8 +615,8 @@ class Application:
 
             if self.conf.build_tasks is None:
                 spec = self.spec_file if version == 'old' else self.rebase_spec_file
-                package_name = spec.header.name
-                package_version = spec.header.version
+                package_name = spec.spec.expanded_name
+                package_version = spec.spec.expanded_version
 
                 if version == 'old' and self.conf.get_old_build_from_koji:
                     koji_build_id, ver = KojiHelper.get_old_build_info(package_name, package_version)
@@ -757,7 +772,7 @@ class Application:
         self.rebase_spec_file.save()
         if not self.conf.non_interactive and \
                 InputHelper.get_message('Do you want to try it one more time'):
-            logger.info('Now it is time to make changes to  %s if necessary.', self.rebase_spec_file.path)
+            logger.info('Now it is time to make changes to  %s if necessary.', self.rebase_spec_file.spec.path)
         elif self.conf.non_interactive and changes_made:
             logger.info('Build log hooks made some changes to the SPEC file, starting the build process again.')
         else:
