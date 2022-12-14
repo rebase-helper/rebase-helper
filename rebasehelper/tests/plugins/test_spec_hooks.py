@@ -23,11 +23,10 @@
 #          František Nečas <fifinecas@seznam.cz>
 
 from textwrap import dedent
-from types import SimpleNamespace
 
 import pytest  # type: ignore
+from specfile.macros import Macro, MacroLevel
 
-from rebasehelper.tags import Tags
 from rebasehelper.plugins.spec_hooks.typo_fix import TypoFix
 from rebasehelper.plugins.spec_hooks.pypi_url_fix import PyPIURLFix
 from rebasehelper.plugins.spec_hooks.escape_macros import EscapeMacros
@@ -43,11 +42,15 @@ class TestSpecHook:
         }
     ])
     def test_typo_fix_spec_hook(self, mocked_spec_object):
-        assert '- This is chnagelog entry with some indentional typos' in \
-               mocked_spec_object.spec_content.section('%changelog')
+        assert (
+            '- This is chnagelog entry with some indentional typos'
+            in mocked_spec_object.spec.sections().content.changelog # pylint: disable=no-member
+        )
         TypoFix.run(mocked_spec_object, mocked_spec_object)
-        assert '- This is changelog entry with some intentional typos' in \
-               mocked_spec_object.spec_content.section('%changelog')
+        assert (
+            '- This is changelog entry with some intentional typos'
+            in mocked_spec_object.spec.sections().content.changelog # pylint: disable=no-member
+        )
 
     @pytest.mark.parametrize('spec_attributes', [
         {
@@ -63,7 +66,14 @@ class TestSpecHook:
                 /usr/share/test1.txt
                 /no/macros/here
                 """),
-            'macros': {},
+            'macros':
+                [
+                    Macro('_bindir', None, '/usr/bin', MacroLevel.MACROFILES, False),
+                    Macro('_libdir', None, '/usr/lib', MacroLevel.MACROFILES, False),
+                    Macro('_datadir', None, '/usr/share', MacroLevel.MACROFILES, False),
+                    Macro('_mandir', None, '%{_datadir}/man', MacroLevel.MACROFILES, False),
+                    Macro('_sysconfdir', None, '/etc', MacroLevel.MACROFILES, False),
+                ]
         }
     ])
     def test_paths_to_rpm_macros_spec_hook(self, mocked_spec_object):
@@ -80,8 +90,9 @@ class TestSpecHook:
             '/no/macros/here',
         ]
         PathsToRPMMacros.run(mocked_spec_object, mocked_spec_object)
-        assert files == mocked_spec_object.spec_content.section('%files')
-        assert files_devel == mocked_spec_object.spec_content.section('%files devel')
+        sections = mocked_spec_object.spec.sections().content # pylint: disable=no-member
+        assert files == list(sections.files)
+        assert files_devel == list(getattr(sections, 'files devel'))
 
     @pytest.mark.parametrize('spec_attributes', [
         {
@@ -95,11 +106,15 @@ class TestSpecHook:
     ])
     def test_escape_macros_spec_hook(self, mocked_spec_object):
         EscapeMacros.run(mocked_spec_object, mocked_spec_object)
-        build = mocked_spec_object.spec_content.section('%build')
-        assert build[0] == "autoreconf -vi # Unescaped macros %%name %%{name}"
+        assert (
+            mocked_spec_object.spec.sections().content.build[0] # pylint: disable=no-member
+            == "autoreconf -vi # Unescaped macros %%name %%{name}"
+        )
         # Test that the string after `#` wasn't recognized as a comment.
-        source9 = mocked_spec_object.get_raw_tag_value('Source9')
-        assert source9 == "https://test.com/#/1.0/%{name}-hardcoded-version-1.0.2.tar.gz"
+        assert (
+            mocked_spec_object.spec.tags().content.source9.value # pylint: disable=no-member
+            == "https://test.com/#/1.0/%{name}-hardcoded-version-1.0.2.tar.gz"
+        )
 
     @pytest.mark.parametrize('replace_with_macro', [
         True,
@@ -112,39 +127,36 @@ class TestSpecHook:
         {
             'spec_content': dedent("""\
                 Version: 1.0.2
+                Release: 0.1.b1
                 Source9: https://test.com/#/1.0/%{name}-hardcoded-version-1.0.2b1.tar.gz
                 Recommends: test > 1.0.2
 
                 %changelog
                 * Wed Apr 26 2017 Nikola Forró <nforro@redhat.com> - 1.0.2-34
                 - Update to 1.0.2
-                """),
-            'header': SimpleNamespace(version='1.0.2', release='0.1.b1'),
+                """)
         }
     ])
     def test_replace_old_version_spec_hook(self, mocked_spec_object, mocked_spec_object_copy, replace_with_macro):
-        mocked_spec_object_copy.header.version = '1.1.0'
-        mocked_spec_object_copy.header.release = '1'
-        mocked_spec_object_copy.set_raw_tag_value('Version', '1.1.0')
+        mocked_spec_object_copy.spec.version = '1.1.0'
+        mocked_spec_object_copy.spec.release = '1'
         ReplaceOldVersion.run(mocked_spec_object, mocked_spec_object_copy,
                               replace_old_version_with_macro=replace_with_macro)
-        # The spec is not saved due to mocking, refresh tags for the assertions
-        mocked_spec_object_copy.tags = Tags(mocked_spec_object_copy.spec_content, mocked_spec_object_copy.spec_content)
 
         # Check if the version has been updated
-        test_source = mocked_spec_object_copy.get_raw_tag_value('Source9')
+        test_source = mocked_spec_object_copy.spec.sources().content[0].location # pylint: disable=no-member
         if replace_with_macro:
             assert test_source == 'https://test.com/#/1.1/%{name}-hardcoded-version-%{version}.tar.gz'
         else:
             assert test_source == 'https://test.com/#/1.1/%{name}-hardcoded-version-1.1.0.tar.gz'
 
         # Check if dependency and Version tags are ignored
-        assert mocked_spec_object_copy.get_raw_tag_value('Recommends') == 'test > 1.0.2'
-        assert mocked_spec_object_copy.get_raw_tag_value('Version') == '1.1.0'
+        tags = mocked_spec_object_copy.spec.tags().content # pylint: disable=no-member
+        assert tags.recommends.value == 'test > 1.0.2'
+        assert tags.version.value == '1.1.0'
 
         # Check if version in changelog hasn't been changed
-        changelog = mocked_spec_object_copy.spec_content.section('%changelog')
-        assert '1.0.2' in changelog[0]
+        assert '1.0.2' in mocked_spec_object_copy.spec.sections().content.changelog[0] # pylint: disable=no-member
 
     @pytest.mark.parametrize('spec_attributes', [
         {
@@ -160,5 +172,6 @@ class TestSpecHook:
             'URL': 'https://pypi.org/project/%{name}',
             'Source0': 'https://files.pythonhosted.org/.../%{name}.%{version}.tar.gz',
         }
+        tags = mocked_spec_object.spec.tags().content # pylint: disable=no-member
         for tag, value in expected.items():
-            assert value == mocked_spec_object.get_raw_tag_value(tag)
+            assert value == getattr(tags, tag).value

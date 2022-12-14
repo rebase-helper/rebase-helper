@@ -23,7 +23,6 @@
 #          František Nečas <fifinecas@seznam.cz>
 
 from rebasehelper.plugins.spec_hooks import BaseSpecHook
-from rebasehelper.helpers.macro_helper import MacroHelper
 
 
 class PathsToRPMMacros(BaseSpecHook):
@@ -31,14 +30,11 @@ class PathsToRPMMacros(BaseSpecHook):
 
     @classmethod
     def run(cls, spec_file, rebase_spec_file, **kwargs):
-        macros = [m for m in rebase_spec_file.macros if m['name'] in MacroHelper.MACROS_WHITELIST]
-        macros = MacroHelper.expand_macros(macros)
-        # ensure maximal greediness
-        macros.sort(key=lambda k: len(k['value']), reverse=True)
-
-        for sec_name, sec_content in rebase_spec_file.spec_content.sections:
-            if sec_name.startswith('%files'):
-                for index, line in enumerate(sec_content):
-                    new_path = MacroHelper.substitute_path_with_macros(line, macros)
-                    sec_content[index] = new_path
+        with rebase_spec_file.spec.sections() as sections:
+            for section in sections:
+                if not section.normalized_id.startswith('files'):
+                    continue
+                for index, line in enumerate(section):
+                    new_path = rebase_spec_file.substitute_path_with_macros(line)
+                    section[index] = new_path
         rebase_spec_file.save()

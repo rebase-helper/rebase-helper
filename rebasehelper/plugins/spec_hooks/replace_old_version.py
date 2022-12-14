@@ -22,16 +22,15 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-import collections
 import re
-import urllib.parse
-from typing import Any, Dict, List, Pattern, Tuple, Set
+from typing import Any, List, Pattern, Tuple
+
+from specfile.sources import TagSource
 
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.types import Options
 from rebasehelper.plugins.spec_hooks import BaseSpecHook
 from rebasehelper.specfile import SpecFile
-from rebasehelper.helpers.macro_helper import MacroHelper
 
 
 class ReplaceOldVersion(BaseSpecHook):
@@ -81,8 +80,8 @@ class ReplaceOldVersion(BaseSpecHook):
             Subversions 1.2, 1.2.3, 1.2.3.4 would be created from version 1.2.3.4.
 
         """
-        old = spec_file.get_version()
-        new = rebase_spec_file.get_version()
+        old = spec_file.spec.expanded_version
+        new = rebase_spec_file.spec.expanded_version
         version_re = r'([\ /\-\s]){}([/.\-\s]|$)'
         # Allow any character after whole version to replace strings such as
         # 1.0.1bc1
@@ -116,34 +115,35 @@ class ReplaceOldVersion(BaseSpecHook):
         replace_with_macro = bool(kwargs.get('replace_old_version_with_macro'))
 
         subversion_patterns = cls._create_possible_replacements(spec_file, rebase_spec_file, replace_with_macro)
-        examined_lines: Dict[int, Set[int]] = collections.defaultdict(set)
-        for tag in rebase_spec_file.tags.filter():
-            examined_lines[tag.section_index].add(tag.line)
-            value = rebase_spec_file.get_raw_tag_value(tag.name, tag.section_index)
-            if not value or tag.name in cls.IGNORED_TAGS:
-                continue
-            scheme = urllib.parse.urlparse(value).scheme
-            if (tag.name.startswith('Patch') or tag.name.startswith('Source')) and not scheme:
-                # skip local sources
-                continue
-
-            # replace the whole version first
-            updated_value = subversion_patterns[0][0].sub(subversion_patterns[0][1], value)
-            # replace subversions only for remote sources/patches
-            if tag.name.startswith('Patch') or tag.name.startswith('Source'):
-                for sub_pattern, repl in subversion_patterns[1:]:
-                    updated_value = sub_pattern.sub(repl, updated_value)
-            rebase_spec_file.set_raw_tag_value(tag.name, updated_value, tag.section_index)
-
-        for sec_index, (sec_name, section) in enumerate(rebase_spec_file.spec_content.sections):
-            if sec_name.startswith('%changelog'):
-                continue
-            for index, line in enumerate(section):
-                tag_ignored = any(MacroHelper.expand(line, line).startswith(tag) for tag in cls.IGNORED_TAGS)
-                if index in examined_lines[sec_index] or tag_ignored:
+        with rebase_spec_file.spec.sections() as sections:
+            for section in sections:
+                if section.normalized_id.startswith('changelog'):
                     continue
-                start, end = spec_file.spec_content.get_comment_span(line, sec_name)
-                updated_line = subversion_patterns[0][0].sub(subversion_patterns[0][1], line[:start])
-                section[index] = updated_line + line[start:end]
-
-        rebase_spec_file.save()
+                elif section.normalized_id.startswith('package'):
+                    with rebase_spec_file.spec.tags(section) as tags:
+                        for tag in tags:
+                            for index, line in enumerate(tag.comments._preceding_lines): # pylint: disable=protected-access
+                                start, end = spec_file.get_comment_span(line, section.is_script)
+                                updated_line = subversion_patterns[0][0].sub(subversion_patterns[0][1], line[:start])
+                                tag.comments._preceding_lines[index] = updated_line + line[start:end] # pylint: disable=protected-access
+                            if not tag.value or tag.normalized_name in cls.IGNORED_TAGS:
+                                continue
+                            if (
+                                tag.normalized_name.startswith("Source")
+                                or tag.normalized_name.startswith("Patch")
+                            ) and not TagSource(tag).remote:
+                                # skip local sources
+                                continue
+                            # replace the whole version first
+                            updated_value = subversion_patterns[0][0].sub(subversion_patterns[0][1], tag.value)
+                            # replace subversions only for remote sources/patches
+                            if tag.normalized_name.startswith('Source') or tag.normalized_name.startswith('Patch'):
+                                for sub_pattern, repl in subversion_patterns[1:]:
+                                    updated_value = sub_pattern.sub(repl, updated_value)
+                            tag.value = updated_value
+                    continue
+                for index, line in enumerate(section):
+                    start, end = spec_file.get_comment_span(line, section.is_script)
+                    updated_line = subversion_patterns[0][0].sub(subversion_patterns[0][1], line[:start])
+                    section[index] = updated_line + line[start:end]
+            rebase_spec_file.save()
