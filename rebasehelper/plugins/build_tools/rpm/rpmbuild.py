@@ -29,7 +29,7 @@ from typing import cast
 from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.helpers.input_helper import InputHelper
 from rebasehelper.helpers.path_helper import PathHelper
-from rebasehelper.helpers.rpm_helper import RpmHelper
+from rebasehelper.helpers.rpm_helper import RpmHelper, RpmHeader
 from rebasehelper.logger import CustomLogger
 from rebasehelper.plugins.build_tools import RpmbuildTemporaryEnvironment
 from rebasehelper.plugins.build_tools.rpm import BuildToolBase
@@ -92,10 +92,10 @@ class Rpmbuild(BuildToolBase):  # pylint: disable=abstract-method
 
         :param spec: SpecFile object
         """
-        if not RpmHelper.all_packages_installed(spec.header.requires):
+        if not RpmHelper.all_packages_installed(RpmHeader(spec.spec.rpm_spec.sourceHeader).requires):
             question = '\nSome build dependencies are missing. Do you want to install them now'
             if conf.non_interactive or InputHelper.get_message(question):
-                if RpmHelper.install_build_dependencies(spec.path, assume_yes=conf.non_interactive) != 0:
+                if RpmHelper.install_build_dependencies(spec.spec.path, assume_yes=conf.non_interactive) != 0:
                     raise RebaseHelperError('Failed to install build dependencies')
 
     @classmethod
@@ -112,7 +112,7 @@ class Rpmbuild(BuildToolBase):  # pylint: disable=abstract-method
         """
         sources = spec.get_sources()
         patches = [p.path for p in spec.get_patches()]
-        with RpmbuildTemporaryEnvironment(sources, patches, spec.path, results_dir) as tmp_env:
+        with RpmbuildTemporaryEnvironment(sources, patches, spec.spec.path, results_dir) as tmp_env:
             env = tmp_env.env()
             tmp_dir = tmp_env.path()
             tmp_results_dir = env.get(RpmbuildTemporaryEnvironment.TEMPDIR_RESULTS)

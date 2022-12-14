@@ -105,7 +105,7 @@ class Mock(BuildToolBase):  # pylint: disable=abstract-method
         """
         sources = spec.get_sources()
         patches = [p.path for p in spec.get_patches()]
-        with MockTemporaryEnvironment(sources, patches, spec.path, results_dir) as tmp_env:
+        with MockTemporaryEnvironment(sources, patches, spec.spec.path, results_dir) as tmp_env:
             env = tmp_env.env()
             tmp_results_dir = env.get(MockTemporaryEnvironment.TEMPDIR_RESULTS)
             rpms, logs = cls._build_rpm(srpm, tmp_results_dir, results_dir,
