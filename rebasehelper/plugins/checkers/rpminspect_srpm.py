@@ -27,9 +27,10 @@ import os
 
 from typing import Optional, cast
 
+from specfile.utils import NEVR
+
 from rebasehelper.logger import CustomLogger
 from rebasehelper.results_store import results_store
-from rebasehelper.helpers.rpm_helper import RpmHelper
 from rebasehelper.plugins.checkers import CheckerCategory
 from rebasehelper.plugins.checkers.rpminspect import Rpminspect
 
@@ -50,7 +51,7 @@ class RpminspectSrpm(Rpminspect):
         result = {'path': cls.get_checker_output_dir_short(), 'files': [], 'checks': {}}
         old_pkg = results_store.get_old_build()['srpm']
         new_pkg = results_store.get_new_build()['srpm']
-        name = RpmHelper.split_nevra(os.path.basename(old_pkg))['name']
+        name = NEVR.from_string(os.path.basename(old_pkg)).name
         outfile, pkg_data = cls.run_rpminspect(cls.results_dir, old_pkg, new_pkg)
         result['files'].append(os.path.basename(outfile))
         result['checks'][name] = pkg_data

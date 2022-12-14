@@ -27,9 +27,10 @@ import os
 
 from typing import Optional, cast
 
+from specfile.utils import NEVR
+
 from rebasehelper.logger import CustomLogger
 from rebasehelper.results_store import results_store
-from rebasehelper.helpers.rpm_helper import RpmHelper
 from rebasehelper.plugins.checkers import CheckerCategory
 from rebasehelper.plugins.checkers.rpminspect import Rpminspect
 
@@ -53,8 +54,8 @@ class RpminspectRpm(Rpminspect):
         for old_pkg in old_pkgs:
             if 'debuginfo' in old_pkg:
                 continue
-            name = RpmHelper.split_nevra(os.path.basename(old_pkg))['name']
-            found = [x for x in new_pkgs if RpmHelper.split_nevra(os.path.basename(x))['name'] == name]
+            name = NEVR.from_string(os.path.basename(old_pkg)).name
+            found = [x for x in new_pkgs if NEVR.from_string(os.path.basename(x)).name == name]
             if not found:
                 logger.warning('New version of package %s was not found!', name)
                 continue
