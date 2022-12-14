@@ -24,15 +24,15 @@
 
 import copy
 import os
+import re
 import shutil
+import types
 
 import pytest  # type: ignore
-import rpm  # type: ignore
+
+from specfile import Specfile
 
 from rebasehelper.specfile import SpecFile
-from rebasehelper.spec_content import SpecContent
-from rebasehelper.tags import Tags
-from rebasehelper.helpers.macro_helper import MacroHelper
 
 
 TESTS_DIR: str = os.path.dirname(__file__)
@@ -56,27 +56,49 @@ def spec_object(workdir):  # pylint: disable=redefined-outer-name
     return SpecFile(SPEC_FILE, workdir)
 
 
+class MockedRpmSpec:
+    def __init__(self, parsed):
+        self.parsed = parsed
+
+
+class MockedParser:
+    def __init__(self, content):
+        self.spec = MockedRpmSpec(content)
+
+    def parse(self, content, *_):
+        self.spec.parsed = content
+
+
 @pytest.fixture
 def mocked_spec_object(spec_attributes):
     spec = SpecFile.__new__(SpecFile)
     spec.save = lambda: None
+    spec_content = ''
+    active_macros = []
     for attribute, value in spec_attributes.items():
-        if attribute == 'macros':
-            for macro, properties in value.items():
-                rpm.addMacro(macro, properties.get('value', ''))
-            macros = MacroHelper.dump()
-            for macro, properties in value.items():
-                for m in macros:
-                    if m['name'] == macro:
-                        for prop, v in properties.items():
-                            if prop != 'value':
-                                m[prop] = v
-            value = macros
-        if attribute == 'spec_content' and isinstance(value, str):
-            value = SpecContent(value)
+        if attribute == 'spec_content':
+            spec_content = value
+            continue
+        elif attribute == 'macros':
+            active_macros = value.copy()
         setattr(spec, attribute, value)
-    if hasattr(spec, 'spec_content') and not hasattr(spec, 'tags'):
-        spec.tags = Tags(spec.spec_content, spec.spec_content)
+    spec.spec = Specfile.__new__(Specfile)
+    spec.spec.autosave = False
+    spec.spec.save = lambda: None
+    spec.spec._lines = spec_content.splitlines()  # pylint: disable=protected-access
+    spec.spec._parser = MockedParser(spec_content)  # pylint: disable=protected-access
+    spec.spec.get_active_macros = lambda: active_macros
+    def expand(self, expression, **_):
+        macros = self.get_active_macros()
+        def replace(match):
+            if match.group(2).count("!") % 2 > 0:
+                return ''
+            return next((m.body for m in macros if m.name == match.group(3)), '')
+        macro_re = re.compile(r'%({([!?]*))?(\w+)(?(1)})')
+        while macro_re.search(expression):
+            expression = macro_re.sub(replace, expression)
+        return expression
+    spec.spec.expand = types.MethodType(expand, spec.spec)
     return spec
 
 
