@@ -27,9 +27,10 @@ import json
 
 from typing import Any, Dict, Tuple
 
+from specfile.utils import NEVR
+
 from rebasehelper.constants import ENCODING
 from rebasehelper.exceptions import CheckerNotFoundError, RebaseHelperError
-from rebasehelper.helpers.rpm_helper import RpmHelper
 from rebasehelper.helpers.process_helper import ProcessHelper
 from rebasehelper.plugins.checkers import BaseChecker
 
@@ -123,7 +124,7 @@ class Rpminspect(BaseChecker):  # pylint: disable=abstract-method
 
         """
         cmd = [cls.CMD, '-F', 'json']
-        pkg_name = RpmHelper.split_nevra(os.path.basename(new_pkg))['name']
+        pkg_name = NEVR.from_string(os.path.basename(new_pkg)).name
         cmd.append(old_pkg)
         cmd.append(new_pkg)
 

@@ -27,6 +27,8 @@ import os
 import re
 from typing import Dict, Optional, cast
 
+from specfile.utils import NEVR
+
 from rebasehelper.constants import ENCODING
 from rebasehelper.exceptions import RebaseHelperError, CheckerNotFoundError
 from rebasehelper.logger import CustomLogger
@@ -78,14 +80,14 @@ class AbiPkgDiff(BaseChecker):
 
     @classmethod
     def _find_debuginfo(cls, debug, pkg):
-        name = RpmHelper.split_nevra(os.path.basename(pkg))['name']
+        name = NEVR.from_string(os.path.basename(pkg)).name
         debuginfo = '{}-debuginfo'.format(name)
-        find = [x for x in debug if RpmHelper.split_nevra(os.path.basename(x))['name'] == debuginfo]
+        find = [x for x in debug if NEVR.from_string(os.path.basename(x)).name == debuginfo]
         if find:
             return find[0]
         srpm = RpmHelper.get_header_from_rpm(pkg).sourcerpm
-        debuginfo = '{}-debuginfo'.format(RpmHelper.split_nevra(srpm)['name'])
-        find = [x for x in debug if RpmHelper.split_nevra(os.path.basename(x))['name'] == debuginfo]
+        debuginfo = '{}-debuginfo'.format(NEVR.from_string(srpm).name)
+        find = [x for x in debug if NEVR.from_string(os.path.basename(x)).name == debuginfo]
         if find:
             return find[0]
         return None
@@ -106,8 +108,8 @@ class AbiPkgDiff(BaseChecker):
             if debug:
                 command.append('--d1')
                 command.append(debug)
-            old_name = RpmHelper.split_nevra(os.path.basename(pkg))['name']
-            find = [x for x in rest_pkgs_new if RpmHelper.split_nevra(os.path.basename(x))['name'] == old_name]
+            old_name = NEVR.from_string(os.path.basename(pkg)).name
+            find = [x for x in rest_pkgs_new if NEVR.from_string(os.path.basename(x)).name == old_name]
             if not find:
                 logger.warning('New version of package %s was not found!', old_name)
                 continue

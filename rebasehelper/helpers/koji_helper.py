@@ -31,9 +31,10 @@ import time
 
 from typing import List, cast
 
+from specfile.utils import NEVRA
+
 from rebasehelper.exceptions import RebaseHelperError
 from rebasehelper.helpers.console_helper import ConsoleHelper
-from rebasehelper.helpers.rpm_helper import RpmHelper
 from rebasehelper.helpers.download_helper import DownloadHelper
 from rebasehelper.logger import CustomLogger
 
@@ -257,9 +258,9 @@ class KojiHelper:
                         if task['state'] != koji.TASK_STATES['CLOSED']:
                             continue
                         if local_path not in rpms:
-                            nevra = RpmHelper.split_nevra(fn)
+                            nevra = NEVRA.from_string(fn)
                             # FIXME: multiple arches
-                            download = nevra['arch'] in ['noarch', 'x86_64']
+                            download = nevra.arch in ['noarch', 'x86_64']
                             if download:
                                 rpms.append(local_path)
                     else:
