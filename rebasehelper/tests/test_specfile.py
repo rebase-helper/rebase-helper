@@ -22,23 +22,14 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
-import locale
 import os
 from typing import List
 from textwrap import dedent
 
 import pytest  # type: ignore
-import rpm  # type: ignore
+from specfile.macros import Macro, MacroLevel
 
-from rebasehelper.tags import Tag
 from rebasehelper.specfile import SpecFile
-
-
-@pytest.fixture(autouse=True)
-def rpm_cleanup():
-    # Some tests change macro values. This can influence other tests.
-    # Prevent it by resetting the macros before each test.
-    rpm.reloadConfig()
 
 
 class TestSpecFile:
@@ -78,7 +69,7 @@ class TestSpecFile:
         NEW_VERSION = '1.2.3.4.5'
         spec_object.set_version(NEW_VERSION)
         spec_object.save()
-        assert spec_object.header.version == NEW_VERSION
+        assert spec_object.spec.expanded_version == NEW_VERSION
 
     @pytest.mark.parametrize('spec_attributes, sources', [
         (
@@ -105,14 +96,14 @@ class TestSpecFile:
         assert mocked_spec_object._get_raw_source_string(None) == None
 
     def test_old_tarball(self, spec_object):
-        assert spec_object.get_archive() == self.OLD_ARCHIVE
+        assert spec_object.get_main_source() == self.OLD_ARCHIVE
 
     def test_get_sources(self, workdir, spec_object):
         sources = [self.SOURCE_1, self.SOURCE_5, self.SOURCE_6, self.OLD_ARCHIVE]
         sources = [os.path.join(workdir, f) for f in sources]
         assert len(set(sources).intersection(set(spec_object.get_sources()))) == 4
         # The Source0 has to be always in the beginning
-        assert spec_object.get_archive() == 'test-1.0.2.tar.xz'
+        assert spec_object.get_main_source() == 'test-1.0.2.tar.xz'
 
     def test_get_patches(self, workdir, spec_object):
         expected_patches = {0: [os.path.join(workdir, self.PATCH_1), 1],
@@ -121,7 +112,7 @@ class TestSpecFile:
                             3: [os.path.join(workdir, self.PATCH_4), 4]}
         patches = {}
         for index, p in enumerate(spec_object.get_patches()):
-            patches[index] = [p.path, p.index]
+            patches[index] = [p.path, p.number]
         assert patches == expected_patches
 
     def test_split_version_string(self):
@@ -133,33 +124,33 @@ class TestSpecFile:
         assert SpecFile.split_version_string('1.1.3~rc6', '1.1.3') == ('1.1.3', 'rc6')
         assert SpecFile.split_version_string('1.1.1d', '1.1.1c') == ('1.1.1d', None)
 
-    def test_extract_version_from_archive_name(self):
+    def test_extract_version_from_archive_name(self, spec_object):
         # Basic tests
-        assert SpecFile.extract_version_from_archive_name('test-1.0.1.tar.gz', '') == '1.0.1'
-        assert SpecFile.extract_version_from_archive_name('/home/user/test-1.0.1.tar.gz', '') == '1.0.1'
-        assert SpecFile.extract_version_from_archive_name('test-1.0.1.tar.gz',
-                                                          'ftp://ftp.test.org/test-%{version}.tar.gz') == '1.0.1'
-        assert SpecFile.extract_version_from_archive_name('/home/user/test-1.0.1.tar.gz',
-                                                          'ftp://ftp.test.org/test-%{version}.tar.gz') == '1.0.1'
+        assert spec_object.extract_version_from_archive_name('test-1.0.1.tar.gz', '') == '1.0.1'
+        assert spec_object.extract_version_from_archive_name('/home/user/test-1.0.1.tar.gz', '') == '1.0.1'
+        assert spec_object.extract_version_from_archive_name('test-1.0.1.tar.gz',
+                                                             'ftp://ftp.test.org/test-%{version}.tar.gz') == '1.0.1'
+        assert spec_object.extract_version_from_archive_name('/home/user/test-1.0.1.tar.gz',
+                                                             'ftp://ftp.test.org/test-%{version}.tar.gz') == '1.0.1'
         # Real world tests
         name = 'http://www.cups.org/software/%{version}/cups-%{version}-source.tar.bz2'
-        assert SpecFile.extract_version_from_archive_name('cups-1.7.5-source.tar.bz2',
-                                                          name) == '1.7.5'
+        assert spec_object.extract_version_from_archive_name('cups-1.7.5-source.tar.bz2',
+                                                             name) == '1.7.5'
         name = 'ftp://ftp.isc.org/isc/bind9/%{VERSION}/bind-%{VERSION}.tar.gz'
-        assert SpecFile.extract_version_from_archive_name('bind-9.9.5rc2.tar.gz',
-                                                          name) == '9.9.5rc2'
+        assert spec_object.extract_version_from_archive_name('bind-9.9.5rc2.tar.gz',
+                                                             name) == '9.9.5rc2'
         name = 'http://www.thekelleys.org.uk/dnsmasq/%{?extrapath}%{name}-%{version}%{?extraversion}.tar.xz'
-        assert SpecFile.extract_version_from_archive_name('dnsmasq-2.69rc1.tar.xz',
-                                                          name) == '2.69rc1'
+        assert spec_object.extract_version_from_archive_name('dnsmasq-2.69rc1.tar.xz',
+                                                             name) == '2.69rc1'
         name = 'http://downloads.sourceforge.net/%{name}/%{name}-%{version}%{?prever:-%{prever}}.tar.xz'
-        assert SpecFile.extract_version_from_archive_name('log4cplus-1.1.3-rc3.tar.xz',
-                                                          name) == '1.1.3-rc3'
+        assert spec_object.extract_version_from_archive_name('log4cplus-1.1.3-rc3.tar.xz',
+                                                             name) == '1.1.3-rc3'
         name = 'http://downloads.sourceforge.net/%{name}/%{name}-%{version}%{?prever:_%{prever}}.tar.xz'
-        assert SpecFile.extract_version_from_archive_name('log4cplus-1.1.3_rc3.tar.xz',
-                                                          name) == '1.1.3_rc3'
+        assert spec_object.extract_version_from_archive_name('log4cplus-1.1.3_rc3.tar.xz',
+                                                             name) == '1.1.3_rc3'
         name = 'http://download.gnome.org/sources/libsigc++/%{release_version}/libsigc++-%{version}.tar.xz'
-        assert SpecFile.extract_version_from_archive_name('libsigc++-2.10.0.tar.xz',
-                                                          name) == '2.10.0'
+        assert spec_object.extract_version_from_archive_name('libsigc++-2.10.0.tar.xz',
+                                                             name) == '2.10.0'
 
     @pytest.mark.parametrize('spec_attributes, main_files', [
         (
@@ -170,7 +161,7 @@ class TestSpecFile:
                     %files test
                     """)
             },
-            '%files'
+            'files'
         ),
         (
             {
@@ -241,30 +232,33 @@ class TestSpecFile:
                 %prep
                 %setup -q -c -a 5
                 """),
-            'get_release': lambda: '34',
             'macros':
-                {
-                    'name': {'value': 'test', 'level': -3},
-                    'version': {'value': '1.0.2', 'level': -3},
-                },
+                [
+                    Macro('release', None, '34', MacroLevel.SPEC, True),
+                    Macro('release_str', None, '%{release}%{?dist}', MacroLevel.SPEC, True),
+                    Macro('name', None, 'test', MacroLevel.SPEC, False),
+                    Macro('version', None, '1.0.2', MacroLevel.SPEC, False),
+                ],
         }
     ])
     def test_update_setup_dirname(self, mocked_spec_object):
         mocked_spec_object.set_extra_version('rc1', False)
 
-        prep = mocked_spec_object.spec_content.section('%prep')
+        prep = mocked_spec_object.spec.sections().content.prep # pylint: disable=no-member
         mocked_spec_object.update_setup_dirname('test-1.0.2')
-        assert mocked_spec_object.spec_content.section('%prep') == prep
+        assert mocked_spec_object.spec.sections().content.prep == prep # pylint: disable=no-member
 
         mocked_spec_object.update_setup_dirname('test-1.0.2rc1')
-        prep = mocked_spec_object.spec_content.section('%prep')
-        setup = [l for l in prep if l.startswith('%setup')][0]
-        assert '-n %{name}-%{version}rc1' in setup
+        assert (
+            mocked_spec_object.spec.prep().content.setup.options.n # pylint: disable=no-member
+            == '%{name}-%{version}rc1'
+        )
 
         mocked_spec_object.update_setup_dirname('test-1.0.2-rc1')
-        prep = mocked_spec_object.spec_content.section('%prep')
-        setup = [l for l in prep if l.startswith('%setup')][0]
-        assert '-n %{name}-%{version}-rc1' in setup
+        assert (
+            mocked_spec_object.spec.prep().content.setup.options.n # pylint: disable=no-member
+            == '%{name}-%{version}-rc1'
+        )
 
     def test_find_archive_target_in_prep(self, spec_object):
         target = spec_object.find_archive_target_in_prep('documentation.tar.xz')
@@ -275,7 +269,6 @@ class TestSpecFile:
     @pytest.mark.parametrize('spec_attributes, kwargs, expected_content', [
         (
             {
-                'keep_comments': False,
                 'removed_patches': [],
                 'spec_content': dedent("""\
                     Patch0:    0.patch
@@ -293,7 +286,7 @@ class TestSpecFile:
                     """),
             },
             {
-                'patches':
+                'patches_dict':
                     {
                         'deleted': ['2.patch'],
                         'inapplicable': ['1.patch'],
@@ -316,7 +309,6 @@ class TestSpecFile:
         ),
         (
             {
-                'keep_comments': False,
                 'removed_patches': [],
                 'spec_content': dedent("""\
                     Patch0:    0.patch
@@ -334,7 +326,7 @@ class TestSpecFile:
                     """),
             },
             {
-                'patches':
+                'patches_dict':
                     {
                         'deleted': ['2.patch'],
                         'inapplicable': ['1.patch'],
@@ -357,7 +349,6 @@ class TestSpecFile:
         ),
         (
             {
-                'keep_comments': False,
                 'removed_patches': [],
                 'spec_content': dedent("""\
                     Patch0:     0.patch
@@ -371,7 +362,7 @@ class TestSpecFile:
                     """),
             },
             {
-                'patches':
+                'patches_dict':
                     {
                         'deleted': ['1.patch'],
                     },
@@ -382,48 +373,15 @@ class TestSpecFile:
             
             Patch2:     2.patch
             """),
-        ),
-        (
-            {
-                'keep_comments': True,
-                'removed_patches': [],
-                'spec_content': dedent("""\
-                Patch0:     0.patch
-
-
-                # Patch comment
-                # line2
-                Patch1:     1.patch
-
-                Patch2:     2.patch
-                """),
-            },
-            {
-                'patches':
-                    {
-                        'deleted': ['1.patch'],
-                    },
-                'disable_inapplicable': False,
-            },
-            dedent("""\
-            Patch0:     0.patch
-            
-            
-            # Patch comment
-            # line2
-
-            Patch2:     2.patch
-        """),
         )
     ], ids=[
         'do_not_disable_inapplicable',
         'disable_inapplicable',
-        'comments_and_blank_lines',
-        'keep_comments'
+        'comments_and_blank_lines'
     ])
     def test_write_updated_patches(self, mocked_spec_object, kwargs, expected_content):
         mocked_spec_object.write_updated_patches(**kwargs)
-        assert expected_content == str(mocked_spec_object.spec_content)
+        assert expected_content == str(mocked_spec_object.spec)
 
     @pytest.mark.parametrize('spec_attributes', [
         {
@@ -431,168 +389,26 @@ class TestSpecFile:
         }
     ])
     def test_update_paths_to_sources_and_patches(self, mocked_spec_object):
-        line = [l for l in mocked_spec_object.spec_content.section('%package') if l.startswith('Patch5')][0]
-        assert 'rebased-sources' in line
-
+        assert 'rebased-sources' in mocked_spec_object.spec.patches().content[0].location # pylint: disable=no-member
         mocked_spec_object.update_paths_to_sources_and_patches()
-
-        line = [l for l in mocked_spec_object.spec_content.section('%package') if l.startswith('Patch5')][0]
-        assert 'rebased-sources' not in line
+        assert 'rebased-sources' not in mocked_spec_object.spec.patches().content[0].location # pylint: disable=no-member
 
     def test_tags(self, spec_object):
+        tags = spec_object.spec.tags().content # pylint: disable=no-member
         # sanity check
-        assert spec_object.tag('Name') == Tag(0, '%package', 16, 'Name', (6, 10), True)
+        assert tags.name.name == 'Name'
         # no workaround
-        assert spec_object.tag('Patch100') is None
-        assert spec_object.tag('Patch101') is not None
-        assert spec_object.tag('Patch102') is None
-        assert spec_object.get_raw_tag_value('Patch101') == 'no_workaround.patch'
-        # workaround
-        spec_object.predefined_macros = {'use_workaround': '1'}
+        assert 'Patch100' in tags and not tags.patch100.valid
+        assert 'Patch101' in tags and tags.patch101.valid
+        assert 'Patch102' in tags and not tags.patch102.valid
+        assert tags.patch101.expanded_value == 'no_workaround.patch'
+        spec_object.spec.macros.append(('use_workaround', '1'))
         spec_object.update()
-        assert spec_object.tag('Patch100') is not None
-        assert spec_object.tag('Patch101') is not None
-        assert spec_object.tag('Patch102') is not None
-        assert spec_object.get_raw_tag_value('Patch100') == 'workaround_base.patch'
-        assert spec_object.get_raw_tag_value('Patch101') == 'workaround_1.patch'
-        assert spec_object.get_raw_tag_value('Patch102') == 'workaround_2.patch'
-
-    @pytest.mark.parametrize('preserve_macros', [
-        False,
-        True,
-    ], ids=[
-        'ignoring_macros',
-        'preserving_macros',
-    ])
-    @pytest.mark.parametrize('tag, value, lines, lines_preserve', [
-        (
-            'Summary',
-            'A testing SPEC file',
-            [
-                '%{!?specfile: %global specfile spec file}',
-                '%global summary %{?longsum}%{!?longsum:A testing %{specfile}}',
-                'Summary: A testing SPEC file',
-            ],
-            [
-                '%{!?specfile: %global specfile SPEC file}',
-                '%global summary %{?longsum}%{!?longsum:A testing %{specfile}}',
-                'Summary: %{summary}',
-            ],
-        ),
-        (
-            'Version',
-            '1.1.8',
-            [
-                '%global version_major 1',
-                '%global version_minor 0',
-                '%global version_patch 2',
-                '%global version_major_minor %{version_major}.%{version_minor}',
-                '%global version %{version_major_minor}.%{version_patch}',
-                'Version: 1.1.8',
-            ],
-            [
-                '%global version_major 1',
-                '%global version_minor 1',
-                '%global version_patch 8',
-                '%global version_major_minor %{version_major}.%{version_minor}',
-                '%global version %{version_major_minor}.%{version_patch}',
-                'Version: %{version}',
-            ],
-        ),
-        (
-            'Release',
-            '42%{?dist}',
-            [
-                '%global release 34',
-                '%global release_str %{release}%{?dist}',
-                'Release: 42%{?dist}',
-            ],
-            [
-                '%global release 42',
-                '%global release_str %{release}%{?dist}',
-                'Release: %{release_str}',
-            ],
-        ),
-        (
-            'Source8',
-            'https://github.com/rebase-helper/rebase-helper/archive/'
-            'b0ed0b235bd5ea295fc897e1e2e8e6b6637f2c2d/'
-            'rebase-helper-b0ed0b235bd5ea295fc897e1e2e8e6b6637f2c2d.tar.gz',
-            [
-                '%global project rebase-helper',
-                '%global commit d70cb5a2f523db5b6088427563531f43b7703859',
-                'Source8: https://github.com/rebase-helper/rebase-helper/archive/'
-                'b0ed0b235bd5ea295fc897e1e2e8e6b6637f2c2d/'
-                'rebase-helper-b0ed0b235bd5ea295fc897e1e2e8e6b6637f2c2d.tar.gz',
-            ],
-            [
-                '%global project rebase-helper',
-                '%global commit b0ed0b235bd5ea295fc897e1e2e8e6b6637f2c2d',
-                'Source8: https://github.com/%{project}/%{project}/archive/%{commit}/%{project}-%{commit}.tar.gz',
-            ],
-        ),
-        (
-            'Patch1000',
-            '0.8.b5%{?dist}',
-            [
-                '%global prever b4',
-                'Patch1000: 0.8.b5%{?dist}',
-            ],
-            [
-                '%global prever b5',
-                'Patch1000: 0.8.%{?prever}%{?dist}',
-            ],
-        ),
-        (
-            'Patch1001',
-            '1.22.2',
-            [
-                '%global branch 1.22',
-                'Patch1001: 1.22.2',
-            ],
-            [
-                '%global branch 1.22',
-                'Patch1001: %{branch}.2',
-            ],
-        ),
-        (
-            'URL',
-            'http://testing2.org',
-            [
-                '%global domain testing',
-                '%global address %{domain}.org',
-                '%global full_address http://%{address}',
-                'URL: http://testing2.org',
-            ],
-            [
-                '%global domain testing2',
-                '%global address %{domain}.org',
-                '%global full_address http://%{address}',
-                'URL: %{full_address}',
-            ],
-        )
-    ], ids=[
-        'Summary=>"A testing SPEC file..."',
-        'Version=>"1.1.8"',
-        'Release=>"42%{?dist}"',
-        'Source8=>"https://github.com/rebase-helper/rebase-helper/archive/..."',
-        'Patch1000=>"0.8.b5%{?dist}"',
-        'Patch1001=>"1.22.2"',
-        'URL=>"http://testing2.org"',
-    ])
-    def test_set_tag(self, spec_object, preserve_macros, tag, value, lines, lines_preserve):
-        spec_object.set_tag(tag, value, preserve_macros=preserve_macros)
-        for line in lines_preserve if preserve_macros else lines:
-            assert line in spec_object.spec_content.section('%package')
-
-    def test_get_new_log_with_non_c_locale(self, spec_object):
-        # Changelogs should be identical no matter what locale
-        changelog = spec_object.get_new_log("test2")
-        for l in locale.locale_alias:
-            try:
-                locale.setlocale(locale.LC_TIME, l)
-                # Prevents us from trying out strange locale aliases that fail
-                locale.setlocale(locale.LC_TIME, locale.getlocale(locale.LC_TIME))
-            except locale.Error:
-                continue
-            assert changelog == spec_object.get_new_log("test2")
+        tags = spec_object.spec.tags().content # pylint: disable=no-member
+        # workaround
+        assert 'Patch100' in tags and tags.patch100.valid
+        assert 'Patch101' in tags and tags.patch101.valid
+        assert 'Patch102' in tags and tags.patch102.valid
+        assert tags.patch100.expanded_value == 'workaround_base.patch'
+        assert tags.patch101.expanded_value == 'workaround_1.patch'
+        assert tags.patch102.expanded_value == 'workaround_2.patch'
