@@ -182,13 +182,6 @@ OPTIONS: Options = [
         "help": "disable inapplicable patches in rebased SPEC file",
     },
     {
-        "name": ["--keep-comments"],
-        "default": False,
-        "switch": True,
-        "dest": "keep_comments",
-        "help": "do not remove associated comments when removing patches from spec file",
-    },
-    {
         "name": ["--skip-version-check"],
         "default": False,
         "switch": True,
