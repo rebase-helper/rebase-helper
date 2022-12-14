@@ -45,7 +45,10 @@ class CommitHashUpdater(BaseSpecHook):
         :param spec_file: SPEC file to base the search on
         :return: SHA of a commit, or None
         """
-        m = re.match(r'^https?://github\.com/(?P<owner>[\w-]+)/(?P<project>[\w-]+)/.*$', spec_file.sources[0])
+        m = re.match(
+            r'^https?://github\.com/(?P<owner>[\w-]+)/(?P<project>[\w-]+)/.*$',
+            spec_file.get_raw_main_source(),
+        )
         if not m:
             return None
         baseurl = 'https://api.github.com/repos/{owner}/{project}'.format(**m.groupdict())
@@ -90,31 +93,33 @@ class CommitHashUpdater(BaseSpecHook):
 
     @classmethod
     def _get_commit_hash(cls, spec_file):
-        if 'github.com' in spec_file.sources[0]:
+        if 'github.com' in spec_file.get_raw_main_source():
             return cls._get_commit_hash_from_github(spec_file)
         return None
 
     @classmethod
     def run(cls, spec_file, rebase_spec_file, **kwargs):
-        if rebase_spec_file.sources[0] != spec_file.sources[0]:
+        if rebase_spec_file.get_raw_main_source() != spec_file.get_raw_main_source():
             # nothing to do
             return
         # try to determine commit hash matching the new version
         new_commit = cls._get_commit_hash(rebase_spec_file)
         if not new_commit:
             return
-        source = rebase_spec_file.sources[0]
+        value = original_value = rebase_spec_file.get_raw_main_source()
         # try to determine commit hash matching the old version
         old_commit = cls._get_commit_hash(spec_file)
         if old_commit:
             # replace old commit hash with the new one
-            source = source.replace(old_commit, new_commit)
+            value = value.replace(old_commit, new_commit)
         else:
             # try to find anything resembling SHA1 hash
-            hashes = re.findall(r'[0-9a-f]{40}', source)
+            hashes = re.findall(r'[0-9a-f]{40}', value)
             if len(set(hashes)) != 1:
                 # multiple different hashes (or none), cannot continue
                 return
-            source = source.replace(hashes[0], new_commit)
-        tag = 'Source{0}'.format(rebase_spec_file.main_source_index)
-        rebase_spec_file.set_tag(tag, source, preserve_macros=True)
+            value = value.replace(hashes[0], new_commit)
+        updated_value = rebase_spec_file.spec.update_value(original_value, value, protected_entities=".*name")
+        with rebase_spec_file.spec.sources() as sources:
+            main_source = next(s for s in sources if s.number == rebase_spec_file.main_source_number)
+            main_source.location = updated_value

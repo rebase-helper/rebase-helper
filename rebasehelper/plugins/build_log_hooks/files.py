@@ -30,12 +30,14 @@ import os
 import re
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
+from specfile.macros import MacroLevel
+from specfile.sections import Section
+
 from rebasehelper.logger import CustomLogger
 from rebasehelper.plugins.build_log_hooks import BaseBuildLogHook
 from rebasehelper.types import PackageCategories
-from rebasehelper.helpers.macro_helper import MacroHelper
 from rebasehelper.constants import NEW_BUILD_DIR, ENCODING
-from rebasehelper.specfile import SpecFile
+from rebasehelper.specfile import SpecFile, MACROS_WHITELIST
 
 
 logger: CustomLogger = cast(CustomLogger, logging.getLogger(__name__))
@@ -202,16 +204,16 @@ class Files(BaseBuildLogHook):
         best_match = ''
         best_match_section = ''
         files = []
-        for sec_name, sec_content in rebase_spec_file.spec_content.sections:
-            if sec_name.startswith('%files'):
-                files.append(sec_name)
-                for line in sec_content:
-                    new_best_match = difflib.get_close_matches(file, [best_match, MacroHelper.expand(line)])
+        for section in rebase_spec_file.spec.sections().content: # pylint: disable=no-member
+            if section.normalized_id.startswith('files'):
+                files.append(section.id)
+                for line in section:
+                    new_best_match = difflib.get_close_matches(file, [best_match, rebase_spec_file.spec.expand(line)])
                     if new_best_match:
                         # the new match is a closer match
                         if new_best_match[0] != best_match:
                             best_match = str(new_best_match[0])
-                            best_match_section = sec_name
+                            best_match_section = section.id
 
         return best_match_section or rebase_spec_file.get_main_files_section() or (files[0] if files else None)
 
@@ -232,28 +234,30 @@ class Files(BaseBuildLogHook):
         with the closest matching path.
 
         """
-        # get %{name} macro
-        macros = [m for m in MacroHelper.filter(rebase_spec_file.macros, level=-3) if m['name'] == 'name']
-        macros.extend(m for m in rebase_spec_file.macros if m['name'] in MacroHelper.MACROS_WHITELIST)
-        macros = MacroHelper.expand_macros(macros)
-        # ensure maximal greediness
-        macros.sort(key=lambda k: len(k['value']), reverse=True)
-
         result: Dict[str, AddedFiles] = collections.defaultdict(lambda: collections.defaultdict(list))
         for file in files:
-            section = cls._get_best_matching_files_section(rebase_spec_file, file)
-            if section is None:
+            section_name = cls._get_best_matching_files_section(rebase_spec_file, file)
+            if section_name is None:
                 logger.error('The specfile does not contain any %files section, cannot add the missing files')
                 break
-            substituted_path = cls._sanitize_path(MacroHelper.substitute_path_with_macros(file, macros))
-            try:
-                index = [i for i, l in enumerate(rebase_spec_file.spec_content.section(section)) if l][-1] + 1
-            except IndexError:
-                # section is empty
-                index = 0
-            rebase_spec_file.spec_content.section(section).insert(index, substituted_path)
-            result['added'][section].append(substituted_path)
-            logger.info("Added %s to '%s' section", substituted_path, section)
+            substituted_path = cls._sanitize_path(
+                rebase_spec_file.substitute_path_with_macros(
+                    file,
+                    lambda m: m.level == MacroLevel.SPEC
+                    and m.name == "name"
+                    or m.name in MACROS_WHITELIST,
+                )
+            )
+            with rebase_spec_file.spec.sections() as sections:
+                section = getattr(sections, section_name)
+                try:
+                    index = [i for i, l in enumerate(section) if l][-1] + 1
+                except IndexError:
+                    # section is empty
+                    index = 0
+                section.insert(index, substituted_path)
+            result['added']['%' + section_name].append(substituted_path)
+            logger.info("Added %s to '%s' section", substituted_path, '%' + section_name)
 
         return result
 
@@ -281,11 +285,19 @@ class Files(BaseBuildLogHook):
         return directives, prepended_directive
 
     @classmethod
-    def _correct_one_section(cls, subpackage: str, sec_name: str, sec_content: List[str], files: List[str],
-                             result: Dict[str, RemovedFromSections]) -> None:
+    def _correct_one_section(
+        cls,
+        spec: SpecFile,
+        subpackage: str,
+        sec_name: str,
+        sec_content: Section,
+        files: List[str],
+        result: Dict[str, RemovedFromSections],
+    ) -> None:
         """Removes deleted files from one %files section.
 
         Args:
+            spec: SPEC file to remove the files from.
             subpackage: Name of the subpackage which the section relates to.
             sec_name: Name of the %files section
             sec_content: Content of the %files section
@@ -299,7 +311,7 @@ class Files(BaseBuildLogHook):
             # Expand the whole line to check for occurrences of special
             # keywords, such as %global and %if blocks. Macro definitions
             # expand to empty string.
-            expanded = MacroHelper.expand(sec_content[i])
+            expanded = spec.spec.expand(sec_content[i])
             if not original_line or not expanded or any(k in expanded for k in cls.PROHIBITED_KEYWORDS):
                 i += 1
                 continue
@@ -318,7 +330,7 @@ class Files(BaseBuildLogHook):
                         prepend_macro = cls.FILES_DIRECTIVES[prepended_directive] or ''
                         split_line[j] = os.path.join(prepend_macro, subpackage, os.path.basename(path))
                         possible_rename[j] = True
-            split_line = [MacroHelper.expand(p) for p in split_line]
+            split_line = [spec.spec.expand(p) for p in split_line]
 
             j = 0
             while j < len(split_line) and files:
@@ -334,8 +346,8 @@ class Files(BaseBuildLogHook):
                     del split_line[j]
                     del original_line[len(directives) + j]
                     files.remove(deleted_file)
-                    result['removed'][sec_name].append(original_file)
-                    logger.info("Removed %s from '%s' section", original_file, sec_name)
+                    result['removed']['%' + sec_name].append(original_file)
+                    logger.info("Removed %s from '%s' section", original_file, '%' + sec_name)
                     if warn_about_rename:
                         logger.warning("The installation of %s was handled by %s directive and the file has now been "
                                        "removed. The file may have been renamed and rebase-helper cannot automatically "
@@ -367,13 +379,14 @@ class Files(BaseBuildLogHook):
 
         """
         result: Dict[str, RemovedFromSections] = collections.defaultdict(lambda: collections.defaultdict(list))
-        for sec_name, sec_content in rebase_spec_file.spec_content.sections:
-            if sec_name.startswith('%files'):
-                subpackage = rebase_spec_file.get_subpackage_name(sec_name)
-                cls._correct_one_section(subpackage, sec_name, sec_content, files, result)
-                if not files:
-                    # Nothing more to be done
-                    return cast(Dict[str, RemovedFiles], result)
+        with rebase_spec_file.spec.sections() as sections:
+            for section in sections:
+                if section.normalized_id.startswith('files'):
+                    subpackage = rebase_spec_file.get_subpackage_name(section.id)
+                    cls._correct_one_section(rebase_spec_file, subpackage, section.id, section, files, result)
+                    if not files:
+                        # Nothing more to be done
+                        return cast(Dict[str, RemovedFiles], result)
 
         result_with_irremovable: Dict[str, RemovedFiles] = cast(Dict[str, RemovedFiles], result)
         logger.info('Could not remove the following files:')

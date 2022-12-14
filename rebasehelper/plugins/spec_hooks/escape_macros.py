@@ -32,8 +32,9 @@ class EscapeMacros(BaseSpecHook):
 
     @classmethod
     def run(cls, spec_file, rebase_spec_file, **kwargs):
-        for sec_name, section in rebase_spec_file.spec_content.sections:
-            for index, line in enumerate(section):
-                start, end = spec_file.spec_content.get_comment_span(line, sec_name)
-                new_comment = re.sub(r'(?<!%)(%(?P<brace>{\??)?\w+(?(brace)}))', r'%\1', line[start:end])
-                section[index] = line[:start] + new_comment
+        with rebase_spec_file.spec.sections() as sections:
+            for section in sections:
+                for index, line in enumerate(section):
+                    start, end = spec_file.get_comment_span(line, section.is_script)
+                    new_comment = re.sub(r'(?<!%)(%(?P<brace>{\??)?\w+(?(brace)}))', r'%\1', line[start:end])
+                    section[index] = line[:start] + new_comment
