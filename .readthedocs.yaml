@@ -1,0 +1,19 @@
+version: 2
+
+build:
+  os: ubuntu-22.04
+  tools:
+    python: "3.9"
+  apt_packages:
+    - libkrb5-dev
+    - libcurl4-openssl-dev
+    - rpm
+    - cython3
+
+sphinx:
+  configuration: docs/conf.py
+
+python:
+  install:
+    - requirements: doc-requirements-gssapi.txt
+    - requirements: doc-requirements.txt

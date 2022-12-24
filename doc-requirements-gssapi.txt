@@ -1,0 +1,1 @@
+https://github.com/pythongssapi/python-gssapi/archive/refs/tags/v1.8.0.tar.gz
