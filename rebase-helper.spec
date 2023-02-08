@@ -89,7 +89,7 @@ install -p -m 0644 build/rebase-helper.bash %{buildroot}%{_datadir}/bash-complet
 
 
 %check
-PYTHONPATH=$(pwd) py.test-3 -v %{pkgname}
+PYTHONPATH=$(pwd) py.test-3 -v tests
 
 
 %files

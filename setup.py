@@ -100,7 +100,7 @@ setup(
     author_email='phracek@redhat.com',
     url='https://github.com/rebase-helper/rebase-helper',
     license='GPLv2+',
-    packages=find_packages(),
+    packages=find_packages(exclude=['tests*']),
     include_package_data=True,
     use_scm_version=True,
     cmdclass={
@@ -160,6 +160,16 @@ setup(
         'setuptools_scm',
         'setuptools_scm_git_archive',
     ],
+    extras_require={
+        'testing': [
+            'cov-core',
+            'coverage',
+            'pytest-cov',
+            'pytest',
+            'types-requests',
+            'types-setuptools',
+        ]
+    },
     classifiers=[
         'Development Status :: 4 - Beta',
         'Environment :: Console',
