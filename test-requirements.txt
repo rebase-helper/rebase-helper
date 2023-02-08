@@ -1,7 +1,1 @@
-.
-cov-core
-coverage
-pytest-cov
-pytest
-types-requests
-types-setuptools
+.[testing]

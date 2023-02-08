@@ -25,7 +25,7 @@
 from typing import List
 
 from rebasehelper.plugins.plugin_manager import plugin_manager
-from rebasehelper.tests.conftest import TEST_FILES_DIR
+from tests.conftest import TEST_FILES_DIR
 
 
 class TestPkgDiff:
