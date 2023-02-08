@@ -37,7 +37,7 @@ class PluginLoader:
             result[ep.name] = None
             try:
                 plugin = ep.load()
-            except BaseException:
+            except BaseException: # pylint: disable=broad-exception-caught
                 # skip broken plugin
                 continue
             try:

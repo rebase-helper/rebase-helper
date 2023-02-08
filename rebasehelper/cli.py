@@ -187,7 +187,7 @@ class CliHelper:
             sys.exit(1)
         except SystemExit as e:
             sys.exit(e.code)
-        except BaseException:
+        except BaseException: # pylint: disable=broad-exception-caught
             logger_traceback: CustomLogger = cast(CustomLogger, logging.getLogger('rebasehelper.traceback'))
             logger_traceback.propagate = False
             logger_traceback.setLevel(CustomLogger.TRACE)
