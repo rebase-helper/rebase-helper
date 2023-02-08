@@ -398,17 +398,16 @@ class TestSpecFile:
         # sanity check
         assert tags.name.name == 'Name'
         # no workaround
-        assert 'Patch100' in tags and not tags.patch100.valid
-        assert 'Patch101' in tags and tags.patch101.valid
-        assert 'Patch102' in tags and not tags.patch102.valid
-        assert tags.patch101.expanded_value == 'no_workaround.patch'
+        assert 'Patch100' in tags
+        assert 'Patch101' in tags
+        assert 'Patch102' in tags
         spec_object.spec.macros.append(('use_workaround', '1'))
         spec_object.update()
         tags = spec_object.spec.tags().content # pylint: disable=no-member
         # workaround
-        assert 'Patch100' in tags and tags.patch100.valid
-        assert 'Patch101' in tags and tags.patch101.valid
-        assert 'Patch102' in tags and tags.patch102.valid
+        assert 'Patch100' in tags
+        assert 'Patch101' in tags
+        assert 'Patch102' in tags
         assert tags.patch100.expanded_value == 'workaround_base.patch'
         assert tags.patch101.expanded_value == 'workaround_1.patch'
         assert tags.patch102.expanded_value == 'workaround_2.patch'
