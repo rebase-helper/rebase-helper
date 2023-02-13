@@ -2,6 +2,20 @@
 
 ## [Unreleased]
 
+## [0.28.0] - 2023-02-13
+### Fixed
+- *debuginfo* packages are now skipped when running **sonamecheck**
+
+### Changed
+- Replaced our own implementation of lookaside cache client with *rpkg*
+- Switched from docker to podman in GitHub Actions
+- Added a 30 seconds time limit to bugzilla queries
+- Dropped support for Python < 3.9 and EPEL 8
+- Switched to [specfile](https://github.com/packit/specfile) library
+
+### Removed
+- Removed `--keep-comments` option
+
 ## [0.27.0] - 2022-06-24
 ### Added
 - Added support for `rpmuncompress` being used by `rpm` >= 4.18
