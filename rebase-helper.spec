@@ -1,5 +1,3 @@
-%{?python_enable_dependency_generator}
-
 %global pkgname rebasehelper
 
 Name:           rebase-helper
@@ -14,33 +12,11 @@ Source0:        https://github.com/rebase-helper/%{name}/archive/%{version}/%{na
 BuildArch:      noarch
 
 BuildRequires:  make
-BuildRequires:  python3-devel
-BuildRequires:  python3-setuptools
-BuildRequires:  python3-setuptools_scm
-BuildRequires:  python3-setuptools_scm_git_archive
-BuildRequires:  python3-specfile
-BuildRequires:  python3-rpm
-BuildRequires:  python3-rpkg
-BuildRequires:  python3-koji
-BuildRequires:  python3-pyquery
-BuildRequires:  python3-copr
-BuildRequires:  python3-pam
-BuildRequires:  python3-requests
-BuildRequires:  python3-requests-gssapi
-BuildRequires:  python3-GitPython
-BuildRequires:  python3-ansicolors
-BuildRequires:  python3-sphinx
-BuildRequires:  python3-sphinx_rtd_theme
-BuildRequires:  python3-m2r
-BuildRequires:  python3-pytest
-BuildRequires:  python3-unidiff
+BuildRequires:  python%{python3_pkgversion}-devel
 
-Requires:       git
-Requires:       rpm-build
-Requires:       mock
-Requires:       python3-setuptools
-Requires:       python3-koji
-Requires:       python3-unidiff
+BuildRequires:  python%{python3_pkgversion}-m2r
+BuildRequires:  python%{python3_pkgversion}-sphinx
+BuildRequires:  python%{python3_pkgversion}-sphinx_rtd_theme
 
 Recommends:     licensecheck
 Recommends:     rpmlint
@@ -57,51 +33,50 @@ The goal of rebase-helper is to automate most of these steps.
 
 
 %prep
-%setup -q
+%autosetup -p1
 
-# remove bundled egg-info
-rm -rf %{pkgname}.egg-info
+
+%generate_buildrequires
+%pyproject_buildrequires -x testing
 
 
 %build
-%py3_build
+%pyproject_wheel
 
 # generate man page
-make SPHINXBUILD=sphinx-build-3 man
+make PYTHONPATH="%{pyproject_build_lib}" SPHINXBUILD=sphinx-build-3 man
 
 # generate bash completion script
-make PYTHON=%{__python3} PYTHONPATH=$(pwd) completion
+make PYTHON=%{python3} PYTHONPATH=$(pwd) completion
 
 # generate sample configuration file
-make PYTHON=%{__python3} PYTHONPATH=$(pwd) sample_config
+make PYTHON=%{python3} PYTHONPATH=$(pwd) sample_config
 
 
 %install
-%py3_install
+%pyproject_install
+%pyproject_save_files %{pkgname}
 
 # install man page
 mkdir -p %{buildroot}%{_datadir}/man/man1/
-install -p -m 0644 build/man/rebase-helper.1 %{buildroot}%{_datadir}/man/man1
+install -p -m 0644 docs/build/man/%{name}.1 %{buildroot}%{_datadir}/man/man1
 
 # install bash completion
 mkdir -p %{buildroot}%{_datadir}/bash-completion/completions/
-install -p -m 0644 build/rebase-helper.bash %{buildroot}%{_datadir}/bash-completion/completions/rebase-helper
+install -p -m 0644 %{name}.bash %{buildroot}%{_datadir}/bash-completion/completions/%{name}
 
 
 %check
-PYTHONPATH=$(pwd) py.test-3 -v tests
+%pytest
 
 
-%files
-%license LICENSE
+%files -f %{pyproject_files}
 %doc README.md
 %doc CHANGELOG.md
-%doc build/rebase-helper.cfg
+%doc %{name}.cfg
 %{_bindir}/%{name}
-%{python3_sitelib}/%{pkgname}/
-%{python3_sitelib}/%{pkgname}-*-py%{python3_version}.egg-info
-%{_mandir}/man1/rebase-helper.1*
-%{_datadir}/bash-completion/completions/rebase-helper
+%{_mandir}/man1/%{name}.1*
+%{_datadir}/bash-completion/completions/%{name}
 
 
 %changelog
