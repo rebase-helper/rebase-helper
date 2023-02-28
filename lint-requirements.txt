@@ -1,2 +1,4 @@
 pylint>=1.4.5
 mypy
+types-requests
+types-setuptools
