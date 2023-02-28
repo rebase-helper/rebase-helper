@@ -23,45 +23,43 @@ help:
 
 
 clean:
-	@$(PYTHON) setup.py clean
-	rm -f MANIFEST
-	rm -f build/rebase-helper.bash
-	rm -rf build/html
-	rm -rf build/man
+	rm -rf dist
+	rm -rf build
+	rm -rf rebasehelper.egg-info
 	find . -type f -name "*.py[co]" -delete
 	find . -type d -name "__pycache__" -delete
 
 
-install:
-	@$(PYTHON) setup.py install
+install: build
+	$(PYTHON) -m pip install --no-deps dist/rebasehelper-*.whl
 
 
 build:
-	@$(PYTHON) setup.py build
+	$(PYTHON) -m build
 
 
 log:
 	@(LC_ALL=C date +"* %a %b %e %Y `git config --get user.name` <`git config --get user.email`> - VERSION"; git log --pretty="format:- %s (%an)" | cat) | less
 
 
-source: clean
-	@$(PYTHON) setup.py sdist
+source:
+	$(PYTHON) -m build --sdist
 
 
-html: build
-	make -C docs clean html
+html:
+	make -C docs html
 
 
-man: build
-	make -C docs clean man
+man:
+	make -C docs man
 
 
-completion: build
-	$(PYTHON) -m rebasehelper.completion rebase-helper.bash.in build/rebase-helper.bash
+completion:
+	$(PYTHON) -m rebasehelper.completion rebase-helper.bash.in rebase-helper.bash
 
 
-sample_config: build
-	$(PYTHON) -m rebasehelper.sample_config build/rebase-helper.cfg
+sample_config:
+	$(PYTHON) -m rebasehelper.sample_config rebase-helper.cfg
 
 
 test:
