@@ -12,13 +12,12 @@ issue_repository: https://github.com/rebase-helper/rebase-helper
 
 actions:
   create-archive:
-    - python3 setup.py sdist --base-name rebase-helper --dist-dir .
-    - bash -c "ls -1t ./rebase-helper-*.tar.gz | head -n 1"
-  fix-spec-file:
-    - bash -c "rpmdev-bumpspec -c \"Rebuild $PACKIT_PROJECT_COMMIT\" -n $(python3 setup.py --version) ./rebase-helper.spec"
+    - python3 -m build --sdist --outdir .
+    - bash -c "ls -1t ./rebasehelper-*.tar.gz | head -n 1"
+  get-current-version: python3 -m setuptools_scm
 
 srpm_build_deps:
-  - python3-pip # "python3 setup.py --version" needs it
+  - python3-build
   - python3-setuptools_scm
 
 jobs:
