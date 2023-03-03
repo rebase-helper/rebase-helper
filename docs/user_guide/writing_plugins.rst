@@ -38,7 +38,7 @@ Example
            return cls.NAME
 
        @classmethod
-       def run(cls, spec_file, rebase_spec_file):
+       def run(cls, spec_file, rebase_spec_file, **kwargs):
            """
            This method is called after original SPEC file is processed
 
@@ -54,15 +54,43 @@ Example
 
    from setuptools import setup
 
+   setup()
 
-   setup(
-       name='MySpecHook',
-       version='0.1',
-       description='Custom SPEC hook for rebase-helper',
-       author='John Doe',
-       install_requires=['rebasehelper>=0.10.0'],
-       packages=['my_spec_hook'],
-       entry_points={
-           'rebasehelper.spec_hooks': ['my_spec_hook = my_spec_hook:MySpecHook']
-       }
-   )
+.. code-block:: ini
+   :caption: setup.cfg
+
+   [metadata]
+   name = MySpecHook
+   version = 0.1
+   description = Custom SPEC hook for rebase-helper
+   author = John Doe
+
+   [options]
+   packages = my_spec_hook
+   install_requires = rebasehelper>=0.10.0
+
+   [options.entry_points]
+   rebasehelper.spec_hooks =
+       my-spec-hook = my_spec_hook:MySpecHook
+
+Alternatively, use `pyproject.toml` instead of `setup.py` and `setup.cfg`:
+
+.. code-block:: toml
+   :caption: pyproject.toml
+
+   [build-system]
+   requires = ["setuptools"]
+   build-backend = "setuptools.build_meta"
+
+   [project]
+   name = "MySpecHook"
+   version = "0.1"
+   description = "Custom SPEC hook for rebase-helper"
+   authors = [{name = "John Doe"}]
+   dependencies = ["rebasehelper>=0.10.0"]
+
+   [project.entry-points."rebasehelper.spec_hooks"]
+   my-spec-hook = "my_spec_hook:MySpecHook"
+
+   [tool.setuptools]
+   packages = ["my_spec_hook"]

@@ -4,8 +4,8 @@ Installation
 :program:`rebase-helper` is packaged in Fedora, so you can just install it with :command:`dnf`.
 
 If you can't or don't want to use :program:`rebase-helper` package, you have to install,
-apart from Python requirements listed in `get_requirements` function in :file:`setup.py`,
-the following dependencies:
+apart from Python requirements listed in `install_requires` in the `options` section
+in :file:`setup.cfg`, the following dependencies:
 
 ============ ======================== =================================================
 Dependency   Package name (in Fedora) Notes
