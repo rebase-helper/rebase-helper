@@ -373,11 +373,52 @@ class TestSpecFile:
             
             Patch2:     2.patch
             """),
-        )
+        ),
+        (
+            {
+                'removed_patches': [],
+                'spec_content': dedent("""\
+                    Patch0:    0.patch
+                    Patch1:    1.patch
+
+                    %patchlist
+                    2.patch
+                    3.patch
+
+                    %prep
+                    %patch0 -p0
+                    %patch1 -p1
+                    %patch2 -p2
+                    %patch3 -p3
+                    """),
+            },
+            {
+                'patches_dict':
+                    {
+                        'modified': ['1.patch', '2.patch'],
+                    },
+                'disable_inapplicable': False,
+            },
+            dedent("""\
+                Patch0:    0.patch
+                Patch1:    rebase-helper-results/rebased-sources/1.patch
+
+                %patchlist
+                rebase-helper-results/rebased-sources/2.patch
+                3.patch
+
+                %prep
+                %patch0 -p0
+                %patch1 -p1
+                %patch2 -p2
+                %patch3 -p3
+                """)
+        ),
     ], ids=[
         'do_not_disable_inapplicable',
         'disable_inapplicable',
-        'comments_and_blank_lines'
+        'comments_and_blank_lines',
+        'modified_patches'
     ])
     def test_write_updated_patches(self, mocked_spec_object, kwargs, expected_content):
         mocked_spec_object.write_updated_patches(**kwargs)
