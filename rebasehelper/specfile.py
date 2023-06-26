@@ -405,34 +405,34 @@ class SpecFile:
         removed_patches = []
         inapplicable_patches = []
         modified_patches = []
-        for patch in self.spec.patches().content: # pylint: disable=no-member
-            if 'deleted' in patches_dict:
-                patch_removed = [x for x in patches_dict['deleted'] if patch.expanded_filename in x]
-            else:
-                patch_removed = []
-            if 'inapplicable' in patches_dict:
-                patch_inapplicable = [x for x in patches_dict['inapplicable'] if patch.expanded_filename in x]
-            else:
-                patch_inapplicable = []
-            if patch_removed:
-                self.removed_patches.append(patch.expanded_filename)
-                removed_patches.append(patch.number)
-                continue
-            if patch_inapplicable:
-                inapplicable_patches.append(patch.number)
-            if 'modified' in patches_dict:
-                patch_modified = [x for x in patches_dict['modified'] if patch.expanded_filename in x]
-            else:
-                patch_modified = []
-            if patch_modified:
-                patch.location = os.path.join(constants.RESULTS_DIR,
-                                              constants.REBASED_SOURCES_DIR,
-                                              patch.expanded_filename)
-                modified_patches.append(patch.number)
-        self.process_patch_macros(comment_out=inapplicable_patches if disable_inapplicable else None,
-                                  remove=removed_patches, annotate=inapplicable_patches,
-                                  note='The following patch contains conflicts')
         with self.spec.patches() as patches:
+            for patch in patches:
+                if 'deleted' in patches_dict:
+                    patch_removed = [x for x in patches_dict['deleted'] if patch.expanded_filename in x]
+                else:
+                    patch_removed = []
+                if 'inapplicable' in patches_dict:
+                    patch_inapplicable = [x for x in patches_dict['inapplicable'] if patch.expanded_filename in x]
+                else:
+                    patch_inapplicable = []
+                if patch_removed:
+                    self.removed_patches.append(patch.expanded_filename)
+                    removed_patches.append(patch.number)
+                    continue
+                if patch_inapplicable:
+                    inapplicable_patches.append(patch.number)
+                if 'modified' in patches_dict:
+                    patch_modified = [x for x in patches_dict['modified'] if patch.expanded_filename in x]
+                else:
+                    patch_modified = []
+                if patch_modified:
+                    patch.location = os.path.join(constants.RESULTS_DIR,
+                                                  constants.REBASED_SOURCES_DIR,
+                                                  patch.expanded_filename)
+                    modified_patches.append(patch.number)
+            self.process_patch_macros(comment_out=inapplicable_patches if disable_inapplicable else None,
+                                      remove=removed_patches, annotate=inapplicable_patches,
+                                      note='The following patch contains conflicts')
             for number in removed_patches:
                 patches.remove_numbered(number)
             if disable_inapplicable:
