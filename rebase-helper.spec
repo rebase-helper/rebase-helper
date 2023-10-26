@@ -7,7 +7,7 @@ Summary:        The tool that helps you to rebase your package to the latest ver
 
 License:        GPLv2+
 URL:            https://github.com/rebase-helper/rebase-helper
-Source0:        https://github.com/rebase-helper/%{name}/archive/%{version}/%{name}-%{version}.tar.gz
+Source0:        %{pypi_source %{pkgname}}
 
 BuildArch:      noarch
 
@@ -33,7 +33,7 @@ The goal of rebase-helper is to automate most of these steps.
 
 
 %prep
-%autosetup -p1
+%autosetup -p1 -n %{pkgname}-%{version}
 
 # since we are building from PyPI source, we don't need git-archive
 # support in setuptools_scm
