@@ -35,6 +35,10 @@ The goal of rebase-helper is to automate most of these steps.
 %prep
 %autosetup -p1
 
+# since we are building from PyPI source, we don't need git-archive
+# support in setuptools_scm
+sed -i 's/setuptools_scm\[toml\]>=7/setuptools_scm[toml]/' pyproject.toml
+
 
 %generate_buildrequires
 %pyproject_buildrequires -x testing
