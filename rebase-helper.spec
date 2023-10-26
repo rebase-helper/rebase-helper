@@ -48,7 +48,7 @@ sed -i 's/setuptools_scm\[toml\]>=7/setuptools_scm[toml]/' pyproject.toml
 %pyproject_wheel
 
 # generate man page
-make PYTHONPATH="%{pyproject_build_lib}" SPHINXBUILD=sphinx-build-3 man
+make PYTHONPATH=$(pwd)/build/lib SPHINXBUILD=sphinx-build-3 man
 
 # generate bash completion script
 make PYTHON=%{python3} PYTHONPATH=$(pwd) completion
