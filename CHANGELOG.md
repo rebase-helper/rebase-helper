@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.28.1] - 2023-10-26
+### Changed
+- Removed dependency on obsoleted setuptools_scm_git_archive
+
 ## [0.28.0] - 2023-02-13
 ### Fixed
 - *debuginfo* packages are now skipped when running **sonamecheck**
