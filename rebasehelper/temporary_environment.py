@@ -61,7 +61,7 @@ class TemporaryEnvironment:
         else:
             logger.debug("Exit callback executed successfully")
 
-        shutil.rmtree(self.path(), onerror=lambda func, path, excinfo: shutil.rmtree(path))
+        shutil.rmtree(self.path(), onerror=lambda func, path, excinfo: shutil.rmtree(path)) # pylint: disable=deprecated-argument
         logger.debug("Destroyed environment in '%s'", self.path())
 
     def __str__(self):
