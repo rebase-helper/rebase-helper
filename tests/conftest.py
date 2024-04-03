@@ -86,6 +86,7 @@ def mocked_spec_object(spec_attributes):
     spec.spec.autosave = False
     spec.spec.save = lambda: None
     spec.spec._lines = spec_content.splitlines()  # pylint: disable=protected-access
+    spec.spec._trailing_newline = True  # pylint: disable=protected-access
     spec.spec._parser = MockedParser(spec_content)  # pylint: disable=protected-access
     spec.spec.get_active_macros = lambda: active_macros
     def expand(self, expression, **_):
