@@ -180,7 +180,7 @@ class GemArchiveType(ArchiveTypeBase):
 
         def close(self):
             self.data.close()
-            shutil.rmtree(self.tmp, onerror=lambda func, path, excinfo: shutil.rmtree(path))
+            shutil.rmtree(self.tmp, onerror=lambda func, path, excinfo: shutil.rmtree(path)) # pylint: disable=deprecated-argument
 
     @classmethod
     def open(cls, filename):
