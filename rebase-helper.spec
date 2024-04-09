@@ -5,7 +5,7 @@ Version:        0.28.1
 Release:        %autorelease
 Summary:        The tool that helps you to rebase your package to the latest version
 
-License:        GPLv2+
+License:        GPL-2.0-or-later
 URL:            https://github.com/rebase-helper/rebase-helper
 Source0:        %{pypi_source %{pkgname}}
 
