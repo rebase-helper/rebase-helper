@@ -775,13 +775,13 @@ class SpecFile:
                     else:
                         basedir = ns.dir if os.path.isabs(ns.dir) else os.path.join(basedir, ns.dir)
                 if archive in line:
+                    target = '.'
                     if cmd == 'tar':
                         parser = tar_parser
                     elif cmd == 'unzip':
                         parser = unzip_parser
                     elif cmd == 'rpmuncompress':
                         parser = None
-                        target = '.'
                     else:
                         continue
                     if parser:

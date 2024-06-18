@@ -65,8 +65,7 @@ class Config:
                 dest = option['dest']
             else:
                 args = [n.lstrip('-').replace('-', '_') for n in option['name'] if n.startswith('--')]
-                if args:
-                    dest = args[0]
+                dest = args[0] if args else None
 
             if dest and dest not in self.config:
                 self.config[dest] = option.get('default')
