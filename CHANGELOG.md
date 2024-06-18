@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+## [0.29.0] - 2024-06-18
+### Changed
+- Changed handling of `%patch` macros to use the specfile library
+
+### Fixed
+- Replaced `%patchN` macros (obsoleted in `rpm` 4.20) in test files with supported variants
+
 ## [0.28.1] - 2023-10-26
 ### Changed
 - Removed dependency on obsoleted setuptools_scm_git_archive
