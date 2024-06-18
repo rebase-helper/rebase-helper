@@ -279,10 +279,10 @@ class TestSpecFile:
                     3.patch
 
                     %prep
-                    %patch0 -p0
-                    %patch1 -p1
-                    %patch2 -p2
-                    %patch3 -p3
+                    %patch -P 0 -p0
+                    %patch -P 1 -p1
+                    %patch -P 2 -p2
+                    %patch -P 3 -p3
                     """),
             },
             {
@@ -301,10 +301,10 @@ class TestSpecFile:
                 3.patch
 
                 %prep
-                %patch0 -p0
+                %patch -P 0 -p0
                 # The following patch contains conflicts
-                %patch1 -p1
-                %patch2 -p3
+                %patch -P 1 -p1
+                %patch -P 2 -p3
                 """)
         ),
         (
@@ -319,10 +319,10 @@ class TestSpecFile:
                     3.patch
 
                     %prep
-                    %patch0 -p0
-                    %patch1 -p1
-                    %patch2 -p2
-                    %patch3 -p3
+                    %patch -P 0 -p0
+                    %patch -P 1 -p1
+                    %patch -P 2 -p2
+                    %patch -P 3 -p3
                     """),
             },
             {
@@ -341,10 +341,10 @@ class TestSpecFile:
         3.patch
 
         %prep
-        %patch0 -p0
+        %patch -P 0 -p0
         # The following patch contains conflicts
-        #%%patch1 -p1
-        %patch1 -p3
+        #%%patch -P 1 -p1
+        %patch -P 1 -p3
         """),
         ),
         (
@@ -386,10 +386,10 @@ class TestSpecFile:
                     3.patch
 
                     %prep
-                    %patch0 -p0
-                    %patch1 -p1
-                    %patch2 -p2
-                    %patch3 -p3
+                    %patch -P 0 -p0
+                    %patch -P 1 -p1
+                    %patch -P 2 -p2
+                    %patch -P 3 -p3
                     """),
             },
             {
@@ -408,10 +408,10 @@ class TestSpecFile:
                 3.patch
 
                 %prep
-                %patch0 -p0
-                %patch1 -p1
-                %patch2 -p2
-                %patch3 -p3
+                %patch -P 0 -p0
+                %patch -P 1 -p1
+                %patch -P 2 -p2
+                %patch -P 3 -p3
                 """)
         ),
     ], ids=[

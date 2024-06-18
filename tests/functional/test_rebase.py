@@ -104,7 +104,7 @@ class TestRebase:
             backported_patch, renamed_patch, spec_file = patch
             # Non interactive mode - inapplicable patches are only commented out.
             assert [h for h in spec_file if '+#Patch1:         conflicting.patch\n' in h.target]
-            assert [h for h in spec_file if '+#%%patch1 -p1\n' in h.target]
+            assert [h for h in spec_file if '+#%%patch -P 1 -p1\n' in h.target]
         assert renamed_patch.is_rename  # renamed patch 0.1.patch to 0.2.patch
         assert os.path.basename(renamed_patch.source_file) == 'renamed-0.1.patch'
         assert os.path.basename(renamed_patch.target_file) == 'renamed-0.2.patch'
@@ -114,9 +114,9 @@ class TestRebase:
         assert spec_file.is_modified_file  # test.spec
         if favor_on_conflict != 'downstream':
             assert [h for h in spec_file if '-Patch1:         conflicting.patch\n' in h.source]
-            assert [h for h in spec_file if '-%patch1 -p1\n' in h.source]
+            assert [h for h in spec_file if '-%patch -P 1 -p1\n' in h.source]
         assert [h for h in spec_file if '-Patch2:         backported.patch\n' in h.source]
-        assert [h for h in spec_file if '-%patch2 -p1\n' in h.source]
+        assert [h for h in spec_file if '-%patch -P 2 -p1\n' in h.source]
         assert [h for h in spec_file if '+- New upstream release {}\n'.format(new_version) in h.target]
         with open(os.path.join(RESULTS_DIR, 'report.json'), encoding=ENCODING) as f:
             report = json.load(f)

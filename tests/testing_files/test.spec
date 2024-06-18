@@ -67,10 +67,10 @@ Testing devel spec file
 
 %prep
 %setup -q -c -a 5
-%patch1
-%patch2 -p1
-%patch3 -p1 -b .testing3
-%patch4 -p0 -b .testing4
+%patch -P 1
+%patch -P 2 -p1
+%patch -P 3 -p1 -b .testing3
+%patch -P 4 -p0 -b .testing4
 mkdir misc
 tar -xf %{SOURCE6} -C misc
 
