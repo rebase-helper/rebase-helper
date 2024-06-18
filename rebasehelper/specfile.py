@@ -35,6 +35,7 @@ from typing import Callable, List, Optional, Pattern, Tuple, Dict, cast
 from specfile import Specfile
 from specfile.exceptions import RPMException
 from specfile.macros import MacroLevel
+from specfile.prep import PatchMacro
 from specfile.sections import Section
 from specfile.sources import Source, ListSource, TagSource
 
@@ -341,43 +342,36 @@ class SpecFile:
         remove = list(remove or [])
         annotate = list(annotate or [])
 
-        with self.spec.sections() as sections:
-            if not 'prep' in sections:
+        with self.spec.prep() as prep:
+            if not prep:
                 return
-            prep = sections.prep
 
-            patch_re = re.compile(r'^%patch(?P<number>\d+)(.*)')
-
-            i = 0
             removed = 0
-            while i < len(prep):
-                line = prep[i]
-                match = patch_re.match(line)
-                if match:
-                    number = int(match.group('number'))
-                    if note and number in annotate and number not in remove:
-                        prep.insert(i, '# {}'.format(note))
-                        annotate.remove(number)
-                        i += 1
-                        continue
-                    if number in comment_out:
-                        prep[i] = '#%{}'.format(line)
-                        comment_out.remove(number)
-                        removed += 1
-                    elif number in remove:
-                        del prep[i]
-                        remove.remove(number)
-                        removed += 1
-                        i -= 1
-                    # When combining Patch tags and %patchlist, if a Patch is removed, the numbers
-                    # of %patchlist patches change and %patch macros need to be modified.
-                    elif number in [
-                        p.number
-                        for p in self.spec.patches().content # pylint: disable=no-member
-                        if isinstance(p, ListSource)
-                    ]:
-                        prep[i] = patch_re.sub(r'%patch{}\2'.format(number - removed), prep[i])
-                i += 1
+            indexes_to_remove = []
+            for index, macro in enumerate(prep.macros):
+                if not isinstance(macro, PatchMacro):
+                    continue
+                if macro.number in annotate and macro.number not in remove:
+                    if note:
+                        macro._preceding_lines.append('# {}'.format(note)) # pylint: disable=protected-access
+                    annotate.remove(macro.number)
+                if macro.number in comment_out:
+                    macro._prefix = '#%{}'.format(macro._prefix) # pylint: disable=protected-access
+                    comment_out.remove(macro.number)
+                    removed += 1
+                elif macro.number in remove:
+                    indexes_to_remove.append(index)
+                    removed += 1
+                # When combining Patch tags and %patchlist, if a Patch is removed, the numbers
+                # of %patchlist patches change and %patch macros need to be modified
+                elif macro.number in [
+                    p.number
+                    for p in self.spec.patches().content # pylint: disable=no-member
+                    if isinstance(p, ListSource)
+                ]:
+                    macro.number = macro.number - removed
+            for index in reversed(indexes_to_remove):
+                del prep.macros[index]
 
     @saves
     def update_paths_to_sources_and_patches(self) -> None:
