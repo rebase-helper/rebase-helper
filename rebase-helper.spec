@@ -1,7 +1,7 @@
 %global pkgname rebasehelper
 
 Name:           rebase-helper
-Version:        0.28.1
+Version:        0.29.0
 Release:        %autorelease
 Summary:        The tool that helps you to rebase your package to the latest version
 
