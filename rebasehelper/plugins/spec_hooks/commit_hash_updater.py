@@ -62,7 +62,7 @@ class CommitHashUpdater(BaseSpecHook):
                 logger.warning("Rate limit exceeded on Github API! Try again later.")
             return None
         data = r.json()
-        version = spec_file.header.version
+        version = spec_file.spec.expanded_version
         tag_name = None
         for release in data:
             if version in release.get('name', ''):
@@ -119,7 +119,13 @@ class CommitHashUpdater(BaseSpecHook):
                 # multiple different hashes (or none), cannot continue
                 return
             value = value.replace(hashes[0], new_commit)
-        updated_value = rebase_spec_file.spec.update_value(original_value, value, protected_entities=".*name")
+        positions = [i for i, l in enumerate(rebase_spec_file.spec.lines().content) if original_value in l]
+        updated_value = rebase_spec_file.spec.update_value(
+            original_value,
+            value,
+            positions[-1] if positions else 0,
+            protected_entities=".*name"
+        )
         with rebase_spec_file.spec.sources() as sources:
             main_source = next(s for s in sources if s.number == rebase_spec_file.main_source_number)
             main_source.location = updated_value
