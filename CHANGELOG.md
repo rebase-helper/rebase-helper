@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.29.1] - 2024-07-02
+### Fixed
+- Fixed broken **commit-hash-updater** SPEC hook
+
 ## [0.29.0] - 2024-06-18
 ### Changed
 - Changed handling of `%patch` macros to use the specfile library
