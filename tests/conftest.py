@@ -95,7 +95,7 @@ def mocked_spec_object(spec_attributes):
             if match.group(2).count("!") % 2 > 0:
                 return ''
             return next((m.body for m in macros if m.name == match.group(3)), '')
-        macro_re = re.compile(r'%({([!?]*))?(\w+)(?(1)})')
+        macro_re = re.compile(r'%({)?([!?]*)(\w+)(?(1)})')
         while macro_re.search(expression):
             expression = macro_re.sub(replace, expression)
         return expression
