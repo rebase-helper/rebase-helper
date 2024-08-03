@@ -1,5 +1,5 @@
 Name:           rebase-helper
-Version:        0.29.1
+Version:        0.29.2
 Release:        %autorelease
 Summary:        The tool that helps you to rebase your package to the latest version
 
