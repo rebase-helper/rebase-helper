@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.29.3] - 2025-01-30
+### Changed
+- Replaced `m2r` with `pandoc` for documentation building
+
 ## [0.29.2] - 2024-08-03
 ### Fixed
 - Fixed mocking of macros in the test suite
