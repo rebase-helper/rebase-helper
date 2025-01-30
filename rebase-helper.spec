@@ -12,7 +12,7 @@ BuildArch:      noarch
 BuildRequires:  make
 BuildRequires:  python%{python3_pkgversion}-devel
 
-BuildRequires:  python%{python3_pkgversion}-m2r
+BuildRequires:  pandoc
 BuildRequires:  python%{python3_pkgversion}-sphinx
 BuildRequires:  python%{python3_pkgversion}-sphinx_rtd_theme
 

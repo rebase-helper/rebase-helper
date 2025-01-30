@@ -9,6 +9,7 @@ build:
     - libcurl4-openssl-dev
     - rpm
     - cython3
+    - pandoc
 
 sphinx:
   configuration: docs/conf.py

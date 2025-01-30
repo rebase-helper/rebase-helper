@@ -4,6 +4,7 @@
 #
 
 import os
+import subprocess
 import sys
 
 sys.path[0:0] = [os.path.abspath('.'), os.path.abspath('..')]
@@ -16,6 +17,12 @@ on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 if not on_rtd:
     # Use RTD theme when building locally
     import sphinx_rtd_theme
+
+
+def setup(app):
+    # convert Markdown files to RST
+    subprocess.check_call(['pandoc', '--from=markdown', '--to=rst', '--output=../README.rst', '../README.md'])
+    subprocess.check_call(['pandoc', '--from=markdown', '--to=rst', '--output=../CHANGELOG.rst', '../CHANGELOG.md'])
 
 
 # -- General configuration ------------------------------------------------
@@ -35,14 +42,13 @@ extensions = [
     'sphinx.ext.viewcode',
     'ext.autoargs',
     'ext.custom_man_builder',
-    'm2r',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
 # The suffix of source filenames.
-source_suffix = ['.rst', '.md']
+source_suffix = ['.rst']
 
 # The encoding of source files.
 source_encoding = 'utf-8-sig'
