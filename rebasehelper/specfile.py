@@ -129,7 +129,7 @@ class SpecFile:
         self.patches: Dict[str, List[PatchObject]] = {}
         self.removed_patches: List[str] = []
         self.category: Optional[PackageCategory] = None
-        self.spec = Specfile(path, sources_location, macros=list((predefined_macros or {}).items()))
+        self.spec = Specfile(path, sourcedir=sources_location, macros=list((predefined_macros or {}).items()))
         self._update_data()
 
     def download_remote_sources(self) -> None:

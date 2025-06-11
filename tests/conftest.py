@@ -27,6 +27,7 @@ import os
 import re
 import shutil
 import types
+from io import StringIO
 
 import pytest  # type: ignore
 
@@ -85,6 +86,7 @@ def mocked_spec_object(spec_attributes):
     spec.spec = Specfile.__new__(Specfile)
     spec.spec.autosave = False
     spec.spec.save = lambda: None
+    spec.spec._file = StringIO(spec_content)  # pylint: disable=protected-access
     spec.spec._lines = spec_content.splitlines()  # pylint: disable=protected-access
     spec.spec._trailing_newline = True  # pylint: disable=protected-access
     spec.spec._parser = MockedParser(spec_content)  # pylint: disable=protected-access
