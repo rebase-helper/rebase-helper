@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.29.4] - 2025-06-11
+### Fixed
+- Adapted to changes in specfile 0.35.0
+
 ## [0.29.3] - 2025-01-30
 ### Changed
 - Replaced `m2r` with `pandoc` for documentation building
