@@ -23,6 +23,7 @@
 #          František Nečas <fifinecas@seznam.cz>
 
 import argparse
+import copy
 import sys
 
 from rebasehelper.exceptions import RebaseHelperError, ParseError
@@ -39,11 +40,12 @@ class SilentArgumentParser(argparse.ArgumentParser):
 class CustomHelpFormatter(argparse.HelpFormatter):
 
     def _expand_help(self, action):
-        action.default = getattr(action, 'actual_default', None)
-        if isinstance(action.default, list):
-            default_str = ','.join(str(c) for c in action.default)
-            action.default = default_str
-        return super()._expand_help(action)
+        fmt_action = copy.deepcopy(action)
+        fmt_action.default = getattr(fmt_action, 'actual_default', None)
+        if isinstance(fmt_action.default, list):
+            default_str = ','.join(str(c) for c in fmt_action.default)
+            fmt_action.default = default_str
+        return super()._expand_help(fmt_action)
 
 
 class CustomAction(argparse.Action):

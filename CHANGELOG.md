@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.29.5] - 2025-06-21
+### Fixed
+- Fixed processing of custom argparse actions with Python 3.14
+
 ## [0.29.4] - 2025-06-11
 ### Fixed
 - Adapted to changes in specfile 0.35.0
