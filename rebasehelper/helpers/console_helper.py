@@ -32,8 +32,6 @@ import tempfile
 import termios
 import tty
 
-import colors  # type: ignore
-
 from rebasehelper.constants import ENCODING
 
 
@@ -67,22 +65,18 @@ class ConsoleHelper:
         return True
 
     @classmethod
-    def cprint(cls, message, fg=None, bg=None, style=None):
+    def cprint(cls, message, prefix='', suffix=''):
         """Prints colored output if possible.
 
         Args:
             message (str): String to be printed out.
-            fg (str): Foreground color.
-            bg (str): Background color.
-            style (str): Style to be applied to the printed message.
-                Possible styles: bold, faint, italic, underline, blink, blink2, negative, concealed, crossed.
-                Some styles may not be supported by every terminal, e.g. 'blink'.
-                Multiple styles should be connected with a '+', e.g. 'bold+italic'.
+            prefix (str): ANSI escape sequence prefix.
+            suffix (str): ANSI escape sequence suffix.
 
         """
         if cls.use_colors:
             try:
-                print(colors.color(message, fg=fg, bg=bg, style=style))
+                print(prefix + message + suffix)
             except ValueError:
                 print(message)
         else:

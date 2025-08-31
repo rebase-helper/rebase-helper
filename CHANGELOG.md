@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.29.6] - 2025-08-31
+### Changed
+- Removed the dependency on unmaintained `ansicolors` library
+
 ## [0.29.5] - 2025-06-21
 ### Fixed
 - Fixed processing of custom argparse actions with Python 3.14
