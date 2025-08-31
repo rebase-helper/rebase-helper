@@ -67,30 +67,30 @@ class CustomLogger(logging.Logger):
 
 
 class ColorizingStreamHandler(logging.StreamHandler):
-    colors: Dict[str, Dict[int, Dict[str, Optional[str]]]] = {
+    colors: Dict[str, Dict[int, Dict[str, str]]] = {
         'dark': {
-            logging.DEBUG: {'fg': 'brightblack', 'bg': 'default', 'style': None},
-            CustomLogger.TRACE: {'fg': 'red', 'bg': 'default', 'style': None},
-            CustomLogger.VERBOSE: {'fg': 'brightblack', 'bg': 'default', 'style': None},
-            logging.INFO: {'fg': 'default', 'bg': 'default', 'style': None},
-            CustomLogger.SUCCESS: {'fg': 'green', 'bg': 'default', 'style': None},
-            CustomLogger.HEADING: {'fg': 'yellow', 'bg': 'default', 'style': None},
-            CustomLogger.IMPORTANT: {'fg': 'red', 'bg': 'default', 'style': None},
-            logging.WARNING: {'fg': 'yellow', 'bg': 'default', 'style': None},
-            logging.ERROR: {'fg': 'red', 'bg': 'default', 'style': 'bold'},
-            logging.CRITICAL: {'fg': 'white', 'bg': 'red', 'style': 'bold'},
+            logging.DEBUG: {'prefix': '\x1b[90;49m', 'suffix': '\x1b[0m'},
+            CustomLogger.TRACE: {'prefix': '\x1b[31;49m', 'suffix': '\x1b[0m'},
+            CustomLogger.VERBOSE: {'prefix': '\x1b[90;49m', 'suffix': '\x1b[0m'},
+            logging.INFO: {'prefix': '\x1b[39;49m', 'suffix': '\x1b[0m'},
+            CustomLogger.SUCCESS: {'prefix': '\x1b[32;49m', 'suffix': '\x1b[0m'},
+            CustomLogger.HEADING: {'prefix': '\x1b[33;49m', 'suffix': '\x1b[0m'},
+            CustomLogger.IMPORTANT: {'prefix': '\x1b[31;49m', 'suffix': '\x1b[0m'},
+            logging.WARNING: {'prefix': '\x1b[33;49m', 'suffix': '\x1b[0m'},
+            logging.ERROR: {'prefix': '\x1b[31;49;1m', 'suffix': '\x1b[0m'},
+            logging.CRITICAL: {'prefix': '\x1b[37;41;1m', 'suffix': '\x1b[0m'},
         },
         'light': {
-            logging.DEBUG: {'fg': 'brightblack', 'bg': 'default', 'style': None},
-            CustomLogger.TRACE: {'fg': 'red', 'bg': 'default', 'style': None},
-            CustomLogger.VERBOSE: {'fg': 'brightblack', 'bg': 'default', 'style': None},
-            logging.INFO: {'fg': 'default', 'bg': 'default', 'style': None},
-            CustomLogger.SUCCESS: {'fg': 'green', 'bg': 'default', 'style': None},
-            CustomLogger.HEADING: {'fg': 'blue', 'bg': 'default', 'style': None},
-            CustomLogger.IMPORTANT: {'fg': 'red', 'bg': 'default', 'style': None},
-            logging.WARNING: {'fg': 'blue', 'bg': 'default', 'style': None},
-            logging.ERROR: {'fg': 'red', 'bg': 'default', 'style': 'bold'},
-            logging.CRITICAL: {'fg': 'white', 'bg': 'red', 'style': 'bold'},
+            logging.DEBUG: {'prefix': '\x1b[90;49m', 'suffix': '\x1b[0m'},
+            CustomLogger.TRACE: {'prefix': '\x1b[31;49m', 'suffix': '\x1b[0m'},
+            CustomLogger.VERBOSE: {'prefix': '\x1b[90;49m', 'suffix': '\x1b[0m'},
+            logging.INFO: {'prefix': '\x1b[39;49m', 'suffix': '\x1b[0m'},
+            CustomLogger.SUCCESS: {'prefix': '\x1b[32;49m', 'suffix': '\x1b[0m'},
+            CustomLogger.HEADING: {'prefix': '\x1b[34;49m', 'suffix': '\x1b[0m'},
+            CustomLogger.IMPORTANT: {'prefix': '\x1b[31;49m', 'suffix': '\x1b[0m'},
+            logging.WARNING: {'prefix': '\x1b[34;49m', 'suffix': '\x1b[0m'},
+            logging.ERROR: {'prefix': '\x1b[31;49;1m', 'suffix': '\x1b[0m'},
+            logging.CRITICAL: {'prefix': '\x1b[37;41;1m', 'suffix': '\x1b[0m'},
         },
     }
 
