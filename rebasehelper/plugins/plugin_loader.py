@@ -24,7 +24,7 @@
 
 from typing import Dict, Optional, Type
 
-import pkg_resources
+import importlib.metadata
 
 from rebasehelper.plugins.plugin import Plugin
 
@@ -33,7 +33,11 @@ class PluginLoader:
     @classmethod
     def load(cls, entrypoint, manager):
         result: Dict[str, Optional[Type[Plugin]]] = {}
-        for ep in pkg_resources.iter_entry_points(entrypoint):
+        try:
+            eps = importlib.metadata.entry_points(group=entrypoint)
+        except TypeError:
+            eps = importlib.metadata.entry_points().get(entrypoint, [])
+        for ep in eps:
             result[ep.name] = None
             try:
                 plugin = ep.load()

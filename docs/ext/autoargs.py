@@ -90,7 +90,11 @@ class AutoArgsDirective(Directive):
         if not action.option_strings or action.nargs == 0:
             return None
         else:
-            usage = fmt._format_actions_usage([action], [])
+            try:
+                usage = fmt._format_actions_usage([action], [])
+            except AttributeError:
+                parts, _ = fmt._get_actions_usage_parts([action], [])
+                usage = ' '.join(parts)
             option_string = action.option_strings[0]
             idx = usage.find(option_string)
             if idx == -1:

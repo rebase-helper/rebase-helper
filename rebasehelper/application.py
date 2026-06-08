@@ -29,7 +29,7 @@ import shutil
 from typing import Any, Dict, List, Optional, cast
 
 import git  # type: ignore
-from pkg_resources import parse_version
+from packaging.version import Version as parse_version
 from specfile.sources import Patch
 
 from rebasehelper.archive import Archive

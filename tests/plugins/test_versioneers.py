@@ -24,7 +24,7 @@
 
 import pytest  # type: ignore
 
-from pkg_resources import parse_version
+from packaging.version import Version as parse_version
 
 from rebasehelper.plugins.plugin_manager import plugin_manager
 from rebasehelper.plugins.versioneers.anitya import Anitya

@@ -43,7 +43,11 @@ class Completion:
             if action.nargs == 0:
                 return None
             fmt = parser._get_formatter()  # pylint: disable=protected-access
-            usage = fmt._format_actions_usage([action], [])  # pylint: disable=protected-access
+            try:
+                usage = fmt._format_actions_usage([action], [])  # pylint: disable=protected-access
+            except AttributeError:
+                parts, _ = fmt._get_actions_usage_parts([action], [])  # pylint: disable=protected-access
+                usage = ' '.join(parts)
             option_string = action.option_strings[0]
             idx = usage.find(option_string)
             if idx == -1:

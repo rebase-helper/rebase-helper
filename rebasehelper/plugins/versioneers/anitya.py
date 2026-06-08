@@ -25,7 +25,7 @@
 import logging
 from typing import cast
 
-from pkg_resources import parse_version
+from packaging.version import Version as parse_version
 
 from rebasehelper.logger import CustomLogger
 from rebasehelper.plugins.versioneers import BaseVersioneer
