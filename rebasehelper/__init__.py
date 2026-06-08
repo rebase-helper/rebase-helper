@@ -22,10 +22,8 @@
 #          Nikola Forró <nforro@redhat.com>
 #          František Nečas <fifinecas@seznam.cz>
 
+import importlib.metadata
 import logging
-import os
-
-import pkg_resources
 
 
 try:
@@ -39,9 +37,8 @@ else:
 # ensure that all messages are caught
 logging.getLogger(__name__).setLevel(logging.DEBUG)
 
-# make entry points accessible in case this package is not installed
-parent_dir: str = os.path.dirname(os.path.dirname(__file__))
-pkg_resources.working_set.add_entry(parent_dir)
-
 # set current package version
-VERSION: str = pkg_resources.get_distribution(__name__).version
+try:
+    VERSION: str = importlib.metadata.version("rebasehelper")
+except importlib.metadata.PackageNotFoundError:
+    VERSION = "unknown"

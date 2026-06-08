@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+## [0.29.7] - 2026-06-08
+### Fixed
+- Fixed compatibility with Python 3.15
+
 ## [0.29.6] - 2025-08-31
 ### Changed
 - Removed the dependency on unmaintained `ansicolors` library
